@@ -1,0 +1,7 @@
+*.o
+.dirstamp
+.deps/
+.libs/
+disp_1
+elec_1
+xr_1

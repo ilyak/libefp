@@ -1,0 +1,19 @@
+LIBEFP_1 {
+global:
+	efp_banner;
+	efp_opts_default;
+	efp_init;
+	efp_update_fragments;
+	efp_scf_update;
+	efp_compute;
+	efp_get_energy;
+	efp_get_gradient;
+	efp_get_frag_count;
+	efp_get_frag_atom_count;
+	efp_get_frag_atoms;
+	efp_shutdown;
+	efp_get_term_index;
+	efp_result_to_string;
+local:
+	*;
+};

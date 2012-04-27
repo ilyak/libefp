@@ -1,0 +1,66 @@
+AC_PREREQ([2.62])
+AC_INIT([libefp],
+	[0.1],
+	[ilya.kaliman@gmail.com],
+	[libefp],
+	[http://repo.or.cz/w/efp.git/])
+AC_CONFIG_SRCDIR([src/efp.c])
+AC_CONFIG_AUX_DIR([build-aux])
+AM_INIT_AUTOMAKE([
+	foreign 1.11 -Wall -Wno-portability silent-rules tar-pax
+	no-dist-gzip dist-xz subdir-objects color-tests
+])
+AC_PROG_CC_STDC
+AC_OPENMP
+AC_USE_SYSTEM_EXTENSIONS
+AC_SYS_LARGEFILE
+AC_CONFIG_MACRO_DIR([m4])
+AM_PROG_CC_C_O
+AM_SILENT_RULES([yes])
+LT_INIT([pic-only])
+AC_PREFIX_DEFAULT([/usr])
+
+AC_PROG_SED
+AC_PROG_MKDIR_P
+
+AC_ARG_WITH([cblas-libs],
+	AS_HELP_STRING([--with-cblas-libs=LIBS], [use cblas libraries]),
+	[], [with_cblas_libs=""])
+AC_SUBST([cblas_libs], [$with_cblas_libs])
+
+developer_CFLAGS="-Wall -Wextra -pedantic \
+-Wno-unused-parameter \
+-Wmissing-declarations -Wmissing-prototypes \
+-Wnested-externs -Wpointer-arith \
+-Wsign-compare -Wchar-subscripts \
+-Wstrict-prototypes -Wshadow \
+-Wformat-security -Wtype-limits"
+
+AC_ARG_ENABLE([developer-flags],
+	AS_HELP_STRING([--enable-developer-flags], [use developer GCC flags]),
+	[enable_developer_flags=$developer_CFLAGS],
+	[enable_developer_flags=""])
+AC_SUBST([my_CFLAGS], [$enable_developer_flags])
+
+AC_CONFIG_HEADERS(config.h)
+AC_CONFIG_FILES([
+	Makefile
+])
+
+AC_OUTPUT
+AC_MSG_RESULT([
+        configuration
+        =============
+
+        prefix:             ${prefix}
+        sysconfdir:         ${sysconfdir}
+        libdir:             ${libdir}
+        includedir:         ${includedir}
+
+        compiler:           ${CC}
+        cflags:             ${CFLAGS}
+        ldflags:            ${LDFLAGS}
+
+        cblas libs:         ${cblas_libs}
+        developer cflags:   ${my_CFLAGS}
+])
