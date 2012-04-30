@@ -136,6 +136,10 @@ Information for libefp contributors
    produces no warnings. Use "make check" to make sure that all new code passes
    the test cases.
 
+7. To debug using tests do "libtool --mode=execute gdb ./mytest" in tests
+   directory. This will start gdb so you will be able to set breakpoints and
+   inspect variables in mytest test program.
+
 
 References
 ==========
