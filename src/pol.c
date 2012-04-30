@@ -293,6 +293,16 @@ efp_scf_update_pol(struct efp *efp, double *energy)
 
 	compute_elec_field(efp);
 
+	/* set initial approximation - all induced dipoles are zero */
+	for (int i = 0; i < efp->n_frag; i++) {
+		struct frag *frag = efp->frags + i;
+		for (int j = 0; j < frag->n_polarizable_pts; j++) {
+			struct polarizable_pt *pt = frag->polarizable_pts + j;
+			vec_zero(&pt->induced_dipole);
+			vec_zero(&pt->induced_dipole_conj);
+		}
+	}
+
 	/* compute induced dipoles self consistently */
 	while (pol_scf_iter(efp) > conv_epsilon);
 
