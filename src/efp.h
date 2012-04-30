@@ -85,7 +85,7 @@ enum efp_elec_damp {
 	EFP_ELEC_DAMP_OVERLAP      /* overlap-based damping */
 };
 
-/* Opaque EFP struct. */
+/* Opaque EFP structure. */
 struct efp;
 
 /* Options controlling EFP computation. */
@@ -118,6 +118,7 @@ struct efp_basis_data {
 	double x, y, z;   /* coordinates of an atom */
 };
 
+/* Atom from QM region. */
 struct efp_qm_atom {
 	double x, y, z;   /* atom position */
 	double charge;    /* effective charge */
@@ -143,7 +144,7 @@ struct efp_qm_data {
  *              derivatives of overlap integrals should be written.
  * user_data (input): user data which was specified during initialization.
  *
- * return: EFP_RESULT_CALLBACK_FAILED on error, EFP_RESULT_SUCCESS otherwise.
+ * return: EFP_RESULT_CALLBACK_FAILED on error or EFP_RESULT_SUCCESS otherwise.
  */
 typedef enum efp_result (*efp_overlap_integrals_fn)(int n_basis_data,
 	const struct efp_basis_data *data, int size, double *s, double *sx,
@@ -160,34 +161,42 @@ typedef enum efp_result (*efp_overlap_integrals_fn)(int n_basis_data,
  *              derivatives of kinetic energy integrals should be written.
  * user_data (input): user data which was specified during initialization.
  *
- * return: EFP_RESULT_CALLBACK_FAILED on error, EFP_RESULT_SUCCESS otherwise.
+ * return: EFP_RESULT_CALLBACK_FAILED on error or EFP_RESULT_SUCCESS otherwise.
  */
 typedef enum efp_result (*efp_kinetic_integrals_fn)(int n_basis_data,
 	const struct efp_basis_data *data, int size, double *t, double *tx,
 	void *user_data);
 
-/* XXX */
+/* Compute field form electrons on specified points.
+ *
+ * n_pt (input): number of points in xyz array.
+ * xyz (input): x,y,z coordinates of points where electric field is needed.
+ * field (output): computed x,y,z components of electric field.
+ * user_data (input): user data which was specified during initialization.
+ *
+ * return: EFP_RESULT_CALLBACK_FAILED on error or EFP_RESULT_SUCCESS otherwise.
+ */
 typedef enum efp_result (*efp_electron_density_field_fn)(int n_pt,
 	const double *xyz, double *field, void *user_data);
 
 /* Information about callback functions. */
 struct efp_callbacks {
-	/* callback to compute overlap integrals */
+	/* callback function, see efp_overlap_integrals_fn */
 	efp_overlap_integrals_fn get_overlap_integrals;
 
 	/* will be passed as a last parameter to get_overlap_integrals */
 	void *get_overlap_integrals_user_data;
 
-	/* callback to compute kinetic energy integrals */
+	/* callback function, see efp_kinetic_integrals_fn */
 	efp_kinetic_integrals_fn get_kinetic_integrals;
 
 	/* will be passed as a last parameter to get_kinetic_integrals */
 	void *get_kinetic_integrals_user_data;
 
-	/* XXX */
+	/* callback function, see efp_electron_density_field_fn */
 	efp_electron_density_field_fn get_electron_density_field;
 
-	/* XXX */
+	/* will be passed as a last parameter to get_electron_density_field */
 	void *get_electron_density_field_user_data;
 };
 
@@ -201,7 +210,7 @@ void efp_opts_default(struct efp_opts *opts);
 
 /* Initialize the EFP computation.
  *
- * out (output): initialized efp struct.
+ * out (output): initialized opaque efp structure.
  * opts (input): user-defined options controlling the computation.
  * callbacks (input): user-supplied callback functions (see efp_callbacks).
  * potential_files (input): NULL-terminated list with paths to the files with
@@ -229,7 +238,10 @@ enum efp_result efp_update_qm_data(struct efp *efp,
  */
 enum efp_result efp_update_fragments(struct efp *efp, const double *xyzabc);
 
-/* XXX */
+/* Update wave function dependent terms. Must be called during QM SCF.
+ *
+ * energy (output): wave function dependent energy.
+ */
 enum efp_result efp_scf_update(struct efp *efp, double *energy);
 
 /* Perform the EFP computation. This call can take long time to complete. */
