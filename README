@@ -132,9 +132,9 @@ Information for libefp contributors
    objects from two different threads. NEVER use mutable global state as it
    will break this. Store all mutable data in the efp object.
 
-6. All code should compile so that compilation with gcc -Wall produces no
-   warnings. Use "make check" to make sure that all new code passes the test
-   cases.
+6. Use --enable-developer-flags in configuration and make sure that compilation
+   produces no warnings. Use "make check" to make sure that all new code passes
+   the test cases.
 
 
 References
