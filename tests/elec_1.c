@@ -39,8 +39,8 @@ static const char *fragname[] = {
 };
 
 static const double xyzabc[] = {
-	0.0, 0.0, 0.0, 1.0, 2.0, 3.0,
-	6.0, 0.0, 0.0, 5.0, 2.0, 8.0
+	BOHR(0.0), BOHR(0.0), BOHR(0.0), 1.0, 2.0, 3.0,
+	BOHR(5.0), BOHR(0.0), BOHR(0.0), 5.0, 2.0, 8.0
 };
 
 static const double ref_gradient[] = {

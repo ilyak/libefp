@@ -39,8 +39,8 @@ static const char *fragname[] = {
 };
 
 static const double xyzabc[] = {
-	0.0, 0.0, 0.0, 1.0, 2.0, 3.0,
-	6.0, 0.0, 0.0, 5.0, 2.0, 8.0
+	BOHR(0.0), BOHR(0.0), BOHR(0.0), 1.0, 2.0, 3.0,
+	BOHR(5.0), BOHR(0.0), BOHR(0.0), 5.0, 2.0, 8.0
 };
 
 static const double ref_gradient[] = {
@@ -52,7 +52,7 @@ static const struct test_data test_data = {
 	.potential_files = potential_files,
 	.fragname = fragname,
 	.xyzabc = xyzabc,
-	.ref_energy = 0.0,
+	.ref_energy = -0.000098903256,
 	.ref_gradient = ref_gradient,
 	.opts = {
 		.terms = EFP_TERM_DISP,

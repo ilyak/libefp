@@ -41,6 +41,8 @@ struct test_data {
 	struct efp_callbacks callbacks;
 };
 
+#define BOHR(x) ((x) / 0.52917721092)
+
 int run_test(const struct test_data *test_data);
 
 #define DEFINE_TEST(test_data)                                               \

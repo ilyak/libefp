@@ -49,6 +49,28 @@ eq(double a, double b)
 	return fabs(a - b) < eps;
 }
 
+static inline enum efp_result
+print_atoms(struct efp *efp)
+{
+	enum efp_result res;
+	int n_frags = efp_get_frag_count(efp);
+
+	for (int i = 0; i < n_frags; i++) {
+		int n_atoms = efp_get_frag_atom_count(efp, i);
+
+		struct efp_atom atoms[n_atoms];
+		if ((res = efp_get_frag_atoms(efp, i, atoms)))
+			return res;
+
+		for (int a = 0; a < n_atoms; a++) {
+			struct efp_atom *atom = atoms + a;
+			printf("%s %10.6lf %10.6lf %10.6lf\n", atom->label,
+					atom->x, atom->y, atom->z);
+		}
+	}
+	return EFP_RESULT_SUCCESS;
+}
+
 int
 run_test(const struct test_data *test_data)
 {
@@ -64,6 +86,11 @@ run_test(const struct test_data *test_data)
 
 	if ((res = efp_update_fragments(efp, test_data->xyzabc))) {
 		error("efp_update_fragments", res);
+		goto fail;
+	}
+
+	if ((res = print_atoms(efp))) {
+		error("print_atoms", res);
 		goto fail;
 	}
 
