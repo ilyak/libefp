@@ -166,7 +166,14 @@ compute_xr_frag(struct efp *efp, int frag_i, int frag_j,
 		&lmo_s[0][0], fr_i->n_lmo);
 
 	/* lmo_t = wf_i * t * wf_j(t) */
-	/* XXX */
+	cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+		fr_i->n_lmo, fr_j->xr_wf_size, fr_i->xr_wf_size, 1.0,
+		fr_i->xr_wf, fr_i->xr_wf_size, t + offset, block_size, 0.0,
+		tmp, fr_i->n_lmo);
+	cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
+		fr_i->n_lmo, fr_j->n_lmo, fr_j->xr_wf_size, 1.0,
+		tmp, fr_i->n_lmo, fr_j->xr_wf, fr_j->xr_wf_size, 0.0,
+		&lmo_t[0][0], fr_i->n_lmo);
 
 	double energy = 0.0;
 
@@ -297,6 +304,12 @@ efp_compute_xr(struct efp *efp)
 	double energy = 0.0;
 	efp->charge_pen_energy = 0.0;
 
+	/* Because of potentially huge number of fragments we can't just
+	 * compute all overlap and kinetic energy integrals in one step.
+	 * Instead we process fragments in blocks so that number of basis
+	 * functions in each block is not greater than some reasonable number.
+	 * Also see setup_xr function in efp.c for block setup details.
+	 */
 	for (int i = 0; i < efp->n_xr_blocks; i++)
 		for (int j = i; j < efp->n_xr_blocks; j++)
 			if ((res = compute_xr_block(efp, i, j, &energy)))
