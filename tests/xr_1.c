@@ -49,12 +49,9 @@ static const double ref_gradient[] = {
 };
 
 static enum efp_result
-overlap_integrals_fn(int n_basis_data, const struct efp_basis_data *data,
-		int size, double *s, double *sx, void *user_data)
+overlap_integrals_fn(struct efp_xr_block *block, double *s, double *sx,
+		     void *user_data)
 {
-	if (size != 0)
-		return EFP_RESULT_INVALID_ARRAY_SIZE;
-
 	static const double s_[] = {
 0.0, 0.0, 0.0
 	};
@@ -63,21 +60,23 @@ overlap_integrals_fn(int n_basis_data, const struct efp_basis_data *data,
 0.0, 0.0, 0.0
 	};
 
-	memcpy(s, s_, size * size * sizeof(double));
+	size_t size = block->basis_size_i * block->basis_size_j;
+
+	if (size != ARRAY_SIZE(s_))
+		return EFP_RESULT_INVALID_ARRAY_SIZE;
+
+	memcpy(s, s_, size * sizeof(double));
 
 	if (sx)
-		memcpy(sx, sx_, 3 * size * size * sizeof(double));
+		memcpy(sx, sx_, 3 * size * sizeof(double));
 
 	return EFP_RESULT_SUCCESS;
 }
 
 static enum efp_result
-kinetic_integrals_fn(int n_basis_data, const struct efp_basis_data *data,
-		int size, double *t, double *tx, void *user_data)
+kinetic_integrals_fn(struct efp_xr_block *block, double *t, double *tx,
+		     void *user_data)
 {
-	if (size != 0)
-		return EFP_RESULT_INVALID_ARRAY_SIZE;
-
 	static const double t_[] = {
 0.0, 0.0, 0.0
 	};
@@ -86,10 +85,15 @@ kinetic_integrals_fn(int n_basis_data, const struct efp_basis_data *data,
 0.0, 0.0, 0.0
 	};
 
-	memcpy(t, t_, size * size * sizeof(double));
+	size_t size = block->basis_size_i * block->basis_size_j;
+
+	if (size != ARRAY_SIZE(t_))
+		return EFP_RESULT_INVALID_ARRAY_SIZE;
+
+	memcpy(t, t_, size * sizeof(double));
 
 	if (tx)
-		memcpy(tx, tx_, 3 * size * size * sizeof(double));
+		memcpy(tx, tx_, 3 * size * sizeof(double));
 
 	return EFP_RESULT_SUCCESS;
 }

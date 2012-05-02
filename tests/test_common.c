@@ -45,7 +45,7 @@ error(const char *title, enum efp_result res)
 static inline int
 eq(double a, double b)
 {
-	static const double eps = 1.0e-8;
+	static const double eps = 1.0e-5;
 	return fabs(a - b) < eps;
 }
 

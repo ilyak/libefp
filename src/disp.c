@@ -40,6 +40,18 @@ damp_tt(double r)
 }
 
 static double
+damp_tt_grad(double r)
+{
+	static const double a = 1.5; /* Tang-Toennies damping parameter */
+
+	double ra = r * a;
+	double ra2 = ra * ra;
+	double ra6 = ra2 * ra2 * ra2;
+
+	return a * exp(-ra) * ra6 / 720.0;
+}
+
+static double
 damp_overlap(struct efp *efp, int frag_i, int frag_j, int pt_i, int pt_j)
 {
 	int idx = disp_damp_overlap_idx(efp, frag_i, frag_j, pt_i, pt_j);
@@ -47,10 +59,15 @@ damp_overlap(struct efp *efp, int frag_i, int frag_j, int pt_i, int pt_j)
 }
 
 static double
+damp_overlap_grad(struct efp *efp, int frag_i, int frag_j, int pt_i, int pt_j)
+{
+	/* XXX */
+	assert(0);
+}
+
+static double
 compute_disp_pt(struct efp *efp, int i, int ii, int j, int jj, double *grad)
 {
-	double sum = 0.0;
-
 	const struct frag *fr_i = efp->frags + i;
 	const struct frag *fr_j = efp->frags + j;
 
@@ -59,23 +76,41 @@ compute_disp_pt(struct efp *efp, int i, int ii, int j, int jj, double *grad)
 	const struct dynamic_polarizable_pt *pt_j =
 				fr_j->dynamic_polarizable_pts + jj;
 
+	double sum = 0.0;
 	for (int k = 0; k < ARRAY_SIZE(disp_weights); k++)
 		sum += disp_weights[k] * pt_i->trace[k] * pt_j->trace[k];
 
 	double r = vec_dist(VEC(pt_i->x), VEC(pt_j->x));
+	double r2 = r * r, r6 = r2 * r2 * r2;
 
-	double damp = efp->opts.disp_damp == EFP_DISP_DAMP_TT ?
-			damp_tt(r) :
-			damp_overlap(efp, i, j, ii, jj);
+	double damp;
+	switch (efp->opts.disp_damp) {
+	case EFP_DISP_DAMP_TT:
+		damp = damp_tt(r);
+		break;
+	case EFP_DISP_DAMP_OVERLAP:
+		damp = damp_overlap(efp, i, j, ii, jj);
+		break;
+	}
 
-	sum *= damp / pow(r, 6);
+	double energy = 4.0 / 3.0 * sum * damp / r6;
 
 	if (grad) {
 		double dx = pt_i->x - pt_j->x;
 		double dy = pt_i->y - pt_j->y;
 		double dz = pt_i->z - pt_j->z;
 
-		double g = -6.0 * sum / r;
+		double gdamp;
+		switch (efp->opts.disp_damp) {
+		case EFP_DISP_DAMP_TT:
+			gdamp = damp_tt_grad(r);
+			break;
+		case EFP_DISP_DAMP_OVERLAP:
+			gdamp = damp_overlap_grad(efp, i, j, ii, jj);
+			break;
+		}
+
+		double g = 4.0 / 3.0 * sum * (gdamp / r - 6.0 * damp / r2) / r6;
 		double gx = g * dx;
 		double gy = g * dy;
 		double gz = g * dz;
@@ -97,7 +132,7 @@ compute_disp_pt(struct efp *efp, int i, int ii, int j, int jj, double *grad)
 		g_j[4] -= gx * (pt_j->z - fr_j->z) - gz * (pt_j->x - fr_j->x);
 		g_j[5] -= gy * (pt_j->x - fr_j->x) - gx * (pt_j->y - fr_j->y);
 	}
-	return sum;
+	return energy;
 }
 
 static double
@@ -123,9 +158,6 @@ efp_compute_disp(struct efp *efp)
 	for (int i = 0; i < efp->n_frag; i++)
 		for (int j = i + 1; j < efp->n_frag; j++)
 			energy -= compute_disp_frag(efp, i, j, efp->grad);
-
-	/* approximate higher-order terms as 1/3 of C6 energy */
-	energy *= (4.0 / 3.0);
 
 	efp->energy[efp_get_term_index(EFP_TERM_DISP)] = energy;
 	return EFP_RESULT_SUCCESS;

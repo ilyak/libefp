@@ -38,8 +38,8 @@ fock_idx(int i, int j)
 		i * (i + 1) / 2 + j;
 }
 
-static inline int
-valence(int n)
+static inline double
+valence(double n)
 {
 	if (n > 2)
 		n -= 2;
@@ -57,7 +57,7 @@ get_disp_damp_overlap(double s_ij)
 
 static void
 calc_disp_damp_overlap(struct efp *efp, int frag_i, int frag_j,
-				int i, int j, double s_ij)
+		       int i, int j, double s_ij)
 {
 	if (!efp->disp_damp_overlap)
 		return;
@@ -80,70 +80,9 @@ get_block_frag_count(struct efp *efp, int i)
 	return efp->xr_block_frag_offset[i + 1] - efp->xr_block_frag_offset[i];
 }
 
-static void
-get_block_sizes(struct efp *efp, int block_i, int block_j,
-			int *n_atoms, int *wf_size)
-{
-	struct frag *frags_i = efp->frags + efp->xr_block_frag_offset[block_i];
-	struct frag *frags_j = efp->frags + efp->xr_block_frag_offset[block_j];
-	int n_frag_i = get_block_frag_count(efp, block_i);
-	int n_frag_j = get_block_frag_count(efp, block_j);
-
-	*n_atoms = 0, *wf_size = 0;
-
-	for (int i = 0; i < n_frag_i; i++) {
-		*n_atoms += frags_i[i].n_atoms;
-		*wf_size += frags_i[i].xr_wf_size;
-	}
-
-	if (block_i != block_j) {
-		for (int j = 0; j < n_frag_j; j++) {
-			*n_atoms += frags_j[j].n_atoms;
-			*wf_size += frags_j[j].xr_wf_size;
-		}
-	}
-}
-
-static void
-get_block_basis_data(struct efp *efp, int block_i, int block_j,
-			struct efp_basis_data *data)
-{
-	struct frag *frags_i = efp->frags + efp->xr_block_frag_offset[block_i];
-	struct frag *frags_j = efp->frags + efp->xr_block_frag_offset[block_j];
-	int n_frag_i = get_block_frag_count(efp, block_i);
-	int n_frag_j = get_block_frag_count(efp, block_j);
-
-	for (int i = 0; i < n_frag_i; i++) {
-		struct frag *fr_i = frags_i + i;
-		for (int a = 0; a < fr_i->n_atoms; a++) {
-			strcpy(data->basis, fr_i->basis_name);
-			data->n = fr_i->atoms[a].n;
-			data->x = fr_i->atoms[a].x;
-			data->y = fr_i->atoms[a].y;
-			data->z = fr_i->atoms[a].z;
-			data++;
-		}
-	}
-
-	if (block_i != block_j) {
-		for (int j = 0; j < n_frag_j; j++) {
-			struct frag *fr_j = frags_j + j;
-			for (int a = 0; a < fr_j->n_atoms; a++) {
-				strcpy(data->basis, fr_j->basis_name);
-				data->n = fr_j->atoms[a].n;
-				data->x = fr_j->atoms[a].x;
-				data->y = fr_j->atoms[a].y;
-				data->z = fr_j->atoms[a].z;
-				data++;
-			}
-		}
-	}
-}
-
 static double
-compute_xr_frag(struct efp *efp, int frag_i, int frag_j,
-	int offset_i, int offset_j, const double *s, const double *t,
-	const double *sx, const double *tx)
+compute_xr_frag(struct efp *efp, int frag_i, int frag_j, int stride,
+		const double *s, const double *t)
 {
 	struct frag *fr_i = efp->frags + frag_i;
 	struct frag *fr_j = efp->frags + frag_j;
@@ -152,13 +91,10 @@ compute_xr_frag(struct efp *efp, int frag_i, int frag_j,
 	double lmo_t[fr_i->n_lmo][fr_j->n_lmo];
 	double tmp[fr_i->n_lmo * fr_j->xr_wf_size];
 
-	int block_size = efp->xr_block_frag_offset[efp->n_frag];
-	int offset = offset_i * block_size + offset_j;
-
 	/* lmo_s = wf_i * s * wf_j(t) */
 	cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
 		fr_i->n_lmo, fr_j->xr_wf_size, fr_i->xr_wf_size, 1.0,
-		fr_i->xr_wf, fr_i->xr_wf_size, s + offset, block_size, 0.0,
+		fr_i->xr_wf, fr_i->xr_wf_size, s, stride, 0.0,
 		tmp, fr_i->n_lmo);
 	cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
 		fr_i->n_lmo, fr_j->n_lmo, fr_j->xr_wf_size, 1.0,
@@ -168,7 +104,7 @@ compute_xr_frag(struct efp *efp, int frag_i, int frag_j,
 	/* lmo_t = wf_i * t * wf_j(t) */
 	cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
 		fr_i->n_lmo, fr_j->xr_wf_size, fr_i->xr_wf_size, 1.0,
-		fr_i->xr_wf, fr_i->xr_wf_size, t + offset, block_size, 0.0,
+		fr_i->xr_wf, fr_i->xr_wf_size, t, stride, 0.0,
 		tmp, fr_i->n_lmo);
 	cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
 		fr_i->n_lmo, fr_j->n_lmo, fr_j->xr_wf_size, 1.0,
@@ -206,7 +142,7 @@ compute_xr_frag(struct efp *efp, int frag_i, int frag_j,
 				struct efp_atom *at = fr_j->atoms + jj;
 				double r = vec_dist(fr_i->lmo_centroids + i,
 							VEC(at->x));
-				energy -= s_ij * s_ij * valence(at->n) / r;
+				energy -= s_ij * s_ij * valence(at->znuc) / r;
 			}
 			for (int l = 0; l < fr_j->n_lmo; l++) {
 				double r = vec_dist(fr_i->lmo_centroids + i,
@@ -217,7 +153,7 @@ compute_xr_frag(struct efp *efp, int frag_i, int frag_j,
 				struct efp_atom *at = fr_i->atoms + ii;
 				double r = vec_dist(fr_j->lmo_centroids + j,
 							VEC(at->x));
-				energy -= s_ij * s_ij * valence(at->n) / r;
+				energy -= s_ij * s_ij * valence(at->znuc) / r;
 			}
 			for (int k = 0; k < fr_i->n_lmo; k++) {
 				double r = vec_dist(fr_i->lmo_centroids + k,
@@ -238,22 +174,41 @@ compute_xr_block(struct efp *efp, int block_i, int block_j, double *energy)
 
 	struct frag *frags_i = efp->frags + efp->xr_block_frag_offset[block_i];
 	struct frag *frags_j = efp->frags + efp->xr_block_frag_offset[block_j];
-	int n_frag_i = get_block_frag_count(efp, block_i);
-	int n_frag_j = get_block_frag_count(efp, block_j);
+	int n_block_i = get_block_frag_count(efp, block_i);
+	int n_block_j = get_block_frag_count(efp, block_j);
 
-	int n_atoms, wf_size;
-	get_block_sizes(efp, block_i, block_j, &n_atoms, &wf_size);
+	struct efp_xr_block block;
+	memset(&block, 0, sizeof(struct efp_xr_block));
 
-	struct efp_basis_data basis_data[n_atoms];
-	get_block_basis_data(efp, block_i, block_j, basis_data);
+	for (int i = 0; i < n_block_i; i++) {
+		block.n_atoms_i += frags_i[i].n_atoms;
+		block.basis_size_i += frags_i[i].xr_wf_size;
+	}
 
-	double *s = malloc(wf_size * wf_size * sizeof(double));
-	double *t = malloc(wf_size * wf_size * sizeof(double));
+	for (int j = 0; j < n_block_j; j++) {
+		block.n_atoms_j += frags_j[j].n_atoms;
+		block.basis_size_j += frags_j[j].xr_wf_size;
+	}
+
+	block.atoms_i = malloc(block.n_atoms_i * sizeof(struct efp_atom));
+	block.atoms_j = malloc(block.n_atoms_j * sizeof(struct efp_atom));
+
+	for (int i = 0, idx = 0; i < n_block_i; i++)
+		for (int a = 0; a < frags_i[i].n_atoms; a++)
+			block.atoms_i[idx++] = frags_i[i].atoms[a];
+
+	for (int j = 0, idx = 0; j < n_block_j; j++)
+		for (int a = 0; a < frags_j[j].n_atoms; a++)
+			block.atoms_j[idx++] = frags_j[j].atoms[a];
+
+	size_t size = block.basis_size_i * block.basis_size_j * sizeof(double);
+
+	double *s = malloc(size), *t = malloc(size);
 	double *sx = NULL, *tx = NULL;
 
 	if (efp->grad) {
-		sx = malloc(3 * wf_size * wf_size * sizeof(double));
-		tx = malloc(3 * wf_size * wf_size * sizeof(double));
+		sx = malloc(3 * size);
+		tx = malloc(3 * size);
 	}
 
 	if (!s || !t || (efp->grad && (!sx || !tx))) {
@@ -261,36 +216,36 @@ compute_xr_block(struct efp *efp, int block_i, int block_j, double *energy)
 		goto fail;
 	}
 
-	if ((res = efp->callbacks.get_overlap_integrals(
-			n_atoms, basis_data, wf_size, s, sx,
+	if ((res = efp->callbacks.get_overlap_integrals(&block, s, sx,
 			efp->callbacks.get_overlap_integrals_user_data)))
 		goto fail;
 
-	if ((res = efp->callbacks.get_kinetic_integrals(
-			n_atoms, basis_data, wf_size, t, tx,
+	if ((res = efp->callbacks.get_kinetic_integrals(&block, t, tx,
 			efp->callbacks.get_kinetic_integrals_user_data)))
 		goto fail;
 
-	int offset_i = 0;
+	for (int i = 0; i < n_block_i; i++) {
+		int j = 0, offset = i * block.basis_size_j;
 
-	for (int i = 0; i < n_frag_i; i++) {
-		int offset_j = 0;
-		struct frag *fr_i = frags_i + i;
+		if (block_i == block_j)
+			for (; j < i + 1; j++)
+				offset += frags_j[j].xr_wf_size;
 
-		for (int j = 0; j < n_frag_j; j++) {
-			struct frag *fr_j = frags_j + j;
+		for (; j < n_block_j; j++) {
+			int frag_i = i + efp->xr_block_frag_offset[block_i];
+			int frag_j = j + efp->xr_block_frag_offset[block_j];
 
-			*energy += compute_xr_frag(efp, i, j,
-					offset_i, offset_j, s, t, sx, tx);
+			*energy += compute_xr_frag(efp, frag_i, frag_j,
+						   block.basis_size_j,
+						   s + offset, t + offset);
 
-			offset_j += fr_j->xr_wf_size;
+			offset += frags_j[j].xr_wf_size;
 		}
-		offset_i += fr_i->xr_wf_size;
 	}
 
 fail:
-	free(s), free(sx);
-	free(t), free(tx);
+	free(block.atoms_i), free(block.atoms_j);
+	free(s), free(sx), free(t), free(tx);
 	return res;
 }
 

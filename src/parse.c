@@ -206,7 +206,6 @@ parse_coordinates(struct efp *efp, struct stream *stream)
 		if (tok_stop(stream))
 			return EFP_RESULT_SUCCESS;
 
-		double an;
 		char *label;
 		struct efp_atom atom;
 
@@ -215,7 +214,7 @@ parse_coordinates(struct efp *efp, struct stream *stream)
 		    !tok_double(stream, &atom.y) ||
 		    !tok_double(stream, &atom.z) ||
 		    !tok_double(stream, &atom.mass) ||
-		    !tok_double(stream, &an))
+		    !tok_double(stream, &atom.znuc))
 			return EFP_RESULT_SYNTAX_ERROR;
 
 		if (strlen(label) >= ARRAY_SIZE(atom.label)) {
@@ -225,7 +224,6 @@ parse_coordinates(struct efp *efp, struct stream *stream)
 
 		strcpy(atom.label, label);
 		free(label);
-		atom.n = lrint(an);
 
 		if (!eq(atom.mass, 0.0)) {
 			frag->n_atoms++;
@@ -317,11 +315,18 @@ parse_quadrupoles(struct efp *efp, struct stream *stream)
 		if (!tok_label(stream, NULL))
 			return EFP_RESULT_SYNTAX_ERROR;
 
-		double *q = frag->multipole_pts[i].quadrupole;
+		double q[6];
 
 		for (int j = 0; j < 6; j++)
 			if (!tok_double(stream, q + j))
 				return EFP_RESULT_SYNTAX_ERROR;
+
+		frag->multipole_pts[i].quadrupole[0] = q[0];
+		frag->multipole_pts[i].quadrupole[1] = q[3];
+		frag->multipole_pts[i].quadrupole[2] = q[4];
+		frag->multipole_pts[i].quadrupole[3] = q[1];
+		frag->multipole_pts[i].quadrupole[4] = q[5];
+		frag->multipole_pts[i].quadrupole[5] = q[2];
 
 		next_line(stream);
 	}
@@ -346,11 +351,22 @@ parse_octupoles(struct efp *efp, struct stream *stream)
 		if (!tok_label(stream, NULL))
 			return EFP_RESULT_SYNTAX_ERROR;
 
-		double *o = frag->multipole_pts[i].octupole;
+		double o[10];
 
 		for (int j = 0; j < 10; j++)
 			if (!tok_double(stream, o + j))
 				return EFP_RESULT_SYNTAX_ERROR;
+
+		frag->multipole_pts[i].octupole[0] = o[0];
+		frag->multipole_pts[i].octupole[1] = o[3];
+		frag->multipole_pts[i].octupole[2] = o[4];
+		frag->multipole_pts[i].octupole[3] = o[5];
+		frag->multipole_pts[i].octupole[4] = o[9];
+		frag->multipole_pts[i].octupole[5] = o[7];
+		frag->multipole_pts[i].octupole[6] = o[1];
+		frag->multipole_pts[i].octupole[7] = o[6];
+		frag->multipole_pts[i].octupole[8] = o[8];
+		frag->multipole_pts[i].octupole[9] = o[2];
 
 		next_line(stream);
 	}
@@ -793,6 +809,9 @@ parse_file(struct efp *efp, struct stream *stream)
 
 		if ((res = parse_fragment(efp, stream)))
 			return res;
+
+		for (int i = 0; i < frag->n_atoms; i++)
+			strcpy(frag->atoms[i].basis, frag->basis_name);
 	}
 	return EFP_RESULT_SUCCESS;
 }

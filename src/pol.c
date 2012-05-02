@@ -116,9 +116,9 @@ compute_elec_field_pt(struct efp *efp, int frag_idx, int pt_idx)
 			t = t * t * t;
 			t = 1.0 / t;
 
-			pt->elec_field.x += atom->charge * dr.x * t;
-			pt->elec_field.y += atom->charge * dr.y * t;
-			pt->elec_field.z += atom->charge * dr.z * t;
+			pt->elec_field.x += atom->znuc * dr.x * t;
+			pt->elec_field.y += atom->znuc * dr.y * t;
+			pt->elec_field.z += atom->znuc * dr.z * t;
 		}
 	}
 }

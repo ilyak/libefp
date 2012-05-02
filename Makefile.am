@@ -38,7 +38,6 @@ lib_LTLIBRARIES = src/libefp.la
 
 src_libefp_la_SOURCES = \
 	src/ai_disp.c \
-	src/ai_elec.c \
 	src/ai_xr.c \
 	src/cblas.h \
 	src/chtr.c \

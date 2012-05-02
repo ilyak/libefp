@@ -103,26 +103,19 @@ struct efp_opts {
 	enum efp_elec_damp elec_damp;
 };
 
-/* EFP fragment atom. */
+/* EFP atom info. */
 struct efp_atom {
 	char label[32];   /* atom label */
-	int n;            /* atomic number */
-	double mass;      /* atom mass in amu */
+	char basis[32];   /* name of a basis on this atom */
 	double x, y, z;   /* atom position */
+	double mass;      /* atom mass */
+	double znuc;      /* nuclear charge */
 };
 
-/* Basis data for one atom. */
-struct efp_basis_data {
-	char basis[32];   /* name of a basis for this atom */
-	int n;            /* nuclear charge of an atom */
-	double x, y, z;   /* coordinates of an atom */
-};
-
-/* Atom from QM region. */
+/* QM atom info. */
 struct efp_qm_atom {
 	double x, y, z;   /* atom position */
-	double charge;    /* effective charge */
-	int n;            /* atomic number */
+	double znuc;      /* effective nuclear charge */
 };
 
 /* Information about ab initio region. */
@@ -131,13 +124,21 @@ struct efp_qm_data {
 	struct efp_qm_atom *atoms;  /* atom data */
 };
 
+/* XXX */
+struct efp_xr_block {
+	int n_atoms_i;             /* */
+	struct efp_atom *atoms_i;  /* */
+	int basis_size_i;          /* */
+	int n_atoms_j;             /* */
+	struct efp_atom *atoms_j;  /* */
+	int basis_size_j;          /* */
+};
+
 /* Callback functions */
 
 /* Compute overlap integrals over Gaussian basis functions.
  *
- * n_basis_data (input): number of entries in data array.
- * data (input): information about a basis.
- * size (input): expected dimension of s matrix.
+ * block (input): block information, see efp_xr_block.
  * s (output): array of size * size elements where overlap integrals should be
  *             written.
  * sx (output): if not NULL, an array of 3 * size * size elements where x,y,z
@@ -146,15 +147,12 @@ struct efp_qm_data {
  *
  * return: EFP_RESULT_CALLBACK_FAILED on error or EFP_RESULT_SUCCESS otherwise.
  */
-typedef enum efp_result (*efp_overlap_integrals_fn)(int n_basis_data,
-	const struct efp_basis_data *data, int size, double *s, double *sx,
-	void *user_data);
+typedef enum efp_result (*efp_overlap_integrals_fn)(struct efp_xr_block *block,
+		double *s, double *sx, void *user_data);
 
 /* Compute kinetic energy integrals over Gaussian basis functions.
  *
- * n_basis_data (input): number of entries in data array.
- * data (input): information about a basis.
- * size (input): expected dimension of s matrix.
+ * block (input): block information, see efp_xr_block.
  * t (output): array of size * size elements where kinetic energy integrals
  *             should be written.
  * tx (output): if not NULL, an array of 3 * size * size elements where x,y,z
@@ -163,9 +161,8 @@ typedef enum efp_result (*efp_overlap_integrals_fn)(int n_basis_data,
  *
  * return: EFP_RESULT_CALLBACK_FAILED on error or EFP_RESULT_SUCCESS otherwise.
  */
-typedef enum efp_result (*efp_kinetic_integrals_fn)(int n_basis_data,
-	const struct efp_basis_data *data, int size, double *t, double *tx,
-	void *user_data);
+typedef enum efp_result (*efp_kinetic_integrals_fn)(struct efp_xr_block *block,
+		double *t, double *tx, void *user_data);
 
 /* Compute field form electrons on specified points.
  *

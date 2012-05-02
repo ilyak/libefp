@@ -41,6 +41,7 @@ struct test_data {
 	struct efp_callbacks callbacks;
 };
 
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
 #define BOHR(x) ((x) / 0.52917721092)
 
 int run_test(const struct test_data *test_data);

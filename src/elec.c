@@ -28,24 +28,27 @@
 
 #include "efp_private.h"
 
-#define DR_A      (dr[a])
-#define DR_B      (dr[b])
-#define DR_C      (dr[c])
+#define DR_A   (ELV(&dr, a))
+#define DR_B   (ELV(&dr, b))
+#define DR_C   (ELV(&dr, c))
 
-#define Q1        (pt_i->monopole)
-#define Q2        (pt_j->monopole)
-#define D1_A      (pt_i->dipole[a])
-#define D2_A      (pt_j->dipole[a])
-#define D1_B      (pt_i->dipole[b])
-#define D2_B      (pt_j->dipole[b])
-#define Q1_AB     (pt_i->quadrupole[t2_idx(a, b)])
-#define Q2_AB     (pt_j->quadrupole[t2_idx(a, b)])
-#define O1_ABC    (pt_i->octupole[t3_idx(a, b, c)])
-#define O2_ABC    (pt_j->octupole[t3_idx(a, b, c)])
+#define D1_A   (pt_i->dipole[a])
+#define D2_A   (pt_j->dipole[a])
+#define D1_B   (pt_i->dipole[b])
+#define D2_B   (pt_j->dipole[b])
 
-#define SUM_A(x)  (a = 0, tmp_a = x, a = 1, tmp_a += x, a = 2, tmp_a += x)
-#define SUM_B(x)  (b = 0, tmp_b = x, b = 1, tmp_b += x, b = 2, tmp_b += x)
-#define SUM_C(x)  (c = 0, tmp_c = x, c = 1, tmp_c += x, c = 2, tmp_c += x)
+#define Q1_AB  (pt_i->quadrupole[t2_idx(a, b)])
+#define Q2_AB  (pt_j->quadrupole[t2_idx(a, b)])
+
+#define O1_ABC (pt_i->octupole[t3_idx(a, b, c)])
+#define O2_ABC (pt_j->octupole[t3_idx(a, b, c)])
+
+#define SUM_A(x) (a = 0, sum_a = x, a = 1, sum_a += x, a = 2, sum_a += x)
+#define SUM_B(x) (b = 0, sum_b = x, b = 1, sum_b += x, b = 2, sum_b += x)
+#define SUM_C(x) (c = 0, sum_c = x, c = 1, sum_c += x, c = 2, sum_c += x)
+
+#define SUM_AB(x)  (SUM_A(SUM_B(x)))
+#define SUM_ABC(x) (SUM_A(SUM_B(SUM_C(x))))
 
 static inline double
 get_damp_screen(struct efp *efp, double r_ij, double pi, double pj)
@@ -55,6 +58,31 @@ get_damp_screen(struct efp *efp, double r_ij, double pi, double pj)
 	else
 		return 1.0 - exp(-pi * r_ij) * pj * pj / (pj * pj - pi * pi) -
 			     exp(-pj * r_ij) * pi * pi / (pi * pi - pj * pj);
+}
+
+static double
+compute_charge_pt(double charge, struct vec *pos, struct multipole_pt *pt_i)
+{
+	double energy = 0.0;
+
+	struct vec dr = {
+		pt_i->x - pos->x, pt_i->y - pos->y, pt_i->z - pos->z
+	};
+
+	double r = vec_len(&dr);
+
+	double ri[8];
+	powers(1.0 / r, 8, ri);
+
+	int a, b, c;
+	double sum_a, sum_b, sum_c;
+
+	energy += ri[1] * charge * pt_i->monopole;
+	energy -= ri[3] * charge * SUM_A(D1_A * DR_A);
+	energy += ri[5] * charge * SUM_AB(Q1_AB * DR_A * DR_B);
+	energy -= ri[7] * charge * SUM_ABC(O1_ABC * DR_A * DR_B * DR_C);
+
+	return energy;
 }
 
 static double
@@ -68,53 +96,58 @@ compute_elec_pt(struct efp *efp, int i, int j, int ii, int jj)
 	struct multipole_pt *pt_i = fr_i->multipole_pts + ii;
 	struct multipole_pt *pt_j = fr_j->multipole_pts + jj;
 
-	double dr[3] = {
+	struct vec dr = {
 		pt_j->x - pt_i->x, pt_j->y - pt_i->y, pt_j->z - pt_i->z
 	};
 
-	double r = vec_len(VEC(dr[0]));
+	double r = vec_len(&dr);
 
 	double ri[10];
 	powers(1.0 / r, 10, ri);
 
 	int a, b, c;
-	double tmp_a, tmp_b, tmp_c;
+	double sum_a, sum_b, sum_c;
 	double t1, t2, t3, t4;
 
-	/* monopole - monopole */
-	t1 = ri[1] * Q1 * Q2;
+	double q1 = pt_i->monopole;
+	double q2 = pt_j->monopole;
 
-	if (efp->opts.elec_damp == EFP_ELEC_DAMP_SCREEN)
-		t1 *= get_damp_screen(efp, r, fr_i->screen_params[ii],
-					fr_j->screen_params[jj]);
+	/* monopole - monopole */
+	t1 = ri[1] * q1 * q2;
+
+	if (efp->opts.elec_damp == EFP_ELEC_DAMP_SCREEN) {
+		double scr_i = fr_i->screen_params[ii];
+		double scr_j = fr_j->screen_params[jj];
+		t1 *= get_damp_screen(efp, r, scr_i, scr_j);
+	}
 
 	energy += t1;
 
 	/* monopole - dipole */
-	energy += ri[3] * Q2 * SUM_A(D1_A * DR_A);
-	energy -= ri[3] * Q1 * SUM_A(D2_A * DR_A);
+	energy += ri[3] * q2 * SUM_A(D1_A * DR_A);
+	energy -= ri[3] * q1 * SUM_A(D2_A * DR_A);
 
 	/* monopole - quadrupole */
-	energy += ri[5] * Q2 * SUM_A(SUM_B(Q1_AB * DR_A * DR_B));
-	energy += ri[5] * Q1 * SUM_A(SUM_B(Q2_AB * DR_A * DR_B));
+	energy += ri[5] * q2 * SUM_AB(Q1_AB * DR_A * DR_B);
+	energy += ri[5] * q1 * SUM_AB(Q2_AB * DR_A * DR_B);
 
 	/* monopole - octupole */
-	energy += ri[7] * Q2 * SUM_A(SUM_B(SUM_C(O1_ABC * DR_A * DR_B * DR_C)));
-	energy -= ri[7] * Q1 * SUM_A(SUM_B(SUM_C(O2_ABC * DR_A * DR_B * DR_C)));
+	energy += ri[7] * q2 * SUM_ABC(O1_ABC * DR_A * DR_B * DR_C);
+	energy -= ri[7] * q1 * SUM_ABC(O2_ABC * DR_A * DR_B * DR_C);
 
 	/* dipole - dipole */
 	energy += ri[3] * SUM_A(D1_A * D2_A);
-	energy -= 3 * ri[5] * SUM_A(SUM_B(D1_A * D2_B * DR_A * DR_B));
+	energy -= 3 * ri[5] * SUM_AB(D1_A * D2_B * DR_A * DR_B);
 
 	/* dipole - quadrupole */
-	energy += 2 * ri[5] * SUM_A(SUM_B(Q1_AB * D2_A * DR_B));
-	energy -= 2 * ri[5] * SUM_A(SUM_B(Q2_AB * D1_A * DR_B));
+	energy += 2 * ri[5] * SUM_AB(Q1_AB * D2_A * DR_B);
+	energy -= 2 * ri[5] * SUM_AB(Q2_AB * D1_A * DR_B);
 
 	t1 = SUM_A(D2_A * DR_A);
-	energy -= 5 * ri[7] * SUM_A(SUM_B(Q1_AB * DR_A * DR_B)) * t1;
+	energy -= 5 * ri[7] * SUM_AB(Q1_AB * DR_A * DR_B) * t1;
 
 	t1 = SUM_A(D1_A * DR_A);
-	energy += 5 * ri[7] * SUM_A(SUM_B(Q2_AB * DR_A * DR_B)) * t1;
+	energy += 5 * ri[7] * SUM_AB(Q2_AB * DR_A * DR_B) * t1;
 
 	/* quadrupole - quadrupole */
 	t1 = 0.0;
@@ -123,9 +156,9 @@ compute_elec_pt(struct efp *efp, int i, int j, int ii, int jj)
 		t3 = SUM_A(Q2_AB * DR_A);
 		t1 += t2 * t3;
 	}
-	t2 = SUM_A(SUM_B(Q1_AB * DR_A * DR_B));
-	t3 = SUM_A(SUM_B(Q2_AB * DR_A * DR_B));
-	t4 = SUM_A(SUM_B(Q1_AB * Q2_AB));
+	t2 = SUM_AB(Q1_AB * DR_A * DR_B);
+	t3 = SUM_AB(Q2_AB * DR_A * DR_B);
+	t4 = SUM_AB(Q1_AB * Q2_AB);
 
 	energy -= 20 * ri[7] * t1 / 3.0;
 	energy += 35 * ri[9] * t2 * t3 / 3.0;
@@ -145,6 +178,38 @@ compute_elec_frag(struct efp *efp, int i, int j)
 	struct frag *fr_i = efp->frags + i;
 	struct frag *fr_j = efp->frags + j;
 
+	/* nuclei - nuclei */
+	for (int ii = 0; ii < fr_i->n_atoms; ii++) {
+		for (int jj = 0; jj < fr_j->n_atoms; jj++) {
+			struct efp_atom *at_i = fr_i->atoms + ii;
+			struct efp_atom *at_j = fr_j->atoms + jj;
+
+			double r = vec_dist(VEC(at_i->x), VEC(at_j->x));
+			energy += at_i->znuc * at_j->znuc / r;
+		}
+	}
+
+	/* nuclei - mult points */
+	for (int ii = 0; ii < fr_i->n_atoms; ii++) {
+		for (int jj = 0; jj < fr_j->n_multipole_pts; jj++) {
+			struct efp_atom *at = fr_i->atoms + ii;
+			struct multipole_pt *pt = fr_j->multipole_pts + jj;
+
+			energy += compute_charge_pt(at->znuc, VEC(at->x), pt);
+		}
+	}
+
+	/* mult points - nuclei */
+	for (int jj = 0; jj < fr_j->n_atoms; jj++) {
+		for (int ii = 0; ii < fr_i->n_multipole_pts; ii++) {
+			struct efp_atom *at = fr_j->atoms + jj;
+			struct multipole_pt *pt = fr_i->multipole_pts + ii;
+
+			energy += compute_charge_pt(at->znuc, VEC(at->x), pt);
+		}
+	}
+
+	/* mult points - mult points */
 	for (int ii = 0; ii < fr_i->n_multipole_pts; ii++)
 		for (int jj = 0; jj < fr_j->n_multipole_pts; jj++)
 			energy += compute_elec_pt(efp, i, j, ii, jj);
@@ -209,7 +274,7 @@ efp_update_elec(struct frag *frag, const struct mat *rotmat)
 		rotate_quad(rotmat, frag->lib->multipole_pts[i].quadrupole,
 				frag->multipole_pts[i].quadrupole);
 
-		/* correction for Buckingham quadrupoles XXX */
+		/* correction for Buckingham quadrupoles */
 		double *quad = frag->multipole_pts[i].quadrupole;
 
 		double qtr = quad[t2_idx(0, 0)] +
@@ -227,7 +292,7 @@ efp_update_elec(struct frag *frag, const struct mat *rotmat)
 		rotate_oct(rotmat, frag->lib->multipole_pts[i].octupole,
 				frag->multipole_pts[i].octupole);
 
-		/* correction for Buckingham octupoles XXX */
+		/* correction for Buckingham octupoles */
 		double *oct = frag->multipole_pts[i].octupole;
 
 		double otrx = oct[t3_idx(0, 0, 0)] +
@@ -251,4 +316,45 @@ efp_update_elec(struct frag *frag, const struct mat *rotmat)
 		oct[8] = 2.5 * oct[8] - 0.5 * otry;
 		oct[9] = 2.5 * oct[9] - 1.5 * otrz; /* zzz */
 	}
+}
+
+static double
+compute_ai_frag(struct efp *efp, int frag_idx)
+{
+	double energy = 0.0;
+	struct frag *fr_i = efp->frags + frag_idx;
+
+	for (int i = 0; i < fr_i->n_atoms; i++) {
+		for (int j = 0; j < efp->qm_data.n_atoms; j++) {
+			struct efp_atom *at_i = fr_i->atoms + i;
+			struct efp_qm_atom *at_j = efp->qm_data.atoms + j;
+
+			double r = vec_dist(VEC(at_i->x), VEC(at_j->x));
+			energy += at_i->znuc * at_j->znuc / r;
+		}
+	}
+	for (int i = 0; i < fr_i->n_multipole_pts; i++) {
+		for (int j = 0; j < efp->qm_data.n_atoms; j++) {
+			struct multipole_pt *pt = fr_i->multipole_pts + i;
+			struct efp_qm_atom *at = efp->qm_data.atoms + j;
+
+			energy += compute_charge_pt(at->znuc, VEC(at->x), pt);
+		}
+	}
+	return energy;
+}
+
+enum efp_result
+efp_compute_ai_elec(struct efp *efp)
+{
+	if (efp->grad)
+		return EFP_RESULT_NOT_IMPLEMENTED;
+
+	double energy = 0.0;
+
+	for (int i = 0; i < efp->n_frag; i++)
+		energy += compute_ai_frag(efp, i);
+
+	efp->energy[efp_get_term_index(EFP_TERM_AI_ELEC)] = energy;
+	return EFP_RESULT_SUCCESS;
 }
