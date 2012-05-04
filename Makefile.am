@@ -78,7 +78,8 @@ TESTS = \
 	tests/elec_1 \
 	tests/pol_1 \
 	tests/disp_1 \
-	tests/xr_1
+	tests/xr_1 \
+	tests/total_1a
 
 check_PROGRAMS = $(TESTS)
 
@@ -101,3 +102,7 @@ tests_disp_1_CPPFLAGS = $(TESTS_CPPFLAGS)
 tests_xr_1_SOURCES = tests/xr_1.c $(TESTS_COMMON_FILES)
 tests_xr_1_LDADD = $(TESTS_LDADD)
 tests_xr_1_CPPFLAGS = $(TESTS_CPPFLAGS)
+
+tests_total_1a_SOURCES = tests/total_1a.c $(TESTS_COMMON_FILES)
+tests_total_1a_LDADD = $(TESTS_LDADD)
+tests_total_1a_CPPFLAGS = $(TESTS_CPPFLAGS)
