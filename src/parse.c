@@ -584,14 +584,17 @@ parse_projection_wf(struct efp *efp, struct stream *stream)
 
 	for (int j = 0; j < frag->n_lmo; j++) {
 		for (int i = 0; i < frag->xr_wf_size / 5; i++) {
+			stream->ptr += 5;
 			for (int k = 0; k < 5; k++)
 				if (!tok_double(stream, ptr++))
 					return EFP_RESULT_SYNTAX_ERROR;
 			next_line(stream);
 		}
-		for (int k = 0; k < frag->xr_wf_size % 5; k++)
+		for (int k = 0; k < frag->xr_wf_size % 5; k++) {
+			stream->ptr += 5;
 			if (!tok_double(stream, ptr++))
 				return EFP_RESULT_SYNTAX_ERROR;
+		}
 		if (frag->xr_wf_size % 5)
 			next_line(stream);
 	}

@@ -24,9 +24,6 @@
  * SUCH DAMAGE.
  */
 
-#include <math.h>
-#include <stdio.h>
-
 #include "test_common.h"
 
 static void

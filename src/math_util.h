@@ -85,10 +85,10 @@ vec_len(const struct vec *a)
 static inline double
 vec_dist_2(const struct vec *a, const struct vec *b)
 {
-	double dx = a->x - b->x;
-	double dy = a->y - b->y;
-	double dz = a->z - b->z;
-	return dx * dx + dy * dy + dz * dz;
+	struct vec dr = {
+		a->x - b->x, a->y - b->y, a->z - b->z
+	};
+	return vec_len_2(&dr);
 }
 
 static inline double
@@ -128,7 +128,7 @@ mat_trans_vec(const struct mat *mat, const struct vec *vec, struct vec *out)
 
 static inline void
 move_pt(const struct vec *pos, const struct mat *rotmat,
-			const struct vec *init, struct vec *out)
+	const struct vec *init, struct vec *out)
 {
 	mat_vec(rotmat, init, out);
 	out->x += pos->x, out->y += pos->y, out->z += pos->z;
@@ -145,29 +145,6 @@ powers(double x, int n, double *p)
 	}
 }
 
-/* element index in compacted symmetric matrix */
-static inline int
-t2_idx(int a, int b)
-{
-	static const int idx[] = {
-		0, 1, 2, 1, 3, 4, 2, 4, 5
-	};
-
-	return idx[a * 3 + b];
-}
-
-/* element index in compacted symmetric rank 3 tensor */
-static inline int
-t3_idx(int a, int b, int c)
-{
-	static const int idx[] = {
-		0, 1, 2, 1, 3, 4, 2, 4, 5, 1, 3, 4, 3, 6, 7, 4,
-		7, 8, 2, 4, 5, 4, 7, 8, 5, 8, 9
-	};
-
-	return idx[a * 3 * 3 + b * 3 + c];
-}
-
 static inline void
 rotate_t1(const struct mat *rotmat, const double *in, double *out)
 {
@@ -177,20 +154,20 @@ rotate_t1(const struct mat *rotmat, const double *in, double *out)
 static inline void
 rotate_t2(const struct mat *rotmat, const double *in, double *out)
 {
-	memset(out, 0, 6 * sizeof(double));
+	memset(out, 0, 9 * sizeof(double));
 
 	for (int a1 = 0; a1 < 3; a1++)
 	for (int b1 = 0; b1 < 3; b1++)
 		for (int a2 = 0; a2 < 3; a2++)
 		for (int b2 = 0; b2 < 3; b2++)
-			out[t2_idx(a2, b2)] += in[t2_idx(a1, b1)] *
+			out[a2 * 3 + b2] += in[a1 * 3 + b1] *
 				ELM(rotmat, a2, a1) * ELM(rotmat, b2, b1);
 }
 
 static inline void
 rotate_t3(const struct mat *rotmat, const double *in, double *out)
 {
-	memset(out, 0, 10 * sizeof(double));
+	memset(out, 0, 27 * sizeof(double));
 
 	for (int a1 = 0; a1 < 3; a1++)
 	for (int b1 = 0; b1 < 3; b1++)
@@ -198,7 +175,7 @@ rotate_t3(const struct mat *rotmat, const double *in, double *out)
 		for (int a2 = 0; a2 < 3; a2++)
 		for (int b2 = 0; b2 < 3; b2++)
 		for (int c2 = 0; c2 < 3; c2++)
-			out[t3_idx(a2, b2, c2)] += in[t3_idx(a1, b1, c1)] *
+			out[a2 * 9 + b2 * 3 + c2] += in[a1 * 9 + b1 * 3 + c1] *
 				ELM(rotmat, a2, a1) *
 				ELM(rotmat, b2, b1) *
 				ELM(rotmat, c2, c1);

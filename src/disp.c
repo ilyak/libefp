@@ -24,6 +24,8 @@
  * SUCH DAMAGE.
  */
 
+#include <assert.h>
+
 #include "efp_private.h"
 #include "disp.h"
 

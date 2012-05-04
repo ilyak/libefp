@@ -43,7 +43,7 @@ static const double xyzabc[] = {
 	BOHR(5.0), BOHR(0.0), BOHR(0.0), 5.0, 2.0, 8.0
 };
 
-static const double ref_gradient[] = {
+static const double ref_gradient[] = { /* from Q-Chem 4.0 */
 	 6.2469370978534026e-05, -2.1601463511397569e-07,
 	 4.0492586440871674e-07,  4.5003170183999674e-08,
 	 2.5764689731580998e-06, -4.1445973600957137e-06,
@@ -56,7 +56,7 @@ static const struct test_data test_data = {
 	.potential_files = potential_files,
 	.fragname = fragname,
 	.xyzabc = xyzabc,
-	.ref_energy = -0.000098903256,
+	.ref_energy = -0.000098903256, /* from Q-Chem 4.0 */
 	.ref_gradient = ref_gradient,
 	.opts = {
 		.terms = EFP_TERM_DISP,

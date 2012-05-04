@@ -25,15 +25,14 @@
  */
 
 #include "efp_private.h"
+#include "elec.h"
 
 static void
 add_multipole_field(struct polarizable_pt *pt,
 		    const struct multipole_pt *mult_pt)
 {
 	struct vec dr = {
-		pt->x - mult_pt->x,
-		pt->y - mult_pt->y,
-		pt->z - mult_pt->z
+		pt->x - mult_pt->x, pt->y - mult_pt->y, pt->z - mult_pt->z
 	};
 
 	double t1, t2;
@@ -60,22 +59,22 @@ add_multipole_field(struct polarizable_pt *pt,
 	t1 = 0.0;
 	for (int a = 0; a < 3; a++)
 		for (int b = 0; b < 3; b++)
-			t1 += mult_pt->quadrupole[t2_idx(a, b)] *
+			t1 += mult_pt->quadrupole[quad_idx(a, b)] *
 				ELV(&dr, a) * ELV(&dr, b);
 
-	t2 = mult_pt->quadrupole[t2_idx(0, 0)] * dr.x +
-	     mult_pt->quadrupole[t2_idx(1, 0)] * dr.y +
-	     mult_pt->quadrupole[t2_idx(2, 0)] * dr.z;
+	t2 = mult_pt->quadrupole[quad_idx(0, 0)] * dr.x +
+	     mult_pt->quadrupole[quad_idx(1, 0)] * dr.y +
+	     mult_pt->quadrupole[quad_idx(2, 0)] * dr.z;
 	pt->elec_field.x -= 2 * ri[5] * t2 - 5 * ri[7] * t1 * dr.x;
 
-	t2 = mult_pt->quadrupole[t2_idx(0, 1)] * dr.x +
-	     mult_pt->quadrupole[t2_idx(1, 1)] * dr.y +
-	     mult_pt->quadrupole[t2_idx(2, 1)] * dr.z;
+	t2 = mult_pt->quadrupole[quad_idx(0, 1)] * dr.x +
+	     mult_pt->quadrupole[quad_idx(1, 1)] * dr.y +
+	     mult_pt->quadrupole[quad_idx(2, 1)] * dr.z;
 	pt->elec_field.y -= 2 * ri[5] * t2 - 5 * ri[7] * t1 * dr.y;
 
-	t2 = mult_pt->quadrupole[t2_idx(0, 2)] * dr.x +
-	     mult_pt->quadrupole[t2_idx(1, 2)] * dr.y +
-	     mult_pt->quadrupole[t2_idx(2, 2)] * dr.z;
+	t2 = mult_pt->quadrupole[quad_idx(0, 2)] * dr.x +
+	     mult_pt->quadrupole[quad_idx(1, 2)] * dr.y +
+	     mult_pt->quadrupole[quad_idx(2, 2)] * dr.z;
 	pt->elec_field.z -= 2 * ri[5] * t2 - 5 * ri[7] * t1 * dr.z;
 
 	/* octupole-polarizability interactions are ignored */
@@ -340,19 +339,6 @@ efp_compute_ai_pol(struct efp *efp)
 	return EFP_RESULT_SUCCESS;
 }
 
-static void
-rotate_tensor(const struct mat *rotmat, const struct mat *in, struct mat *out)
-{
-	mat_zero(out);
-
-	for (int a1 = 0; a1 < 3; a1++)
-	for (int b1 = 0; b1 < 3; b1++)
-		for (int a2 = 0; a2 < 3; a2++)
-		for (int b2 = 0; b2 < 3; b2++)
-			ELM(out, a2, b2) += ELM(in, a1, b1) *
-				ELM(rotmat, a2, a1) * ELM(rotmat, b2, b1);
-}
-
 void
 efp_update_pol(struct frag *frag, const struct mat *rotmat)
 {
@@ -361,7 +347,9 @@ efp_update_pol(struct frag *frag, const struct mat *rotmat)
 			VEC(frag->lib->polarizable_pts[i].x),
 			VEC(frag->polarizable_pts[i].x));
 
-		rotate_tensor(rotmat, &frag->lib->polarizable_pts[i].tensor,
-				&frag->polarizable_pts[i].tensor);
+		const struct mat *in = &frag->lib->polarizable_pts[i].tensor;
+		struct mat *out = &frag->polarizable_pts[i].tensor;
+
+		rotate_t2(rotmat, (const double *)in, (double *)out);
 	}
 }

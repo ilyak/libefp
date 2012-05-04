@@ -27,8 +27,6 @@
 #ifndef LIBEFP_DISP_H
 #define LIBEFP_DISP_H
 
-#include <assert.h>
-
 static const double disp_weights[] = {
 	0.72086099022968040154E-02, 0.17697067815034886394E-01,
 	0.30660908596251749739E-01, 0.48381293256249884995E-01,
@@ -42,12 +40,12 @@ static inline int
 disp_damp_overlap_idx(struct efp *efp, int frag_i, int frag_j,
 				int pt_i, int pt_j)
 {
-	assert(frag_i < frag_j);
+	int n_disp = efp->disp_damp_overlap_offset[efp->n_frag];
 
 	int offset_i = efp->disp_damp_overlap_offset[frag_i] + pt_i;
 	int offset_j = efp->disp_damp_overlap_offset[frag_j] + pt_j;
 
-	return offset_j * (offset_j + 1) / 2 + offset_i;
+	return offset_i * n_disp + offset_j;
 }
 
 #endif /* LIBEFP_DISP_H */

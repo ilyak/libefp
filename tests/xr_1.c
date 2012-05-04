@@ -43,7 +43,7 @@ static const double xyzabc[] = {
 	BOHR(5.0), BOHR(0.0), BOHR(0.0), 5.0, 2.0, 8.0
 };
 
-static const double ref_gradient[] = {
+static const double ref_gradient[] = { /* from Q-Chem 4.0 */
 	0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
 	0.0, 0.0, 0.0, 0.0, 0.0, 0.0
 };
@@ -52,23 +52,25 @@ static enum efp_result
 overlap_integrals_fn(struct efp_xr_block *block, double *s, double *sx,
 		     void *user_data)
 {
-	static const double s_[] = {
-0.0, 0.0, 0.0
-	};
+	static const int basis_size = 140;
 
-	static const double sx_[] = {
-0.0, 0.0, 0.0
-	};
-
-	size_t size = block->basis_size_i * block->basis_size_j;
-
-	if (size != ARRAY_SIZE(s_))
+	if (block->basis_size_i != basis_size ||
+	    block->basis_size_j != basis_size)
 		return EFP_RESULT_INVALID_ARRAY_SIZE;
 
-	memcpy(s, s_, size * sizeof(double));
+	int size = block->basis_size_i * block->basis_size_j;
+
+	FILE *fp = fopen(ABS_TOP_SRCDIR "/tests/data/sint_1", "r");
+	if (!fp)
+		return EFP_RESULT_FILE_NOT_FOUND;
+
+	for (int i = 0; i < size; i++, s++)
+		fscanf(fp, "%lf", s);
+
+	fclose(fp);
 
 	if (sx)
-		memcpy(sx, sx_, 3 * size * sizeof(double));
+		return EFP_RESULT_NOT_IMPLEMENTED;
 
 	return EFP_RESULT_SUCCESS;
 }
@@ -77,23 +79,25 @@ static enum efp_result
 kinetic_integrals_fn(struct efp_xr_block *block, double *t, double *tx,
 		     void *user_data)
 {
-	static const double t_[] = {
-0.0, 0.0, 0.0
-	};
+	static const int basis_size = 140;
 
-	static const double tx_[] = {
-0.0, 0.0, 0.0
-	};
-
-	size_t size = block->basis_size_i * block->basis_size_j;
-
-	if (size != ARRAY_SIZE(t_))
+	if (block->basis_size_i != basis_size ||
+	    block->basis_size_j != basis_size)
 		return EFP_RESULT_INVALID_ARRAY_SIZE;
 
-	memcpy(t, t_, size * sizeof(double));
+	int size = block->basis_size_i * block->basis_size_j;
+
+	FILE *fp = fopen(ABS_TOP_SRCDIR "/tests/data/tint_1", "r");
+	if (!fp)
+		return EFP_RESULT_FILE_NOT_FOUND;
+
+	for (int i = 0; i < size; i++, t++)
+		fscanf(fp, "%lf", t);
+
+	fclose(fp);
 
 	if (tx)
-		memcpy(tx, tx_, 3 * size * sizeof(double));
+		return EFP_RESULT_NOT_IMPLEMENTED;
 
 	return EFP_RESULT_SUCCESS;
 }
@@ -102,7 +106,7 @@ static const struct test_data test_data = {
 	.potential_files = potential_files,
 	.fragname = fragname,
 	.xyzabc = xyzabc,
-	.ref_energy = 0.0,
+	.ref_energy = 0.000013466610, /* from Q-Chem 4.0 */
 	.ref_gradient = ref_gradient,
 	.opts = {
 		.terms = EFP_TERM_XR,

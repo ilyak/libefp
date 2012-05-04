@@ -24,34 +24,27 @@
  * SUCH DAMAGE.
  */
 
-#ifndef LIBEFP_TEST_COMMON_H
-#define LIBEFP_TEST_COMMON_H
+#ifndef LIBEFP_ELEC_H
+#define LIBEFP_ELEC_H
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <efp.h>
-
-struct test_data {
-	const char **potential_files;
-	const char **fragname;
-	const double *xyzabc;
-	double ref_energy;
-	const double *ref_gradient;
-	struct efp_opts opts;
-	struct efp_callbacks callbacks;
-};
-
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
-#define BOHR(x) ((x) / 0.52917721092)
-
-int run_test(const struct test_data *test_data);
-
-#define DEFINE_TEST(test_data)                                               \
-int main(void)                                                               \
-{                                                                            \
-	return run_test(&(test_data));                                       \
+static inline int
+quad_idx(int a, int b)
+{
+	static const int idx[] = {
+		0, 1, 2, 1, 3, 4, 2, 4, 5
+	};
+	return idx[a * 3 + b];
 }
 
-#endif /* LIBEFP_TEST_COMMON_H */
+static inline int
+oct_idx(int a, int b, int c)
+{
+	static const int idx[] = {
+		0, 1, 2, 1, 3, 4, 2, 4, 5,
+		1, 3, 4, 3, 6, 7, 4, 7, 8,
+		2, 4, 5, 4, 7, 8, 5, 8, 9
+	};
+	return idx[a * 9 + b * 3 + c];
+}
+
+#endif /* LIBEFP_ELEC_H */

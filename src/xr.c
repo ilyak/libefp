@@ -62,9 +62,12 @@ calc_disp_damp_overlap(struct efp *efp, int frag_i, int frag_j,
 	if (!efp->disp_damp_overlap)
 		return;
 
-	int idx = disp_damp_overlap_idx(efp, frag_i, frag_j, i, j);
-	efp->disp_damp_overlap[idx] =
-		fabs(s_ij) > 1.0e-6 ? get_disp_damp_overlap(s_ij) : 0.0;
+	double damp = fabs(s_ij) > 1.0e-6 ? get_disp_damp_overlap(s_ij) : 0.0;
+
+	efp->disp_damp_overlap[
+		disp_damp_overlap_idx(efp, frag_i, frag_j, i, j)] = damp;
+	efp->disp_damp_overlap[
+		disp_damp_overlap_idx(efp, frag_j, frag_i, j, i)] = damp;
 }
 
 static inline double
@@ -95,21 +98,21 @@ compute_xr_frag(struct efp *efp, int frag_i, int frag_j, int stride,
 	cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
 		fr_i->n_lmo, fr_j->xr_wf_size, fr_i->xr_wf_size, 1.0,
 		fr_i->xr_wf, fr_i->xr_wf_size, s, stride, 0.0,
-		tmp, fr_i->n_lmo);
+		tmp, fr_j->xr_wf_size);
 	cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
 		fr_i->n_lmo, fr_j->n_lmo, fr_j->xr_wf_size, 1.0,
-		tmp, fr_i->n_lmo, fr_j->xr_wf, fr_j->xr_wf_size, 0.0,
-		&lmo_s[0][0], fr_i->n_lmo);
+		tmp, fr_j->xr_wf_size, fr_j->xr_wf, fr_j->xr_wf_size, 0.0,
+		&lmo_s[0][0], fr_j->n_lmo);
 
 	/* lmo_t = wf_i * t * wf_j(t) */
 	cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
 		fr_i->n_lmo, fr_j->xr_wf_size, fr_i->xr_wf_size, 1.0,
 		fr_i->xr_wf, fr_i->xr_wf_size, t, stride, 0.0,
-		tmp, fr_i->n_lmo);
+		tmp, fr_j->xr_wf_size);
 	cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
 		fr_i->n_lmo, fr_j->n_lmo, fr_j->xr_wf_size, 1.0,
-		tmp, fr_i->n_lmo, fr_j->xr_wf, fr_j->xr_wf_size, 0.0,
-		&lmo_t[0][0], fr_i->n_lmo);
+		tmp, fr_j->xr_wf_size, fr_j->xr_wf, fr_j->xr_wf_size, 0.0,
+		&lmo_t[0][0], fr_j->n_lmo);
 
 	double energy = 0.0;
 
@@ -224,8 +227,8 @@ compute_xr_block(struct efp *efp, int block_i, int block_j, double *energy)
 			efp->callbacks.get_kinetic_integrals_user_data)))
 		goto fail;
 
-	for (int i = 0; i < n_block_i; i++) {
-		int j = 0, offset = i * block.basis_size_j;
+	for (int i = 0, offset = 0; i < n_block_i; i++) {
+		int j = 0;
 
 		if (block_i == block_j)
 			for (; j < i + 1; j++)
@@ -241,6 +244,7 @@ compute_xr_block(struct efp *efp, int block_i, int block_j, double *energy)
 
 			offset += frags_j[j].xr_wf_size;
 		}
+		offset += (frags_i[i].xr_wf_size - 1) * block.basis_size_j;
 	}
 
 fail:
@@ -277,48 +281,67 @@ efp_compute_xr(struct efp *efp)
 static void
 rotate_func_d(const struct mat *rotmat, const double *in, double *out)
 {
+	/* GAMESS order */
+	enum { xx = 0, yy, zz, xy, xz, yz };
+
 	const double norm = sqrt(3.0) / 2.0;
 
-	double normin[6];
-	memcpy(normin, in, 6 * sizeof(double));
+	/* XXX hack for now - input in GAMESS order output in Q-Chem order */
+	double full_in[9] = {
+		       in[xx], norm * in[xy], norm * in[xz],
+		norm * in[xy],        in[yy], norm * in[yz],
+		norm * in[xz], norm * in[yz],        in[zz]
+	};
 
-	normin[1] *= norm;
-	normin[2] *= norm;
-	normin[4] *= norm;
+	double full_out[9];
+	rotate_t2(rotmat, full_in, full_out);
 
-	rotate_t2(rotmat, normin, out);
-
-	out[1] /= norm;
-	out[2] /= norm;
-	out[4] /= norm;
+	/* Q-Chem order */
+	out[0] = full_out[0];
+	out[1] = full_out[1] / norm;
+	out[2] = full_out[4];
+	out[3] = full_out[2] / norm;
+	out[4] = full_out[5] / norm;
+	out[5] = full_out[8];
 }
 
 static void
 rotate_func_f(const struct mat *rotmat, const double *in, double *out)
 {
+	/* GAMESS order */
+	enum { xxx = 0, xxy = 3, xyy = 5, yyy = 1, xxz = 4,
+	       xyz = 9, yyz = 6, xzz = 7, yzz = 8, zzz = 2 };
+
 	const double norm1 = sqrt(5.0) / 3.0;
 	const double norm2 = sqrt(3.0) / 2.0;
 
-	double normin[10];
-	memcpy(normin, in, 10 * sizeof(double));
+	/* XXX hack for now - input in GAMESS order output in Q-Chem order */
+	double full_in[27] = {
+in[xxx],                 in[xxy] * norm1,         in[xxz] * norm1,
+in[xxy] * norm1,         in[xyy] * norm1,         in[xyz] * norm1 * norm2,
+in[xxz] * norm1,         in[xyz] * norm1 * norm2, in[xzz] * norm1,
+in[xxy] * norm1,         in[xyy] * norm1,         in[xyz] * norm1 * norm2,
+in[xyy] * norm1,         in[yyy],                 in[yyz] * norm1,
+in[xyz] * norm1 * norm2, in[yyz] * norm1,         in[yzz] * norm1,
+in[xxz] * norm1,         in[xyz] * norm1 * norm2, in[xzz] * norm1,
+in[xyz] * norm1 * norm2, in[yyz] * norm1,         in[yzz] * norm1,
+in[xzz] * norm1,         in[yzz] * norm1,         in[zzz]
+	};
 
-	normin[1] *= norm1;
-	normin[2] *= norm1;
-	normin[3] *= norm1;
-	normin[4] *= norm1 * norm2;
-	normin[5] *= norm1;
-	normin[7] *= norm1;
-	normin[8] *= norm1;
+	double full_out[27];
+	rotate_t3(rotmat, full_in, full_out);
 
-	rotate_t3(rotmat, normin, out);
-
-	out[1] /= norm1;
-	out[2] /= norm1;
-	out[3] /= norm1;
-	out[4] /= norm1 * norm2;
-	out[5] /= norm1;
-	out[7] /= norm1;
-	out[8] /= norm1;
+	/* Q-Chem order */
+	out[0] = full_out[9 * 0 + 3 * 0 + 0];
+	out[1] = full_out[9 * 0 + 3 * 0 + 1] / norm1;
+	out[2] = full_out[9 * 0 + 3 * 1 + 1] / norm1;
+	out[3] = full_out[9 * 1 + 3 * 1 + 1];
+	out[4] = full_out[9 * 0 + 3 * 0 + 2] / norm1;
+	out[5] = full_out[9 * 0 + 3 * 1 + 2] / norm1 / norm2;
+	out[6] = full_out[9 * 1 + 3 * 1 + 2] / norm1;
+	out[7] = full_out[9 * 0 + 3 * 2 + 2] / norm1;
+	out[8] = full_out[9 * 1 + 3 * 2 + 2] / norm1;
+	out[9] = full_out[9 * 2 + 3 * 2 + 2];
 }
 
 void

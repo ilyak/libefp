@@ -27,6 +27,7 @@
 #include <string.h>
 
 #include "efp_private.h"
+#include "elec.h"
 
 #define DR_A   (ELV(&dr, a))
 #define DR_B   (ELV(&dr, b))
@@ -37,11 +38,11 @@
 #define D1_B   (pt_i->dipole[b])
 #define D2_B   (pt_j->dipole[b])
 
-#define Q1_AB  (pt_i->quadrupole[t2_idx(a, b)])
-#define Q2_AB  (pt_j->quadrupole[t2_idx(a, b)])
+#define Q1_AB  (pt_i->quadrupole[quad_idx(a, b)])
+#define Q2_AB  (pt_j->quadrupole[quad_idx(a, b)])
 
-#define O1_ABC (pt_i->octupole[t3_idx(a, b, c)])
-#define O2_ABC (pt_j->octupole[t3_idx(a, b, c)])
+#define O1_ABC (pt_i->octupole[oct_idx(a, b, c)])
+#define O2_ABC (pt_j->octupole[oct_idx(a, b, c)])
 
 #define SUM_A(x) (a = 0, sum_a = x, a = 1, sum_a += x, a = 2, sum_a += x)
 #define SUM_B(x) (b = 0, sum_b = x, b = 1, sum_b += x, b = 2, sum_b += x)
@@ -236,25 +237,46 @@ efp_compute_elec(struct efp *efp)
 static void
 rotate_quad(const struct mat *rotmat, const double *in, double *out)
 {
-	rotate_t2(rotmat, in, out);
+	double full_in[9], full_out[9];
 
-	out[1] /= 2.0; /* xy */
-	out[2] /= 2.0; /* xz */
-	out[4] /= 2.0; /* yz */
+	for (int a = 0; a < 3; a++)
+		for (int b = 0; b < 3; b++)
+			full_in[a * 3 + b] = in[quad_idx(a, b)];
+
+	rotate_t2(rotmat, full_in, full_out);
+
+	out[0] = full_out[0];  /* xx */
+	out[1] = full_out[1];  /* xy */
+	out[2] = full_out[2];  /* xz */
+	out[3] = full_out[4];  /* yy */
+	out[4] = full_out[5];  /* yz */
+	out[5] = full_out[8];  /* zz */
 }
 
 static void
 rotate_oct(const struct mat *rotmat, const double *in, double *out)
 {
-	rotate_t3(rotmat, in, out);
+	double full_in[27], full_out[27];
 
-	out[1] /= 3.0; /* xxy */
-	out[2] /= 3.0; /* xxz */
-	out[3] /= 3.0; /* xyy */
-	out[4] /= 6.0; /* xyz */
-	out[5] /= 3.0; /* xzz */
-	out[7] /= 3.0; /* yyz */
-	out[8] /= 3.0; /* yzz */
+	for (int a = 0; a < 3; a++)
+		for (int b = 0; b < 3; b++)
+			for (int c = 0; c < 3; c++) {
+				int idx = 9 * a + 3 * b + c;
+				full_in[idx] = in[oct_idx(a, b, c)];
+			}
+
+	rotate_t3(rotmat, full_in, full_out);
+
+	out[0] = full_out[9 * 0 + 3 * 0 + 0];  /* xxx */
+	out[1] = full_out[9 * 0 + 3 * 0 + 1];  /* xxy */
+	out[2] = full_out[9 * 0 + 3 * 0 + 2];  /* xxz */
+	out[3] = full_out[9 * 0 + 3 * 1 + 1];  /* xyy */
+	out[4] = full_out[9 * 0 + 3 * 1 + 2];  /* xyz */
+	out[5] = full_out[9 * 0 + 3 * 2 + 2];  /* xzz */
+	out[6] = full_out[9 * 1 + 3 * 1 + 1];  /* yyy */
+	out[7] = full_out[9 * 1 + 3 * 1 + 2];  /* yyz */
+	out[8] = full_out[9 * 1 + 3 * 2 + 2];  /* yzz */
+	out[9] = full_out[9 * 2 + 3 * 2 + 2];  /* zzz */
 }
 
 void
@@ -277,9 +299,9 @@ efp_update_elec(struct frag *frag, const struct mat *rotmat)
 		/* correction for Buckingham quadrupoles */
 		double *quad = frag->multipole_pts[i].quadrupole;
 
-		double qtr = quad[t2_idx(0, 0)] +
-			     quad[t2_idx(1, 1)] +
-			     quad[t2_idx(2, 2)];
+		double qtr = quad[quad_idx(0, 0)] +
+			     quad[quad_idx(1, 1)] +
+			     quad[quad_idx(2, 2)];
 
 		quad[0] = 1.5 * quad[0] - 0.5 * qtr; /* xx */
 		quad[1] = 1.5 * quad[1];
@@ -295,15 +317,15 @@ efp_update_elec(struct frag *frag, const struct mat *rotmat)
 		/* correction for Buckingham octupoles */
 		double *oct = frag->multipole_pts[i].octupole;
 
-		double otrx = oct[t3_idx(0, 0, 0)] +
-			      oct[t3_idx(0, 1, 1)] +
-			      oct[t3_idx(0, 2, 2)];
-		double otry = oct[t3_idx(0, 0, 1)] +
-			      oct[t3_idx(1, 1, 1)] +
-			      oct[t3_idx(1, 2, 2)];
-		double otrz = oct[t3_idx(0, 0, 2)] +
-			      oct[t3_idx(1, 1, 2)] +
-			      oct[t3_idx(2, 2, 2)];
+		double otrx = oct[oct_idx(0, 0, 0)] +
+			      oct[oct_idx(0, 1, 1)] +
+			      oct[oct_idx(0, 2, 2)];
+		double otry = oct[oct_idx(0, 0, 1)] +
+			      oct[oct_idx(1, 1, 1)] +
+			      oct[oct_idx(1, 2, 2)];
+		double otrz = oct[oct_idx(0, 0, 2)] +
+			      oct[oct_idx(1, 1, 2)] +
+			      oct[oct_idx(2, 2, 2)];
 
 		oct[0] = 2.5 * oct[0] - 1.5 * otrx; /* xxx */
 		oct[1] = 2.5 * oct[1] - 0.5 * otry;

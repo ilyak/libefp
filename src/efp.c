@@ -434,18 +434,17 @@ setup_disp(struct efp *efp)
 	if (n_disp == 0)
 		return EFP_RESULT_SUCCESS;
 
-	efp->disp_damp_overlap_offset = malloc(efp->n_frag * sizeof(int));
+	efp->disp_damp_overlap_offset = malloc((efp->n_frag + 1) * sizeof(int));
 	if (!efp->disp_damp_overlap_offset)
 		return EFP_RESULT_NO_MEMORY;
 
 	efp->disp_damp_overlap_offset[0] = 0;
-	for (int i = 1; i < efp->n_frag; i++)
+	for (int i = 1; i <= efp->n_frag; i++)
 		efp->disp_damp_overlap_offset[i] =
 			efp->disp_damp_overlap_offset[i - 1] +
 			efp->frags[i - 1].n_dynamic_polarizable_pts;
 
-	size_t size = n_disp * (n_disp - 1) / 2;
-	efp->disp_damp_overlap = malloc(size * sizeof(double));
+	efp->disp_damp_overlap = malloc(n_disp * n_disp * sizeof(double));
 	if (!efp->disp_damp_overlap)
 		return EFP_RESULT_NO_MEMORY;
 
