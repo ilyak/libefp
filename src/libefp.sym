@@ -4,6 +4,7 @@ global:
 	efp_opts_default;
 	efp_init;
 	efp_update_fragments;
+	efp_scf_init;
 	efp_scf_update;
 	efp_compute;
 	efp_get_energy;

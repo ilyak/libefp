@@ -92,6 +92,22 @@ compute_elec_field_pt(struct efp *efp, int frag_idx, int pt_idx)
 		if (i == frag_idx)
 			continue;
 
+		/* field due to nuclei */
+		for (int j = 0; j < efp->frags[i].n_atoms; j++) {
+			struct efp_atom *at = efp->frags[i].atoms + j;
+
+			struct vec dr = {
+				pt->x - at->x, pt->y - at->y, pt->z - at->z
+			};
+
+			double r = vec_len(&dr);
+			double r3 = r * r * r;
+
+			pt->elec_field.x += at->znuc * dr.x / r3;
+			pt->elec_field.y += at->znuc * dr.y / r3;
+			pt->elec_field.z += at->znuc * dr.z / r3;
+		}
+
 		/* field due to multipoles */
 		for (int j = 0; j < efp->frags[i].n_multipole_pts; j++) {
 			struct multipole_pt *mult_pt =
@@ -166,22 +182,6 @@ compute_elec_field(struct efp *efp)
 
 	if (efp->opts.terms & EFP_TERM_AI_POL)
 		add_electron_density_field(efp);
-}
-
-static double
-compute_pol_energy(struct efp *efp)
-{
-	double energy = 0.0;
-
-	for (int i = 0; i < efp->n_frag; i++) {
-		struct frag *frag = efp->frags + i;
-		for (int j = 0; j < frag->n_polarizable_pts; j++) {
-			struct polarizable_pt *pt = frag->polarizable_pts + j;
-			energy -= 0.5 * vec_dot(&pt->induced_dipole,
-						&pt->elec_field);
-		}
-	}
-	return energy;
 }
 
 static void
@@ -285,11 +285,30 @@ pol_scf_iter(struct efp *efp)
 	return conv / n_pt;
 }
 
-enum efp_result
-efp_scf_update_pol(struct efp *efp, double *energy)
+double
+efp_compute_pol_energy(struct efp *efp)
 {
-	static const double conv_epsilon = 1.0e-16;
+	static const double scf_conv_epsilon = 1.0e-16;
 
+	/* compute induced dipoles self consistently */
+	while (pol_scf_iter(efp) > scf_conv_epsilon);
+
+	double energy = 0.0;
+
+	for (int i = 0; i < efp->n_frag; i++) {
+		struct frag *frag = efp->frags + i;
+		for (int j = 0; j < frag->n_polarizable_pts; j++) {
+			struct polarizable_pt *pt = frag->polarizable_pts + j;
+			energy -= 0.5 * vec_dot(&pt->induced_dipole,
+						&pt->elec_field);
+		}
+	}
+	return energy;
+}
+
+void
+efp_pol_scf_init(struct efp *efp)
+{
 	compute_elec_field(efp);
 
 	/* set initial approximation - all induced dipoles are zero */
@@ -301,12 +320,6 @@ efp_scf_update_pol(struct efp *efp, double *energy)
 			vec_zero(&pt->induced_dipole_conj);
 		}
 	}
-
-	/* compute induced dipoles self consistently */
-	while (pol_scf_iter(efp) > conv_epsilon);
-
-	*energy += compute_pol_energy(efp);
-	return EFP_RESULT_SUCCESS;
 }
 
 static void
@@ -318,10 +331,8 @@ compute_grad(struct efp *efp)
 enum efp_result
 efp_compute_pol(struct efp *efp)
 {
-	/* induced dipoles are computed during SCF in efp_scf_update_pol */
-
 	int idx = efp_get_term_index(EFP_TERM_POL);
-	efp->energy[idx] = compute_pol_energy(efp);
+	efp->energy[idx] = efp_compute_pol_energy(efp);
 
 	if (efp->grad)
 		compute_grad(efp);
@@ -332,9 +343,10 @@ efp_compute_pol(struct efp *efp)
 enum efp_result
 efp_compute_ai_pol(struct efp *efp)
 {
-	/* because polarization is computed self consistently we can't
-	   separate it into EFP/EFP and EFP/AI parts. So everything goes
-	   into EFP_TERM_POL and EFP_TERM_AI_POL is zero */
+	/* Polarization is computed self-consistently so we can't separate it
+	 * into EFP/EFP and EFP/AI parts. Everything goes into EFP_TERM_POL
+	 * and EFP_TERM_AI_POL stays zero.
+	 */
 	efp->energy[efp_get_term_index(EFP_TERM_AI_POL)] = 0.0;
 	return EFP_RESULT_SUCCESS;
 }

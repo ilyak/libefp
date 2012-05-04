@@ -168,7 +168,8 @@ struct efp {
 };
 
 enum efp_result efp_read_potential(struct efp *efp, const char **files);
-enum efp_result efp_scf_update_pol(struct efp *efp, double *energy);
+void efp_pol_scf_init(struct efp *efp);
+double efp_compute_pol_energy(struct efp *efp);
 void efp_update_elec(struct frag *frag, const struct mat *rotmat);
 void efp_update_pol(struct frag *frag, const struct mat *rotmat);
 void efp_update_disp(struct frag *frag, const struct mat *rotmat);

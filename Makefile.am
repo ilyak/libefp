@@ -75,8 +75,9 @@ EXTRA_DIST += src/libefp.pc.in
 CLEANFILES += src/libefp.pc
 
 TESTS = \
-	tests/disp_1 \
 	tests/elec_1 \
+	tests/pol_1 \
+	tests/disp_1 \
 	tests/xr_1
 
 check_PROGRAMS = $(TESTS)
@@ -85,13 +86,17 @@ TESTS_COMMON_FILES = tests/test_common.c tests/test_common.h
 TESTS_LDADD = src/libefp.la
 TESTS_CPPFLAGS = $(AM_CPPFLAGS) -DABS_TOP_SRCDIR=\"$(abs_top_srcdir)\"
 
-tests_disp_1_SOURCES = tests/disp_1.c $(TESTS_COMMON_FILES)
-tests_disp_1_LDADD = $(TESTS_LDADD)
-tests_disp_1_CPPFLAGS = $(TESTS_CPPFLAGS)
-
 tests_elec_1_SOURCES = tests/elec_1.c $(TESTS_COMMON_FILES)
 tests_elec_1_LDADD = $(TESTS_LDADD)
 tests_elec_1_CPPFLAGS = $(TESTS_CPPFLAGS)
+
+tests_pol_1_SOURCES = tests/pol_1.c $(TESTS_COMMON_FILES)
+tests_pol_1_LDADD = $(TESTS_LDADD)
+tests_pol_1_CPPFLAGS = $(TESTS_CPPFLAGS)
+
+tests_disp_1_SOURCES = tests/disp_1.c $(TESTS_COMMON_FILES)
+tests_disp_1_LDADD = $(TESTS_LDADD)
+tests_disp_1_CPPFLAGS = $(TESTS_CPPFLAGS)
 
 tests_xr_1_SOURCES = tests/xr_1.c $(TESTS_COMMON_FILES)
 tests_xr_1_LDADD = $(TESTS_LDADD)

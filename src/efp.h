@@ -235,7 +235,10 @@ enum efp_result efp_update_qm_data(struct efp *efp,
  */
 enum efp_result efp_update_fragments(struct efp *efp, const double *xyzabc);
 
-/* Update wave function dependent terms. Must be called during QM SCF.
+/* Initialize SCF computation. Must be called before ab initio SCF cycle. */
+enum efp_result efp_scf_init(struct efp *efp);
+
+/* Update wave function dependent terms. Must be called during ab initio SCF.
  *
  * energy (output): wave function dependent energy.
  */

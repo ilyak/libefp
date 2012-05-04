@@ -153,14 +153,17 @@ efp_update_fragments(struct efp *efp, const double *xyzabc)
 }
 
 EFP_EXPORT enum efp_result
+efp_scf_init(struct efp *efp)
+{
+	efp_pol_scf_init(efp);
+	return EFP_RESULT_SUCCESS;
+}
+
+EFP_EXPORT enum efp_result
 efp_scf_update(struct efp *efp, double *energy)
 {
-	enum efp_result res;
-
 	*energy = 0.0;
-	if ((res = efp_scf_update_pol(efp, energy)))
-		return res;
-
+	*energy += efp_compute_pol_energy(efp);
 	return EFP_RESULT_SUCCESS;
 }
 

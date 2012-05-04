@@ -91,6 +91,19 @@ run_test(const struct test_data *test_data)
 		goto fail;
 	}
 
+	if ((res = efp_scf_init(efp))) {
+		error("efp_scf_init", res);
+		goto fail;
+	}
+
+	/* Begin imaginary SCF */
+	double scf_energy;
+	if ((res = efp_scf_update(efp, &scf_energy))) {
+		error("efp_scf_update", res);
+		goto fail;
+	}
+	/* End imaginary SCF */
+
 	if ((res = efp_compute(efp))) {
 		error("efp_compute", res);
 		goto fail;
