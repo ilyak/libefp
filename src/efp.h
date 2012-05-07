@@ -125,7 +125,7 @@ struct efp_qm_data {
 };
 
 /* XXX */
-struct efp_xr_block {
+struct efp_st_block {
 	int n_atoms_i;             /* */
 	struct efp_atom *atoms_i;  /* */
 	int basis_size_i;          /* */
@@ -134,35 +134,27 @@ struct efp_xr_block {
 	int basis_size_j;          /* */
 };
 
+/* XXX */
+struct efp_st_data {
+	double *s, *sx, *sy, *sz;
+	double *t, *tx, *ty, *tz;
+};
+
 /* Callback functions */
 
-/* Compute overlap integrals over Gaussian basis functions.
+/* Compute overlap and kinetic energy integrals over Gaussian basis functions.
  *
- * block (input): block information, see efp_xr_block.
- * s (output): array of size * size elements where overlap integrals should be
- *             written.
- * sx (output): if not NULL, an array of 3 * size * size elements where x,y,z
- *              derivatives of overlap integrals should be written.
+ * block (input): block information, see efp_st_block.
+ * compute_derivatives (input): if nonzero also compute integral derivatives.
+ * st (output): where integrals should be stored, see efp_st_data.
  * user_data (input): user data which was specified during initialization.
  *
  * return: EFP_RESULT_CALLBACK_FAILED on error or EFP_RESULT_SUCCESS otherwise.
  */
-typedef enum efp_result (*efp_overlap_integrals_fn)(struct efp_xr_block *block,
-		double *s, double *sx, void *user_data);
-
-/* Compute kinetic energy integrals over Gaussian basis functions.
- *
- * block (input): block information, see efp_xr_block.
- * t (output): array of size * size elements where kinetic energy integrals
- *             should be written.
- * tx (output): if not NULL, an array of 3 * size * size elements where x,y,z
- *              derivatives of kinetic energy integrals should be written.
- * user_data (input): user data which was specified during initialization.
- *
- * return: EFP_RESULT_CALLBACK_FAILED on error or EFP_RESULT_SUCCESS otherwise.
- */
-typedef enum efp_result (*efp_kinetic_integrals_fn)(struct efp_xr_block *block,
-		double *t, double *tx, void *user_data);
+typedef enum efp_result (*efp_st_integrals_fn)(struct efp_st_block *block,
+					       int compute_derivatives,
+					       struct efp_st_data *st,
+					       void *user_data);
 
 /* Compute field form electrons on specified points.
  *
@@ -178,17 +170,11 @@ typedef enum efp_result (*efp_electron_density_field_fn)(int n_pt,
 
 /* Information about callback functions. */
 struct efp_callbacks {
-	/* callback function, see efp_overlap_integrals_fn */
-	efp_overlap_integrals_fn get_overlap_integrals;
+	/* callback function, see efp_st_integrals_fn */
+	efp_st_integrals_fn get_st_integrals;
 
-	/* will be passed as a last parameter to get_overlap_integrals */
-	void *get_overlap_integrals_user_data;
-
-	/* callback function, see efp_kinetic_integrals_fn */
-	efp_kinetic_integrals_fn get_kinetic_integrals;
-
-	/* will be passed as a last parameter to get_kinetic_integrals */
-	void *get_kinetic_integrals_user_data;
+	/* will be passed as a last parameter to get_st_integrals */
+	void *get_st_integrals_user_data;
 
 	/* callback function, see efp_electron_density_field_fn */
 	efp_electron_density_field_fn get_electron_density_field;

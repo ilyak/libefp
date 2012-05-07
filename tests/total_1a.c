@@ -49,56 +49,42 @@ static const double ref_gradient[] = { /* from Q-Chem 4.0 */
 };
 
 static enum efp_result
-overlap_integrals_fn(struct efp_xr_block *block, double *s, double *sx,
-		     void *user_data)
+st_integrals_fn(struct efp_st_block *block, int compute_derivatives,
+		struct efp_st_data *st, void *user_data)
 {
 	static const int basis_size = 140;
+
+	if (compute_derivatives)
+		return EFP_RESULT_NOT_IMPLEMENTED;
 
 	if (block->basis_size_i != basis_size ||
 	    block->basis_size_j != basis_size)
 		return EFP_RESULT_INVALID_ARRAY_SIZE;
 
-	int size = block->basis_size_i * block->basis_size_j;
-
-	FILE *fp = fopen(ABS_TOP_SRCDIR "/tests/data/sint_1", "r");
-	if (!fp)
-		return EFP_RESULT_FILE_NOT_FOUND;
-
-	for (int i = 0; i < size; i++, s++)
-		fscanf(fp, "%lf", s);
-
-	fclose(fp);
-
-	if (sx)
-		return EFP_RESULT_NOT_IMPLEMENTED;
-
-	return EFP_RESULT_SUCCESS;
-}
-
-static enum efp_result
-kinetic_integrals_fn(struct efp_xr_block *block, double *t, double *tx,
-		     void *user_data)
-{
-	static const int basis_size = 140;
-
-	if (block->basis_size_i != basis_size ||
-	    block->basis_size_j != basis_size)
-		return EFP_RESULT_INVALID_ARRAY_SIZE;
+	FILE *fp;
+	double *ptr;
 
 	int size = block->basis_size_i * block->basis_size_j;
 
-	FILE *fp = fopen(ABS_TOP_SRCDIR "/tests/data/tint_1", "r");
+	fp = fopen(ABS_TOP_SRCDIR "/tests/data/sint_1", "r");
 	if (!fp)
 		return EFP_RESULT_FILE_NOT_FOUND;
 
-	for (int i = 0; i < size; i++, t++)
-		fscanf(fp, "%lf", t);
+	ptr = st->s;
+	for (int i = 0; i < size; i++, ptr++)
+		fscanf(fp, "%lf", ptr);
 
 	fclose(fp);
 
-	if (tx)
-		return EFP_RESULT_NOT_IMPLEMENTED;
+	fp = fopen(ABS_TOP_SRCDIR "/tests/data/tint_1", "r");
+	if (!fp)
+		return EFP_RESULT_FILE_NOT_FOUND;
 
+	ptr = st->t;
+	for (int i = 0; i < size; i++, ptr++)
+		fscanf(fp, "%lf", ptr);
+
+	fclose(fp);
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -117,8 +103,7 @@ static const struct test_data test_data = {
 		.do_gradient = 0
 	},
 	.callbacks = {
-		.get_overlap_integrals = overlap_integrals_fn,
-		.get_kinetic_integrals = kinetic_integrals_fn
+		.get_st_integrals = st_integrals_fn
 	}
 };
 

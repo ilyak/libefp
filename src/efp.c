@@ -387,8 +387,7 @@ check_params(struct efp *efp)
 				return EFP_RESULT_PARAMETERS_MISSING;
 	}
 	if (efp->opts.terms & EFP_TERM_XR) {
-		if (!efp->callbacks.get_overlap_integrals ||
-		    !efp->callbacks.get_kinetic_integrals)
+		if (!efp->callbacks.get_st_integrals)
 			return EFP_RESULT_CALLBACK_NOT_SET;
 
 		for (int i = 0; i < efp->n_frag; i++)
