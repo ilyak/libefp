@@ -66,10 +66,7 @@ compute_charge_pt(double charge, vec_t *pos, struct multipole_pt *pt_i)
 {
 	double energy = 0.0;
 
-	vec_t dr = {
-		pt_i->x - pos->x, pt_i->y - pos->y, pt_i->z - pos->z
-	};
-
+	vec_t dr = vec_sub(VEC(pt_i->x), pos);
 	double r = vec_len(&dr);
 
 	double ri[8];
@@ -97,10 +94,7 @@ compute_elec_pt(struct efp *efp, int i, int j, int ii, int jj)
 	struct multipole_pt *pt_i = fr_i->multipole_pts + ii;
 	struct multipole_pt *pt_j = fr_j->multipole_pts + jj;
 
-	vec_t dr = {
-		pt_j->x - pt_i->x, pt_j->y - pt_i->y, pt_j->z - pt_i->z
-	};
-
+	vec_t dr = vec_sub(VEC(pt_j->x), VEC(pt_i->x));
 	double r = vec_len(&dr);
 
 	double ri[10];

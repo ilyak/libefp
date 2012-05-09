@@ -96,10 +96,7 @@ compute_elec_field_pt(struct efp *efp, int frag_idx, int pt_idx)
 		for (int j = 0; j < efp->frags[i].n_atoms; j++) {
 			struct efp_atom *at = efp->frags[i].atoms + j;
 
-			vec_t dr = {
-				pt->x - at->x, pt->y - at->y, pt->z - at->z
-			};
-
+			vec_t dr = vec_sub(VEC(pt->x), VEC(at->x));
 			double r = vec_len(&dr);
 			double r3 = r * r * r;
 
@@ -121,15 +118,9 @@ compute_elec_field_pt(struct efp *efp, int frag_idx, int pt_idx)
 		for (int i = 0; i < efp->qm_data.n_atoms; i++) {
 			struct efp_qm_atom *atom = efp->qm_data.atoms + i;
 
-			vec_t dr = {
-				pt->x - atom->x,
-				pt->y - atom->y,
-				pt->z - atom->z
-			};
-
-			double t = vec_len(&dr);
+			vec_t dr = vec_sub(VEC(pt->x), VEC(atom->x));
+			double t = 1.0 / vec_len(&dr);
 			t = t * t * t;
-			t = 1.0 / t;
 
 			pt->elec_field.x += atom->znuc * dr.x * t;
 			pt->elec_field.y += atom->znuc * dr.y * t;
