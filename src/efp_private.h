@@ -55,7 +55,7 @@ struct frag {
 	struct multipole_pt {
 		double x, y, z;
 		double monopole;
-		double dipole[3];
+		vec_t dipole;
 		double quadrupole[6];
 		double octupole[10];
 	} *multipole_pts;
@@ -72,12 +72,12 @@ struct frag {
 	/* distributed polarizability points */
 	struct polarizable_pt {
 		double x, y, z;
-		struct mat tensor;
-		struct vec elec_field;
-		struct vec induced_dipole;
-		struct vec induced_dipole_new;
-		struct vec induced_dipole_conj;
-		struct vec induced_dipole_conj_new;
+		mat_t tensor;
+		vec_t elec_field;
+		vec_t induced_dipole;
+		vec_t induced_dipole_new;
+		vec_t induced_dipole_conj;
+		vec_t induced_dipole_conj_new;
 	} *polarizable_pts;
 
 	/* number of distributed polarizability points */
@@ -96,7 +96,7 @@ struct frag {
 	int n_lmo;
 
 	/* localized molecular orbital centroids */
-	struct vec *lmo_centroids;
+	vec_t *lmo_centroids;
 
 	/* spin multiplicity */
 	int multiplicity;
@@ -170,9 +170,9 @@ struct efp {
 enum efp_result efp_read_potential(struct efp *efp, const char **files);
 void efp_pol_scf_init(struct efp *efp);
 double efp_compute_pol_energy(struct efp *efp);
-void efp_update_elec(struct frag *frag, const struct mat *rotmat);
-void efp_update_pol(struct frag *frag, const struct mat *rotmat);
-void efp_update_disp(struct frag *frag, const struct mat *rotmat);
-void efp_update_xr(struct frag *frag, const struct mat *rotmat);
+void efp_update_elec(struct frag *frag, const mat_t *rotmat);
+void efp_update_pol(struct frag *frag, const mat_t *rotmat);
+void efp_update_disp(struct frag *frag, const mat_t *rotmat);
+void efp_update_xr(struct frag *frag, const mat_t *rotmat);
 
 #endif /* LIBEFP_EFP_PRIVATE_H */

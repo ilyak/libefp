@@ -98,7 +98,7 @@ efp_update_qm_data(struct efp *efp, const struct efp_qm_data *qm_data)
 
 static void
 update_fragment(struct efp *efp, int idx, double x, double y, double z,
-			const struct mat *rotmat)
+			const mat_t *rotmat)
 {
 	struct frag *frag = efp->frags + idx;
 	frag->x = x, frag->y = y, frag->z = z;
@@ -115,7 +115,7 @@ update_fragment(struct efp *efp, int idx, double x, double y, double z,
 }
 
 static void
-euler_to_matrix(double a, double b, double c, struct mat *out)
+euler_to_matrix(double a, double b, double c, mat_t *out)
 {
 	double sina = sin(a), cosa = cos(a);
 	double sinb = sin(b), cosb = cos(b);
@@ -144,7 +144,7 @@ efp_update_fragments(struct efp *efp, const double *xyzabc)
 		double x = xyzabc[0], y = xyzabc[1], z = xyzabc[2];
 		double a = xyzabc[3], b = xyzabc[4], c = xyzabc[5];
 
-		struct mat rotmat;
+		mat_t rotmat;
 		euler_to_matrix(a, b, c, &rotmat);
 
 		update_fragment(efp, i, x, y, z, &rotmat);
@@ -297,7 +297,7 @@ copy_frag(struct frag *dest, const struct frag *src)
 				src->dynamic_polarizable_pts, size);
 	}
 	if (src->lmo_centroids) {
-		size = src->n_lmo * sizeof(struct vec);
+		size = src->n_lmo * sizeof(vec_t);
 		dest->lmo_centroids = malloc(size);
 		if (!dest->lmo_centroids)
 			return EFP_RESULT_NO_MEMORY;

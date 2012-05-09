@@ -34,65 +34,56 @@
 
 #define PI 3.14159265358979323846
 
-struct vec {
+typedef struct {
 	double x, y, z;
-};
+} vec_t;
 
-struct mat {
+typedef struct {
 	double xx, xy, xz, yx, yy, yz, zx, zy, zz;
-};
+} mat_t;
 
-#define VEC(x) ((struct vec *)(&(x)))
-#define ELV(v, i) (((double *)v)[i])
-#define ELM(m, i, j) (((double *)m)[3 * i + j])
+#define VEC(x) ((vec_t *)(&(x)))
 
 static inline void
-vec_zero(struct vec *vec)
+vec_zero(vec_t *vec)
 {
-	memset(vec, 0, sizeof(struct vec));
+	vec->x = 0.0, vec->y = 0.0, vec->z = 0.0;
 }
 
-//static inline void
-//vec_add(const struct vec *a, const struct vec *b, struct vec *out)
-//{
-//	out->x = a->x + b->x, out->y = a->y + b->y, out->z = a->z + b->z;
-//}
-
-//static inline void
-//vec_sub(const struct vec *a, const struct vec *b, struct vec *out)
-//{
-//	out->x = a->x - b->x, out->y = a->y - b->y, out->z = a->z - b->z;
-//}
-
 static inline double
-vec_dot(const struct vec *a, const struct vec *b)
+vec_dot(const vec_t *a, const vec_t *b)
 {
 	return a->x * b->x + a->y * b->y + a->z * b->z;
 }
 
+static inline vec_t
+vec_sub(const vec_t *a, const vec_t *b)
+{
+	vec_t c = { a->x - b->x, a->y - b->y, a->z - b->z };
+	return c;
+}
+
 static inline double
-vec_len_2(const struct vec *a)
+vec_len_2(const vec_t *a)
 {
 	return vec_dot(a, a);
 }
 
 static inline double
-vec_len(const struct vec *a)
+vec_len(const vec_t *a)
 {
 	return sqrt(vec_len_2(a));
 }
 
 static inline double
-vec_dist_2(const struct vec *a, const struct vec *b)
+vec_dist_2(const vec_t *a, const vec_t *b)
 {
-	struct vec dr = {
-		a->x - b->x, a->y - b->y, a->z - b->z
-	};
+	vec_t dr = vec_sub(a, b);
 	return vec_len_2(&dr);
 }
 
 static inline double
-vec_dist(const struct vec *a, const struct vec *b)
+vec_dist(const vec_t *a, const vec_t *b)
 {
 	return sqrt(vec_dist_2(a, b));
 }
@@ -105,13 +96,15 @@ eq(double a, double b)
 }
 
 static inline void
-mat_zero(struct mat *mat)
+mat_zero(mat_t *mat)
 {
-	memset(mat, 0, sizeof(struct mat));
+	mat->xx = 0.0, mat->xy = 0.0, mat->xz = 0.0;
+	mat->yx = 0.0, mat->yy = 0.0, mat->yz = 0.0;
+	mat->zx = 0.0, mat->zy = 0.0, mat->zz = 0.0;
 }
 
 static inline void
-mat_vec(const struct mat *mat, const struct vec *vec, struct vec *out)
+mat_vec(const mat_t *mat, const vec_t *vec, vec_t *out)
 {
 	out->x = mat->xx * vec->x + mat->xy * vec->y + mat->xz * vec->z;
 	out->y = mat->yx * vec->x + mat->yy * vec->y + mat->yz * vec->z;
@@ -119,7 +112,7 @@ mat_vec(const struct mat *mat, const struct vec *vec, struct vec *out)
 }
 
 static inline void
-mat_trans_vec(const struct mat *mat, const struct vec *vec, struct vec *out)
+mat_trans_vec(const mat_t *mat, const vec_t *vec, vec_t *out)
 {
 	out->x = mat->xx * vec->x + mat->yx * vec->y + mat->zx * vec->z;
 	out->y = mat->xy * vec->x + mat->yy * vec->y + mat->zy * vec->z;
@@ -127,8 +120,8 @@ mat_trans_vec(const struct mat *mat, const struct vec *vec, struct vec *out)
 }
 
 static inline void
-move_pt(const struct vec *pos, const struct mat *rotmat,
-	const struct vec *init, struct vec *out)
+move_pt(const vec_t *pos, const mat_t *rotmat,
+	const vec_t *init, vec_t *out)
 {
 	mat_vec(rotmat, init, out);
 	out->x += pos->x, out->y += pos->y, out->z += pos->z;
@@ -146,14 +139,9 @@ powers(double x, int n, double *p)
 }
 
 static inline void
-rotate_t1(const struct mat *rotmat, const double *in, double *out)
+rotate_t2(const mat_t *rotmat, const double *in, double *out)
 {
-	mat_vec(rotmat, (const struct vec *)in, (struct vec *)out);
-}
-
-static inline void
-rotate_t2(const struct mat *rotmat, const double *in, double *out)
-{
+	const double *rm = (const double *)rotmat;
 	memset(out, 0, 9 * sizeof(double));
 
 	for (int a1 = 0; a1 < 3; a1++)
@@ -161,12 +149,14 @@ rotate_t2(const struct mat *rotmat, const double *in, double *out)
 		for (int a2 = 0; a2 < 3; a2++)
 		for (int b2 = 0; b2 < 3; b2++)
 			out[a2 * 3 + b2] += in[a1 * 3 + b1] *
-				ELM(rotmat, a2, a1) * ELM(rotmat, b2, b1);
+					rm[a2 * 3 + a1] *
+					rm[b2 * 3 + b1];
 }
 
 static inline void
-rotate_t3(const struct mat *rotmat, const double *in, double *out)
+rotate_t3(const mat_t *rotmat, const double *in, double *out)
 {
+	const double *rm = (const double *)rotmat;
 	memset(out, 0, 27 * sizeof(double));
 
 	for (int a1 = 0; a1 < 3; a1++)
@@ -176,9 +166,9 @@ rotate_t3(const struct mat *rotmat, const double *in, double *out)
 		for (int b2 = 0; b2 < 3; b2++)
 		for (int c2 = 0; c2 < 3; c2++)
 			out[a2 * 9 + b2 * 3 + c2] += in[a1 * 9 + b1 * 3 + c1] *
-				ELM(rotmat, a2, a1) *
-				ELM(rotmat, b2, b1) *
-				ELM(rotmat, c2, c1);
+					rm[a2 * 3 + a1] *
+					rm[b2 * 3 + b1] *
+					rm[c2 * 3 + c1];
 }
 
 #endif /* LIBEFP_MATH_UTIL_H */

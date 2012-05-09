@@ -288,9 +288,9 @@ parse_dipoles(struct efp *efp, struct stream *stream)
 
 	for (int i = 0; i < frag->n_multipole_pts; i++) {
 		if (!tok_label(stream, NULL) ||
-		    !tok_double(stream, frag->multipole_pts[i].dipole) ||
-		    !tok_double(stream, frag->multipole_pts[i].dipole + 1) ||
-		    !tok_double(stream, frag->multipole_pts[i].dipole + 2))
+		    !tok_double(stream, &frag->multipole_pts[i].dipole.x) ||
+		    !tok_double(stream, &frag->multipole_pts[i].dipole.y) ||
+		    !tok_double(stream, &frag->multipole_pts[i].dipole.z))
 			return EFP_RESULT_SYNTAX_ERROR;
 		next_line(stream);
 	}
@@ -626,12 +626,12 @@ parse_lmo_centroids(struct efp *efp, struct stream *stream)
 	struct frag *frag = get_last_frag(efp);
 	next_line(stream);
 
-	frag->lmo_centroids = malloc(frag->n_lmo * sizeof(struct vec));
+	frag->lmo_centroids = malloc(frag->n_lmo * sizeof(vec_t));
 	if (!frag->lmo_centroids)
 		return EFP_RESULT_NO_MEMORY;
 
 	for (int i = 0; i < frag->n_lmo; i++) {
-		struct vec *ct = frag->lmo_centroids + i;
+		vec_t *ct = frag->lmo_centroids + i;
 
 		if (!tok_label(stream, NULL) ||
 		    !tok_double(stream, &ct->x) ||

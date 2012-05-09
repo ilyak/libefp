@@ -276,7 +276,7 @@ efp_compute_xr(struct efp *efp)
 }
 
 static void
-rotate_func_d(const struct mat *rotmat, const double *in, double *out)
+rotate_func_d(const mat_t *rotmat, const double *in, double *out)
 {
 	/* GAMESS order */
 	enum { xx = 0, yy, zz, xy, xz, yz };
@@ -303,7 +303,7 @@ rotate_func_d(const struct mat *rotmat, const double *in, double *out)
 }
 
 static void
-rotate_func_f(const struct mat *rotmat, const double *in, double *out)
+rotate_func_f(const mat_t *rotmat, const double *in, double *out)
 {
 	/* GAMESS order */
 	enum { xxx = 0, xxy = 3, xyy = 5, yyy = 1, xxz = 4,
@@ -342,7 +342,7 @@ in[xzz] * norm1,         in[yzz] * norm1,         in[zzz]
 }
 
 void
-efp_update_xr(struct frag *frag, const struct mat *rotmat)
+efp_update_xr(struct frag *frag, const mat_t *rotmat)
 {
 	/* move LMO centroids */
 	for (int i = 0; i < frag->n_lmo; i++)
@@ -363,7 +363,8 @@ efp_update_xr(struct frag *frag, const struct mat *rotmat)
 				func++;
 				/* fall through */
 			case 'P':
-				rotate_t1(rotmat, in + func, out + func);
+				mat_vec(rotmat, (const vec_t *)(in + func),
+						(vec_t *)(out + func));
 				func += 3;
 				break;
 			case 'D':

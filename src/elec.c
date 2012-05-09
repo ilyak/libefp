@@ -29,14 +29,14 @@
 #include "efp_private.h"
 #include "elec.h"
 
-#define DR_A   (ELV(&dr, a))
-#define DR_B   (ELV(&dr, b))
-#define DR_C   (ELV(&dr, c))
+#define DR_A ((double *)&dr)[a]
+#define DR_B ((double *)&dr)[b]
+#define DR_C ((double *)&dr)[c]
 
-#define D1_A   (pt_i->dipole[a])
-#define D2_A   (pt_j->dipole[a])
-#define D1_B   (pt_i->dipole[b])
-#define D2_B   (pt_j->dipole[b])
+#define D1_A   ((double *)&pt_i->dipole)[a]
+#define D2_A   ((double *)&pt_j->dipole)[a]
+#define D1_B   ((double *)&pt_i->dipole)[b]
+#define D2_B   ((double *)&pt_j->dipole)[b]
 
 #define Q1_AB  (pt_i->quadrupole[quad_idx(a, b)])
 #define Q2_AB  (pt_j->quadrupole[quad_idx(a, b)])
@@ -62,11 +62,11 @@ get_damp_screen(struct efp *efp, double r_ij, double pi, double pj)
 }
 
 static double
-compute_charge_pt(double charge, struct vec *pos, struct multipole_pt *pt_i)
+compute_charge_pt(double charge, vec_t *pos, struct multipole_pt *pt_i)
 {
 	double energy = 0.0;
 
-	struct vec dr = {
+	vec_t dr = {
 		pt_i->x - pos->x, pt_i->y - pos->y, pt_i->z - pos->z
 	};
 
@@ -97,7 +97,7 @@ compute_elec_pt(struct efp *efp, int i, int j, int ii, int jj)
 	struct multipole_pt *pt_i = fr_i->multipole_pts + ii;
 	struct multipole_pt *pt_j = fr_j->multipole_pts + jj;
 
-	struct vec dr = {
+	vec_t dr = {
 		pt_j->x - pt_i->x, pt_j->y - pt_i->y, pt_j->z - pt_i->z
 	};
 
@@ -235,7 +235,7 @@ efp_compute_elec(struct efp *efp)
 }
 
 static void
-rotate_quad(const struct mat *rotmat, const double *in, double *out)
+rotate_quad(const mat_t *rotmat, const double *in, double *out)
 {
 	double full_in[9], full_out[9];
 
@@ -254,7 +254,7 @@ rotate_quad(const struct mat *rotmat, const double *in, double *out)
 }
 
 static void
-rotate_oct(const struct mat *rotmat, const double *in, double *out)
+rotate_oct(const mat_t *rotmat, const double *in, double *out)
 {
 	double full_in[27], full_out[27];
 
@@ -280,7 +280,7 @@ rotate_oct(const struct mat *rotmat, const double *in, double *out)
 }
 
 void
-efp_update_elec(struct frag *frag, const struct mat *rotmat)
+efp_update_elec(struct frag *frag, const mat_t *rotmat)
 {
 	for (int i = 0; i < frag->n_multipole_pts; i++) {
 		/* move point position */
@@ -289,8 +289,8 @@ efp_update_elec(struct frag *frag, const struct mat *rotmat)
 			VEC(frag->multipole_pts[i].x));
 
 		/* rotate dipole */
-		rotate_t1(rotmat, frag->lib->multipole_pts[i].dipole,
-				frag->multipole_pts[i].dipole);
+		mat_vec(rotmat, &frag->lib->multipole_pts[i].dipole,
+				&frag->multipole_pts[i].dipole);
 
 		/* rotate quadrupole */
 		rotate_quad(rotmat, frag->lib->multipole_pts[i].quadrupole,
