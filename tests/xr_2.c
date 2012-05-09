@@ -25,13 +25,13 @@
  */
 
 #include "test_common.h"
-#include "geometry_1.h"
+#include "geometry_2.h"
 
 static enum efp_result
 st_integrals_fn(struct efp_st_block *block, int compute_derivatives,
 		struct efp_st_data *st, void *user_data)
 {
-	static const int basis_size = 140;
+	static const int basis_size = 345;
 
 	if (compute_derivatives)
 		return EFP_RESULT_NOT_IMPLEMENTED;
@@ -45,7 +45,7 @@ st_integrals_fn(struct efp_st_block *block, int compute_derivatives,
 
 	int size = block->basis_size_i * block->basis_size_j;
 
-	fp = fopen(ABS_TOP_SRCDIR "/tests/data/sint_1", "r");
+	fp = fopen(ABS_TOP_SRCDIR "/tests/data/sint_2", "r");
 	if (!fp)
 		return EFP_RESULT_FILE_NOT_FOUND;
 
@@ -55,7 +55,7 @@ st_integrals_fn(struct efp_st_block *block, int compute_derivatives,
 
 	fclose(fp);
 
-	fp = fopen(ABS_TOP_SRCDIR "/tests/data/tint_1", "r");
+	fp = fopen(ABS_TOP_SRCDIR "/tests/data/tint_2", "r");
 	if (!fp)
 		return EFP_RESULT_FILE_NOT_FOUND;
 
@@ -69,6 +69,9 @@ st_integrals_fn(struct efp_st_block *block, int compute_derivatives,
 
 static const double ref_gradient[] = { /* from Q-Chem 4.0 */
 	0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+	0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+	0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+	0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
 	0.0, 0.0, 0.0, 0.0, 0.0, 0.0
 };
 
@@ -76,7 +79,7 @@ static const struct test_data test_data = {
 	.potential_files = potential_files,
 	.fragname = fragname,
 	.xyzabc = xyzabc,
-	.ref_energy = 0.000013466610, /* from Q-Chem 4.0 */
+	.ref_energy = 0.000844260733, /* from Q-Chem 4.0 */
 	.ref_gradient = ref_gradient,
 	.opts = {
 		.terms = EFP_TERM_XR,

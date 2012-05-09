@@ -25,23 +25,7 @@
  */
 
 #include "test_common.h"
-
-static const char *potential_files[] = {
-	ABS_TOP_SRCDIR "/fraglib/h2o.efp",
-	ABS_TOP_SRCDIR "/fraglib/nh3.efp",
-	NULL
-};
-
-static const char *fragname[] = {
-	"H2O_L",
-	"NH3_L",
-	 NULL
-};
-
-static const double xyzabc[] = {
-	BOHR(0.0), BOHR(0.0), BOHR(0.0), 1.0, 2.0, 3.0,
-	BOHR(5.0), BOHR(0.0), BOHR(0.0), 5.0, 2.0, 8.0
-};
+#include "geometry_1.h"
 
 static const double ref_gradient[] = { /* from Q-Chem 4.0 */
 	0.0, 0.0, 0.0, 0.0, 0.0, 0.0,

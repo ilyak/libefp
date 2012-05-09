@@ -25,37 +25,7 @@
  */
 
 #include "test_common.h"
-
-static const char *potential_files[] = {
-	ABS_TOP_SRCDIR "/fraglib/h2o.efp",
-	ABS_TOP_SRCDIR "/fraglib/nh3.efp",
-	NULL
-};
-
-static const char *fragname[] = {
-	"H2O_L",
-	"NH3_L",
-	"H2O_L",
-	"H2O_L",
-	"NH3_L",
-	 NULL
-};
-
-static const double xyzabc[] = { /* some random geometry */
-	BOHR(-1.0), BOHR( 3.7), BOHR( 0.4), -1.3,  0.0,  7.0,
-	BOHR( 0.4), BOHR(-0.9), BOHR(-0.7),  4.0,  1.6, -2.3,
-	BOHR( 1.7), BOHR( 2.0), BOHR( 3.3), -1.2, -2.0,  6.2,
-	BOHR( 0.0), BOHR( 3.9), BOHR(-3.4),  1.3,  5.2, -3.0,
-	BOHR(-3.5), BOHR( 0.0), BOHR(-0.7),  0.0, -2.7,  2.7
-};
-
-static const double ref_gradient[] = { /* from Q-Chem 4.0 */
-	0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-	0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-	0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-	0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-	0.0, 0.0, 0.0, 0.0, 0.0, 0.0
-};
+#include "geometry_2.h"
 
 static enum efp_result
 st_integrals_fn(struct efp_st_block *block, int compute_derivatives,
@@ -96,6 +66,14 @@ st_integrals_fn(struct efp_st_block *block, int compute_derivatives,
 	fclose(fp);
 	return EFP_RESULT_SUCCESS;
 }
+
+static const double ref_gradient[] = { /* from Q-Chem 4.0 */
+	0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+	0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+	0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+	0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+	0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+};
 
 static const struct test_data test_data = {
 	.potential_files = potential_files,

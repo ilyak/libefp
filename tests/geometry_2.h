@@ -24,25 +24,25 @@
  * SUCH DAMAGE.
  */
 
-#include "test_common.h"
-#include "geometry_1.h"
-
-static const double ref_gradient[] = { /* from Q-Chem 4.0 */
-	0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-	0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+static const char *potential_files[] = {
+	ABS_TOP_SRCDIR "/fraglib/h2o.efp",
+	ABS_TOP_SRCDIR "/fraglib/nh3.efp",
+	NULL
 };
 
-static const struct test_data test_data = {
-	.potential_files = potential_files,
-	.fragname = fragname,
-	.xyzabc = xyzabc,
-		/* elec + pol - from Q-Chem 4.0 */
-	.ref_energy = 0.000255425403 + -0.000010402834,
-	.ref_gradient = ref_gradient,
-	.opts = {
-		.terms = EFP_TERM_ELEC | EFP_TERM_POL,
-		.do_gradient = 0
-	}
+static const char *fragname[] = {
+	"H2O_L",
+	"NH3_L",
+	"H2O_L",
+	"H2O_L",
+	"NH3_L",
+	 NULL
 };
 
-DEFINE_TEST(test_data)
+static const double xyzabc[] = { /* some random geometry */
+	BOHR(-1.0), BOHR( 3.7), BOHR( 0.4), -1.3,  0.0,  7.0,
+	BOHR( 0.4), BOHR(-0.9), BOHR(-0.7),  4.0,  1.6, -2.3,
+	BOHR( 1.7), BOHR( 2.0), BOHR( 3.3), -1.2, -2.0,  6.2,
+	BOHR( 0.0), BOHR( 3.9), BOHR(-3.4),  1.3,  5.2, -3.0,
+	BOHR(-3.5), BOHR( 0.0), BOHR(-0.7),  0.0, -2.7,  2.7
+};
