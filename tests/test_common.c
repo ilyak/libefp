@@ -42,7 +42,7 @@ error(const char *title, enum efp_result res)
 static inline int
 eq(double a, double b)
 {
-	static const double eps = 1.0e-5;
+	static const double eps = 1.0e-7;
 	return fabs(a - b) < eps;
 }
 
@@ -61,8 +61,10 @@ print_atoms(struct efp *efp)
 
 		for (int a = 0; a < n_atoms; a++) {
 			struct efp_atom *atom = atoms + a;
+			double x = atom->x, y = atom->y, z = atom->z;
+
 			printf("%s %10.6lf %10.6lf %10.6lf\n", atom->label,
-					atom->x, atom->y, atom->z);
+				ANGSTROM(x), ANGSTROM(y), ANGSTROM(z));
 		}
 	}
 	return EFP_RESULT_SUCCESS;
