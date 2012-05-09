@@ -79,7 +79,8 @@ TESTS = \
 	tests/pol_1 \
 	tests/disp_1 \
 	tests/xr_1 \
-	tests/total_1a
+	tests/total_1a \
+	tests/total_2a
 
 check_PROGRAMS = $(TESTS)
 
@@ -106,3 +107,7 @@ tests_xr_1_CPPFLAGS = $(TESTS_CPPFLAGS)
 tests_total_1a_SOURCES = tests/total_1a.c $(TESTS_COMMON_FILES)
 tests_total_1a_LDADD = $(TESTS_LDADD)
 tests_total_1a_CPPFLAGS = $(TESTS_CPPFLAGS)
+
+tests_total_2a_SOURCES = tests/total_2a.c $(TESTS_COMMON_FILES)
+tests_total_2a_LDADD = $(TESTS_LDADD)
+tests_total_2a_CPPFLAGS = $(TESTS_CPPFLAGS)
