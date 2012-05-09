@@ -62,7 +62,7 @@ get_damp_screen(struct efp *efp, double r_ij, double pi, double pj)
 }
 
 static double
-compute_charge_pt(double charge, vec_t *pos, struct multipole_pt *pt_i)
+compute_charge_pt(double charge, const vec_t *pos, struct multipole_pt *pt_i)
 {
 	double energy = 0.0;
 
