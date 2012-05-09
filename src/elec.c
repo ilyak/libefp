@@ -54,16 +54,25 @@
 static inline double
 get_damp_screen(struct efp *efp, double r_ij, double pi, double pj)
 {
-	if (fabs((pi - pj) * r_ij) < 1.0e-5)
+	if (pj == HUGE_VAL) {   /* damping for nucleus */
+		return 1.0 - exp(-pi * r_ij);
+	}
+	else if (fabs((pi - pj) * r_ij) < 1.0e-5) {
 		return 1.0 - (1.0 + 0.5 * pi * r_ij) * exp(-pi * r_ij);
-	else
+	}
+	else {
 		return 1.0 - exp(-pi * r_ij) * pj * pj / (pj * pj - pi * pi) -
 			     exp(-pj * r_ij) * pi * pi / (pi * pi - pj * pj);
+	}
 }
 
 static double
-compute_charge_pt(double charge, const vec_t *pos, struct multipole_pt *pt_i)
+charge_mult_energy(struct efp *efp, double charge, const vec_t *pos,
+		   int frag_idx, int pt_idx)
 {
+	struct frag *fr_i = efp->frags + frag_idx;
+	struct multipole_pt *pt_i = fr_i->multipole_pts + pt_idx;
+
 	double energy = 0.0;
 
 	vec_t dr = vec_sub(VEC(pt_i->x), pos);
@@ -75,7 +84,13 @@ compute_charge_pt(double charge, const vec_t *pos, struct multipole_pt *pt_i)
 	int a, b, c;
 	double sum_a, sum_b, sum_c;
 
-	energy += ri[1] * charge * pt_i->monopole;
+	double damp = 1.0;
+	if (efp->opts.elec_damp == EFP_ELEC_DAMP_SCREEN) {
+		double scr_i = fr_i->screen_params[pt_idx];
+		damp = get_damp_screen(efp, r, scr_i, HUGE_VAL);
+	}
+
+	energy += ri[1] * charge * pt_i->monopole * damp;
 	energy -= ri[3] * charge * SUM_A(D1_A * DR_A);
 	energy += ri[5] * charge * SUM_AB(Q1_AB * DR_A * DR_B);
 	energy -= ri[7] * charge * SUM_ABC(O1_ABC * DR_A * DR_B * DR_C);
@@ -108,15 +123,13 @@ compute_elec_pt(struct efp *efp, int i, int j, int ii, int jj)
 	double q2 = pt_j->monopole;
 
 	/* monopole - monopole */
-	t1 = ri[1] * q1 * q2;
-
+	double damp = 1.0;
 	if (efp->opts.elec_damp == EFP_ELEC_DAMP_SCREEN) {
 		double scr_i = fr_i->screen_params[ii];
 		double scr_j = fr_j->screen_params[jj];
-		t1 *= get_damp_screen(efp, r, scr_i, scr_j);
+		damp = get_damp_screen(efp, r, scr_i, scr_j);
 	}
-
-	energy += t1;
+	energy += ri[1] * q1 * q2 * damp;
 
 	/* monopole - dipole */
 	energy += ri[3] * q2 * SUM_A(D1_A * DR_A);
@@ -166,12 +179,12 @@ compute_elec_pt(struct efp *efp, int i, int j, int ii, int jj)
 }
 
 static double
-compute_elec_frag(struct efp *efp, int i, int j)
+compute_elec_frag(struct efp *efp, int fr_i_idx, int fr_j_idx)
 {
 	double energy = 0.0;
 
-	struct frag *fr_i = efp->frags + i;
-	struct frag *fr_j = efp->frags + j;
+	struct frag *fr_i = efp->frags + fr_i_idx;
+	struct frag *fr_j = efp->frags + fr_j_idx;
 
 	/* nuclei - nuclei */
 	for (int ii = 0; ii < fr_i->n_atoms; ii++) {
@@ -188,9 +201,9 @@ compute_elec_frag(struct efp *efp, int i, int j)
 	for (int ii = 0; ii < fr_i->n_atoms; ii++) {
 		for (int jj = 0; jj < fr_j->n_multipole_pts; jj++) {
 			struct efp_atom *at = fr_i->atoms + ii;
-			struct multipole_pt *pt = fr_j->multipole_pts + jj;
 
-			energy += compute_charge_pt(at->znuc, VEC(at->x), pt);
+			energy += charge_mult_energy(efp, at->znuc, VEC(at->x),
+						     fr_j_idx, jj);
 		}
 	}
 
@@ -198,16 +211,17 @@ compute_elec_frag(struct efp *efp, int i, int j)
 	for (int jj = 0; jj < fr_j->n_atoms; jj++) {
 		for (int ii = 0; ii < fr_i->n_multipole_pts; ii++) {
 			struct efp_atom *at = fr_j->atoms + jj;
-			struct multipole_pt *pt = fr_i->multipole_pts + ii;
 
-			energy += compute_charge_pt(at->znuc, VEC(at->x), pt);
+			energy += charge_mult_energy(efp, at->znuc, VEC(at->x),
+						     fr_i_idx, ii);
 		}
 	}
 
 	/* mult points - mult points */
 	for (int ii = 0; ii < fr_i->n_multipole_pts; ii++)
 		for (int jj = 0; jj < fr_j->n_multipole_pts; jj++)
-			energy += compute_elec_pt(efp, i, j, ii, jj);
+			energy += compute_elec_pt(efp, fr_i_idx, fr_j_idx,
+					ii, jj);
 
 	return energy;
 }
@@ -351,10 +365,10 @@ compute_ai_frag(struct efp *efp, int frag_idx)
 	}
 	for (int i = 0; i < fr_i->n_multipole_pts; i++) {
 		for (int j = 0; j < efp->qm_data.n_atoms; j++) {
-			struct multipole_pt *pt = fr_i->multipole_pts + i;
 			struct efp_qm_atom *at = efp->qm_data.atoms + j;
 
-			energy += compute_charge_pt(at->znuc, VEC(at->x), pt);
+			energy += charge_mult_energy(efp, at->znuc, VEC(at->x),
+						     frag_idx, i);
 		}
 	}
 	return energy;
