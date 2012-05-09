@@ -124,20 +124,36 @@ struct efp_qm_data {
 	struct efp_qm_atom *atoms;  /* atom data */
 };
 
-/* XXX */
+/* Information about a block of atoms for overlap and kinetic energy integrals
+ * computation by get_st_integrals callback function. The block represents a
+ * rectangular matrix. The get_st_integrals callback should compute overlap and
+ * kinetic energy integrals for each basis function from horizontal dimension
+ * with each basis function from vertical dimension.
+ */
 struct efp_st_block {
-	int n_atoms_i;             /* */
-	struct efp_atom *atoms_i;  /* */
-	int basis_size_i;          /* */
-	int n_atoms_j;             /* */
-	struct efp_atom *atoms_j;  /* */
-	int basis_size_j;          /* */
+	/* number of atoms in block horizontal dimension */
+	int n_atoms_i;
+
+	/* atoms of horizontal dimension */
+	struct efp_atom *atoms_i;
+
+	/* expected total basis size in horizontal dimension */
+	int basis_size_i;
+
+	/* number of atoms in block vertical dimension */
+	int n_atoms_j;
+
+	/* atoms of vertical dimension */
+	struct efp_atom *atoms_j;
+
+	/* expected total basis size in vertical dimension */
+	int basis_size_j;
 };
 
-/* XXX */
+/* Overlap and kinetic energy integrals data. */
 struct efp_st_data {
-	double *s, *sx, *sy, *sz;
-	double *t, *tx, *ty, *tz;
+	double *s, *sx, *sy, *sz; /* overlap integrals and their derivatives */
+	double *t, *tx, *ty, *tz; /* kinetic integrals and their derivatives */
 };
 
 /* Callback functions */
