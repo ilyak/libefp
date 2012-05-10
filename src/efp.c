@@ -162,8 +162,7 @@ efp_scf_init(struct efp *efp)
 EFP_EXPORT enum efp_result
 efp_scf_update(struct efp *efp, double *energy)
 {
-	*energy = 0.0;
-	*energy += efp_compute_pol_energy(efp);
+	*energy = efp_compute_pol_energy(efp);
 	return EFP_RESULT_SUCCESS;
 }
 
