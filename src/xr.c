@@ -351,7 +351,7 @@ efp_update_xr(struct frag *frag, const mat_t *rotmat)
 
 	/* rotate wavefunction */
 	for (int lmo = 0; lmo < frag->n_lmo; lmo++) {
-		double *in = frag->lib->xr_wf + lmo * frag->xr_wf_size;
+		const double *in = frag->lib->xr_wf + lmo * frag->xr_wf_size;
 		double *out = frag->xr_wf + lmo * frag->xr_wf_size;
 
 		for (int i = 0, func = 0; frag->shells[i]; i++) {
