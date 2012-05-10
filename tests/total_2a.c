@@ -28,43 +28,16 @@
 #include "geometry_2.h"
 
 static enum efp_result
-st_integrals_fn(struct efp_st_block *block, int compute_derivatives,
+st_integrals_fn(const struct efp_st_block *block, int compute_derivatives,
 		struct efp_st_data *st, void *user_data)
 {
-	static const int basis_size = 345;
+	static const int expected_size_i = 345;
+	static const int expected_size_j = 345;
+	static const char *s_path = ABS_TOP_SRCDIR "/tests/data/sint_2";
+	static const char *t_path = ABS_TOP_SRCDIR "/tests/data/tint_2";
 
-	if (compute_derivatives)
-		return EFP_RESULT_NOT_IMPLEMENTED;
-
-	if (block->basis_size_i != basis_size ||
-	    block->basis_size_j != basis_size)
-		return EFP_RESULT_INVALID_ARRAY_SIZE;
-
-	FILE *fp;
-	double *ptr;
-
-	int size = block->basis_size_i * block->basis_size_j;
-
-	fp = fopen(ABS_TOP_SRCDIR "/tests/data/sint_2", "r");
-	if (!fp)
-		return EFP_RESULT_FILE_NOT_FOUND;
-
-	ptr = st->s;
-	for (int i = 0; i < size; i++, ptr++)
-		fscanf(fp, "%lf", ptr);
-
-	fclose(fp);
-
-	fp = fopen(ABS_TOP_SRCDIR "/tests/data/tint_2", "r");
-	if (!fp)
-		return EFP_RESULT_FILE_NOT_FOUND;
-
-	ptr = st->t;
-	for (int i = 0; i < size; i++, ptr++)
-		fscanf(fp, "%lf", ptr);
-
-	fclose(fp);
-	return EFP_RESULT_SUCCESS;
+	return st_integrals_from_file(block, compute_derivatives, st, user_data,
+			expected_size_i, expected_size_j, s_path, t_path);
 }
 
 static const double ref_gradient[] = { /* from Q-Chem 4.0 */
