@@ -399,6 +399,88 @@ dipole_quadrupole_grad(const vec_t *p1, const vec_t *d1, const vec_t *com1,
 		       const vec_t *p2, const double *quad2, const vec_t *com2,
 		       double *grad1, double *grad2)
 {
+	vec_t dr = vec_sub(p1, p2);
+
+	double r = vec_len(&dr);
+	double r2 = r * r;
+	double r5 = r2 * r2 * r;
+	double r7 = r5 * r2;
+	double r9 = r7 * r2;
+
+	double q2s = 0.0;
+	for (int a = 0; a < 3; a++)
+		for (int b = 0; b < 3; b++)
+			q2s += quad2[quad_idx(a, b)] * DR_A * DR_B;
+
+	double q2sx = 0.0, q2sy = 0.0, q2sz = 0.0;
+	for (int a = 0; a < 3; a++) {
+		q2sx += quad2[quad_idx(0, a)] * DR_A;
+		q2sy += quad2[quad_idx(1, a)] * DR_A;
+		q2sz += quad2[quad_idx(2, a)] * DR_A;
+	}
+
+	double d1dr = vec_dot(d1, &dr);
+
+	double t1 = d1->x * q2sx + d1->y * q2sy + d1->z * q2sz;
+	double t2 = -10.0 / r7 * t1 + 35.0 / r9 * q2s * d1dr;
+
+	double d1q2x = d1->x * quad2[quad_idx(0, 0)] +
+		       d1->y * quad2[quad_idx(0, 1)] +
+		       d1->z * quad2[quad_idx(0, 2)];
+	double d1q2y = d1->x * quad2[quad_idx(1, 0)] +
+		       d1->y * quad2[quad_idx(1, 1)] +
+		       d1->z * quad2[quad_idx(1, 2)];
+	double d1q2z = d1->x * quad2[quad_idx(2, 0)] +
+		       d1->y * quad2[quad_idx(2, 1)] +
+		       d1->z * quad2[quad_idx(2, 2)];
+
+	double q2xdr = dr.x * quad2[quad_idx(0, 0)] +
+		       dr.y * quad2[quad_idx(0, 1)] +
+		       dr.z * quad2[quad_idx(0, 2)];
+	double q2ydr = dr.x * quad2[quad_idx(1, 0)] +
+		       dr.y * quad2[quad_idx(1, 1)] +
+		       dr.z * quad2[quad_idx(1, 2)];
+	double q2zdr = dr.x * quad2[quad_idx(2, 0)] +
+		       dr.y * quad2[quad_idx(2, 1)] +
+		       dr.z * quad2[quad_idx(2, 2)];
+
+	double gx = t2 * dr.x + 2.0 / r5 * d1q2x - 5.0 / r7 * q2s * d1->x -
+			10.0 / r7 * q2xdr * d1dr;
+	double gy = t2 * dr.y + 2.0 / r5 * d1q2y - 5.0 / r7 * q2s * d1->y -
+			10.0 / r7 * q2ydr * d1dr;
+	double gz = t2 * dr.z + 2.0 / r5 * d1q2z - 5.0 / r7 * q2s * d1->z -
+			10.0 / r7 * q2zdr * d1dr;
+
+	double td1x = 2.0 / r5 * (d1->z * q2ydr - d1->y * q2zdr) +
+			5.0 / r7 * q2s * (dr.z * d1->y - dr.y * d1->z);
+	double td1y = 2.0 / r5 * (d1->x * q2zdr - d1->z * q2xdr) +
+			5.0 / r7 * q2s * (dr.x * d1->z - dr.z * d1->x);
+	double td1z = 2.0 / r5 * (d1->y * q2xdr - d1->x * q2ydr) +
+			5.0 / r7 * q2s * (dr.y * d1->x - dr.x * d1->y);
+
+	double tq2x = -10.0 / r7 * d1dr * (q2ydr * dr.z - q2zdr * dr.y) -
+			2.0 / r5 * ((q2zdr * d1->y + dr.y * d1q2z) -
+				    (q2ydr * d1->z + dr.z * d1q2y));
+	double tq2y = -10.0 / r7 * d1dr * (q2zdr * dr.x - q2xdr * dr.z) -
+			2.0 / r5 * ((q2xdr * d1->z + dr.z * d1q2x) -
+				    (q2zdr * d1->x + dr.x * d1q2z));
+	double tq2z = -10.0 / r7 * d1dr * (q2xdr * dr.y - q2ydr * dr.x) -
+			2.0 / r5 * ((q2ydr * d1->x + dr.x * d1q2y) -
+				    (q2xdr * d1->y + dr.y * d1q2x));
+
+	grad1[0] += gx;
+	grad1[1] += gy;
+	grad1[2] += gz;
+	grad1[3] += gz * (p1->y - com1->y) - gy * (p1->z - com1->z) - td1x;
+	grad1[4] += gx * (p1->z - com1->z) - gz * (p1->x - com1->x) - td1y;
+	grad1[5] += gy * (p1->x - com1->x) - gx * (p1->y - com1->y) - td1z;
+
+	grad2[0] -= gx;
+	grad2[1] -= gy;
+	grad2[2] -= gz;
+	grad2[3] -= gz * (p2->y - com2->y) - gy * (p2->z - com2->z) - tq2x;
+	grad2[4] -= gx * (p2->z - com2->z) - gz * (p2->x - com2->x) - tq2y;
+	grad2[5] -= gy * (p2->x - com2->x) - gx * (p2->y - com2->y) - tq2z;
 }
 
 static void
