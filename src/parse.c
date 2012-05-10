@@ -315,18 +315,11 @@ parse_quadrupoles(struct efp *efp, struct stream *stream)
 		if (!tok_label(stream, NULL))
 			return EFP_RESULT_SYNTAX_ERROR;
 
-		double q[6];
+		double *q = frag->multipole_pts[i].quadrupole;
 
 		for (int j = 0; j < 6; j++)
 			if (!tok_double(stream, q + j))
 				return EFP_RESULT_SYNTAX_ERROR;
-
-		frag->multipole_pts[i].quadrupole[0] = q[0];
-		frag->multipole_pts[i].quadrupole[1] = q[3];
-		frag->multipole_pts[i].quadrupole[2] = q[4];
-		frag->multipole_pts[i].quadrupole[3] = q[1];
-		frag->multipole_pts[i].quadrupole[4] = q[5];
-		frag->multipole_pts[i].quadrupole[5] = q[2];
 
 		next_line(stream);
 	}
@@ -351,22 +344,11 @@ parse_octupoles(struct efp *efp, struct stream *stream)
 		if (!tok_label(stream, NULL))
 			return EFP_RESULT_SYNTAX_ERROR;
 
-		double o[10];
+		double *o = frag->multipole_pts[i].octupole;
 
 		for (int j = 0; j < 10; j++)
 			if (!tok_double(stream, o + j))
 				return EFP_RESULT_SYNTAX_ERROR;
-
-		frag->multipole_pts[i].octupole[0] = o[0];
-		frag->multipole_pts[i].octupole[1] = o[3];
-		frag->multipole_pts[i].octupole[2] = o[4];
-		frag->multipole_pts[i].octupole[3] = o[5];
-		frag->multipole_pts[i].octupole[4] = o[9];
-		frag->multipole_pts[i].octupole[5] = o[7];
-		frag->multipole_pts[i].octupole[6] = o[1];
-		frag->multipole_pts[i].octupole[7] = o[6];
-		frag->multipole_pts[i].octupole[8] = o[8];
-		frag->multipole_pts[i].octupole[9] = o[2];
 
 		next_line(stream);
 	}

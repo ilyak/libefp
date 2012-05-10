@@ -253,12 +253,9 @@ rotate_quad(const mat_t *rotmat, const double *in, double *out)
 
 	rotate_t2(rotmat, full_in, full_out);
 
-	out[0] = full_out[0];  /* xx */
-	out[1] = full_out[1];  /* xy */
-	out[2] = full_out[2];  /* xz */
-	out[3] = full_out[4];  /* yy */
-	out[4] = full_out[5];  /* yz */
-	out[5] = full_out[8];  /* zz */
+	for (int a = 0; a < 3; a++)
+		for (int b = 0; b < 3; b++)
+			out[quad_idx(a, b)] = full_out[a * 3 + b];
 }
 
 static void
@@ -275,16 +272,12 @@ rotate_oct(const mat_t *rotmat, const double *in, double *out)
 
 	rotate_t3(rotmat, full_in, full_out);
 
-	out[0] = full_out[9 * 0 + 3 * 0 + 0];  /* xxx */
-	out[1] = full_out[9 * 0 + 3 * 0 + 1];  /* xxy */
-	out[2] = full_out[9 * 0 + 3 * 0 + 2];  /* xxz */
-	out[3] = full_out[9 * 0 + 3 * 1 + 1];  /* xyy */
-	out[4] = full_out[9 * 0 + 3 * 1 + 2];  /* xyz */
-	out[5] = full_out[9 * 0 + 3 * 2 + 2];  /* xzz */
-	out[6] = full_out[9 * 1 + 3 * 1 + 1];  /* yyy */
-	out[7] = full_out[9 * 1 + 3 * 1 + 2];  /* yyz */
-	out[8] = full_out[9 * 1 + 3 * 2 + 2];  /* yzz */
-	out[9] = full_out[9 * 2 + 3 * 2 + 2];  /* zzz */
+	for (int a = 0; a < 3; a++)
+		for (int b = 0; b < 3; b++)
+			for (int c = 0; c < 3; c++) {
+				int idx = 9 * a + 3 * b + c;
+				out[oct_idx(a, b, c)] = full_out[idx];
+			}
 }
 
 void
@@ -311,12 +304,12 @@ efp_update_elec(struct frag *frag, const mat_t *rotmat)
 			     quad[quad_idx(1, 1)] +
 			     quad[quad_idx(2, 2)];
 
-		quad[0] = 1.5 * quad[0] - 0.5 * qtr; /* xx */
-		quad[1] = 1.5 * quad[1];
-		quad[2] = 1.5 * quad[2];
-		quad[3] = 1.5 * quad[3] - 0.5 * qtr; /* yy */
+		quad[0] = 1.5 * quad[0] - 0.5 * qtr;
+		quad[1] = 1.5 * quad[1] - 0.5 * qtr;
+		quad[2] = 1.5 * quad[2] - 0.5 * qtr;
+		quad[3] = 1.5 * quad[3];
 		quad[4] = 1.5 * quad[4];
-		quad[5] = 1.5 * quad[5] - 0.5 * qtr; /* zz */
+		quad[5] = 1.5 * quad[5];
 
 		/* rotate octupole */
 		rotate_oct(rotmat, frag->lib->multipole_pts[i].octupole,
@@ -335,16 +328,16 @@ efp_update_elec(struct frag *frag, const mat_t *rotmat)
 			      oct[oct_idx(1, 1, 2)] +
 			      oct[oct_idx(2, 2, 2)];
 
-		oct[0] = 2.5 * oct[0] - 1.5 * otrx; /* xxx */
-		oct[1] = 2.5 * oct[1] - 0.5 * otry;
-		oct[2] = 2.5 * oct[2] - 0.5 * otrz;
-		oct[3] = 2.5 * oct[3] - 0.5 * otrx;
-		oct[4] = 2.5 * oct[4];
+		oct[0] = 2.5 * oct[0] - 1.5 * otrx;
+		oct[1] = 2.5 * oct[1] - 1.5 * otry;
+		oct[2] = 2.5 * oct[2] - 1.5 * otrz;
+		oct[3] = 2.5 * oct[3] - 0.5 * otry;
+		oct[4] = 2.5 * oct[4] - 0.5 * otrz;
 		oct[5] = 2.5 * oct[5] - 0.5 * otrx;
-		oct[6] = 2.5 * oct[6] - 1.5 * otry; /* yyy */
-		oct[7] = 2.5 * oct[7] - 0.5 * otrz;
+		oct[6] = 2.5 * oct[6] - 0.5 * otrz;
+		oct[7] = 2.5 * oct[7] - 0.5 * otrx;
 		oct[8] = 2.5 * oct[8] - 0.5 * otry;
-		oct[9] = 2.5 * oct[9] - 1.5 * otrz; /* zzz */
+		oct[9] = 2.5 * oct[9];
 	}
 }
 

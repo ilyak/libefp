@@ -31,7 +31,7 @@ static inline int
 quad_idx(int a, int b)
 {
 	static const int idx[] = {
-		0, 1, 2, 1, 3, 4, 2, 4, 5
+		0, 3, 4, 3, 1, 5, 4, 5, 2
 	};
 	return idx[a * 3 + b];
 }
@@ -40,9 +40,9 @@ static inline int
 oct_idx(int a, int b, int c)
 {
 	static const int idx[] = {
-		0, 1, 2, 1, 3, 4, 2, 4, 5,
-		1, 3, 4, 3, 6, 7, 4, 7, 8,
-		2, 4, 5, 4, 7, 8, 5, 8, 9
+		0, 3, 4, 3, 5, 9, 4, 9, 7,
+		3, 5, 9, 5, 1, 6, 9, 6, 8,
+		4, 9, 7, 9, 6, 8, 7, 8, 2
 	};
 	return idx[a * 9 + b * 3 + c];
 }
