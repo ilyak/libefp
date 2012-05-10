@@ -137,23 +137,26 @@ struct efp_st_block {
 	/* atoms of horizontal dimension */
 	struct efp_atom *atoms_i;
 
-	/* expected total basis size in horizontal dimension */
-	int basis_size_i;
-
 	/* number of atoms in block vertical dimension */
 	int n_atoms_j;
 
 	/* atoms of vertical dimension */
 	struct efp_atom *atoms_j;
-
-	/* expected total basis size in vertical dimension */
-	int basis_size_j;
 };
 
 /* Overlap and kinetic energy integrals data. */
 struct efp_st_data {
-	double *s, *sx, *sy, *sz; /* overlap integrals and their derivatives */
-	double *t, *tx, *ty, *tz; /* kinetic integrals and their derivatives */
+	/* overlap integrals and their corresponding derivatives */
+	double *s, *sx, *sy, *sz;
+
+	/* kinetic energy integrals and their corresponding derivatives */
+	double *t, *tx, *ty, *tz;
+
+	/* number of columns in integral matrices */
+	int size_i;
+
+	/* number of rows in integral matrices */
+	int size_j;
 };
 
 /* Callback functions */
@@ -167,10 +170,9 @@ struct efp_st_data {
  *
  * return: EFP_RESULT_CALLBACK_FAILED on error or EFP_RESULT_SUCCESS otherwise.
  */
-typedef enum efp_result (*efp_st_integrals_fn)(struct efp_st_block *block,
-					       int compute_derivatives,
-					       struct efp_st_data *st,
-					       void *user_data);
+typedef enum efp_result (*efp_st_integrals_fn)(
+	const struct efp_st_block *block, int compute_derivatives,
+	struct efp_st_data *st, void *user_data);
 
 /* Compute field form electrons on specified points.
  *
@@ -181,8 +183,8 @@ typedef enum efp_result (*efp_st_integrals_fn)(struct efp_st_block *block,
  *
  * return: EFP_RESULT_CALLBACK_FAILED on error or EFP_RESULT_SUCCESS otherwise.
  */
-typedef enum efp_result (*efp_electron_density_field_fn)(int n_pt,
-	const double *xyz, double *field, void *user_data);
+typedef enum efp_result (*efp_electron_density_field_fn)(
+	int n_pt, const double *xyz, double *field, void *user_data);
 
 /* Information about callback functions. */
 struct efp_callbacks {
