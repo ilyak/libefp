@@ -30,20 +30,28 @@
 static inline int
 quad_idx(int a, int b)
 {
+	/* order in which GAMESS stores quadrupoles */
+	enum { xx = 0, yy, zz, xy, xz, yz };
+
 	static const int idx[] = {
-		0, 3, 4, 3, 1, 5, 4, 5, 2
+		xx, xy, xz, xy, yy, yz, xz, yz, zz
 	};
+
 	return idx[a * 3 + b];
 }
 
 static inline int
 oct_idx(int a, int b, int c)
 {
-	static const int idx[] = {
-		0, 3, 4, 3, 5, 9, 4, 9, 7,
-		3, 5, 9, 5, 1, 6, 9, 6, 8,
-		4, 9, 7, 9, 6, 8, 7, 8, 2
+	/* order in which GAMESS stores octupoles */
+	enum { xxx = 0, yyy, zzz, xxy, xxz, xyy, yyz, xzz, yzz, xyz };
+
+	static const int idx[3 * 3 * 3] = {
+		xxx, xxy, xxz, xxy, xyy, xyz, xxz, xyz, xzz,
+		xxy, xyy, xyz, xyy, yyy, yyz, xyz, yyz, yzz,
+		xxz, xyz, xzz, xyz, yyz, yzz, xzz, yzz, zzz
 	};
+
 	return idx[a * 9 + b * 3 + c];
 }
 
