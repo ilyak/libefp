@@ -7,6 +7,7 @@ global:
 	efp_scf_init;
 	efp_scf_update;
 	efp_compute;
+	efp_qm_contribution;
 	efp_get_energy;
 	efp_get_gradient;
 	efp_get_frag_count;

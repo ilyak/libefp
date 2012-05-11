@@ -186,6 +186,15 @@ typedef enum efp_result (*efp_st_integrals_fn)(
 typedef enum efp_result (*efp_electron_density_field_fn)(
 	int n_pt, const double *xyz, double *field, void *user_data);
 
+/* XXX */
+typedef enum efp_result (*efp_ao_integrals_fn)(
+	int n_charges, const double *charges, const double *xyz, int n_basis,
+	double *ints, void *user_data);
+
+/* XXX */
+typedef enum efp_result (*efp_field_integrals_fn)(
+	double *z, int order, void *user_data);
+
 /* Information about callback functions. */
 struct efp_callbacks {
 	/* callback function, see efp_st_integrals_fn */
@@ -199,6 +208,18 @@ struct efp_callbacks {
 
 	/* will be passed as a last parameter to get_electron_density_field */
 	void *get_electron_density_field_user_data;
+
+	/* XXX */
+	efp_ao_integrals_fn get_ao_integrals;
+
+	/* XXX */
+	void *get_ao_integrals_user_data;
+
+	/* XXX */
+	efp_field_integrals_fn get_field_integrals;
+
+	/* XXX */
+	void *get_field_integrals_user_data;
 };
 
 /* Public methods */
@@ -250,6 +271,9 @@ enum efp_result efp_scf_update(struct efp *efp, double *energy);
 
 /* Perform the EFP computation. This call can take long time to complete. */
 enum efp_result efp_compute(struct efp *efp);
+
+/* Compute one-electron contributions to QM Hamiltonian from EFP fragments. */
+enum efp_result efp_qm_contribution(struct efp *efp, int n_basis, double *v);
 
 /* Get computed energies of corresponding EFP terms.
  *
