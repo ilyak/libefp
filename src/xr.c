@@ -275,70 +275,99 @@ efp_compute_xr(struct efp *efp)
 	return EFP_RESULT_SUCCESS;
 }
 
+static inline int
+func_d_idx(int a, int b)
+{
+	/* order in which GAMESS stores D functions */
+	enum { xx = 0, yy, zz, xy, xz, yz };
+
+	static const int idx[3 * 3] = {
+		xx, xy, xz, xy, yy, yz, xz, yz, zz
+	};
+
+	return idx[3 * a + b];
+}
+
+static inline int
+func_f_idx(int a, int b, int c)
+{
+	/* order in which GAMESS stores F functions */
+	enum { xxx = 0, yyy, zzz, xxy, xxz, xyy, yyz, xzz, yzz, xyz };
+
+	static const int idx[3 * 3 * 3] = {
+		xxx, xxy, xxz, xxy, xyy, xyz, xxz, xyz, xzz,
+		xxy, xyy, xyz, xyy, yyy, yyz, xyz, yyz, yzz,
+		xxz, xyz, xzz, xyz, yyz, yzz, xzz, yzz, zzz
+	};
+
+	return idx[9 * a + 3 * b + c];
+}
+
 static void
 rotate_func_d(const mat_t *rotmat, const double *in, double *out)
 {
-	/* GAMESS order */
-	enum { xx = 0, yy, zz, xy, xz, yz };
-
 	const double norm = sqrt(3.0) / 2.0;
 
-	/* XXX hack for now - input in GAMESS order output in Q-Chem order */
-	double full_in[9] = {
-		       in[xx], norm * in[xy], norm * in[xz],
-		norm * in[xy],        in[yy], norm * in[yz],
-		norm * in[xz], norm * in[yz],        in[zz]
-	};
+	double full_in[9], full_out[9];
 
-	double full_out[9];
+	for (int a = 0; a < 3; a++) {
+		for (int b = 0; b < 3; b++) {
+			full_in[3 * a + b] = in[func_d_idx(a, b)];
+			if (a != b)
+				full_in[3 * a + b] *= norm;
+		}
+	}
+
 	rotate_t2(rotmat, full_in, full_out);
 
-	/* Q-Chem order */
-	out[0] = full_out[0];
-	out[1] = full_out[1] / norm;
-	out[2] = full_out[4];
-	out[3] = full_out[2] / norm;
-	out[4] = full_out[5] / norm;
-	out[5] = full_out[8];
+	for (int a = 0; a < 3; a++) {
+		for (int b = 0; b < 3; b++) {
+			if (a != b)
+				full_out[3 * a + b] /= norm;
+			out[func_d_idx(a, b)] = full_out[3 * a + b];
+		}
+	}
 }
 
 static void
 rotate_func_f(const mat_t *rotmat, const double *in, double *out)
 {
-	/* GAMESS order */
-	enum { xxx = 0, xxy = 3, xyy = 5, yyy = 1, xxz = 4,
-	       xyz = 9, yyz = 6, xzz = 7, yzz = 8, zzz = 2 };
-
 	const double norm1 = sqrt(5.0) / 3.0;
 	const double norm2 = sqrt(3.0) / 2.0;
 
-	/* XXX hack for now - input in GAMESS order output in Q-Chem order */
-	double full_in[27] = {
-in[xxx],                 in[xxy] * norm1,         in[xxz] * norm1,
-in[xxy] * norm1,         in[xyy] * norm1,         in[xyz] * norm1 * norm2,
-in[xxz] * norm1,         in[xyz] * norm1 * norm2, in[xzz] * norm1,
-in[xxy] * norm1,         in[xyy] * norm1,         in[xyz] * norm1 * norm2,
-in[xyy] * norm1,         in[yyy],                 in[yyz] * norm1,
-in[xyz] * norm1 * norm2, in[yyz] * norm1,         in[yzz] * norm1,
-in[xxz] * norm1,         in[xyz] * norm1 * norm2, in[xzz] * norm1,
-in[xyz] * norm1 * norm2, in[yyz] * norm1,         in[yzz] * norm1,
-in[xzz] * norm1,         in[yzz] * norm1,         in[zzz]
-	};
+	double full_in[27], full_out[27];
 
-	double full_out[27];
+	for (int a = 0; a < 3; a++)
+		for (int b = 0; b < 3; b++)
+			for (int c = 0; c < 3; c++) {
+				int full_idx = 9 * a + 3 * b + c;
+				int in_idx = func_f_idx(a, b, c);
+
+				full_in[full_idx] = in[in_idx];
+
+				if (a != b || a != c)
+					full_in[full_idx] *= norm1;
+
+				if (a != b && a != c && b != c)
+					full_in[full_idx] *= norm2;
+			}
+
 	rotate_t3(rotmat, full_in, full_out);
 
-	/* Q-Chem order */
-	out[0] = full_out[9 * 0 + 3 * 0 + 0];
-	out[1] = full_out[9 * 0 + 3 * 0 + 1] / norm1;
-	out[2] = full_out[9 * 0 + 3 * 1 + 1] / norm1;
-	out[3] = full_out[9 * 1 + 3 * 1 + 1];
-	out[4] = full_out[9 * 0 + 3 * 0 + 2] / norm1;
-	out[5] = full_out[9 * 0 + 3 * 1 + 2] / norm1 / norm2;
-	out[6] = full_out[9 * 1 + 3 * 1 + 2] / norm1;
-	out[7] = full_out[9 * 0 + 3 * 2 + 2] / norm1;
-	out[8] = full_out[9 * 1 + 3 * 2 + 2] / norm1;
-	out[9] = full_out[9 * 2 + 3 * 2 + 2];
+	for (int a = 0; a < 3; a++)
+		for (int b = 0; b < 3; b++)
+			for (int c = 0; c < 3; c++) {
+				int full_idx = 9 * a + 3 * b + c;
+				int out_idx = func_f_idx(a, b, c);
+
+				if (a != b || a != c)
+					full_out[full_idx] /= norm1;
+
+				if (a != b && a != c && b != c)
+					full_out[full_idx] /= norm2;
+
+				out[out_idx] = full_out[full_idx];
+			}
 }
 
 void
