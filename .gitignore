@@ -9,6 +9,7 @@ Makefile.in
 /configure
 /libtool
 /stamp-h1
+/html
 
 *~
 .*.swp
