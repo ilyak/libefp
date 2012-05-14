@@ -155,13 +155,16 @@ compute_disp_frag(struct efp *efp, int i, int j, double *grad)
 enum efp_result
 efp_compute_disp(struct efp *efp)
 {
+	if (!(efp->opts.terms & EFP_TERM_DISP))
+		return EFP_RESULT_SUCCESS;
+
 	double energy = 0.0;
 
 	for (int i = 0; i < efp->n_frag; i++)
 		for (int j = i + 1; j < efp->n_frag; j++)
 			energy -= compute_disp_frag(efp, i, j, efp->grad);
 
-	efp->energy[efp_get_term_index(EFP_TERM_DISP)] = energy;
+	efp->energy.dispersion = energy;
 	return EFP_RESULT_SUCCESS;
 }
 

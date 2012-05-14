@@ -76,9 +76,6 @@ enum efp_result {
 	EFP_RESULT_INCONSISTENT_TERMS
 };
 
-/** Total number of EFP terms. */
-#define EFP_TERM_COUNT 10
-
 /** Flags to specify EFP energy terms. */
 enum efp_term {
 	EFP_TERM_ELEC = 1 << 0,     /**< EFP/EFP electrostatics */
@@ -123,6 +120,46 @@ struct efp_opts {
 
 	/** Electrostatic damping type. */
 	enum efp_elec_damp elec_damp;
+};
+
+/** EFP energy terms. */
+struct efp_energy {
+	/**
+	 * Electrostatic energy. */
+	double electrostatic;
+	/**
+	 * Charge penetration energy from overlap-based electrostatic
+	 * damping. Zero if overlap-based damping is turned off. */
+	double charge_penetration;
+	/**
+	 * All polarization energy go here. Polarization is computed
+	 * self-consistently so we can't separate it into EFP/EFP and EFP/AI
+	 * parts. */
+	double polarization;
+	/**
+	 * Dispersion energy. */
+	double dispersion;
+	/**
+	 * Exchange-repulsion energy. */
+	double exchange_repulsion;
+	/**
+	 * Charge transfer energy. */
+	double charge_transfer;
+	/**
+	 * AI/EFP electrostatic energy. */
+	double ai_electrostatic;
+	/**
+	 * AI/EFP dispersion energy. */
+	double ai_dispersion;
+	/**
+	 * AI/EFP exchange-repulsion energy. */
+	double ai_exchange_repulsion;
+	/**
+	 * AI/EFP charge transfer energy. */
+	double ai_charge_transfer;
+	/**
+	 * Sum of the all above terms. */
+	double total;
 };
 
 /** EFP atom info. */
@@ -332,7 +369,7 @@ enum efp_result efp_update_fragments(struct efp *efp, const double *xyzabc);
  *
  * \param[in] efp The efp structure.
  * \param[in] pts Array of 9 times the number of fragments numbers. For each
- *                fragment specifies \x \y \z coordinates of 3 points to
+ *                fragment specifies \a x \a y \a z coordinates of 3 points to
  *                determine the position and orientation of a corresponding
  *                fragment.
  *
@@ -385,18 +422,11 @@ enum efp_result efp_qm_contribution(struct efp *efp, int n_basis, double *v);
  * Get computed energies of corresponding EFP terms.
  *
  * \param[in] efp The efp structure.
- * \param[out] energy Array of size #EFP_TERM_COUNT where energy terms will be
- *                    stored. The sum of the elements of this array will give
- *                    total EFP/EFP and AI/EFP energy. Use efp_get_term_index
- *                    to get the term index in the energy array. NOTE that
- *                    polarization is computed self-consistently so we cannot
- *                    separate EFP/EFP and AI/EFP parts. If the AI/EFP part is
- *                    enabled it will be added to EFP/EFP part and
- *                    corresponding member in energy array will be zero.
+ * \param[out] energy Computed EFP energy components.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_energy(struct efp *efp, double *energy);
+enum efp_result efp_get_energy(struct efp *efp, struct efp_energy *energy);
 
 /**
  * Get computed EFP energy gradient.
@@ -450,15 +480,6 @@ enum efp_result efp_get_frag_atoms(struct efp *efp, int frag_idx,
  * \param[in] efp The efp structure to be released.
  */
 void efp_shutdown(struct efp *efp);
-
-/**
- * Convert #efp_term flag to the index in array of energy terms.
- *
- * \param term Input flag.
- *
- * \return Index of the flag in array of energy terms.
- */
-int efp_get_term_index(enum efp_term term);
 
 /**
  * Convert #efp_result to a human readable message.

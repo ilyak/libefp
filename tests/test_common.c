@@ -162,18 +162,14 @@ run_test(const struct test_data *test_data)
 		goto fail;
 	}
 
-	double energy = 0.0;
-	double energy_terms[EFP_TERM_COUNT];
+	struct efp_energy energy;
 
-	if ((res = efp_get_energy(efp, energy_terms))) {
+	if ((res = efp_get_energy(efp, &energy))) {
 		error("efp_get_energy", res);
 		goto fail;
 	}
 
-	for (int i = 0; i < EFP_TERM_COUNT; i++)
-		energy += energy_terms[i];
-
-	if (!eq(energy, test_data->ref_energy)) {
+	if (!eq(energy.total, test_data->ref_energy)) {
 		message("wrong energy");
 		status = EXIT_FAILURE;
 	}

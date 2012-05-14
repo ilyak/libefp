@@ -33,7 +33,6 @@ enum efp_result efp_compute_disp(struct efp *efp);
 enum efp_result efp_compute_xr(struct efp *efp);
 enum efp_result efp_compute_chtr(struct efp *efp);
 enum efp_result efp_compute_ai_elec(struct efp *efp);
-enum efp_result efp_compute_ai_pol(struct efp *efp);
 enum efp_result efp_compute_ai_disp(struct efp *efp);
 enum efp_result efp_compute_ai_xr(struct efp *efp);
 enum efp_result efp_compute_ai_chtr(struct efp *efp);

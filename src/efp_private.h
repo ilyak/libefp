@@ -151,11 +151,8 @@ struct efp {
 	/* information about ab initio region */
 	struct efp_qm_data qm_data;
 
-	/* energy contributions of terms */
-	double energy[EFP_TERM_COUNT];
-
-	/* charge penetration energy for overlap-based electrostatic damping */
-	double charge_pen_energy;
+	/* EFP energy terms */
+	struct efp_energy energy;
 
 	/* total energy gradient */
 	double *grad;

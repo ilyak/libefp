@@ -561,23 +561,14 @@ compute_grad(struct efp *efp)
 enum efp_result
 efp_compute_pol(struct efp *efp)
 {
-	int idx = efp_get_term_index(EFP_TERM_POL);
-	efp->energy[idx] = efp_compute_pol_energy(efp);
+	if (!(efp->opts.terms & EFP_TERM_POL))
+		return EFP_RESULT_SUCCESS;
+
+	efp->energy.polarization = efp_compute_pol_energy(efp);
 
 	if (efp->grad)
 		compute_grad(efp);
 
-	return EFP_RESULT_SUCCESS;
-}
-
-enum efp_result
-efp_compute_ai_pol(struct efp *efp)
-{
-	/* Polarization is computed self-consistently so we can't separate it
-	 * into EFP/EFP and EFP/AI parts. Everything goes into EFP_TERM_POL
-	 * and EFP_TERM_AI_POL stays zero.
-	 */
-	efp->energy[efp_get_term_index(EFP_TERM_AI_POL)] = 0.0;
 	return EFP_RESULT_SUCCESS;
 }
 

@@ -229,6 +229,9 @@ compute_elec_frag(struct efp *efp, int fr_i_idx, int fr_j_idx)
 enum efp_result
 efp_compute_elec(struct efp *efp)
 {
+	if (!(efp->opts.terms & EFP_TERM_ELEC))
+		return EFP_RESULT_SUCCESS;
+
 	if (efp->grad)
 		return EFP_RESULT_NOT_IMPLEMENTED;
 
@@ -238,7 +241,7 @@ efp_compute_elec(struct efp *efp)
 		for (int j = i + 1; j < efp->n_frag; j++)
 			energy += compute_elec_frag(efp, i, j);
 
-	efp->energy[efp_get_term_index(EFP_TERM_ELEC)] = energy;
+	efp->energy.electrostatic = energy;
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -370,6 +373,9 @@ compute_ai_frag(struct efp *efp, int frag_idx)
 enum efp_result
 efp_compute_ai_elec(struct efp *efp)
 {
+	if (!(efp->opts.terms & EFP_TERM_AI_ELEC))
+		return EFP_RESULT_SUCCESS;
+
 	if (efp->grad)
 		return EFP_RESULT_NOT_IMPLEMENTED;
 
@@ -378,6 +384,6 @@ efp_compute_ai_elec(struct efp *efp)
 	for (int i = 0; i < efp->n_frag; i++)
 		energy += compute_ai_frag(efp, i);
 
-	efp->energy[efp_get_term_index(EFP_TERM_AI_ELEC)] = energy;
+	efp->energy.ai_electrostatic = energy;
 	return EFP_RESULT_SUCCESS;
 }

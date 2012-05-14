@@ -32,11 +32,17 @@
 enum efp_result
 efp_compute_chtr(struct efp *efp)
 {
+	if (!(efp->opts.terms & EFP_TERM_CHTR))
+		return EFP_RESULT_SUCCESS;
+
 	return EFP_RESULT_NOT_IMPLEMENTED;
 }
 
 enum efp_result
 efp_compute_ai_chtr(struct efp *efp)
 {
+	if (!(efp->opts.terms & EFP_TERM_AI_CHTR))
+		return EFP_RESULT_SUCCESS;
+
 	return EFP_RESULT_NOT_IMPLEMENTED;
 }

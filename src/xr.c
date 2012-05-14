@@ -124,7 +124,11 @@ compute_xr_frag(struct efp *efp, int frag_i, int frag_j, int offset,
 					       fr_j->lmo_centroids + j);
 
 			calc_disp_damp_overlap(efp, frag_i, frag_j, i, j, s_ij);
-			efp->charge_pen_energy += get_charge_pen(s_ij, r_ij);
+
+			if ((efp->opts.terms & EFP_TERM_ELEC) &&
+			    (efp->opts.elec_damp == EFP_ELEC_DAMP_OVERLAP))
+				efp->energy.charge_penetration +=
+						get_charge_pen(s_ij, r_ij);
 
 			/* xr - first part */
 			if (fabs(s_ij) > 1.0e-6)
@@ -253,12 +257,15 @@ fail:
 enum efp_result
 efp_compute_xr(struct efp *efp)
 {
+	if (!(efp->opts.terms & EFP_TERM_XR))
+		return EFP_RESULT_SUCCESS;
+
 	if (efp->grad)
 		return EFP_RESULT_NOT_IMPLEMENTED;
 
 	enum efp_result res;
 	double energy = 0.0;
-	efp->charge_pen_energy = 0.0;
+	efp->energy.charge_penetration = 0.0;
 
 	/* Because of potentially huge number of fragments we can't just
 	 * compute all overlap and kinetic energy integrals in one step.
@@ -271,7 +278,7 @@ efp_compute_xr(struct efp *efp)
 			if ((res = compute_xr_block(efp, i, j, &energy)))
 				return res;
 
-	efp->energy[efp_get_term_index(EFP_TERM_XR)] = energy;
+	efp->energy.exchange_repulsion = energy;
 	return EFP_RESULT_SUCCESS;
 }
 

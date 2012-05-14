@@ -29,5 +29,8 @@
 enum efp_result
 efp_compute_ai_xr(struct efp *efp)
 {
+	if (!(efp->opts.terms & EFP_TERM_AI_XR))
+		return EFP_RESULT_SUCCESS;
+
 	return EFP_RESULT_NOT_IMPLEMENTED;
 }

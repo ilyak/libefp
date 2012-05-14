@@ -29,16 +29,6 @@
 #include "efp_private.h"
 #include "elec.h"
 
-typedef enum efp_result (*term_energy_fn)(struct efp *efp);
-
-/* order must be the same as in efp_term enum */
-static const term_energy_fn term_energy_funcs[] = {
-	efp_compute_elec, efp_compute_pol, efp_compute_disp,
-	efp_compute_xr, efp_compute_chtr,
-	efp_compute_ai_elec, efp_compute_ai_pol, efp_compute_ai_disp,
-	efp_compute_ai_xr, efp_compute_ai_chtr
-};
-
 static inline int
 initialized(struct efp *efp)
 {
@@ -46,7 +36,7 @@ initialized(struct efp *efp)
 }
 
 EFP_EXPORT enum efp_result
-efp_get_energy(struct efp *efp, double *energy)
+efp_get_energy(struct efp *efp, struct efp_energy *energy)
 {
 	if (!initialized(efp))
 		return EFP_RESULT_NOT_INITIALIZED;
@@ -54,7 +44,7 @@ efp_get_energy(struct efp *efp, double *energy)
 	if (!energy)
 		return EFP_RESULT_INVALID_ARGUMENT;
 
-	memcpy(energy, efp->energy, EFP_TERM_COUNT * sizeof(double));
+	memcpy(energy, &efp->energy, sizeof(struct efp_energy));
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -264,17 +254,26 @@ efp_compute(struct efp *efp)
 
 	enum efp_result res;
 
-	for (int i = 0; i < ARRAY_SIZE(term_energy_funcs); i++)
-		if (efp->opts.terms & (1 << i))
-			if ((res = term_energy_funcs[i](efp)))
-				return res;
+	if ((res = efp_compute_elec(efp)))    return res;
+	if ((res = efp_compute_pol(efp)))     return res;
+	if ((res = efp_compute_disp(efp)))    return res;
+	if ((res = efp_compute_xr(efp)))      return res;
+	if ((res = efp_compute_chtr(efp)))    return res;
+	if ((res = efp_compute_ai_elec(efp))) return res;
+	if ((res = efp_compute_ai_disp(efp))) return res;
+	if ((res = efp_compute_ai_xr(efp)))   return res;
+	if ((res = efp_compute_ai_chtr(efp))) return res;
 
-	/* overlap-based charge penetration */
-	if ((efp->opts.terms & EFP_TERM_ELEC) &&
-	     efp->opts.elec_damp == EFP_ELEC_DAMP_OVERLAP) {
-		int idx = efp_get_term_index(EFP_TERM_ELEC);
-		efp->energy[idx] += efp->charge_pen_energy;
-	}
+	efp->energy.total = efp->energy.electrostatic +
+			    efp->energy.charge_penetration +
+			    efp->energy.polarization +
+			    efp->energy.dispersion +
+			    efp->energy.exchange_repulsion +
+			    efp->energy.charge_transfer +
+			    efp->energy.ai_electrostatic +
+			    efp->energy.ai_dispersion +
+			    efp->energy.ai_exchange_repulsion +
+			    efp->energy.ai_charge_transfer;
 
 	return EFP_RESULT_SUCCESS;
 }
@@ -736,24 +735,6 @@ efp_get_frag_atoms(struct efp *efp, int frag_idx, struct efp_atom *atoms)
 	memcpy(atoms, frag->atoms, frag->n_atoms * sizeof(struct efp_atom));
 
 	return EFP_RESULT_SUCCESS;
-}
-
-EFP_EXPORT int
-efp_get_term_index(enum efp_term term)
-{
-	switch (term) {
-		case EFP_TERM_ELEC: return 0;
-		case EFP_TERM_POL: return 1;
-		case EFP_TERM_DISP: return 2;
-		case EFP_TERM_XR: return 3;
-		case EFP_TERM_CHTR: return 4;
-		case EFP_TERM_AI_ELEC: return 5;
-		case EFP_TERM_AI_POL: return 6;
-		case EFP_TERM_AI_DISP: return 7;
-		case EFP_TERM_AI_XR: return 8;
-		case EFP_TERM_AI_CHTR: return 9;
-	}
-	return -1;
 }
 
 EFP_EXPORT const char *
