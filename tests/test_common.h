@@ -36,7 +36,8 @@
 struct test_data {
 	const char **potential_files;
 	const char **fragname;
-	const double *xyzabc;
+	const double *geometry_xyzabc;
+	const double *geometry_points;
 	double ref_energy;
 	const double *ref_gradient;
 	struct efp_opts opts;

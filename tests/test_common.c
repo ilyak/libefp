@@ -124,9 +124,19 @@ run_test(const struct test_data *test_data)
 		goto fail;
 	}
 
-	if ((res = efp_update_fragments(efp, test_data->xyzabc))) {
-		error("efp_update_fragments", res);
-		goto fail;
+	if (test_data->geometry_xyzabc) {
+		if ((res = efp_update_fragments(efp,
+						test_data->geometry_xyzabc))) {
+			error("efp_update_fragments", res);
+			goto fail;
+		}
+	}
+	else {
+		if ((res = efp_update_fragments_2(efp,
+						test_data->geometry_points))) {
+			error("efp_update_fragments_2", res);
+			goto fail;
+		}
 	}
 
 	if ((res = print_atoms(efp))) {

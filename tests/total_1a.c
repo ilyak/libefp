@@ -48,7 +48,7 @@ static const double ref_gradient[] = { /* from Q-Chem 4.0 */
 static const struct test_data test_data = {
 	.potential_files = potential_files,
 	.fragname = fragname,
-	.xyzabc = xyzabc,
+	.geometry_xyzabc = xyzabc,
 		/* elec + pol + disp + xr from Q-Chem 4.0 */
 	.ref_energy =  0.000255425403 + -0.000010402834 +
 		      -0.000098903256 +  0.000013466610,

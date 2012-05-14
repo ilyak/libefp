@@ -153,6 +153,84 @@ efp_update_fragments(struct efp *efp, const double *xyzabc)
 	return EFP_RESULT_SUCCESS;
 }
 
+static void
+points_to_matrix(const double *pts, mat_t *rotmat)
+{
+	double (*rm)[3] = (double (*)[3])rotmat;
+
+	const double *p1 = pts + 0;
+	const double *p2 = pts + 3;
+	const double *p3 = pts + 6;
+
+	double t1norm = 0.0;
+	double t2norm = 0.0;
+
+	for (int i = 0; i < 3; i++) {
+		rm[i][0] = p2[i] - p1[i];
+		t1norm += rm[i][0] * rm[i][0];
+		rm[i][1] = p3[i] - p1[i];
+		t2norm += rm[i][1] * rm[i][1];
+	}
+
+	t1norm = 1.0 / sqrt(t1norm);
+	t2norm = 1.0 / sqrt(t2norm);
+
+	for (int i = 0; i < 3; i++) {
+		rm[i][0] *= t1norm;
+		rm[i][1] *= t2norm;
+	}
+
+	double dot = rm[0][0] * rm[0][1] +
+		     rm[1][0] * rm[1][1] +
+		     rm[2][0] * rm[2][1];
+
+	rm[0][1] -= dot * rm[0][0];
+	rm[1][1] -= dot * rm[1][0];
+	rm[2][1] -= dot * rm[2][0];
+
+	rm[0][2] = rm[1][0] * rm[2][1] - rm[2][0] * rm[1][1];
+	rm[1][2] = rm[2][0] * rm[0][1] - rm[0][0] * rm[2][1];
+	rm[2][2] = rm[0][0] * rm[1][1] - rm[1][0] * rm[0][1];
+
+	for (int j = 0; j < 3; j++) {
+		double vecsq = 0.0;
+		for (int i = 0; i < 3; i++)
+			vecsq += rm[i][j] * rm[i][j];
+		vecsq = sqrt(vecsq);
+		for (int i = 0; i < 3; i++)
+			rm[i][j] /= vecsq;
+	}
+}
+
+EFP_EXPORT enum efp_result
+efp_update_fragments_2(struct efp *efp, const double *pts)
+{
+	if (!initialized(efp))
+		return EFP_RESULT_NOT_INITIALIZED;
+
+	if (!pts)
+		return EFP_RESULT_INVALID_ARGUMENT;
+
+	for (int i = 0; i < efp->n_frag; i++) {
+		struct frag *frag = efp->frags + i;
+		const double *pt = pts + 9 * i;
+
+		mat_t rotmat;
+		points_to_matrix(pt, &rotmat);
+
+		vec_t p1;
+		mat_vec(&rotmat, VEC(frag->lib->atoms[0].x), &p1);
+
+		/* center of mass */
+		double x = pt[0] - p1.x;
+		double y = pt[1] - p1.y;
+		double z = pt[2] - p1.z;
+
+		update_fragment(efp, i, x, y, z, &rotmat);
+	}
+	return EFP_RESULT_SUCCESS;
+}
+
 EFP_EXPORT enum efp_result
 efp_scf_init(struct efp *efp)
 {

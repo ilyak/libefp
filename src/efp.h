@@ -320,6 +320,27 @@ enum efp_result efp_update_qm_data(struct efp *efp,
 enum efp_result efp_update_fragments(struct efp *efp, const double *xyzabc);
 
 /**
+ * Update positions and orientations of effective fragments.
+ *
+ * This is convenience function. It does the same as efp_update_fragments.
+ * However to specify position and orientation of fragments it takes
+ * coordinates of 3 points in space for each fragment. For each fragment point
+ * 1 and first atom of fragment are made to coincide. The vector connecting
+ * points 1 and 2 is aligned with the corresponding vector connecting fragment
+ * atoms. The plane defined by points 1, 2, and 3 is made to coincide with the
+ * corresponding fragment plane.
+ *
+ * \param[in] efp The efp structure.
+ * \param[in] pts Array of 9 times the number of fragments numbers. For each
+ *                fragment specifies \x \y \z coordinates of 3 points to
+ *                determine the position and orientation of a corresponding
+ *                fragment.
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_update_fragments_2(struct efp *efp, const double *pts);
+
+/**
  * Initialize SCF computation. Must be called before ab initio SCF cycle.
  *
  * \param[in] efp The efp structure.
