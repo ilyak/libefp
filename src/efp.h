@@ -35,14 +35,15 @@
  *
  * \section API Public API Documentation
  *
- * The library is still in active development so API is UNSTABLE.
- * Documentation for public API is available
- * <a href="efp_8h.html">here</a>.
+ * The library is still in active development and API is UNSTABLE.
+ * Documentation for public API is available <a href="efp_8h.html">here</a>.
+ * See <a href="http://github.com/libefp/libefp/blob/master/README">README</a>
+ * file for additional information.
  *
  * \section Repo Git Repository
  *
- * Latest development version of code can be found at
- * http://github.com/libefp/libefp
+ * Latest development version of code can be found in
+ * <a href="http://github.com/libefp/libefp">git repository</a>.
  *
  * \copyright Copyright (c) 2012 Ilya Kaliman.
  * Distributed under the terms of BSD 2-clause license. See
