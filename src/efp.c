@@ -745,7 +745,7 @@ efp_banner(void)
 		"The Effective Fragment Potential method implementation\n"
 		"Copyright (c) 2012 Ilya Kaliman\n"
 		"See LICENSE file for licensing terms\n"
-		"Source code available at http://repo.or.cz/w/efp.git/\n";
+		"Project web page http://libefp.github.com/\n";
 
 	return banner;
 }
