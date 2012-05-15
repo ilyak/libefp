@@ -31,6 +31,25 @@
  * Public libefp interface.
  */
 
+/** \mainpage libefp - The Effective Fragment Potential method implementation
+ *
+ * \section API Public API Documentation
+ *
+ * The library is still in active development so API is UNSTABLE.
+ * Documentation for public libefp API is available
+ * <a href="efp_8h.html">here</a>.
+ *
+ * \section Repo Git Repository
+ *
+ * Latest development version of code can be found at
+ * http://repo.or.cz/w/efp.git
+ *
+ * \copyright Copyright (c) 2012 Ilya Kaliman.
+ * Distributed under the terms of BSD 2-clause license. See
+ * <a href="http://repo.or.cz/w/efp.git/blob/HEAD:/LICENSE">LICENSE</a>
+ * file for details.
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -49,20 +68,24 @@ enum efp_result {
 	EFP_RESULT_NOT_INITIALIZED,
 	/** File not found on disk. */
 	EFP_RESULT_FILE_NOT_FOUND,
-	/** Syntax error in EFP potential data file. */
+	/** Syntax error in EFP parameters file. */
 	EFP_RESULT_SYNTAX_ERROR,
-	/** The basis name in EFP potential data file was not specified. */
+	/** The basis name in EFP parameters file was not specified. */
 	EFP_RESULT_BASIS_NOT_SPECIFIED,
 	/** Unknown fragment type. */
 	EFP_RESULT_UNKNOWN_FRAGMENT,
-	/** Loaded EFP parameters contain duplicate fragments. */
+	/** EFP parameters contain duplicate fragments. */
 	EFP_RESULT_DUPLICATE_PARAMETERS,
-	/** Required callback was not set. */
+	/** Required callback function was not set. */
 	EFP_RESULT_CALLBACK_NOT_SET,
-	/** Call to callback failed. */
+	/** Call to callback function failed. */
 	EFP_RESULT_CALLBACK_FAILED,
-	/** Exchange-repulsion must be turned on.
-	 * Required for overlap-based electrostatic and dispersion damping. */
+	/**
+	 * Exchange-repulsion must be turned on.
+	 *
+	 * Exchange-repulsion must be enabled to compute overlap-based
+	 * electrostatic and dispersion damping. Overlap integrals need to be
+	 * computed for these damping types. */
 	EFP_RESULT_OVERLAP_INTEGRALS_REQUIRED,
 	/** Gradient computation was not requested. */
 	EFP_RESULT_GRADIENT_NOT_REQUESTED,
@@ -70,9 +93,14 @@ enum efp_result {
 	EFP_RESULT_PARAMETERS_MISSING,
 	/** Wrong array length. */
 	EFP_RESULT_INVALID_ARRAY_SIZE,
-	/** Unsupported SCREEN group in EFP potential data file. */
+	/** Unsupported SCREEN group in EFP parameters file. */
 	EFP_RESULT_UNSUPPORTED_SCREEN,
-	/** Inconsistent selection of EFP terms. */
+	/**
+	 * Inconsistent selection of EFP terms.
+	 *
+	 * This means that AI/EFP terms were selected without selecting their
+	 * EFP/EFP counterparts. Also enabling polarization without
+	 * electrostatics produces this error. */
 	EFP_RESULT_INCONSISTENT_TERMS
 };
 
@@ -115,10 +143,10 @@ struct efp_opts {
 	/** Set to nonzero to request gradient computation. */
 	int do_gradient;
 
-	/** Dispersion damping type. */
+	/** Dispersion damping type (see #efp_disp_damp). */
 	enum efp_disp_damp disp_damp;
 
-	/** Electrostatic damping type. */
+	/** Electrostatic damping type (see #efp_elec_damp). */
 	enum efp_elec_damp elec_damp;
 };
 
@@ -132,8 +160,8 @@ struct efp_energy {
 	 * damping. Zero if overlap-based damping is turned off. */
 	double charge_penetration;
 	/**
-	 * All polarization energy go here. Polarization is computed
-	 * self-consistently so we can't separate it into EFP/EFP and EFP/AI
+	 * All polarization energy goes here. Polarization is computed
+	 * self-consistently so we can't separate it into EFP/EFP and AI/EFP
 	 * parts. */
 	double polarization;
 	/**
@@ -158,7 +186,7 @@ struct efp_energy {
 	 * AI/EFP charge transfer energy. */
 	double ai_charge_transfer;
 	/**
-	 * Sum of the all above terms. */
+	 * Sum of all the above terms. */
 	double total;
 };
 
@@ -181,7 +209,7 @@ struct efp_qm_atom {
 	double znuc;      /**< Effective nuclear charge. */
 };
 
-/** Information about ab initio region. */
+/** Information about \a ab \a initio region. */
 struct efp_qm_data {
 	int n_atoms;                /**< Number of atoms in QM part. */
 	struct efp_qm_atom *atoms;  /**< Atom data. */
@@ -192,9 +220,9 @@ struct efp_qm_data {
  * computation by efp_callbacks::get_st_integrals callback function.
  *
  * The block represents a rectangular matrix. The
- * efp_callbacks::get_st_integrals callback computes overlap and kinetic energy
- * integrals for each basis function from horizontal dimension of a block with
- * each basis function from vertical dimension of a block.
+ * efp_callbacks::get_st_integrals callback function computes overlap and
+ * kinetic energy integrals for each basis function from horizontal dimension
+ * of a block with each basis function from vertical dimension of a block.
  */
 struct efp_st_block {
 	/** Number of atoms in block horizontal dimension. */
@@ -301,7 +329,7 @@ struct efp_callbacks {
 };
 
 /**
- * Get a printable string with the information about the library.
+ * Get a human readable banner with the information about the library.
  *
  * \return Banner string, zero-terminated.
  */
@@ -320,9 +348,9 @@ void efp_opts_default(struct efp_opts *opts);
  * \param[out] out Initialized efp structure.
  * \param[in] opts User defined options controlling the computation.
  * \param[in] callbacks User supplied callback functions (see efp_callbacks).
- * \param[in] potential_files NULL-terminated list with paths to the files with
- *                            Effective Fragment Potential data.
- * \param[in] fragname NULL-terminated list with names of the fragments
+ * \param[in] potential_files NULL-terminated array with paths to the files
+ *                            with EFP parameters.
+ * \param[in] fragname NULL-terminated array with names of the fragments
  *                     comprising the molecular system.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
@@ -334,10 +362,10 @@ enum efp_result efp_init(struct efp **out,
 			 const char **fragname);
 
 /**
- * Update information about ab initio region.
+ * Update information about \a ab \a initio region.
  *
  * \param[in] efp The efp structure.
- * \param[in] qm_data Information about ab initio region.
+ * \param[in] qm_data Information about \a ab \a initio region.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
@@ -359,7 +387,7 @@ enum efp_result efp_update_fragments(struct efp *efp, const double *xyzabc);
 /**
  * Update positions and orientations of effective fragments.
  *
- * This is convenience function. It does the same as efp_update_fragments.
+ * This is a convenience function. It does the same as efp_update_fragments.
  * However to specify position and orientation of fragments it takes
  * coordinates of 3 points in space for each fragment. For each fragment point
  * 1 and first atom of fragment are made to coincide. The vector connecting
@@ -368,7 +396,7 @@ enum efp_result efp_update_fragments(struct efp *efp, const double *xyzabc);
  * corresponding fragment plane.
  *
  * \param[in] efp The efp structure.
- * \param[in] pts Array of 9 times the number of fragments numbers. For each
+ * \param[in] pts Array of size 9 times the number of fragments. For each
  *                fragment specifies \a x \a y \a z coordinates of 3 points to
  *                determine the position and orientation of a corresponding
  *                fragment.
@@ -378,7 +406,9 @@ enum efp_result efp_update_fragments(struct efp *efp, const double *xyzabc);
 enum efp_result efp_update_fragments_2(struct efp *efp, const double *pts);
 
 /**
- * Initialize SCF computation. Must be called before ab initio SCF cycle.
+ * Initialize SCF computation.
+ *
+ * Must be called before \a ab \a initio SCF cycle.
  *
  * \param[in] efp The efp structure.
  *
@@ -387,7 +417,9 @@ enum efp_result efp_update_fragments_2(struct efp *efp, const double *pts);
 enum efp_result efp_scf_init(struct efp *efp);
 
 /**
- * Update wave function dependent terms. Must be called during ab initio SCF.
+ * Update wave function dependent energy terms.
+ *
+ * Must be called during \a ab \a initio SCF.
  *
  * \param[in] efp The efp structure.
  * \param[out] energy Wave function dependent EFP energy.
@@ -422,7 +454,7 @@ enum efp_result efp_qm_contribution(struct efp *efp, int n_basis, double *v);
  * Get computed energies of corresponding EFP terms.
  *
  * \param[in] efp The efp structure.
- * \param[out] energy Computed EFP energy components.
+ * \param[out] energy Computed EFP energy components (see efp_energy).
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
@@ -467,8 +499,8 @@ int efp_get_frag_atom_count(struct efp *efp, int frag_idx);
  * \param[in] efp The efp structure.
  * \param[in] frag_idx Index of a fragment between zero and total number of
  *                     fragments minus one.
- * \param[out] atoms Array of size returned by efp_get_frag_atom_count where
- *                   atom info will be stored.
+ * \param[out] atoms Array of size returned by efp_get_frag_atom_count. Atom
+ *                   information is stored here.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
