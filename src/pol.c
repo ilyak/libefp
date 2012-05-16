@@ -116,15 +116,16 @@ compute_elec_field_pt(struct efp *efp, int frag_idx, int pt_idx)
 	if (efp->opts.terms & EFP_TERM_AI_POL) {
 		/* field due to QM nuclei */
 		for (int i = 0; i < efp->qm_data.n_atoms; i++) {
-			struct efp_qm_atom *atom = efp->qm_data.atoms + i;
+			const double *xyz = efp->qm_data.atom_xyz + 3 * i;
+			double znuc = efp->qm_data.atom_znuc[i];
 
-			vec_t dr = vec_sub(VEC(pt->x), VEC(atom->x));
+			vec_t dr = vec_sub(VEC(pt->x), (const vec_t *)xyz);
 			double t = 1.0 / vec_len(&dr);
 			t = t * t * t;
 
-			pt->elec_field.x += atom->znuc * dr.x * t;
-			pt->elec_field.y += atom->znuc * dr.y * t;
-			pt->elec_field.z += atom->znuc * dr.z * t;
+			pt->elec_field.x += znuc * dr.x * t;
+			pt->elec_field.y += znuc * dr.y * t;
+			pt->elec_field.z += znuc * dr.z * t;
 		}
 	}
 }

@@ -73,17 +73,25 @@ efp_update_qm_data(struct efp *efp, const struct efp_qm_data *qm_data)
 	if (!initialized(efp))
 		return EFP_RESULT_NOT_INITIALIZED;
 
-	if (!qm_data || !qm_data->atoms)
+	if (!qm_data)
 		return EFP_RESULT_INVALID_ARGUMENT;
 
-	memcpy(&efp->qm_data, qm_data, sizeof(struct efp_qm_data));
+	memset(&efp->qm_data, 0, sizeof(struct efp_qm_data));
 
-	size_t size = qm_data->n_atoms * sizeof(struct efp_qm_atom);
-	efp->qm_data.atoms = malloc(size);
-	if (!efp->qm_data.atoms)
-		return EFP_RESULT_NO_MEMORY;
-	memcpy(efp->qm_data.atoms, qm_data->atoms, size);
+	if (qm_data->n_atoms > 0) {
+		int n = qm_data->n_atoms * sizeof(double);
+		efp->qm_data.n_atoms = qm_data->n_atoms;
 
+		efp->qm_data.atom_xyz = malloc(3 * n);
+		if (!efp->qm_data.atom_xyz)
+			return EFP_RESULT_NO_MEMORY;
+		memcpy(efp->qm_data.atom_xyz, qm_data->atom_xyz, 3 * n);
+
+		efp->qm_data.atom_znuc = malloc(n);
+		if (!efp->qm_data.atom_znuc)
+			return EFP_RESULT_NO_MEMORY;
+		memcpy(efp->qm_data.atom_znuc, qm_data->atom_znuc, n);
+	}
 	return EFP_RESULT_SUCCESS;
 }
 

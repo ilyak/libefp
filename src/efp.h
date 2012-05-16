@@ -42,8 +42,8 @@
  *
  * \section Repo Git Repository
  *
- * Latest development version of code can be found in
- * <a href="http://github.com/libefp/libefp">git repository</a>.
+ * Latest development version of code can be found in git
+ * <a href="http://github.com/libefp/libefp">repository</a>.
  *
  * \copyright Copyright (c) 2012 Ilya Kaliman.
  * Distributed under the terms of BSD 2-clause license. See
@@ -202,18 +202,11 @@ struct efp_atom {
 	double znuc;      /**< Nuclear charge. */
 };
 
-/** QM atom info. */
-struct efp_qm_atom {
-	double x;         /**< X coordinate of atom position. */
-	double y;         /**< Y coordinate of atom position. */
-	double z;         /**< Z coordinate of atom position. */
-	double znuc;      /**< Effective nuclear charge. */
-};
-
 /** Information about \a ab \a initio region. */
 struct efp_qm_data {
-	int n_atoms;                /**< Number of atoms in QM part. */
-	struct efp_qm_atom *atoms;  /**< Atom data. */
+	int n_atoms;       /**< Number of atoms in QM subsystem. */
+	double *atom_xyz;  /**< Array of atom \a x \a y \a z coordinates. */
+	double *atom_znuc; /**< Array of atom effective nuclear charges. */
 };
 
 /**
