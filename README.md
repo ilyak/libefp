@@ -51,7 +51,7 @@ To be able to use the library you should include efp.h file in your code:
 
 To get the idea of how to use the library see `tests/test_common.c` file. The
 description of the specific public functions and structures provided by the
-library is available in `efp.h` header file.
+library is available at http://libefp.github.com/.
 
 To obtain an executable program link with provided shared (recommended) or
 static libraries:
@@ -92,13 +92,13 @@ makefp job input file similar to the `fraglib/makefp.inp`. Using this input file
 you can create EFP parameters for custom fragment types.
 
 After you created `.efp` file using GAMESS you should rename the fragment by
-replacing `$FRAGNAME` with your name of choice (e.g. `$FRAGNAME` -> `$MYH2O`).
-You also have to add the basis name you used for fragment generation to the
-`.efp` file by replacing `XXX` in the first line after `$FRAGNAME`. Use the
-basis set name in the format which the calling program would understand because
-it will be used in the callback functions. Typically it should be the standard
-basis name, e.g. `6-311++G(3df,2p)`. The basis set name must not contain
-spaces.
+replacing `$FRAGNAME` with your name of choice (e.g. rename `$FRAGNAME` to
+`$MYH2O`). You should also add the basis you used to generate fragment
+parameters to the `.efp` file by replacing "XXX" in the first line after
+`$FRAGNAME` with the name of your basis. Use basis set name in the format which
+the calling program would understand because it will be used as an argument to
+callback functions. Typically it should be the standard basis name such as
+6-311++G(3df,2p). The basis set name must not contain spaces.
 
 For a complete description of EFP data file format consult FRAGNAME section in
 the GAMESS manual (see http://www.msg.ameslab.gov/gamess/).
