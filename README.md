@@ -1,4 +1,4 @@
-# libefp - The Effective Fragment Potential method implementation
+# libefp
 
 ## Overview
 
@@ -77,8 +77,8 @@ during configuration.
 To be able to compute all EFP energy terms the calling program must set
 callback functions which will provide various integrals (e.g., overlap or
 kinetic energy integrals over Gaussian basis functions) as well as information
-about quantum subsystem.  Please consult efp.h file for the full description of
-public API library functions, structures, and callbacks.
+about quantum subsystem. Please see API documentation at
+http://libefp.github.com/ for the full description of public interface.
 
 
 ## How to create custom EFP fragment types
@@ -91,49 +91,50 @@ want to generate parameters for custom fragments you should create GAMESS
 makefp job input file similar to the `fraglib/makefp.inp`. Using this input file
 you can create EFP parameters for custom fragment types.
 
-After you created .efp file using GAMESS you should rename the fragment by
-replacing $FRAGNAME with your name of choice (e.g. $FRAGNAME -> $MYH2O). You
-also have to add the basis name you used for fragment generation to the .efp
-file by replacing "XXX" in the first line after $FRAGNAME. Use the basis set
-name in the format which the calling program would understand because it will
-be used in the callback functions. Typically it should be the standard basis
-name, e.g. 6-311++G(3df,2p). The basis set name must not contain spaces.
+After you created `.efp` file using GAMESS you should rename the fragment by
+replacing `$FRAGNAME` with your name of choice (e.g. `$FRAGNAME` -> `$MYH2O`).
+You also have to add the basis name you used for fragment generation to the
+`.efp` file by replacing `XXX` in the first line after `$FRAGNAME`. Use the
+basis set name in the format which the calling program would understand because
+it will be used in the callback functions. Typically it should be the standard
+basis name, e.g. `6-311++G(3df,2p)`. The basis set name must not contain
+spaces.
 
-For a complete description of EFP data file format see $FRAGNAME section in the
-GAMESS manual (see http://www.msg.ameslab.gov/gamess/).
+For a complete description of EFP data file format consult FRAGNAME section in
+the GAMESS manual (see http://www.msg.ameslab.gov/gamess/).
 
 
 ## Information for libefp contributors
 
-1. The main design principle for the libefp library is Keep It Simple. All
-   code should be easy to read and to understand. It should be easy to
-   integrate the library into programs written in different programming
-   languages. So the language of choice is C and no fancy OO hierarchies.
+- The main design principle for the libefp library is Keep It Simple. All
+  code should be easy to read and to understand. It should be easy to
+  integrate the library into programs written in different programming
+  languages. So the language of choice is C and no fancy OO hierarchies.
 
-2. Be consistent in coding style when adding new code. Consistency is more
-   important than particular coding style. Use descriptive names for variables
-   and functions. The bigger the scope of the symbol the longer its name should
-   be. Look at the sources and maintain similar style for new code.
+- Be consistent in coding style when adding new code. Consistency is more
+  important than particular coding style. Use descriptive names for variables
+  and functions. The bigger the scope of the symbol the longer its name should
+  be. Look at the sources and maintain similar style for new code.
 
-3. Use tabs for indentation. Set tab width to 8 spaces. Keep code within 80
-   columns. If you have more than 3 levels of indentation in some function this
-   usually means that you should rewrite the code.
+- Use tabs for indentation. Set tab width to 8 spaces. Keep code within 80
+  columns. If you have more than 3 levels of indentation in some function this
+  usually means that you should rewrite the code.
 
-4. As with most quantum chemistry methods EFP can require large amounts of
-   memory. The guideline for developers here is simple: ALWAYS check for memory
-   allocation errors in your code and return `EFP_RESULT_NO_MEMORY` on error.
+- As with most quantum chemistry methods EFP can require large amounts of
+  memory. The guideline for developers here is simple: ALWAYS check for memory
+  allocation errors in your code and return `EFP_RESULT_NO_MEMORY` on error.
 
-5. The code is reentrant which means that it is safe to use two different efp
-   objects from two different threads. NEVER use mutable global state as it
-   will break this. Store all mutable data in the efp object.
+- The code is reentrant which means that it is safe to use two different efp
+  objects from two different threads. NEVER use mutable global state as it
+  will break this. Store all mutable data in the efp object.
 
-6. Use --enable-developer-flags in configuration and make sure that compilation
-   produces no warnings. Use "make check" to make sure that all new code passes
-   the test cases.
+- Use `--enable-developer-flags` in configuration and make sure that
+  compilation produces no warnings. Use `make check` to make sure that all new
+  code passes the test cases.
 
-7. To debug using tests do `libtool --mode=execute gdb ./mytest` in tests
-   directory. This will start gdb so you will be able to set breakpoints and
-   inspect variables in mytest test program.
+- To debug using tests do `libtool --mode=execute gdb ./mytest` in tests
+  directory. This will start gdb so you will be able to set breakpoints and
+  inspect variables in mytest test program.
 
 
 ## References
