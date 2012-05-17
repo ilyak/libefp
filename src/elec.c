@@ -345,7 +345,7 @@ efp_update_elec(struct frag *frag, const mat_t *rotmat)
 }
 
 static double
-compute_ai_frag(struct efp *efp, int frag_idx)
+compute_ai_elec_frag(struct efp *efp, int frag_idx)
 {
 	double energy = 0.0;
 	struct frag *fr_i = efp->frags + frag_idx;
@@ -384,7 +384,7 @@ efp_compute_ai_elec(struct efp *efp)
 	double energy = 0.0;
 
 	for (int i = 0; i < efp->n_frag; i++)
-		energy += compute_ai_frag(efp, i);
+		energy += compute_ai_elec_frag(efp, i);
 
 	efp->energy.ai_electrostatic = energy;
 	return EFP_RESULT_SUCCESS;
