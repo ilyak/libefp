@@ -27,9 +27,6 @@
 #include "efp_private.h"
 #include "elec.h"
 
-#define DR_A ((double *)&dr)[a]
-#define DR_B ((double *)&dr)[b]
-
 static void
 add_multipole_field(struct polarizable_pt *pt,
 		    const struct multipole_pt *mult_pt)
@@ -37,45 +34,41 @@ add_multipole_field(struct polarizable_pt *pt,
 	vec_t dr = vec_sub(VEC(pt->x), VEC(mult_pt->x));
 
 	double t1, t2;
-	double r = vec_len(&dr);
 
-	double ri[8];
-	powers(1.0 / r, 8, ri);
+	double r = vec_len(&dr);
+	double r3 = r * r * r;
+	double r5 = r3 * r * r;
+	double r7 = r5 * r * r;
 
 	/* charge */
-	pt->elec_field.x += mult_pt->monopole * dr.x * ri[3];
-	pt->elec_field.y += mult_pt->monopole * dr.y * ri[3];
-	pt->elec_field.z += mult_pt->monopole * dr.z * ri[3];
+	pt->elec_field.x += mult_pt->monopole * dr.x / r3;
+	pt->elec_field.y += mult_pt->monopole * dr.y / r3;
+	pt->elec_field.z += mult_pt->monopole * dr.z / r3;
 
 	/* dipole */
-	t1 = mult_pt->dipole.x * dr.x +
-	     mult_pt->dipole.y * dr.y +
-	     mult_pt->dipole.z * dr.z;
+	t1 = vec_dot(&mult_pt->dipole, &dr);
 
-	pt->elec_field.x -= mult_pt->dipole.x * ri[3] - 3 * ri[5] * t1 * dr.x;
-	pt->elec_field.y -= mult_pt->dipole.y * ri[3] - 3 * ri[5] * t1 * dr.y;
-	pt->elec_field.z -= mult_pt->dipole.z * ri[3] - 3 * ri[5] * t1 * dr.z;
+	pt->elec_field.x -= mult_pt->dipole.x / r3 - 3.0 / r5 * t1 * dr.x;
+	pt->elec_field.y -= mult_pt->dipole.y / r3 - 3.0 / r5 * t1 * dr.y;
+	pt->elec_field.z -= mult_pt->dipole.z / r3 - 3.0 / r5 * t1 * dr.z;
 
 	/* quadrupole */
-	t1 = 0.0;
-	for (int a = 0; a < 3; a++)
-		for (int b = 0; b < 3; b++)
-			t1 += mult_pt->quadrupole[quad_idx(a, b)] * DR_A * DR_B;
+	t1 = quadrupole_sum(mult_pt->quadrupole, &dr);
 
 	t2 = mult_pt->quadrupole[quad_idx(0, 0)] * dr.x +
 	     mult_pt->quadrupole[quad_idx(1, 0)] * dr.y +
 	     mult_pt->quadrupole[quad_idx(2, 0)] * dr.z;
-	pt->elec_field.x -= 2 * ri[5] * t2 - 5 * ri[7] * t1 * dr.x;
+	pt->elec_field.x -= 2.0 / r5 * t2 - 5.0 / r7 * t1 * dr.x;
 
 	t2 = mult_pt->quadrupole[quad_idx(0, 1)] * dr.x +
 	     mult_pt->quadrupole[quad_idx(1, 1)] * dr.y +
 	     mult_pt->quadrupole[quad_idx(2, 1)] * dr.z;
-	pt->elec_field.y -= 2 * ri[5] * t2 - 5 * ri[7] * t1 * dr.y;
+	pt->elec_field.y -= 2.0 / r5 * t2 - 5.0 / r7 * t1 * dr.y;
 
 	t2 = mult_pt->quadrupole[quad_idx(0, 2)] * dr.x +
 	     mult_pt->quadrupole[quad_idx(1, 2)] * dr.y +
 	     mult_pt->quadrupole[quad_idx(2, 2)] * dr.z;
-	pt->elec_field.z -= 2 * ri[5] * t2 - 5 * ri[7] * t1 * dr.z;
+	pt->elec_field.z -= 2.0 / r5 * t2 - 5.0 / r7 * t1 * dr.z;
 
 	/* octupole-polarizability interactions are ignored */
 }
@@ -97,6 +90,7 @@ compute_elec_field_pt(struct efp *efp, int frag_idx, int pt_idx)
 			struct efp_atom *at = efp->frags[i].atoms + j;
 
 			vec_t dr = vec_sub(VEC(pt->x), VEC(at->x));
+
 			double r = vec_len(&dr);
 			double r3 = r * r * r;
 
@@ -120,12 +114,13 @@ compute_elec_field_pt(struct efp *efp, int frag_idx, int pt_idx)
 			double znuc = efp->qm_data.atom_znuc[i];
 
 			vec_t dr = vec_sub(VEC(pt->x), (const vec_t *)xyz);
-			double t = 1.0 / vec_len(&dr);
-			t = t * t * t;
 
-			pt->elec_field.x += znuc * dr.x * t;
-			pt->elec_field.y += znuc * dr.y * t;
-			pt->elec_field.z += znuc * dr.z * t;
+			double r = vec_len(&dr);
+			double r3 = r * r * r;
+
+			pt->elec_field.x += znuc * dr.x / r3;
+			pt->elec_field.y += znuc * dr.y / r3;
+			pt->elec_field.z += znuc * dr.z / r3;
 		}
 	}
 }
@@ -195,30 +190,28 @@ get_induced_dipole_field(struct efp *efp, int frag_idx,
 				fr_j->polarizable_pts + jj;
 
 			vec_t dr = vec_sub(VEC(pt->x), VEC(pt_j->x));
+
 			double r = vec_len(&dr);
+			double r3 = r * r * r;
+			double r5 = r3 * r * r;
 
-			double ri[6];
-			powers(1.0 / r, 6, ri);
+			double t1 = vec_dot(&pt_j->induced_dipole, &dr);
 
-			double sum = vec_dot(&pt_j->induced_dipole, &dr);
+			field->x -= pt_j->induced_dipole.x / r3 -
+						3.0 * t1 * dr.x / r5;
+			field->y -= pt_j->induced_dipole.y / r3 -
+						3.0 * t1 * dr.y / r5;
+			field->z -= pt_j->induced_dipole.z / r3 -
+						3.0 * t1 * dr.z / r5;
 
-			field->x -= ri[3] * pt_j->induced_dipole.x -
-						3.0 * ri[5] * sum * dr.x;
-			field->y -= ri[3] * pt_j->induced_dipole.y -
-						3.0 * ri[5] * sum * dr.y;
-			field->z -= ri[3] * pt_j->induced_dipole.z -
-						3.0 * ri[5] * sum * dr.z;
+			double t2 = vec_dot(&pt_j->induced_dipole_conj, &dr);
 
-			sum = pt_j->induced_dipole_conj.x * dr.x +
-			      pt_j->induced_dipole_conj.y * dr.y +
-			      pt_j->induced_dipole_conj.z * dr.z;
-
-			field_conj->x -= ri[3] * pt_j->induced_dipole_conj.x -
-						3.0 * ri[5] * sum * dr.x;
-			field_conj->y -= ri[3] * pt_j->induced_dipole_conj.y -
-						3.0 * ri[5] * sum * dr.y;
-			field_conj->z -= ri[3] * pt_j->induced_dipole_conj.z -
-						3.0 * ri[5] * sum * dr.z;
+			field_conj->x -= pt_j->induced_dipole_conj.x / r3 -
+						3.0 * t2 * dr.x / r5;
+			field_conj->y -= pt_j->induced_dipole_conj.y / r3 -
+						3.0 * t2 * dr.y / r5;
+			field_conj->z -= pt_j->induced_dipole_conj.z / r3 -
+						3.0 * t2 * dr.z / r5;
 		}
 	}
 }
@@ -241,6 +234,7 @@ pol_scf_iter(struct efp *efp)
 			field.x += pt->elec_field.x;
 			field.y += pt->elec_field.y;
 			field.z += pt->elec_field.z;
+
 			field_conj.x += pt->elec_field.x;
 			field_conj.y += pt->elec_field.y;
 			field_conj.z += pt->elec_field.z;
@@ -329,16 +323,16 @@ charge_dipole_grad(const vec_t *p1, double q1, const vec_t *com1,
 	grad1[0] -= gx;
 	grad1[1] -= gy;
 	grad1[2] -= gz;
-	grad1[3] -= gz * (p2->y - com2->y) - gy * (p2->z - com2->z);
-	grad1[4] -= gx * (p2->z - com2->z) - gz * (p2->x - com2->x);
-	grad1[5] -= gy * (p2->x - com2->x) - gx * (p2->y - com2->y);
+	grad1[3] -= gz * (p1->y - com1->y) - gy * (p1->z - com1->z);
+	grad1[4] -= gx * (p1->z - com1->z) - gz * (p1->x - com1->x);
+	grad1[5] -= gy * (p1->x - com1->x) - gx * (p1->y - com1->y);
 
 	grad2[0] += gx;
 	grad2[1] += gy;
 	grad2[2] += gz;
-	grad2[3] += gz * (p1->y - com1->y) - gy * (p1->z - com1->z);
-	grad2[4] += gx * (p1->z - com1->z) - gz * (p1->x - com1->x);
-	grad2[5] += gy * (p1->x - com1->x) - gx * (p1->y - com1->y);
+	grad2[3] += gz * (p2->y - com2->y) - gy * (p2->z - com2->z);
+	grad2[4] += gx * (p2->z - com2->z) - gz * (p2->x - com2->x);
+	grad2[5] += gy * (p2->x - com2->x) - gx * (p2->y - com2->y);
 	grad2[3] += t2 * (d2->y * dr.z - d2->z * dr.y);
 	grad2[4] += t2 * (d2->z * dr.x - d2->x * dr.z);
 	grad2[5] += t2 * (d2->x * dr.y - d2->y * dr.x);
@@ -408,16 +402,13 @@ dipole_quadrupole_grad(const vec_t *p1, const vec_t *d1, const vec_t *com1,
 	double r7 = r5 * r2;
 	double r9 = r7 * r2;
 
-	double q2s = 0.0;
-	for (int a = 0; a < 3; a++)
-		for (int b = 0; b < 3; b++)
-			q2s += quad2[quad_idx(a, b)] * DR_A * DR_B;
+	double q2s = quadrupole_sum(quad2, &dr);
 
 	double q2sx = 0.0, q2sy = 0.0, q2sz = 0.0;
 	for (int a = 0; a < 3; a++) {
-		q2sx += quad2[quad_idx(0, a)] * DR_A;
-		q2sy += quad2[quad_idx(1, a)] * DR_A;
-		q2sz += quad2[quad_idx(2, a)] * DR_A;
+		q2sx += quad2[quad_idx(0, a)] * vec_el(&dr, a);
+		q2sy += quad2[quad_idx(1, a)] * vec_el(&dr, a);
+		q2sz += quad2[quad_idx(2, a)] * vec_el(&dr, a);
 	}
 
 	double d1dr = vec_dot(d1, &dr);

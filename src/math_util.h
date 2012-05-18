@@ -44,6 +44,12 @@ typedef struct {
 
 #define VEC(x) ((vec_t *)(&(x)))
 
+static inline double
+vec_el(const vec_t *vec, int idx)
+{
+	return ((double *)vec)[idx];
+}
+
 static inline void
 vec_zero(vec_t *vec)
 {

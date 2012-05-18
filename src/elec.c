@@ -24,32 +24,26 @@
  * SUCH DAMAGE.
  */
 
-#include <string.h>
-
 #include "efp_private.h"
 #include "elec.h"
 
-#define DR_A ((double *)&dr)[a]
-#define DR_B ((double *)&dr)[b]
-#define DR_C ((double *)&dr)[c]
+static double
+octupole_sum_xyz(const double *oct, const vec_t *dr, int axis)
+{
+	const double *pdr = (const double *)dr;
+	double sum = 0.0;
 
-#define D1_A   ((double *)&pt_i->dipole)[a]
-#define D2_A   ((double *)&pt_j->dipole)[a]
-#define D1_B   ((double *)&pt_i->dipole)[b]
-#define D2_B   ((double *)&pt_j->dipole)[b]
+	for (int a = 0; a < 3; a++)
+		for (int b = 0; b < 3; b++)
+			for (int c = 0; c < 3; c++) {
+				double o = oct[oct_idx(a, b, c)];
+				if (a == axis) sum += o * pdr[b] * pdr[c];
+				if (b == axis) sum += o * pdr[a] * pdr[c];
+				if (c == axis) sum += o * pdr[a] * pdr[b];
+			}
 
-#define Q1_AB  (pt_i->quadrupole[quad_idx(a, b)])
-#define Q2_AB  (pt_j->quadrupole[quad_idx(a, b)])
-
-#define O1_ABC (pt_i->octupole[oct_idx(a, b, c)])
-#define O2_ABC (pt_j->octupole[oct_idx(a, b, c)])
-
-#define SUM_A(x) (a = 0, sum_a = x, a = 1, sum_a += x, a = 2, sum_a += x)
-#define SUM_B(x) (b = 0, sum_b = x, b = 1, sum_b += x, b = 2, sum_b += x)
-#define SUM_C(x) (c = 0, sum_c = x, c = 1, sum_c += x, c = 2, sum_c += x)
-
-#define SUM_AB(x)  (SUM_A(SUM_B(x)))
-#define SUM_ABC(x) (SUM_A(SUM_B(SUM_C(x))))
+	return sum;
+}
 
 static inline double
 get_damp_screen(struct efp *efp, double r_ij, double pi, double pj)
@@ -73,16 +67,12 @@ charge_mult_energy(struct efp *efp, double charge, const vec_t *pos,
 	struct frag *fr_i = efp->frags + frag_idx;
 	struct multipole_pt *pt_i = fr_i->multipole_pts + pt_idx;
 
-	double energy = 0.0;
-
 	vec_t dr = vec_sub(VEC(pt_i->x), pos);
+
 	double r = vec_len(&dr);
-
-	double ri[8];
-	powers(1.0 / r, 8, ri);
-
-	int a, b, c;
-	double sum_a, sum_b, sum_c;
+	double r3 = r * r * r;
+	double r5 = r3 * r * r;
+	double r7 = r5 * r * r;
 
 	double damp = 1.0;
 	if (efp->opts.elec_damp == EFP_ELEC_DAMP_SCREEN) {
@@ -90,91 +80,217 @@ charge_mult_energy(struct efp *efp, double charge, const vec_t *pos,
 		damp = get_damp_screen(efp, r, scr_i, HUGE_VAL);
 	}
 
-	energy += ri[1] * charge * pt_i->monopole * damp;
-	energy -= ri[3] * charge * SUM_A(D1_A * DR_A);
-	energy += ri[5] * charge * SUM_AB(Q1_AB * DR_A * DR_B);
-	energy -= ri[7] * charge * SUM_ABC(O1_ABC * DR_A * DR_B * DR_C);
+	double energy = 0.0;
+
+	energy += charge * pt_i->monopole * damp / r;
+	energy -= charge * vec_dot(&pt_i->dipole, &dr) / r3;
+	energy += charge * quadrupole_sum(pt_i->quadrupole, &dr) / r5;
+	energy -= charge * octupole_sum(pt_i->octupole, &dr) / r7;
 
 	return energy;
 }
 
+static void
+charge_quadrupole_grad(const vec_t *p1, double q1, const vec_t *com1,
+		       const vec_t *p2, const double *quad2, const vec_t *com2,
+		       double *grad1, double *grad2)
+{
+	vec_t dr = vec_sub(p1, p2);
+
+	double r = vec_len(&dr);
+	double r2 = r * r;
+	double r5 = r2 * r2 * r;
+	double r7 = r5 * r2;
+
+	double t1x = q1 / r5 * -2.0 * (dr.x * quad2[quad_idx(0, 0)] +
+				       dr.y * quad2[quad_idx(0, 1)] +
+				       dr.z * quad2[quad_idx(0, 2)]);
+	double t1y = q1 / r5 * -2.0 * (dr.x * quad2[quad_idx(1, 0)] +
+				       dr.y * quad2[quad_idx(1, 1)] +
+				       dr.z * quad2[quad_idx(1, 2)]);
+	double t1z = q1 / r5 * -2.0 * (dr.x * quad2[quad_idx(2, 0)] +
+				       dr.y * quad2[quad_idx(2, 1)] +
+				       dr.z * quad2[quad_idx(2, 2)]);
+
+	double g = 5.0 * q1 / r7 * quadrupole_sum(quad2, &dr);
+
+	double gx = g * dr.x + t1x;
+	double gy = g * dr.y + t1y;
+	double gz = g * dr.z + t1z;
+
+	grad1[0] -= gx;
+	grad1[1] -= gy;
+	grad1[2] -= gz;
+	grad1[3] -= gz * (p1->y - com1->y) - gy * (p1->z - com1->z);
+	grad1[4] -= gx * (p1->z - com1->z) - gz * (p1->x - com1->x);
+	grad1[5] -= gy * (p1->x - com1->x) - gx * (p1->y - com1->y);
+
+	grad2[0] += gx;
+	grad2[1] += gy;
+	grad2[2] += gz;
+	grad2[3] += gz * (p2->y - com2->y) - gy * (p2->z - com2->z);
+	grad2[4] += gx * (p2->z - com2->z) - gz * (p2->x - com2->x);
+	grad2[5] += gy * (p2->x - com2->x) - gx * (p2->y - com2->y);
+	grad2[3] += t1z * dr.y - t1y * dr.z;
+	grad2[4] += t1x * dr.z - t1z * dr.x;
+	grad2[5] += t1y * dr.x - t1x * dr.y;
+}
+
+static void
+charge_octupole_grad(const vec_t *p1, double q1, const vec_t *com1,
+		     const vec_t *p2, const double *oct2, const vec_t *com2,
+		     double *grad1, double *grad2)
+{
+	vec_t dr = vec_sub(p1, p2);
+
+	double r = vec_len(&dr);
+	double r2 = r * r;
+	double r7 = r2 * r2 * r2 * r;
+	double r9 = r7 * r2;
+
+	double t1x = q1 / r7 * octupole_sum_xyz(oct2, &dr, 0);
+	double t1y = q1 / r7 * octupole_sum_xyz(oct2, &dr, 1);
+	double t1z = q1 / r7 * octupole_sum_xyz(oct2, &dr, 2);
+
+	double g = 7.0 * q1 / r9 * octupole_sum(oct2, &dr);
+
+	double gx = -g * dr.x + t1x;
+	double gy = -g * dr.y + t1y;
+	double gz = -g * dr.z + t1z;
+
+	grad1[0] -= gx;
+	grad1[1] -= gy;
+	grad1[2] -= gz;
+	grad1[3] -= gz * (p1->y - com1->y) - gy * (p1->z - com1->z);
+	grad1[4] -= gx * (p1->z - com1->z) - gz * (p1->x - com1->x);
+	grad1[5] -= gy * (p1->x - com1->x) - gx * (p1->y - com1->y);
+
+	grad2[0] += gx;
+	grad2[1] += gy;
+	grad2[2] += gz;
+	grad2[3] += gz * (p2->y - com2->y) - gy * (p2->z - com2->z);
+	grad2[4] += gx * (p2->z - com2->z) - gz * (p2->x - com2->x);
+	grad2[5] += gy * (p2->x - com2->x) - gx * (p2->y - com2->y);
+	grad2[3] += t1z * dr.y - t1y * dr.z;
+	grad2[4] += t1x * dr.z - t1z * dr.x;
+	grad2[5] += t1y * dr.x - t1x * dr.y;
+}
+
+static void
+compute_elec_pt_grad(struct efp *efp)
+{
+	/* monopole - monopole */
+
+	/* monopole - dipole */
+	/* q1,d2 + q2,d1  XXX from pol.c */
+
+	/* monopole - quadrupole */
+
+	/* monopole - octupole */
+
+	/* dipole - dipole */
+	/* XXX from pol.c */
+
+	/* dipole - quadrupole */
+	/* XXX from pol.c */
+
+	/* quadrupole - quadrupole */
+}
+
 static double
-compute_elec_pt(struct efp *efp, int i, int j, int ii, int jj)
+compute_elec_pt(struct efp *efp, int fr_i_idx, int fr_j_idx,
+		int pt_i_idx, int pt_j_idx)
 {
 	double energy = 0.0;
 
-	struct frag *fr_i = efp->frags + i;
-	struct frag *fr_j = efp->frags + j;
+	struct frag *fr_i = efp->frags + fr_i_idx;
+	struct frag *fr_j = efp->frags + fr_j_idx;
 
-	struct multipole_pt *pt_i = fr_i->multipole_pts + ii;
-	struct multipole_pt *pt_j = fr_j->multipole_pts + jj;
+	struct multipole_pt *pt_i = fr_i->multipole_pts + pt_i_idx;
+	struct multipole_pt *pt_j = fr_j->multipole_pts + pt_j_idx;
 
 	vec_t dr = vec_sub(VEC(pt_j->x), VEC(pt_i->x));
+
 	double r = vec_len(&dr);
-
-	double ri[10];
-	powers(1.0 / r, 10, ri);
-
-	int a, b, c;
-	double sum_a, sum_b, sum_c;
-	double t1, t2, t3, t4;
+	double r3 = r * r * r;
+	double r5 = r3 * r * r;
+	double r7 = r5 * r * r;
+	double r9 = r7 * r * r;
 
 	double q1 = pt_i->monopole;
 	double q2 = pt_j->monopole;
+	const vec_t *d1 = &pt_i->dipole;
+	const vec_t *d2 = &pt_j->dipole;
+	const double *quad1 = pt_i->quadrupole;
+	const double *quad2 = pt_j->quadrupole;
+	const double *oct1 = pt_i->octupole;
+	const double *oct2 = pt_j->octupole;
 
 	/* monopole - monopole */
 	double damp = 1.0;
 	if (efp->opts.elec_damp == EFP_ELEC_DAMP_SCREEN) {
-		double scr_i = fr_i->screen_params[ii];
-		double scr_j = fr_j->screen_params[jj];
-		damp = get_damp_screen(efp, r, scr_i, scr_j);
+		double screen_i = fr_i->screen_params[pt_i_idx];
+		double screen_j = fr_j->screen_params[pt_j_idx];
+		damp = get_damp_screen(efp, r, screen_i, screen_j);
 	}
-	energy += ri[1] * q1 * q2 * damp;
+	energy += q1 * q2 / r * damp;
 
 	/* monopole - dipole */
-	energy += ri[3] * q2 * SUM_A(D1_A * DR_A);
-	energy -= ri[3] * q1 * SUM_A(D2_A * DR_A);
+	energy += q2 / r3 * vec_dot(d1, &dr);
+	energy -= q1 / r3 * vec_dot(d2, &dr);
 
 	/* monopole - quadrupole */
-	energy += ri[5] * q2 * SUM_AB(Q1_AB * DR_A * DR_B);
-	energy += ri[5] * q1 * SUM_AB(Q2_AB * DR_A * DR_B);
+	energy += q2 / r5 * quadrupole_sum(quad1, &dr);
+	energy += q1 / r5 * quadrupole_sum(quad2, &dr);
 
 	/* monopole - octupole */
-	energy += ri[7] * q2 * SUM_ABC(O1_ABC * DR_A * DR_B * DR_C);
-	energy -= ri[7] * q1 * SUM_ABC(O2_ABC * DR_A * DR_B * DR_C);
+	energy += q2 / r7 * octupole_sum(oct1, &dr);
+	energy -= q1 / r7 * octupole_sum(oct2, &dr);
 
 	/* dipole - dipole */
-	energy += ri[3] * SUM_A(D1_A * D2_A);
-	energy -= 3 * ri[5] * SUM_AB(D1_A * D2_B * DR_A * DR_B);
+	energy += vec_dot(d1, d2) / r3;
+	energy -= 3.0 / r5 * vec_dot(d1, &dr) * vec_dot(d2, &dr);
 
 	/* dipole - quadrupole */
-	energy += 2 * ri[5] * SUM_AB(Q1_AB * D2_A * DR_B);
-	energy -= 2 * ri[5] * SUM_AB(Q2_AB * D1_A * DR_B);
+	double q1d2dr = 0.0;
+	double q2d1dr = 0.0;
+	for (int a = 0; a < 3; a++) {
+		for (int b = 0; b < 3; b++) {
+			int idx = quad_idx(a, b);
+			q1d2dr += quad1[idx] * vec_el(d2, a) * vec_el(&dr, b);
+			q2d1dr += quad2[idx] * vec_el(d1, a) * vec_el(&dr, b);
+		}
+	}
 
-	t1 = SUM_A(D2_A * DR_A);
-	energy -= 5 * ri[7] * SUM_AB(Q1_AB * DR_A * DR_B) * t1;
-
-	t1 = SUM_A(D1_A * DR_A);
-	energy += 5 * ri[7] * SUM_AB(Q2_AB * DR_A * DR_B) * t1;
+	energy += 2.0 / r5 * q1d2dr - 2.0 / r5 * q2d1dr;
+	energy -= 5.0 / r7 * quadrupole_sum(quad1, &dr) * vec_dot(d2, &dr);
+	energy += 5.0 / r7 * quadrupole_sum(quad2, &dr) * vec_dot(d1, &dr);
 
 	/* quadrupole - quadrupole */
-	t1 = 0.0;
-	for (b = 0; b < 3; b++) {
-		t2 = SUM_A(Q1_AB * DR_A);
-		t3 = SUM_A(Q2_AB * DR_A);
-		t1 += t2 * t3;
+	double q1q2 = 0.0;
+	double q1q2dr = 0.0;
+	for (int a = 0; a < 3; a++) {
+		double t1 = 0.0;
+		double t2 = 0.0;
+		for (int b = 0; b < 3; b++) {
+			int idx = quad_idx(a, b);
+			t1 += quad1[idx] * vec_el(&dr, b);
+			t2 += quad2[idx] * vec_el(&dr, b);
+			q1q2 += quad1[idx] * quad2[idx];
+		}
+		q1q2dr += t1 * t2;
 	}
-	t2 = SUM_AB(Q1_AB * DR_A * DR_B);
-	t3 = SUM_AB(Q2_AB * DR_A * DR_B);
-	t4 = SUM_AB(Q1_AB * Q2_AB);
 
-	energy -= 20 * ri[7] * t1 / 3.0;
-	energy += 35 * ri[9] * t2 * t3 / 3.0;
-	energy +=  2 * ri[5] * t4 / 3.0;
+	double q1dr = quadrupole_sum(quad1, &dr);
+	double q2dr = quadrupole_sum(quad2, &dr);
+
+	energy += (2.0 / r5 * q1q2 - 20.0 / r7 * q1q2dr +
+			35.0 / r9 * q1dr * q2dr) / 3.0;
 
 	/* gradient */
-	if (efp->grad) {
-	}
+	if (efp->grad)
+		compute_elec_pt_grad(efp);
+
 	return energy;
 }
 

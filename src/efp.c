@@ -29,6 +29,14 @@
 #include "efp_private.h"
 #include "elec.h"
 
+typedef enum efp_result (*term_fn)(struct efp *efp);
+
+static term_fn term_funcs[] = {
+	efp_compute_elec, efp_compute_pol, efp_compute_disp,
+	efp_compute_xr, efp_compute_chtr, efp_compute_ai_elec,
+	efp_compute_ai_disp, efp_compute_ai_xr, efp_compute_ai_chtr
+};
+
 static inline int
 initialized(struct efp *efp)
 {
@@ -262,15 +270,9 @@ efp_compute(struct efp *efp)
 
 	enum efp_result res;
 
-	if ((res = efp_compute_elec(efp)))    return res;
-	if ((res = efp_compute_pol(efp)))     return res;
-	if ((res = efp_compute_disp(efp)))    return res;
-	if ((res = efp_compute_xr(efp)))      return res;
-	if ((res = efp_compute_chtr(efp)))    return res;
-	if ((res = efp_compute_ai_elec(efp))) return res;
-	if ((res = efp_compute_ai_disp(efp))) return res;
-	if ((res = efp_compute_ai_xr(efp)))   return res;
-	if ((res = efp_compute_ai_chtr(efp))) return res;
+	for (int i = 0; i < ARRAY_SIZE(term_funcs); i++)
+		if ((res = term_funcs[i](efp)))
+			return res;
 
 	efp->energy.total = efp->energy.electrostatic +
 			    efp->energy.charge_penetration +

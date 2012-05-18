@@ -46,13 +46,41 @@ oct_idx(int a, int b, int c)
 	/* order in which GAMESS stores octupoles */
 	enum { xxx = 0, yyy, zzz, xxy, xxz, xyy, yyz, xzz, yzz, xyz };
 
-	static const int idx[3 * 3 * 3] = {
+	static const int idx[] = {
 		xxx, xxy, xxz, xxy, xyy, xyz, xxz, xyz, xzz,
 		xxy, xyy, xyz, xyy, yyy, yyz, xyz, yyz, yzz,
 		xxz, xyz, xzz, xyz, yyz, yzz, xzz, yzz, zzz
 	};
 
 	return idx[a * 9 + b * 3 + c];
+}
+
+static inline double
+quadrupole_sum(const double *quad, const vec_t *dr)
+{
+	const double *pdr = (const double *)dr;
+	double sum = 0.0;
+
+	for (int a = 0; a < 3; a++)
+		for (int b = 0; b < 3; b++)
+			sum += quad[quad_idx(a, b)] * pdr[a] * pdr[b];
+
+	return sum;
+}
+
+static inline double
+octupole_sum(const double *oct, const vec_t *dr)
+{
+	const double *pdr = (const double *)dr;
+	double sum = 0.0;
+
+	for (int a = 0; a < 3; a++)
+		for (int b = 0; b < 3; b++)
+			for (int c = 0; c < 3; c++)
+				sum += oct[oct_idx(a, b, c)] * pdr[a] *
+						pdr[b] * pdr[c];
+
+	return sum;
 }
 
 #endif /* LIBEFP_ELEC_H */
