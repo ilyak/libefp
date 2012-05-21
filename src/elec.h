@@ -83,4 +83,24 @@ octupole_sum(const double *oct, const vec_t *dr)
 	return sum;
 }
 
+void efp_charge_dipole_grad(double q1, const vec_t *d2, const vec_t *dr,
+			    vec_t *force, vec_t *add1, vec_t *add2);
+
+void efp_charge_quadrupole_grad(double q1, const double *quad2, const vec_t *dr,
+				vec_t *force, vec_t *add1, vec_t *add2);
+
+void efp_charge_octupole_grad(double q1, const double *oct2, const vec_t *dr,
+			      vec_t *force, vec_t *add1, vec_t *add2);
+
+void efp_dipole_dipole_grad(const vec_t *d1, const vec_t *d2, const vec_t *dr,
+			    vec_t *force, vec_t *add1, vec_t *add2);
+
+void efp_dipole_quadrupole_grad(const vec_t *d1, const double *quad2,
+				const vec_t *dr, vec_t *force, vec_t *add1,
+				vec_t *add2);
+
+void efp_quadrupole_quadrupole_grad(const double *quad1, const double *quad2,
+				    const vec_t *dr, vec_t *force, vec_t *add1,
+				    vec_t *add2);
+
 #endif /* LIBEFP_ELEC_H */

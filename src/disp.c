@@ -68,10 +68,10 @@ damp_overlap_grad(struct efp *efp, int frag_i, int frag_j, int pt_i, int pt_j)
 }
 
 static double
-compute_disp_pt(struct efp *efp, int i, int ii, int j, int jj, double *grad)
+pt_pt_disp(struct efp *efp, int i, int ii, int j, int jj)
 {
-	const struct frag *fr_i = efp->frags + i;
-	const struct frag *fr_j = efp->frags + j;
+	struct frag *fr_i = efp->frags + i;
+	struct frag *fr_j = efp->frags + j;
 
 	const struct dynamic_polarizable_pt *pt_i =
 				fr_i->dynamic_polarizable_pts + ii;
@@ -97,12 +97,9 @@ compute_disp_pt(struct efp *efp, int i, int ii, int j, int jj, double *grad)
 
 	double energy = 4.0 / 3.0 * sum * damp / r6;
 
-	if (grad) {
-		double dx = pt_i->x - pt_j->x;
-		double dy = pt_i->y - pt_j->y;
-		double dz = pt_i->z - pt_j->z;
-
+	if (efp->opts.do_gradient) {
 		double gdamp;
+
 		switch (efp->opts.disp_damp) {
 		case EFP_DISP_DAMP_TT:
 			gdamp = damp_tt_grad(r);
@@ -113,32 +110,23 @@ compute_disp_pt(struct efp *efp, int i, int ii, int j, int jj, double *grad)
 		}
 
 		double g = 4.0 / 3.0 * sum * (gdamp / r - 6.0 * damp / r2) / r6;
-		double gx = g * dx;
-		double gy = g * dy;
-		double gz = g * dz;
 
-		double *g_i = grad + 6 * i;
-		double *g_j = grad + 6 * j;
+		vec_t force = {
+			g * (pt_i->x - pt_j->x),
+			g * (pt_i->y - pt_j->y),
+			g * (pt_i->z - pt_j->z)
+		};
 
-		g_i[0] += gx;
-		g_i[1] += gy;
-		g_i[2] += gz;
-		g_i[3] += gz * (pt_i->y - fr_i->y) - gy * (pt_i->z - fr_i->z);
-		g_i[4] += gx * (pt_i->z - fr_i->z) - gz * (pt_i->x - fr_i->x);
-		g_i[5] += gy * (pt_i->x - fr_i->x) - gx * (pt_i->y - fr_i->y);
+		vec_t zero = { 0.0, 0.0, 0.0 };
 
-		g_j[0] -= gx;
-		g_j[1] -= gy;
-		g_j[2] -= gz;
-		g_j[3] -= gz * (pt_j->y - fr_j->y) - gy * (pt_j->z - fr_j->z);
-		g_j[4] -= gx * (pt_j->z - fr_j->z) - gz * (pt_j->x - fr_j->x);
-		g_j[5] -= gy * (pt_j->x - fr_j->x) - gx * (pt_j->y - fr_j->y);
+		add_force_torque(fr_i, fr_j, VEC(pt_i->x), VEC(pt_j->x),
+				 &force, &zero, &zero);
 	}
 	return energy;
 }
 
 static double
-compute_disp_frag(struct efp *efp, int i, int j, double *grad)
+frag_frag_disp(struct efp *efp, int i, int j)
 {
 	double sum = 0.0;
 
@@ -147,7 +135,7 @@ compute_disp_frag(struct efp *efp, int i, int j, double *grad)
 
 	for (int ii = 0; ii < n_disp_i; ii++)
 		for (int jj = 0; jj < n_disp_j; jj++)
-			sum += compute_disp_pt(efp, i, ii, j, jj, grad);
+			sum += pt_pt_disp(efp, i, ii, j, jj);
 
 	return sum;
 }
@@ -162,7 +150,7 @@ efp_compute_disp(struct efp *efp)
 
 	for (int i = 0; i < efp->n_frag; i++)
 		for (int j = i + 1; j < efp->n_frag; j++)
-			energy -= compute_disp_frag(efp, i, j, efp->grad);
+			energy -= frag_frag_disp(efp, i, j);
 
 	efp->energy.dispersion = energy;
 	return EFP_RESULT_SUCCESS;
@@ -171,8 +159,12 @@ efp_compute_disp(struct efp *efp)
 void
 efp_update_disp(struct frag *frag, const mat_t *rotmat)
 {
-	for (int i = 0; i < frag->n_dynamic_polarizable_pts; i++)
-		move_pt(VEC(frag->x), rotmat,
-			VEC(frag->lib->dynamic_polarizable_pts[i].x),
-			VEC(frag->dynamic_polarizable_pts[i].x));
+	for (int i = 0; i < frag->n_dynamic_polarizable_pts; i++) {
+		const struct dynamic_polarizable_pt *pt_in =
+					frag->lib->dynamic_polarizable_pts + i;
+		struct dynamic_polarizable_pt *pt_out =
+					frag->dynamic_polarizable_pts + i;
+
+		move_pt(VEC(frag->x), rotmat, VEC(pt_in->x), VEC(pt_out->x));
+	}
 }

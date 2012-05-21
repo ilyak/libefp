@@ -27,24 +27,6 @@
 #include "efp_private.h"
 #include "elec.h"
 
-static double
-octupole_sum_xyz(const double *oct, const vec_t *dr, int axis)
-{
-	const double *pdr = (const double *)dr;
-	double sum = 0.0;
-
-	for (int a = 0; a < 3; a++)
-		for (int b = 0; b < 3; b++)
-			for (int c = 0; c < 3; c++) {
-				double o = oct[oct_idx(a, b, c)];
-				if (a == axis) sum += o * pdr[b] * pdr[c];
-				if (b == axis) sum += o * pdr[a] * pdr[c];
-				if (c == axis) sum += o * pdr[a] * pdr[b];
-			}
-
-	return sum;
-}
-
 static inline double
 get_damp_screen(struct efp *efp, double r_ij, double pi, double pj)
 {
@@ -91,115 +73,35 @@ charge_mult_energy(struct efp *efp, double charge, const vec_t *pos,
 }
 
 static void
-charge_quadrupole_grad(const vec_t *p1, double q1, const vec_t *com1,
-		       const vec_t *p2, const double *quad2, const vec_t *com2,
-		       double *grad1, double *grad2)
-{
-	vec_t dr = vec_sub(p1, p2);
-
-	double r = vec_len(&dr);
-	double r2 = r * r;
-	double r5 = r2 * r2 * r;
-	double r7 = r5 * r2;
-
-	double t1x = q1 / r5 * -2.0 * (dr.x * quad2[quad_idx(0, 0)] +
-				       dr.y * quad2[quad_idx(0, 1)] +
-				       dr.z * quad2[quad_idx(0, 2)]);
-	double t1y = q1 / r5 * -2.0 * (dr.x * quad2[quad_idx(1, 0)] +
-				       dr.y * quad2[quad_idx(1, 1)] +
-				       dr.z * quad2[quad_idx(1, 2)]);
-	double t1z = q1 / r5 * -2.0 * (dr.x * quad2[quad_idx(2, 0)] +
-				       dr.y * quad2[quad_idx(2, 1)] +
-				       dr.z * quad2[quad_idx(2, 2)]);
-
-	double g = 5.0 * q1 / r7 * quadrupole_sum(quad2, &dr);
-
-	double gx = g * dr.x + t1x;
-	double gy = g * dr.y + t1y;
-	double gz = g * dr.z + t1z;
-
-	grad1[0] -= gx;
-	grad1[1] -= gy;
-	grad1[2] -= gz;
-	grad1[3] -= gz * (p1->y - com1->y) - gy * (p1->z - com1->z);
-	grad1[4] -= gx * (p1->z - com1->z) - gz * (p1->x - com1->x);
-	grad1[5] -= gy * (p1->x - com1->x) - gx * (p1->y - com1->y);
-
-	grad2[0] += gx;
-	grad2[1] += gy;
-	grad2[2] += gz;
-	grad2[3] += gz * (p2->y - com2->y) - gy * (p2->z - com2->z);
-	grad2[4] += gx * (p2->z - com2->z) - gz * (p2->x - com2->x);
-	grad2[5] += gy * (p2->x - com2->x) - gx * (p2->y - com2->y);
-	grad2[3] += t1z * dr.y - t1y * dr.z;
-	grad2[4] += t1x * dr.z - t1z * dr.x;
-	grad2[5] += t1y * dr.x - t1x * dr.y;
-}
-
-static void
-charge_octupole_grad(const vec_t *p1, double q1, const vec_t *com1,
-		     const vec_t *p2, const double *oct2, const vec_t *com2,
-		     double *grad1, double *grad2)
-{
-	vec_t dr = vec_sub(p1, p2);
-
-	double r = vec_len(&dr);
-	double r2 = r * r;
-	double r7 = r2 * r2 * r2 * r;
-	double r9 = r7 * r2;
-
-	double t1x = q1 / r7 * octupole_sum_xyz(oct2, &dr, 0);
-	double t1y = q1 / r7 * octupole_sum_xyz(oct2, &dr, 1);
-	double t1z = q1 / r7 * octupole_sum_xyz(oct2, &dr, 2);
-
-	double g = 7.0 * q1 / r9 * octupole_sum(oct2, &dr);
-
-	double gx = -g * dr.x + t1x;
-	double gy = -g * dr.y + t1y;
-	double gz = -g * dr.z + t1z;
-
-	grad1[0] -= gx;
-	grad1[1] -= gy;
-	grad1[2] -= gz;
-	grad1[3] -= gz * (p1->y - com1->y) - gy * (p1->z - com1->z);
-	grad1[4] -= gx * (p1->z - com1->z) - gz * (p1->x - com1->x);
-	grad1[5] -= gy * (p1->x - com1->x) - gx * (p1->y - com1->y);
-
-	grad2[0] += gx;
-	grad2[1] += gy;
-	grad2[2] += gz;
-	grad2[3] += gz * (p2->y - com2->y) - gy * (p2->z - com2->z);
-	grad2[4] += gx * (p2->z - com2->z) - gz * (p2->x - com2->x);
-	grad2[5] += gy * (p2->x - com2->x) - gx * (p2->y - com2->y);
-	grad2[3] += t1z * dr.y - t1y * dr.z;
-	grad2[4] += t1x * dr.z - t1z * dr.x;
-	grad2[5] += t1y * dr.x - t1x * dr.y;
-}
-
-static void
-compute_elec_pt_grad(struct efp *efp)
+mult_mult_grad(struct efp *efp, int fr_i_idx, int fr_j_idx,
+	       int pt_i_idx, int pt_j_idx)
 {
 	/* monopole - monopole */
 
 	/* monopole - dipole */
-	/* q1,d2 + q2,d1  XXX from pol.c */
+
+	/* dipole - monopole */
 
 	/* monopole - quadrupole */
 
+	/* quadrupole - monopole */
+
 	/* monopole - octupole */
 
+	/* octupole - monopole */
+
 	/* dipole - dipole */
-	/* XXX from pol.c */
 
 	/* dipole - quadrupole */
-	/* XXX from pol.c */
+
+	/* quadrupole - dipole */
 
 	/* quadrupole - quadrupole */
 }
 
 static double
-compute_elec_pt(struct efp *efp, int fr_i_idx, int fr_j_idx,
-		int pt_i_idx, int pt_j_idx)
+mult_mult_energy(struct efp *efp, int fr_i_idx, int fr_j_idx,
+		 int pt_i_idx, int pt_j_idx)
 {
 	double energy = 0.0;
 
@@ -287,15 +189,11 @@ compute_elec_pt(struct efp *efp, int fr_i_idx, int fr_j_idx,
 	energy += (2.0 / r5 * q1q2 - 20.0 / r7 * q1q2dr +
 			35.0 / r9 * q1dr * q2dr) / 3.0;
 
-	/* gradient */
-	if (efp->grad)
-		compute_elec_pt_grad(efp);
-
 	return energy;
 }
 
 static double
-compute_elec_frag(struct efp *efp, int fr_i_idx, int fr_j_idx)
+frag_frag_elec(struct efp *efp, int fr_i_idx, int fr_j_idx)
 {
 	double energy = 0.0;
 
@@ -335,9 +233,13 @@ compute_elec_frag(struct efp *efp, int fr_i_idx, int fr_j_idx)
 
 	/* mult points - mult points */
 	for (int ii = 0; ii < fr_i->n_multipole_pts; ii++)
-		for (int jj = 0; jj < fr_j->n_multipole_pts; jj++)
-			energy += compute_elec_pt(efp, fr_i_idx, fr_j_idx,
-					ii, jj);
+		for (int jj = 0; jj < fr_j->n_multipole_pts; jj++) {
+			energy += mult_mult_energy(efp, fr_i_idx, fr_j_idx,
+						   ii, jj);
+
+			if (efp->opts.do_gradient)
+				mult_mult_grad(efp, fr_i_idx, fr_j_idx, ii, jj);
+		}
 
 	return energy;
 }
@@ -348,21 +250,21 @@ efp_compute_elec(struct efp *efp)
 	if (!(efp->opts.terms & EFP_TERM_ELEC))
 		return EFP_RESULT_SUCCESS;
 
-	if (efp->grad)
+	if (efp->opts.do_gradient)
 		return EFP_RESULT_NOT_IMPLEMENTED;
 
 	double energy = 0.0;
 
 	for (int i = 0; i < efp->n_frag; i++)
 		for (int j = i + 1; j < efp->n_frag; j++)
-			energy += compute_elec_frag(efp, i, j);
+			energy += frag_frag_elec(efp, i, j);
 
 	efp->energy.electrostatic = energy;
 	return EFP_RESULT_SUCCESS;
 }
 
 static void
-rotate_quad(const mat_t *rotmat, const double *in, double *out)
+rotate_quadrupole(const mat_t *rotmat, const double *in, double *out)
 {
 	double full_in[9], full_out[9];
 
@@ -378,7 +280,7 @@ rotate_quad(const mat_t *rotmat, const double *in, double *out)
 }
 
 static void
-rotate_oct(const mat_t *rotmat, const double *in, double *out)
+rotate_octupole(const mat_t *rotmat, const double *in, double *out)
 {
 	double full_in[27], full_out[27];
 
@@ -403,21 +305,23 @@ void
 efp_update_elec(struct frag *frag, const mat_t *rotmat)
 {
 	for (int i = 0; i < frag->n_multipole_pts; i++) {
+		const struct multipole_pt *pt_in =
+					frag->lib->multipole_pts + i;
+		struct multipole_pt *pt_out =
+					frag->multipole_pts + i;
+
 		/* move point position */
-		move_pt(VEC(frag->x), rotmat,
-			VEC(frag->lib->multipole_pts[i].x),
-			VEC(frag->multipole_pts[i].x));
+		move_pt(VEC(frag->x), rotmat, VEC(pt_in->x), VEC(pt_out->x));
 
 		/* rotate dipole */
-		mat_vec(rotmat, &frag->lib->multipole_pts[i].dipole,
-				&frag->multipole_pts[i].dipole);
+		mat_vec(rotmat, &pt_in->dipole, &pt_out->dipole);
 
 		/* rotate quadrupole */
-		rotate_quad(rotmat, frag->lib->multipole_pts[i].quadrupole,
-				frag->multipole_pts[i].quadrupole);
+		rotate_quadrupole(rotmat, pt_in->quadrupole,
+				  pt_out->quadrupole);
 
 		/* correction for Buckingham quadrupoles */
-		double *quad = frag->multipole_pts[i].quadrupole;
+		double *quad = pt_out->quadrupole;
 
 		double qtr = quad[quad_idx(0, 0)] +
 			     quad[quad_idx(1, 1)] +
@@ -431,11 +335,10 @@ efp_update_elec(struct frag *frag, const mat_t *rotmat)
 		quad[5] = 1.5 * quad[5];
 
 		/* rotate octupole */
-		rotate_oct(rotmat, frag->lib->multipole_pts[i].octupole,
-				frag->multipole_pts[i].octupole);
+		rotate_octupole(rotmat, pt_in->octupole, pt_out->octupole);
 
 		/* correction for Buckingham octupoles */
-		double *oct = frag->multipole_pts[i].octupole;
+		double *oct = pt_out->octupole;
 
 		double otrx = oct[oct_idx(0, 0, 0)] +
 			      oct[oct_idx(0, 1, 1)] +
@@ -494,7 +397,7 @@ efp_compute_ai_elec(struct efp *efp)
 	if (!(efp->opts.terms & EFP_TERM_AI_ELEC))
 		return EFP_RESULT_SUCCESS;
 
-	if (efp->grad)
+	if (efp->opts.do_gradient)
 		return EFP_RESULT_NOT_IMPLEMENTED;
 
 	double energy = 0.0;

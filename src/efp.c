@@ -57,13 +57,20 @@ efp_get_gradient(struct efp *efp, int n_grad, double *grad)
 	if (!grad)
 		return EFP_RESULT_INVALID_ARGUMENT;
 
-	if (!efp->grad)
+	if (!efp->opts.do_gradient)
 		return EFP_RESULT_GRADIENT_NOT_REQUESTED;
 
 	if (n_grad < 6 * efp->n_frag)
 		return EFP_RESULT_INVALID_ARRAY_SIZE;
 
-	memcpy(grad, efp->grad, 6 * efp->n_frag * sizeof(double));
+	for (int i = 0; i < efp->n_frag; i++) {
+		*grad++ = efp->frags[i].force.x;
+		*grad++ = efp->frags[i].force.y;
+		*grad++ = efp->frags[i].force.z;
+		*grad++ = efp->frags[i].torque.x;
+		*grad++ = efp->frags[i].torque.y;
+		*grad++ = efp->frags[i].torque.z;
+	}
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -271,8 +278,12 @@ efp_compute(struct efp *efp)
 	if (!initialized(efp))
 		return EFP_RESULT_NOT_INITIALIZED;
 
-	if (efp->grad)
-		memset(efp->grad, 0, 6 * efp->n_frag * sizeof(double));
+	if (efp->opts.do_gradient) {
+		for (int i = 0; i < efp->n_frag; i++) {
+			vec_zero(&efp->frags[i].force);
+			vec_zero(&efp->frags[i].torque);
+		}
+	}
 
 	enum efp_result res;
 
@@ -444,7 +455,6 @@ efp_shutdown(struct efp *efp)
 	free(efp->xr_block_frag_offset);
 	free(efp->disp_damp_overlap_offset);
 	free(efp->disp_damp_overlap);
-	free(efp->grad);
 	free(efp->qm_grad);
 	free(efp);
 }
@@ -704,12 +714,6 @@ efp_init(struct efp **out, const struct efp_opts *opts,
 
 		if ((res = copy_frag(efp->frags + i, frag)))
 			return res;
-	}
-
-	if (opts->do_gradient) {
-		efp->grad = malloc(6 * efp->n_frag * sizeof(double));
-		if (!efp->grad)
-			return EFP_RESULT_NO_MEMORY;
 	}
 
 	if ((res = setup_xr(efp)))

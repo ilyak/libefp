@@ -47,6 +47,7 @@ src_libefp_la_SOURCES = \
 	src/efp_private.h \
 	src/elec.c \
 	src/elec.h \
+	src/elec_grad.c \
 	src/math_util.h \
 	src/parse.c \
 	src/pol.c \
