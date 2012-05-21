@@ -29,14 +29,6 @@
 #include "efp_private.h"
 #include "elec.h"
 
-typedef enum efp_result (*term_fn)(struct efp *efp);
-
-static term_fn term_funcs[] = {
-	efp_compute_elec, efp_compute_pol, efp_compute_disp,
-	efp_compute_xr, efp_compute_chtr, efp_compute_ai_elec,
-	efp_compute_ai_disp, efp_compute_ai_xr, efp_compute_ai_chtr
-};
-
 static inline int
 initialized(struct efp *efp)
 {
@@ -262,6 +254,20 @@ efp_scf_update(struct efp *efp, double *energy)
 EFP_EXPORT enum efp_result
 efp_compute(struct efp *efp)
 {
+	typedef enum efp_result (*term_fn)(struct efp *);
+
+	static const term_fn term_list[] = {
+		efp_compute_elec,
+		efp_compute_pol,
+		efp_compute_disp,
+		efp_compute_xr,
+		efp_compute_chtr,
+		efp_compute_ai_elec,
+		efp_compute_ai_disp,
+		efp_compute_ai_xr,
+		efp_compute_ai_chtr
+	};
+
 	if (!initialized(efp))
 		return EFP_RESULT_NOT_INITIALIZED;
 
@@ -270,8 +276,8 @@ efp_compute(struct efp *efp)
 
 	enum efp_result res;
 
-	for (int i = 0; i < ARRAY_SIZE(term_funcs); i++)
-		if ((res = term_funcs[i](efp)))
+	for (int i = 0; i < ARRAY_SIZE(term_list); i++)
+		if ((res = term_list[i](efp)))
 			return res;
 
 	efp->energy.total = efp->energy.electrostatic +
