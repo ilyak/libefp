@@ -245,4 +245,92 @@ efp_quadrupole_quadrupole_grad(const double *quad1, const double *quad2,
 			       const vec_t *dr, vec_t *force, vec_t *add1,
 			       vec_t *add2)
 {
+	double r = vec_len(dr);
+	double r2 = r * r;
+	double r5 = r2 * r2 * r;
+	double r7 = r5 * r2;
+	double r9 = r7 * r2;
+	double r11 = r9 * r2;
+
+	double q1ss = quadrupole_sum(quad1, dr);
+	double q2ss = quadrupole_sum(quad2, dr);
+
+	double q1s[3] = { 0.0, 0.0, 0.0 };
+	double q2s[3] = { 0.0, 0.0, 0.0 };
+
+	double q1sq2s = 0.0;
+
+	for (int a = 0; a < 3; a++) {
+		for (int b = 0; b < 3; b++) {
+			q1s[b] += quad1[quad_idx(b, a)] * vec_el(dr, a);
+			q2s[b] += quad2[quad_idx(b, a)] * vec_el(dr, a);
+		}
+		q1sq2s += q1s[a] * q2s[a];
+	}
+
+	double q1q2 = 0.0;
+
+	for (int a = 0; a < 3; a++)
+		for (int b = 0; b < 3; b++)
+			q1q2 += quad1[quad_idx(a, b)] * quad2[quad_idx(a, b)];
+
+	double g = (2.0 * 5.0 / r7 * q1q2 - 20.0 * 7.0 / r9 * q1sq2s +
+			35.0 * 9.0 / r11 * q1ss * q2ss) / 3.0;
+
+	double t1x = 0.0, t1y = 0.0, t1z = 0.0;
+
+	for (int a = 0; a < 3; a++)
+		for (int b = 0; b < 3; b++) {
+			int ab = quad_idx(a, b);
+			double dra = vec_el(dr, a);
+			t1x += (quad1[quad_idx(0, b)] * quad2[ab] +
+				quad1[ab] * quad2[quad_idx(0, b)]) * dra;
+			t1y += (quad1[quad_idx(1, b)] * quad2[ab] +
+				quad1[ab] * quad2[quad_idx(1, b)]) * dra;
+			t1z += (quad1[quad_idx(2, b)] * quad2[ab] +
+				quad1[ab] * quad2[quad_idx(2, b)]) * dra;
+		}
+
+	force->x = g * dr->x + 20.0 / 3.0 / r7 * t1x -
+			70.0 / 3.0 / r9 * (q1s[0] * q2ss + q2s[0] * q1ss);
+	force->y = g * dr->y + 20.0 / 3.0 / r7 * t1y -
+			70.0 / 3.0 / r9 * (q1s[1] * q2ss + q2s[1] * q1ss);
+	force->z = g * dr->z + 20.0 / 3.0 / r7 * t1z -
+			70.0 / 3.0 / r9 * (q1s[2] * q2ss + q2s[2] * q1ss);
+
+	double q1q2tt[3][3];
+	memset(q1q2tt, 0, 9 * sizeof(double));
+
+	for (int a = 0; a < 3; a++)
+	for (int b = 0; b < 3; b++)
+	for (int c = 0; c < 3; c++) {
+		double dra = vec_el(dr, a);
+		double drc = vec_el(dr, c);
+		q1q2tt[b][c] += quad1[quad_idx(a, b)] *
+				(-10.0 / r7 * (drc * q2s[a] + dra * q2s[c]) +
+				  35.0 / r9 * dra * drc * q2ss +
+				   2.0 / r5 * quad2[quad_idx(a, c)]);
+	}
+
+	add1->x = -2.0 / 3.0 * (q1q2tt[1][2] - q1q2tt[2][1]);
+	add1->y = -2.0 / 3.0 * (q1q2tt[2][0] - q1q2tt[0][2]);
+	add1->z = -2.0 / 3.0 * (q1q2tt[0][1] - q1q2tt[1][0]);
+
+	double q2q1tt[3][3];
+	memset(q2q1tt, 0, 9 * sizeof(double));
+
+	for (int a = 0; a < 3; a++)
+	for (int b = 0; b < 3; b++)
+	for (int c = 0; c < 3; c++) {
+		double dra = vec_el(dr, a);
+		double drc = vec_el(dr, c);
+		q2q1tt[b][c] += quad2[quad_idx(a, b)] *
+				(-10.0 / r7 * (drc * q1s[a] + dra * q1s[c]) +
+				  35.0 / r9 * dra * drc * q1ss +
+				   2.0 / r5 * quad1[quad_idx(a, c)]);
+	}
+
+	add2->x = -2.0 / 3.0 * (q2q1tt[1][2] - q2q1tt[2][1]);
+	add2->y = -2.0 / 3.0 * (q2q1tt[2][0] - q2q1tt[0][2]);
+	add2->z = -2.0 / 3.0 * (q2q1tt[0][1] - q2q1tt[1][0]);
 }
