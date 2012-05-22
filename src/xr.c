@@ -84,8 +84,8 @@ get_block_frag_count(struct efp *efp, int i)
 }
 
 static double
-compute_xr_frag(struct efp *efp, int frag_i, int frag_j, int offset,
-		const struct efp_st_data *st)
+frag_frag_xr(struct efp *efp, int frag_i, int frag_j, int offset,
+	     const struct efp_st_data *st)
 {
 	struct frag *fr_i = efp->frags + frag_i;
 	struct frag *fr_j = efp->frags + frag_j;
@@ -241,8 +241,8 @@ compute_xr_block(struct efp *efp, int block_i, int block_j, double *energy)
 			int frag_i = i + efp->xr_block_frag_offset[block_i];
 			int frag_j = j + efp->xr_block_frag_offset[block_j];
 
-			*energy += compute_xr_frag(efp, frag_i, frag_j,
-						   offset, &st);
+			*energy += frag_frag_xr(efp, frag_i, frag_j,
+						offset, &st);
 
 			offset += frags_j[j].xr_wf_size;
 		}

@@ -30,7 +30,7 @@
 #include "disp.h"
 
 static double
-damp_tt(double r)
+get_damp_tt(double r)
 {
 	static const double a = 1.5; /* Tang-Toennies damping parameter */
 
@@ -42,7 +42,7 @@ damp_tt(double r)
 }
 
 static double
-damp_tt_grad(double r)
+get_damp_tt_grad(double r)
 {
 	static const double a = 1.5; /* Tang-Toennies damping parameter */
 
@@ -54,44 +54,50 @@ damp_tt_grad(double r)
 }
 
 static double
-damp_overlap(struct efp *efp, int frag_i, int frag_j, int pt_i, int pt_j)
+get_damp_overlap(struct efp *efp, int frag_i, int frag_j, int pt_i, int pt_j)
 {
 	int idx = disp_damp_overlap_idx(efp, frag_i, frag_j, pt_i, pt_j);
 	return efp->disp_damp_overlap[idx];
 }
 
 static double
-damp_overlap_grad(struct efp *efp, int frag_i, int frag_j, int pt_i, int pt_j)
+get_damp_overlap_grad(struct efp *efp, int frag_i, int frag_j,
+		      int pt_i, int pt_j)
 {
 	/* XXX */
 	assert(0);
 }
 
 static double
-pt_pt_disp(struct efp *efp, int i, int ii, int j, int jj)
+point_point_disp(struct efp *efp, int fr_i_idx, int fr_j_idx,
+		 int pt_i_idx, int pt_j_idx)
 {
-	struct frag *fr_i = efp->frags + i;
-	struct frag *fr_j = efp->frags + j;
+	struct frag *fr_i = efp->frags + fr_i_idx;
+	struct frag *fr_j = efp->frags + fr_j_idx;
 
 	const struct dynamic_polarizable_pt *pt_i =
-				fr_i->dynamic_polarizable_pts + ii;
+				fr_i->dynamic_polarizable_pts + pt_i_idx;
 	const struct dynamic_polarizable_pt *pt_j =
-				fr_j->dynamic_polarizable_pts + jj;
+				fr_j->dynamic_polarizable_pts + pt_j_idx;
 
 	double sum = 0.0;
+
 	for (int k = 0; k < ARRAY_SIZE(disp_weights); k++)
 		sum += disp_weights[k] * pt_i->trace[k] * pt_j->trace[k];
 
 	double r = vec_dist(VEC(pt_i->x), VEC(pt_j->x));
-	double r2 = r * r, r6 = r2 * r2 * r2;
+	double r2 = r * r;
+	double r6 = r2 * r2 * r2;
 
 	double damp;
+
 	switch (efp->opts.disp_damp) {
 	case EFP_DISP_DAMP_TT:
-		damp = damp_tt(r);
+		damp = get_damp_tt(r);
 		break;
 	case EFP_DISP_DAMP_OVERLAP:
-		damp = damp_overlap(efp, i, j, ii, jj);
+		damp = get_damp_overlap(efp, fr_i_idx, fr_j_idx,
+					pt_i_idx, pt_j_idx);
 		break;
 	}
 
@@ -102,10 +108,11 @@ pt_pt_disp(struct efp *efp, int i, int ii, int j, int jj)
 
 		switch (efp->opts.disp_damp) {
 		case EFP_DISP_DAMP_TT:
-			gdamp = damp_tt_grad(r);
+			gdamp = get_damp_tt_grad(r);
 			break;
 		case EFP_DISP_DAMP_OVERLAP:
-			gdamp = damp_overlap_grad(efp, i, j, ii, jj);
+			gdamp = get_damp_overlap_grad(efp, fr_i_idx, fr_j_idx,
+						      pt_i_idx, pt_j_idx);
 			break;
 		}
 
@@ -126,16 +133,16 @@ pt_pt_disp(struct efp *efp, int i, int ii, int j, int jj)
 }
 
 static double
-frag_frag_disp(struct efp *efp, int i, int j)
+frag_frag_disp(struct efp *efp, int frag_i, int frag_j)
 {
 	double sum = 0.0;
 
-	int n_disp_i = efp->frags[i].n_dynamic_polarizable_pts;
-	int n_disp_j = efp->frags[j].n_dynamic_polarizable_pts;
+	int n_disp_i = efp->frags[frag_i].n_dynamic_polarizable_pts;
+	int n_disp_j = efp->frags[frag_j].n_dynamic_polarizable_pts;
 
 	for (int ii = 0; ii < n_disp_i; ii++)
 		for (int jj = 0; jj < n_disp_j; jj++)
-			sum += pt_pt_disp(efp, i, ii, j, jj);
+			sum += point_point_disp(efp, frag_i, frag_j, ii, jj);
 
 	return sum;
 }
