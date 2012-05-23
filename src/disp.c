@@ -101,7 +101,7 @@ point_point_disp(struct efp *efp, int fr_i_idx, int fr_j_idx,
 		break;
 	}
 
-	double energy = 4.0 / 3.0 * sum * damp / r6;
+	double energy = -4.0 / 3.0 * sum * damp / r6;
 
 	if (efp->opts.do_gradient) {
 		double gdamp;
@@ -157,7 +157,7 @@ efp_compute_disp(struct efp *efp)
 
 	for (int i = 0; i < efp->n_frag; i++)
 		for (int j = i + 1; j < efp->n_frag; j++)
-			energy -= frag_frag_disp(efp, i, j);
+			energy += frag_frag_disp(efp, i, j);
 
 	efp->energy.dispersion = energy;
 	return EFP_RESULT_SUCCESS;
