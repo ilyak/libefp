@@ -38,7 +38,7 @@ static const double disp_weights[] = {
 
 static inline int
 disp_damp_overlap_idx(struct efp *efp, int frag_i, int frag_j,
-				int pt_i, int pt_j)
+		      int pt_i, int pt_j)
 {
 	int n_disp = efp->disp_damp_overlap_offset[efp->n_frag];
 
