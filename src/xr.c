@@ -71,7 +71,7 @@ calc_disp_damp_overlap(struct efp *efp, int frag_i, int frag_j,
 }
 
 static inline double
-get_charge_pen(double s_ij, double r_ij)
+get_charge_penetration(double s_ij, double r_ij)
 {
 	double ln_s = log(fabs(s_ij));
 	return -2.0 * s_ij * s_ij / r_ij / sqrt(-2.0 * ln_s);
@@ -128,7 +128,7 @@ frag_frag_xr(struct efp *efp, int frag_i, int frag_j, int offset,
 			if ((efp->opts.terms & EFP_TERM_ELEC) &&
 			    (efp->opts.elec_damp == EFP_ELEC_DAMP_OVERLAP))
 				efp->energy.charge_penetration +=
-						get_charge_pen(s_ij, r_ij);
+					get_charge_penetration(s_ij, r_ij);
 
 			/* xr - first part */
 			if (fabs(s_ij) > 1.0e-6)
