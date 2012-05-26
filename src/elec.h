@@ -83,6 +83,9 @@ octupole_sum(const double *oct, const vec_t *dr)
 	return sum;
 }
 
+void efp_charge_charge_grad(double q1, double q2, const vec_t *dr,
+			    vec_t *force, vec_t *add1, vec_t *add2);
+
 void efp_charge_dipole_grad(double q1, const vec_t *d2, const vec_t *dr,
 			    vec_t *force, vec_t *add1, vec_t *add2);
 

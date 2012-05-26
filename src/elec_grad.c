@@ -46,6 +46,28 @@ octupole_sum_xyz(const double *oct, const vec_t *dr, int axis)
 }
 
 void
+efp_charge_charge_grad(double q1, double q2, const vec_t *dr,
+		       vec_t *force, vec_t *add1, vec_t *add2)
+{
+	double r = vec_len(dr);
+	double r3 = r * r * r;
+
+	double g = q1 * q2 / r3;
+
+	force->x = g * dr->x;
+	force->y = g * dr->y;
+	force->z = g * dr->z;
+
+	add1->x = 0.0;
+	add1->y = 0.0;
+	add1->z = 0.0;
+
+	add2->x = 0.0;
+	add2->y = 0.0;
+	add2->z = 0.0;
+}
+
+void
 efp_charge_dipole_grad(double q1, const vec_t *d2, const vec_t *dr,
 		       vec_t *force, vec_t *add1, vec_t *add2)
 {
@@ -74,8 +96,9 @@ efp_charge_quadrupole_grad(double q1, const double *quad2, const vec_t *dr,
 			   vec_t *force, vec_t *add1, vec_t *add2)
 {
 	double r = vec_len(dr);
-	double r5 = r * r * r * r * r;
-	double r7 = r5 * r * r;
+	double r2 = r * r;
+	double r5 = r2 * r2 * r;
+	double r7 = r5 * r2;
 
 	double t1x = q1 / r5 * -2.0 * (dr->x * quad2[quad_idx(0, 0)] +
 				       dr->y * quad2[quad_idx(0, 1)] +
@@ -125,9 +148,9 @@ efp_charge_octupole_grad(double q1, const double *oct2, const vec_t *dr,
 	add1->y = 0.0;
 	add1->z = 0.0;
 
-	add2->x = t1z * dr->y - t1y * dr->z;
-	add2->y = t1x * dr->z - t1z * dr->x;
-	add2->z = t1y * dr->x - t1x * dr->y;
+	add2->x = t1y * dr->z - t1z * dr->y;
+	add2->y = t1z * dr->x - t1x * dr->z;
+	add2->z = t1x * dr->y - t1y * dr->x;
 }
 
 void
@@ -189,11 +212,8 @@ efp_dipole_quadrupole_grad(const vec_t *d1, const double *quad2,
 	double d1dr = vec_dot(d1, dr);
 	double q2s = quadrupole_sum(quad2, dr);
 
-	double a5 = 2.0 / r5;
-	double a7 = 5.0 / r7;
-
 	double t1 = d1->x * q2sx + d1->y * q2sy + d1->z * q2sz;
-	double t2 = -2.0 * a7 * t1 + 35.0 / r9 * q2s * d1dr;
+	double t2 = -10.0 / r7 * t1 + 35.0 / r9 * q2s * d1dr;
 
 	double d1q2x = d1->x * quad2[quad_idx(0, 0)] +
 		       d1->y * quad2[quad_idx(0, 1)] +
@@ -215,28 +235,28 @@ efp_dipole_quadrupole_grad(const vec_t *d1, const double *quad2,
 		       dr->y * quad2[quad_idx(2, 1)] +
 		       dr->z * quad2[quad_idx(2, 2)];
 
-	force->x = t2 * dr->x + a5 * d1q2x - a7 * q2s * d1->x -
-			2.0 * a7 * q2xdr * d1dr;
-	force->y = t2 * dr->y + a5 * d1q2y - a7 * q2s * d1->y -
-			2.0 * a7 * q2ydr * d1dr;
-	force->z = t2 * dr->z + a5 * d1q2z - a7 * q2s * d1->z -
-			2.0 * a7 * q2zdr * d1dr;
+	force->x = t2 * dr->x + 2.0 / r5 * d1q2x -
+			5.0 / r7 * (q2s * d1->x + 2.0 * q2xdr * d1dr);
+	force->y = t2 * dr->y + 2.0 / r5 * d1q2y -
+			5.0 / r7 * (q2s * d1->y + 2.0 * q2ydr * d1dr);
+	force->z = t2 * dr->z + 2.0 / r5 * d1q2z -
+			5.0 / r7 * (q2s * d1->z + 2.0 * q2zdr * d1dr);
 
-	add1->x = a5 * (d1->z * q2ydr - d1->y * q2zdr) +
-			a7 * q2s * (dr->z * d1->y - dr->y * d1->z);
-	add1->y = a5 * (d1->x * q2zdr - d1->z * q2xdr) +
-			a7 * q2s * (dr->x * d1->z - dr->z * d1->x);
-	add1->z = a5 * (d1->y * q2xdr - d1->x * q2ydr) +
-			a7 * q2s * (dr->y * d1->x - dr->x * d1->y);
+	add1->x = 2.0 / r5 * (d1->z * q2ydr - d1->y * q2zdr) +
+			5.0 / r7 * q2s * (dr->z * d1->y - dr->y * d1->z);
+	add1->y = 2.0 / r5 * (d1->x * q2zdr - d1->z * q2xdr) +
+			5.0 / r7 * q2s * (dr->x * d1->z - dr->z * d1->x);
+	add1->z = 2.0 / r5 * (d1->y * q2xdr - d1->x * q2ydr) +
+			5.0 / r7 * q2s * (dr->y * d1->x - dr->x * d1->y);
 
-	add2->x = -2.0 * a7 * d1dr * (q2ydr * dr->z - q2zdr * dr->y) -
-			a5 * ((q2zdr * d1->y + dr->y * d1q2z) -
+	add2->x = -10.0 / r7 * d1dr * (q2ydr * dr->z - q2zdr * dr->y) -
+			2.0 / r5 * ((q2zdr * d1->y + dr->y * d1q2z) -
 			      (q2ydr * d1->z + dr->z * d1q2y));
-	add2->y = -2.0 * a7 * d1dr * (q2zdr * dr->x - q2xdr * dr->z) -
-			a5 * ((q2xdr * d1->z + dr->z * d1q2x) -
+	add2->y = -10.0 / r7 * d1dr * (q2zdr * dr->x - q2xdr * dr->z) -
+			2.0 / r5 * ((q2xdr * d1->z + dr->z * d1q2x) -
 			      (q2zdr * d1->x + dr->x * d1q2z));
-	add2->z = -2.0 * a7 * d1dr * (q2xdr * dr->y - q2ydr * dr->x) -
-			a5 * ((q2ydr * d1->x + dr->x * d1q2y) -
+	add2->z = -10.0 / r7 * d1dr * (q2xdr * dr->y - q2ydr * dr->x) -
+			2.0 / r5 * ((q2ydr * d1->x + dr->x * d1q2y) -
 			      (q2xdr * d1->y + dr->y * d1q2x));
 }
 
@@ -274,8 +294,8 @@ efp_quadrupole_quadrupole_grad(const double *quad1, const double *quad2,
 		for (int b = 0; b < 3; b++)
 			q1q2 += quad1[quad_idx(a, b)] * quad2[quad_idx(a, b)];
 
-	double g = (2.0 * 5.0 / r7 * q1q2 - 20.0 * 7.0 / r9 * q1sq2s +
-			35.0 * 9.0 / r11 * q1ss * q2ss) / 3.0;
+	double g = 30.0 / r7 * q1q2 - 420.0 / r9 * q1sq2s +
+			945.0 / r11 * q1ss * q2ss;
 
 	double t1x = 0.0, t1y = 0.0, t1z = 0.0;
 
@@ -291,12 +311,12 @@ efp_quadrupole_quadrupole_grad(const double *quad1, const double *quad2,
 				quad1[ab] * quad2[quad_idx(2, b)]) * dra;
 		}
 
-	force->x = g * dr->x + 20.0 / 3.0 / r7 * t1x -
-			70.0 / 3.0 / r9 * (q1s[0] * q2ss + q2s[0] * q1ss);
-	force->y = g * dr->y + 20.0 / 3.0 / r7 * t1y -
-			70.0 / 3.0 / r9 * (q1s[1] * q2ss + q2s[1] * q1ss);
-	force->z = g * dr->z + 20.0 / 3.0 / r7 * t1z -
-			70.0 / 3.0 / r9 * (q1s[2] * q2ss + q2s[2] * q1ss);
+	force->x = (g * dr->x + 60.0 / r7 * t1x -
+			210.0 / r9 * (q1s[0] * q2ss + q2s[0] * q1ss)) / 9.0;
+	force->y = (g * dr->y + 60.0 / r7 * t1y -
+			210.0 / r9 * (q1s[1] * q2ss + q2s[1] * q1ss)) / 9.0;
+	force->z = (g * dr->z + 60.0 / r7 * t1z -
+			210.0 / r9 * (q1s[2] * q2ss + q2s[2] * q1ss)) / 9.0;
 
 	double q1q2tt[3][3];
 	memset(q1q2tt, 0, 9 * sizeof(double));

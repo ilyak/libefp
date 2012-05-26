@@ -103,7 +103,7 @@ point_point_disp(struct efp *efp, int fr_i_idx, int fr_j_idx,
 
 	double energy = -4.0 / 3.0 * sum * damp / r6;
 
-	if (efp->opts.do_gradient) {
+	if (efp->do_gradient) {
 		double gdamp;
 
 		switch (efp->opts.disp_damp) {
@@ -124,10 +124,8 @@ point_point_disp(struct efp *efp, int fr_i_idx, int fr_j_idx,
 			g * (pt_i->z - pt_j->z)
 		};
 
-		vec_t zero = { 0.0, 0.0, 0.0 };
-
 		add_force_torque(fr_i, fr_j, VEC(pt_i->x), VEC(pt_j->x),
-				 &force, &zero, &zero);
+				 &force);
 	}
 	return energy;
 }

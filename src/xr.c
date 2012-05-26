@@ -83,6 +83,11 @@ get_block_frag_count(struct efp *efp, int i)
 	return efp->xr_block_frag_offset[i + 1] - efp->xr_block_frag_offset[i];
 }
 
+static void
+frag_frag_xr_grad(struct efp *efp)
+{
+}
+
 static double
 frag_frag_xr(struct efp *efp, int frag_i, int frag_j, int offset,
 	     const struct efp_st_data *st)
@@ -171,6 +176,10 @@ frag_frag_xr(struct efp *efp, int frag_i, int frag_j, int offset,
 		}
 	}
 	energy *= 2.0;
+
+	if (efp->do_gradient)
+		frag_frag_xr_grad(efp);
+
 	return energy;
 }
 
@@ -211,13 +220,12 @@ compute_xr_block(struct efp *efp, int block_i, int block_j, double *energy)
 		for (int a = 0; a < frags_j[j].n_atoms; a++)
 			block.atoms_j[idx++] = frags_j[j].atoms[a];
 
-	int do_grad = efp->opts.do_gradient;
 	size_t size = st.size_i * st.size_j * sizeof(double);
 
-	st.s = malloc((do_grad ? 4 : 1) * size);
-	st.t = malloc((do_grad ? 4 : 1) * size);
+	st.s = malloc((efp->do_gradient ? 4 : 1) * size);
+	st.t = malloc((efp->do_gradient ? 4 : 1) * size);
 
-	if (do_grad) {
+	if (efp->do_gradient) {
 		st.sx = st.s + 1 * size;
 		st.sy = st.s + 2 * size;
 		st.sz = st.s + 3 * size;
@@ -226,8 +234,8 @@ compute_xr_block(struct efp *efp, int block_i, int block_j, double *energy)
 		st.tz = st.t + 3 * size;
 	}
 
-	if ((res = efp->callbacks.get_st_integrals(&block, do_grad, &st,
-				efp->callbacks.get_st_integrals_user_data)))
+	if ((res = efp->callbacks.get_st_integrals(&block, efp->do_gradient,
+			&st, efp->callbacks.get_st_integrals_user_data)))
 		goto fail;
 
 	for (int i = 0, offset = 0; i < n_block_i; i++) {
@@ -261,7 +269,7 @@ efp_compute_xr(struct efp *efp)
 	if (!(efp->opts.terms & EFP_TERM_XR))
 		return EFP_RESULT_SUCCESS;
 
-	if (efp->opts.do_gradient)
+	if (efp->do_gradient)
 		return EFP_RESULT_NOT_IMPLEMENTED;
 
 	enum efp_result res;

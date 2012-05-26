@@ -142,9 +142,6 @@ struct efp_opts {
 	/** Specifies which energy terms to compute. */
 	enum efp_term terms;
 
-	/** Set to nonzero to request gradient computation. */
-	int do_gradient;
-
 	/** Dispersion damping type (see #efp_disp_damp). */
 	enum efp_disp_damp disp_damp;
 
@@ -377,12 +374,12 @@ enum efp_result efp_update_qm_data(struct efp *efp,
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_update_fragments(struct efp *efp, const double *xyzabc);
+enum efp_result efp_set_coordinates(struct efp *efp, const double *xyzabc);
 
 /**
  * Update positions and orientations of effective fragments.
  *
- * This is a convenience function. It does the same as efp_update_fragments.
+ * This is a convenience function. It does the same as efp_set_coordinates.
  * However to specify position and orientation of fragments it takes
  * coordinates of 3 points in space for each fragment. For each fragment point
  * 1 and first atom of fragment are made to coincide. The vector connecting
@@ -398,7 +395,7 @@ enum efp_result efp_update_fragments(struct efp *efp, const double *xyzabc);
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_update_fragments_2(struct efp *efp, const double *pts);
+enum efp_result efp_set_coordinates_2(struct efp *efp, const double *pts);
 
 /**
  * Initialize SCF computation.
@@ -429,10 +426,11 @@ enum efp_result efp_scf_update(struct efp *efp, double *energy);
  * This call can take long time to complete.
  *
  * \param[in] efp The efp structure.
+ * \param[in] do_gradient Also compute gradient if nonzero value specified.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_compute(struct efp *efp);
+enum efp_result efp_compute(struct efp *efp, int do_gradient);
 
 /**
  * Compute one-electron contributions to QM Hamiltonian from EFP fragments.

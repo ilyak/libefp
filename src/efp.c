@@ -57,7 +57,7 @@ efp_get_gradient(struct efp *efp, int n_grad, double *grad)
 	if (!grad)
 		return EFP_RESULT_INVALID_ARGUMENT;
 
-	if (!efp->opts.do_gradient)
+	if (!efp->do_gradient)
 		return EFP_RESULT_GRADIENT_NOT_REQUESTED;
 
 	if (n_grad < 6 * efp->n_frag)
@@ -138,7 +138,7 @@ euler_to_matrix(double a, double b, double c, mat_t *out)
 }
 
 EFP_EXPORT enum efp_result
-efp_update_fragments(struct efp *efp, const double *xyzabc)
+efp_set_coordinates(struct efp *efp, const double *xyzabc)
 {
 	if (!initialized(efp))
 		return EFP_RESULT_NOT_INITIALIZED;
@@ -208,7 +208,7 @@ points_to_matrix(const double *pts, mat_t *rotmat)
 }
 
 EFP_EXPORT enum efp_result
-efp_update_fragments_2(struct efp *efp, const double *pts)
+efp_set_coordinates_2(struct efp *efp, const double *pts)
 {
 	if (!initialized(efp))
 		return EFP_RESULT_NOT_INITIALIZED;
@@ -259,7 +259,7 @@ efp_scf_update(struct efp *efp, double *energy)
 }
 
 EFP_EXPORT enum efp_result
-efp_compute(struct efp *efp)
+efp_compute(struct efp *efp, int do_gradient)
 {
 	typedef enum efp_result (*term_fn)(struct efp *);
 
@@ -278,7 +278,9 @@ efp_compute(struct efp *efp)
 	if (!initialized(efp))
 		return EFP_RESULT_NOT_INITIALIZED;
 
-	if (efp->opts.do_gradient) {
+	efp->do_gradient = do_gradient;
+
+	if (do_gradient) {
 		for (int i = 0; i < efp->n_frag; i++) {
 			vec_zero(&efp->frags[i].force);
 			vec_zero(&efp->frags[i].torque);

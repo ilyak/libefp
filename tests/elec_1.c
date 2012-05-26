@@ -27,20 +27,23 @@
 #include "test_common.h"
 #include "geometry_1.h"
 
-static const double ref_gradient[] = { /* from Q-Chem 4.0 */
-	0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-	0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+static const double ref_gradient[] = { /* from GAMESS */
+	 0.000102854,   -0.000040496,   -0.000047401,
+	 0.000062717,    0.000541541,   -0.000262925,
+	-0.000102854,    0.000040496,    0.000047401,
+	-0.000062717,   -0.000093667,   -0.000119704
 };
 
 static const struct test_data test_data = {
 	.potential_files = potential_files,
 	.fragname = fragname,
 	.geometry_xyzabc = xyzabc,
-	.ref_energy = 0.000255425403, /* from Q-Chem 4.0 */
+	.ref_energy = 0.0002554254, /* from GAMESS */
+	.do_gradient = 1,
+	.test_numerical_gradient = 1,
 	.ref_gradient = ref_gradient,
 	.opts = {
-		.terms = EFP_TERM_ELEC,
-		.do_gradient = 0
+		.terms = EFP_TERM_ELEC
 	}
 };
 

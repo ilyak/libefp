@@ -56,6 +56,12 @@ vec_zero(vec_t *vec)
 	vec->x = 0.0, vec->y = 0.0, vec->z = 0.0;
 }
 
+static inline void
+vec_negate(vec_t *vec)
+{
+	vec->x = -vec->x, vec->y = -vec->y, vec->z = -vec->z;
+}
+
 static inline double
 vec_dot(const vec_t *a, const vec_t *b)
 {

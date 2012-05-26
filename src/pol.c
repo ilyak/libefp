@@ -330,8 +330,9 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 			efp_charge_dipole_grad(at_j->znuc, &dipole_i, &dr,
 					       &force, &add_j, &add_i);
 
-			add_force_torque(fr_i, fr_j, VEC(pt_i->x), VEC(at_j->x),
-					 &force, &add_i, &add_j);
+			add_force_torque_2(fr_i, fr_j,
+					   VEC(pt_i->x), VEC(at_j->x),
+					   &force, &add_i, &add_j);
 		}
 
 		/* induced dipole - multipoles */
@@ -345,22 +346,25 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 			efp_charge_dipole_grad(pt_j->monopole, &dipole_i, &dr,
 					       &force, &add_j, &add_i);
 
-			add_force_torque(fr_i, fr_j, VEC(pt_i->x), VEC(pt_j->x),
-					 &force, &add_i, &add_j);
+			add_force_torque_2(fr_i, fr_j,
+					   VEC(pt_i->x), VEC(pt_j->x),
+					   &force, &add_i, &add_j);
 
 			/* induced dipole - dipole */
 			efp_dipole_dipole_grad(&dipole_i, &pt_j->dipole, &dr,
 					       &force, &add_i, &add_j);
 
-			add_force_torque(fr_i, fr_j, VEC(pt_i->x), VEC(pt_j->x),
-					 &force, &add_i, &add_j);
+			add_force_torque_2(fr_i, fr_j,
+					   VEC(pt_i->x), VEC(pt_j->x),
+					   &force, &add_i, &add_j);
 
 			/* induced dipole - quadrupole */
 			efp_dipole_quadrupole_grad(&dipole_i, pt_j->quadrupole,
 						   &dr, &force, &add_i, &add_j);
 
-			add_force_torque(fr_i, fr_j, VEC(pt_i->x), VEC(pt_j->x),
-					 &force, &add_i, &add_j);
+			add_force_torque_2(fr_i, fr_j,
+					   VEC(pt_i->x), VEC(pt_j->x),
+					   &force, &add_i, &add_j);
 
 			/* octupole-polarizability interactions are ignored */
 		}
@@ -371,13 +375,33 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 					fr_j->polarizable_pts + k;
 
 			vec_t dr = vec_sub(VEC(pt_j->x), VEC(pt_i->x));
-			vec_t force, add_i, add_j;
 
-			efp_dipole_dipole_grad(&dipole_i, &pt_j->induced_dipole,
-					       &dr, &force, &add_i, &add_j);
+			vec_t force1, add_i1, add_j1;
+			vec_t force2, add_i2, add_j2;
 
-			add_force_torque(fr_i, fr_j, VEC(pt_i->x), VEC(pt_j->x),
-					 &force, &add_i, &add_j);
+			efp_dipole_dipole_grad(&pt_i->induced_dipole,
+					       &pt_j->induced_dipole_conj,
+					       &dr, &force1, &add_i1, &add_j1);
+
+			efp_dipole_dipole_grad(&pt_i->induced_dipole_conj,
+					       &pt_j->induced_dipole,
+					       &dr, &force2, &add_i2, &add_j2);
+
+			vec_t force = { 0.5 * (force1.x + force2.x),
+					0.5 * (force1.y + force2.y),
+					0.5 * (force1.z + force2.z) };
+
+			vec_t add_i = { 0.5 * (add_i1.x + add_i2.x),
+					0.5 * (add_i1.y + add_i2.y),
+					0.5 * (add_i1.z + add_i2.z) };
+
+			vec_t add_j = { 0.5 * (add_j1.x + add_j2.x),
+					0.5 * (add_j1.y + add_j2.y),
+					0.5 * (add_j1.z + add_j2.z) };
+
+			add_force_torque_2(fr_i, fr_j,
+					   VEC(pt_i->x), VEC(pt_j->x),
+					   &force, &add_i, &add_j);
 		}
 	}
 
@@ -402,7 +426,7 @@ efp_compute_pol(struct efp *efp)
 
 	efp->energy.polarization = efp_compute_pol_energy(efp);
 
-	if (efp->opts.do_gradient)
+	if (efp->do_gradient)
 		compute_grad(efp);
 
 	return EFP_RESULT_SUCCESS;

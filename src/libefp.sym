@@ -3,8 +3,8 @@ global:
 	efp_banner;
 	efp_opts_default;
 	efp_init;
-	efp_update_fragments;
-	efp_update_fragments_2;
+	efp_set_coordinates;
+	efp_set_coordinates_2;
 	efp_scf_init;
 	efp_scf_update;
 	efp_compute;

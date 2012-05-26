@@ -154,6 +154,9 @@ struct efp {
 	/* user parameters for this EFP computation */
 	struct efp_opts opts;
 
+	/* gradient will also be computed if nonzero */
+	int do_gradient;
+
 	/* information about ab initio region */
 	struct efp_qm_data qm_data;
 
@@ -168,9 +171,9 @@ struct efp {
 };
 
 static inline void
-add_force_torque(struct frag *fr_i, struct frag *fr_j, const vec_t *pt_i,
-		 const vec_t *pt_j, const vec_t *force, const vec_t *add_i,
-		 const vec_t *add_j)
+add_force_torque(struct frag *fr_i, struct frag *fr_j,
+		 const vec_t *pt_i, const vec_t *pt_j,
+		 const vec_t *force)
 {
 	vec_t dr_i = vec_sub(VEC(pt_i->x), VEC(fr_i->x));
 	vec_t dr_j = vec_sub(VEC(pt_j->x), VEC(fr_j->x));
@@ -178,14 +181,21 @@ add_force_torque(struct frag *fr_i, struct frag *fr_j, const vec_t *pt_i,
 	vec_t torque_i = vec_cross(&dr_i, force);
 	vec_t torque_j = vec_cross(&dr_j, force);
 
-	torque_i = vec_add(&torque_i, add_i);
-	torque_j = vec_add(&torque_j, add_j);
-
 	fr_i->force = vec_add(&fr_i->force, force);
 	fr_i->torque = vec_add(&fr_i->torque, &torque_i);
 
 	fr_j->force = vec_sub(&fr_j->force, force);
 	fr_j->torque = vec_sub(&fr_j->torque, &torque_j);
+}
+
+static inline void
+add_force_torque_2(struct frag *fr_i, struct frag *fr_j, const vec_t *pt_i,
+		   const vec_t *pt_j, const vec_t *force, const vec_t *add_i,
+		   const vec_t *add_j)
+{
+	add_force_torque(fr_i, fr_j, pt_i, pt_j, force);
+	fr_i->torque = vec_add(&fr_i->torque, add_i);
+	fr_j->torque = vec_add(&fr_j->torque, add_j);
 }
 
 enum efp_result efp_read_potential(struct efp *efp, const char **files);

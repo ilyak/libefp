@@ -46,6 +46,38 @@ eq(double a, double b)
 	return fabs(a - b) < eps;
 }
 
+static int
+test_numerical_gradient(struct efp *efp, int n_grad,
+			const double *xyzabc, const double *grad)
+{
+	static const double grad_delta = 0.0001;
+
+	double coord[n_grad];
+	memcpy(coord, xyzabc, n_grad * sizeof(double));
+
+	for (int i = 0; i < n_grad; i++) {
+		struct efp_energy e1;
+		coord[i] = xyzabc[i] - grad_delta;
+		efp_set_coordinates(efp, coord);
+		efp_compute(efp, 0);
+		efp_get_energy(efp, &e1);
+
+		struct efp_energy e2;
+		coord[i] = xyzabc[i] + grad_delta;
+		efp_set_coordinates(efp, coord);
+		efp_compute(efp, 0);
+		efp_get_energy(efp, &e2);
+
+		double num_grad = (e2.total - e1.total) / (2.0 * grad_delta);
+
+		if (!eq(num_grad, grad[i]))
+			return 1;
+
+		coord[i] = xyzabc[i];
+	}
+	return 0;
+}
+
 static inline enum efp_result
 print_atoms(struct efp *efp)
 {
@@ -63,7 +95,7 @@ print_atoms(struct efp *efp)
 			struct efp_atom *atom = atoms + a;
 			double x = atom->x, y = atom->y, z = atom->z;
 
-			printf("%s %10.6lf %10.6lf %10.6lf\n", atom->label,
+			printf("%s %12.8lf %12.8lf %12.8lf\n", atom->label,
 				ANGSTROM(x), ANGSTROM(y), ANGSTROM(z));
 		}
 	}
@@ -125,15 +157,15 @@ run_test(const struct test_data *test_data)
 	}
 
 	if (test_data->geometry_xyzabc) {
-		if ((res = efp_update_fragments(efp,
-						test_data->geometry_xyzabc))) {
+		if ((res = efp_set_coordinates(efp,
+					test_data->geometry_xyzabc))) {
 			error("efp_update_fragments", res);
 			goto fail;
 		}
 	}
 	else {
-		if ((res = efp_update_fragments_2(efp,
-						test_data->geometry_points))) {
+		if ((res = efp_set_coordinates_2(efp,
+					test_data->geometry_points))) {
 			error("efp_update_fragments_2", res);
 			goto fail;
 		}
@@ -157,7 +189,7 @@ run_test(const struct test_data *test_data)
 	}
 	/* End imaginary SCF */
 
-	if ((res = efp_compute(efp))) {
+	if ((res = efp_compute(efp, test_data->do_gradient))) {
 		error("efp_compute", res);
 		goto fail;
 	}
@@ -174,7 +206,7 @@ run_test(const struct test_data *test_data)
 		status = EXIT_FAILURE;
 	}
 
-	if (test_data->opts.do_gradient) {
+	if (test_data->do_gradient) {
 		int n_grad = 6 * efp_get_frag_count(efp);
 		double grad[n_grad];
 
@@ -183,15 +215,25 @@ run_test(const struct test_data *test_data)
 			goto fail;
 		}
 
-		int wrong_grad = 0;
+		if (test_data->ref_gradient) {
+			int wrong_grad = 0;
 
-		for (int i = 0; i < n_grad; i++)
-			if (!eq(grad[i], test_data->ref_gradient[i]))
-				wrong_grad = 1;
+			for (int i = 0; i < n_grad; i++)
+				if (!eq(grad[i], test_data->ref_gradient[i]))
+					wrong_grad = 1;
 
-		if (wrong_grad) {
-			message("wrong gradient");
-			status = EXIT_FAILURE;
+			if (wrong_grad) {
+				message("wrong gradient");
+				status = EXIT_FAILURE;
+			}
+		}
+
+		if (test_data->test_numerical_gradient) {
+			if(test_numerical_gradient(efp, n_grad,
+					test_data->geometry_xyzabc, grad)) {
+				message("wrong numerical gradient");
+				status = EXIT_FAILURE;
+			}
 		}
 	}
 

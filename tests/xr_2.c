@@ -53,10 +53,10 @@ static const struct test_data test_data = {
 	.fragname = fragname,
 	.geometry_xyzabc = xyzabc,
 	.ref_energy = 0.000844260733, /* from Q-Chem 4.0 */
+	.do_gradient = 0,
 	.ref_gradient = ref_gradient,
 	.opts = {
-		.terms = EFP_TERM_XR,
-		.do_gradient = 0
+		.terms = EFP_TERM_XR
 	},
 	.callbacks = {
 		.get_st_integrals = st_integrals_fn

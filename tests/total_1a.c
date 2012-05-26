@@ -52,12 +52,12 @@ static const struct test_data test_data = {
 		/* elec + pol + disp + xr from Q-Chem 4.0 */
 	.ref_energy =  0.000255425403 + -0.000010402834 +
 		      -0.000098903256 +  0.000013466610,
+	.do_gradient = 0,
 	.ref_gradient = ref_gradient,
 	.opts = {
 		.terms = EFP_TERM_ELEC | EFP_TERM_POL |
 			 EFP_TERM_DISP | EFP_TERM_XR,
-		.disp_damp = EFP_DISP_DAMP_TT,
-		.do_gradient = 0
+		.disp_damp = EFP_DISP_DAMP_TT
 	},
 	.callbacks = {
 		.get_st_integrals = st_integrals_fn

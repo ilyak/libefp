@@ -40,6 +40,8 @@ struct test_data {
 	const double *geometry_points;
 	double ref_energy;
 	const double *ref_gradient;
+	int do_gradient;
+	int test_numerical_gradient;
 	struct efp_opts opts;
 	struct efp_callbacks callbacks;
 };
