@@ -119,9 +119,9 @@ point_point_disp(struct efp *efp, int fr_i_idx, int fr_j_idx,
 		double g = 4.0 / 3.0 * sum * (gdamp / r - 6.0 * damp / r2) / r6;
 
 		vec_t force = {
-			g * (pt_i->x - pt_j->x),
-			g * (pt_i->y - pt_j->y),
-			g * (pt_i->z - pt_j->z)
+			g * (pt_j->x - pt_i->x),
+			g * (pt_j->y - pt_i->y),
+			g * (pt_j->z - pt_i->z)
 		};
 
 		add_force_torque(fr_i, fr_j, VEC(pt_i->x), VEC(pt_j->x),
