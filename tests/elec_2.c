@@ -45,8 +45,8 @@ static const struct test_data test_data = {
 	.fragname = fragname,
 	.geometry_xyzabc = xyzabc,
 	.ref_energy = 0.001371996347, /* from Q-Chem 4.0 */
-	.do_gradient = 1,
 	.ref_gradient = ref_gradient,
+	.test_numerical_gradient = 1,
 	.opts = {
 		.terms = EFP_TERM_ELEC
 	}

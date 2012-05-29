@@ -38,8 +38,7 @@ static const struct test_data test_data = {
 	.geometry_xyzabc = xyzabc,
 		/* elec + pol - from Q-Chem 4.0 */
 	.ref_energy = 0.000255425403 + -0.000010402834,
-	.do_gradient = 0,
-	.ref_gradient = ref_gradient,
+//	.ref_gradient = ref_gradient,
 	.opts = {
 		.terms = EFP_TERM_ELEC | EFP_TERM_POL
 	}

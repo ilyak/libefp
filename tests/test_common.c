@@ -42,40 +42,71 @@ error(const char *title, enum efp_result res)
 static inline int
 eq(double a, double b)
 {
-	static const double eps = 1.0e-7;
+	static const double eps = 1.0e-6;
 	return fabs(a - b) < eps;
 }
 
 static int
-test_numerical_gradient(struct efp *efp, int n_grad,
-			const double *xyzabc, const double *grad)
+test_numerical_gradient(struct efp *efp,
+			const double *xyzabc,
+			const double *grad)
 {
 	static const double grad_delta = 0.0001;
 
-	double coord[n_grad];
-	memcpy(coord, xyzabc, n_grad * sizeof(double));
+	int n_frag = efp_get_frag_count(efp);
+	int n_grad = 6 * n_frag;
 
-	for (int i = 0; i < n_grad; i++) {
-		struct efp_energy e1;
-		coord[i] = xyzabc[i] - grad_delta;
-		efp_set_coordinates(efp, coord);
-		efp_compute(efp, 0);
-		efp_get_energy(efp, &e1);
+	double xyzabc_new[n_grad];
+	memcpy(xyzabc_new, xyzabc, n_grad * sizeof(double));
 
-		struct efp_energy e2;
-		coord[i] = xyzabc[i] + grad_delta;
-		efp_set_coordinates(efp, coord);
-		efp_compute(efp, 0);
-		efp_get_energy(efp, &e2);
+	int result = 0;
 
-		double num_grad = (e2.total - e1.total) / (2.0 * grad_delta);
+	for (int i = 0; i < n_frag; i++) {
+		double grad_num[6], grad_euler[6];
 
-		if (!eq(num_grad, grad[i]))
-			return 1;
+		for (int j = 0; j < 6; j++) {
+			struct efp_energy e1;
+			xyzabc_new[6 * i + j] = xyzabc[6 * i + j] - grad_delta;
+			efp_set_coordinates(efp, xyzabc_new);
+			efp_compute(efp, 0);
+			efp_get_energy(efp, &e1);
 
-		coord[i] = xyzabc[i];
+			struct efp_energy e2;
+			xyzabc_new[6 * i + j] = xyzabc[6 * i + j] + grad_delta;
+			efp_set_coordinates(efp, xyzabc_new);
+			efp_compute(efp, 0);
+			efp_get_energy(efp, &e2);
+
+			xyzabc_new[6 * i + j] = xyzabc[6 * i + j];
+			grad_num[j] = (e2.total - e1.total) / (2 * grad_delta);
+		}
+
+		/* convert torque to energy derivatives by Euler angles */
+
+		double tx = grad[6 * i + 3];
+		double ty = grad[6 * i + 4];
+		double tz = grad[6 * i + 5];
+
+		double a = xyzabc[6 * i + 3];
+		double b = xyzabc[6 * i + 4];
+
+		double sina = sin(a);
+		double cosa = cos(a);
+		double sinb = sin(b);
+		double cosb = cos(b);
+
+		grad_euler[0] = grad[6 * i + 0];
+		grad_euler[1] = grad[6 * i + 1];
+		grad_euler[2] = grad[6 * i + 2];
+		grad_euler[3] = tz;
+		grad_euler[4] = cosa * tx + sina * ty;
+		grad_euler[5] = sinb * sina * tx - sinb * cosa * ty + cosb * tz;
+
+		for (int j = 0; j < 6; j++)
+			if (!eq(grad_num[j], grad_euler[j]))
+				result = 1;
 	}
-	return 0;
+	return result;
 }
 
 static inline enum efp_result
@@ -189,7 +220,10 @@ run_test(const struct test_data *test_data)
 	}
 	/* End imaginary SCF */
 
-	if ((res = efp_compute(efp, test_data->do_gradient))) {
+	int do_gradient = test_data->ref_gradient ||
+			  test_data->test_numerical_gradient;
+
+	if ((res = efp_compute(efp, do_gradient))) {
 		error("efp_compute", res);
 		goto fail;
 	}
@@ -206,8 +240,9 @@ run_test(const struct test_data *test_data)
 		status = EXIT_FAILURE;
 	}
 
-	if (test_data->do_gradient) {
-		int n_grad = 6 * efp_get_frag_count(efp);
+	if (do_gradient) {
+		int n_frag = efp_get_frag_count(efp);
+		int n_grad = 6 * n_frag;
 		double grad[n_grad];
 
 		if ((res = efp_get_gradient(efp, n_grad, grad))) {
@@ -229,7 +264,7 @@ run_test(const struct test_data *test_data)
 		}
 
 		if (test_data->test_numerical_gradient) {
-			if(test_numerical_gradient(efp, n_grad,
+			if(test_numerical_gradient(efp,
 					test_data->geometry_xyzabc, grad)) {
 				message("wrong numerical gradient");
 				status = EXIT_FAILURE;

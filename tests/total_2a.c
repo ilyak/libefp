@@ -55,8 +55,7 @@ static const struct test_data test_data = {
 		/* elec + pol + disp + xr from Q-Chem 4.0 */
 	.ref_energy =  0.001371996347 + -0.000190204501 +
 		      -0.001468808757 +  0.000844260733,
-	.do_gradient = 0,
-	.ref_gradient = ref_gradient,
+//	.ref_gradient = ref_gradient,
 	.opts = {
 		.terms = EFP_TERM_ELEC | EFP_TERM_POL |
 			 EFP_TERM_DISP | EFP_TERM_XR,
