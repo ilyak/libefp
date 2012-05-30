@@ -239,6 +239,9 @@ atom_mult_grad(struct efp *efp, int fr_i_idx, int fr_j_idx,
 	/* charge - quadrupole */
 	efp_charge_quadrupole_grad(at_i->znuc, pt_j->quadrupole, &dr,
 				   &force, &torque_i, &torque_j);
+
+	vec_negate(&torque_j);
+
 	add_force_torque_2(fr_i, fr_j, VEC(at_i->x), VEC(pt_j->x),
 			   &force, &torque_i, &torque_j);
 
@@ -368,6 +371,9 @@ mult_mult_grad(struct efp *efp, int fr_i_idx, int fr_j_idx,
 	/* monopole - quadrupole */
 	efp_charge_quadrupole_grad(pt_i->monopole, pt_j->quadrupole, &dr,
 				   &force, &torque_i, &torque_j);
+
+	vec_negate(&torque_j);
+
 	add_force_torque_2(fr_i, fr_j, VEC(pt_i->x), VEC(pt_j->x),
 			   &force, &torque_i, &torque_j);
 
@@ -395,6 +401,9 @@ mult_mult_grad(struct efp *efp, int fr_i_idx, int fr_j_idx,
 	/* dipole - dipole */
 	efp_dipole_dipole_grad(&pt_i->dipole, &pt_j->dipole, &dr,
 			       &force, &torque_i, &torque_j);
+
+	vec_negate(&torque_j);
+
 	add_force_torque_2(fr_i, fr_j, VEC(pt_i->x), VEC(pt_j->x),
 			   &force, &torque_i, &torque_j);
 
@@ -416,6 +425,9 @@ mult_mult_grad(struct efp *efp, int fr_i_idx, int fr_j_idx,
 	/* quadrupole - quadrupole */
 	efp_quadrupole_quadrupole_grad(pt_i->quadrupole, pt_j->quadrupole,
 				       &dr, &force, &torque_i, &torque_j);
+
+	vec_negate(&torque_j);
+
 	add_force_torque_2(fr_i, fr_j, VEC(pt_i->x), VEC(pt_j->x),
 			   &force, &torque_i, &torque_j);
 }

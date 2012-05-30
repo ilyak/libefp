@@ -332,9 +332,9 @@ efp_quadrupole_quadrupole_grad(const double *quad1, const double *quad2,
 				   2.0 / r5 * quad2[quad_idx(a, c)]);
 	}
 
-	add1->x = -2.0 / 3.0 * (q1q2tt[1][2] - q1q2tt[2][1]);
-	add1->y = -2.0 / 3.0 * (q1q2tt[2][0] - q1q2tt[0][2]);
-	add1->z = -2.0 / 3.0 * (q1q2tt[0][1] - q1q2tt[1][0]);
+	add1->x = 2.0 / 3.0 * (q1q2tt[1][2] - q1q2tt[2][1]);
+	add1->y = 2.0 / 3.0 * (q1q2tt[2][0] - q1q2tt[0][2]);
+	add1->z = 2.0 / 3.0 * (q1q2tt[0][1] - q1q2tt[1][0]);
 
 	double q2q1tt[3][3];
 	memset(q2q1tt, 0, 9 * sizeof(double));
@@ -350,7 +350,7 @@ efp_quadrupole_quadrupole_grad(const double *quad1, const double *quad2,
 				   2.0 / r5 * quad1[quad_idx(a, c)]);
 	}
 
-	add2->x = -2.0 / 3.0 * (q2q1tt[1][2] - q2q1tt[2][1]);
-	add2->y = -2.0 / 3.0 * (q2q1tt[2][0] - q2q1tt[0][2]);
-	add2->z = -2.0 / 3.0 * (q2q1tt[0][1] - q2q1tt[1][0]);
+	add2->x = 2.0 / 3.0 * (q2q1tt[1][2] - q2q1tt[2][1]);
+	add2->y = 2.0 / 3.0 * (q2q1tt[2][0] - q2q1tt[0][2]);
+	add2->z = 2.0 / 3.0 * (q2q1tt[0][1] - q2q1tt[1][0]);
 }

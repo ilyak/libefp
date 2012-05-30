@@ -195,7 +195,7 @@ add_force_torque_2(struct frag *fr_i, struct frag *fr_j, const vec_t *pt_i,
 {
 	add_force_torque(fr_i, fr_j, pt_i, pt_j, force);
 	fr_i->torque = vec_add(&fr_i->torque, add_i);
-	fr_j->torque = vec_add(&fr_j->torque, add_j);
+	fr_j->torque = vec_sub(&fr_j->torque, add_j);
 }
 
 enum efp_result efp_read_potential(struct efp *efp, const char **files);
