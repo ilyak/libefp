@@ -60,6 +60,22 @@ struct test_data {
 	const double *ref_gradient;
 
 	/**
+	 * Specifies desired energy accuracy.
+	 *
+	 * The test will pass if energy differs from reference value by less
+	 * than (10 ^ -n), where n is energy_accuracy. If zero value is
+	 * specified then the default value of 7 is used. */
+	int energy_accuracy;
+
+	/**
+	 * Specifies desired gradient accuracy.
+	 *
+	 * The test will pass if gradient differs from reference value by less
+	 * than (10 ^ -n), where n is gradient_accuracy. If zero value is
+	 * specified then the default value of 7 is used. */
+	int gradient_accuracy;
+
+	/**
 	 * Turns on comparison of analytical and numerical gradients if
 	 * nonzero. */
 	int test_numerical_gradient;

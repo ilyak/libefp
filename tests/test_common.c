@@ -40,16 +40,22 @@ error(const char *title, enum efp_result res)
 }
 
 static inline int
-eq(double a, double b)
+eq(double a, double b, int accuracy)
 {
-	static const double eps = 1.0e-6;
+	if (accuracy == 0)
+		accuracy = 7;
+
+	double eps = 1.0;
+
+	while (accuracy--)
+		eps /= 10.0;
+
 	return fabs(a - b) < eps;
 }
 
 static int
-test_numerical_gradient(struct efp *efp,
-			const double *xyzabc,
-			const double *grad)
+test_numerical_gradient(struct efp *efp, const double *xyzabc,
+			const double *grad, int accuracy)
 {
 	static const double grad_delta = 0.0001;
 
@@ -103,7 +109,7 @@ test_numerical_gradient(struct efp *efp,
 		grad_euler[5] = sinb * sina * tx - sinb * cosa * ty + cosb * tz;
 
 		for (int j = 0; j < 6; j++)
-			if (!eq(grad_num[j], grad_euler[j]))
+			if (!eq(grad_num[j], grad_euler[j], accuracy))
 				result = 1;
 	}
 	return result;
@@ -235,7 +241,8 @@ run_test(const struct test_data *test_data)
 		goto fail;
 	}
 
-	if (!eq(energy.total, test_data->ref_energy)) {
+	if (!eq(energy.total, test_data->ref_energy,
+				test_data->energy_accuracy)) {
 		message("wrong energy");
 		status = EXIT_FAILURE;
 	}
@@ -254,7 +261,8 @@ run_test(const struct test_data *test_data)
 			int wrong_grad = 0;
 
 			for (int i = 0; i < n_grad; i++)
-				if (!eq(grad[i], test_data->ref_gradient[i]))
+				if (!eq(grad[i], test_data->ref_gradient[i],
+						test_data->gradient_accuracy))
 					wrong_grad = 1;
 
 			if (wrong_grad) {
@@ -265,7 +273,8 @@ run_test(const struct test_data *test_data)
 
 		if (test_data->test_numerical_gradient) {
 			if(test_numerical_gradient(efp,
-					test_data->geometry_xyzabc, grad)) {
+					test_data->geometry_xyzabc, grad,
+					test_data->gradient_accuracy)) {
 				message("wrong numerical gradient");
 				status = EXIT_FAILURE;
 			}
