@@ -27,9 +27,11 @@
 #include "test_common.h"
 #include "geometry_1.h"
 
-static const double ref_gradient[] = { /* from Q-Chem 4.0 */
-	0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-	0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+static const double ref_gradient[] = { /* from GAMESS */
+	 0.000096311,   -0.000039096,   -0.000046666,
+	 0.000060285,    0.000530526,   -0.000252051,
+	-0.000096311,    0.000039096,    0.000046666,
+	-0.000060285,   -0.000089595,   -0.000117352
 };
 
 static const struct test_data test_data = {
@@ -38,7 +40,9 @@ static const struct test_data test_data = {
 	.geometry_xyzabc = xyzabc,
 		/* elec + pol - from Q-Chem 4.0 */
 	.ref_energy = 0.000255425403 + -0.000010402834,
-//	.ref_gradient = ref_gradient,
+	.ref_gradient = ref_gradient,
+	.gradient_accuracy = 6,
+	.test_numerical_gradient = 1,
 	.opts = {
 		.terms = EFP_TERM_ELEC | EFP_TERM_POL
 	}

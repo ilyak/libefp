@@ -329,6 +329,7 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 
 			efp_charge_dipole_grad(at_j->znuc, &dipole_i, &dr,
 					       &force, &add_j, &add_i);
+			vec_negate(&force);
 
 			add_force_torque_2(fr_i, fr_j,
 					   VEC(pt_i->x), VEC(at_j->x),
@@ -345,6 +346,7 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 			/* induced dipole - charge */
 			efp_charge_dipole_grad(pt_j->monopole, &dipole_i, &dr,
 					       &force, &add_j, &add_i);
+			vec_negate(&force);
 
 			add_force_torque_2(fr_i, fr_j,
 					   VEC(pt_i->x), VEC(pt_j->x),
@@ -353,6 +355,7 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 			/* induced dipole - dipole */
 			efp_dipole_dipole_grad(&dipole_i, &pt_j->dipole, &dr,
 					       &force, &add_i, &add_j);
+			vec_negate(&add_j);
 
 			add_force_torque_2(fr_i, fr_j,
 					   VEC(pt_i->x), VEC(pt_j->x),
@@ -361,7 +364,6 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 			/* induced dipole - quadrupole */
 			efp_dipole_quadrupole_grad(&dipole_i, pt_j->quadrupole,
 						   &dr, &force, &add_i, &add_j);
-
 			add_force_torque_2(fr_i, fr_j,
 					   VEC(pt_i->x), VEC(pt_j->x),
 					   &force, &add_i, &add_j);
@@ -382,10 +384,12 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 			efp_dipole_dipole_grad(&pt_i->induced_dipole,
 					       &pt_j->induced_dipole_conj,
 					       &dr, &force1, &add_i1, &add_j1);
+			vec_negate(&add_j1);
 
 			efp_dipole_dipole_grad(&pt_i->induced_dipole_conj,
 					       &pt_j->induced_dipole,
 					       &dr, &force2, &add_i2, &add_j2);
+			vec_negate(&add_j2);
 
 			vec_t force = { 0.5 * (force1.x + force2.x),
 					0.5 * (force1.y + force2.y),

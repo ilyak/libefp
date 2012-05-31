@@ -74,12 +74,14 @@ test_numerical_gradient(struct efp *efp, const double *xyzabc,
 			struct efp_energy e1;
 			xyzabc_new[6 * i + j] = xyzabc[6 * i + j] - grad_delta;
 			efp_set_coordinates(efp, xyzabc_new);
+			efp_scf_init(efp);
 			efp_compute(efp, 0);
 			efp_get_energy(efp, &e1);
 
 			struct efp_energy e2;
 			xyzabc_new[6 * i + j] = xyzabc[6 * i + j] + grad_delta;
 			efp_set_coordinates(efp, xyzabc_new);
+			efp_scf_init(efp);
 			efp_compute(efp, 0);
 			efp_get_energy(efp, &e2);
 
