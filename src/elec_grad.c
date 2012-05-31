@@ -282,8 +282,8 @@ efp_quadrupole_quadrupole_grad(const double *quad1, const double *quad2,
 
 	for (int a = 0; a < 3; a++) {
 		for (int b = 0; b < 3; b++) {
-			q1s[b] += quad1[quad_idx(b, a)] * vec_el(dr, a);
-			q2s[b] += quad2[quad_idx(b, a)] * vec_el(dr, a);
+			q1s[a] += quad1[quad_idx(a, b)] * vec_el(dr, b);
+			q2s[a] += quad2[quad_idx(a, b)] * vec_el(dr, b);
 		}
 		q1sq2s += q1s[a] * q2s[a];
 	}

@@ -40,7 +40,6 @@ static const struct test_data test_data = {
 	.geometry_xyzabc = xyzabc,
 	.ref_energy = 0.0002554254, /* from GAMESS */
 	.ref_gradient = ref_gradient,
-	.gradient_accuracy = 5,
 	.test_numerical_gradient = 1,
 	.opts = {
 		.terms = EFP_TERM_ELEC
