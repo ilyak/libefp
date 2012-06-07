@@ -44,8 +44,9 @@ static const struct test_data test_data = {
 	.potential_files = potential_files,
 	.fragname = fragname,
 	.geometry_xyzabc = xyzabc,
-		/* elec + pol - from Q-Chem 4.0 */
-	.ref_energy = 0.001371996347 + -0.000190204501,
+		/* elec + pol - from GAMESS */
+	.ref_energy = 0.0013721463 + -0.0001902044,
+	.energy_accuracy = 6,
 	.ref_gradient = ref_gradient,
 	.gradient_accuracy = 5,
 	.test_numerical_gradient = 1,
