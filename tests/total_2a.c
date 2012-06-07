@@ -27,20 +27,7 @@
 #include "test_common.h"
 #include "geometry_2.h"
 
-static enum efp_result
-st_integrals_fn(const struct efp_st_block *block, int compute_derivatives,
-		struct efp_st_data *st, void *user_data)
-{
-	static const int expected_size_i = 345;
-	static const int expected_size_j = 345;
-	static const char *s_path = ABS_TOP_SRCDIR "/tests/data/sint_2";
-	static const char *t_path = ABS_TOP_SRCDIR "/tests/data/tint_2";
-
-	return st_integrals_from_file(block, compute_derivatives, st, user_data,
-			expected_size_i, expected_size_j, s_path, t_path);
-}
-
-static const double ref_gradient[] = { /* from Q-Chem 4.0 */
+static const double ref_gradient[] = { /* from GAMESS */
 	0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
 	0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
 	0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
@@ -52,17 +39,15 @@ static const struct test_data test_data = {
 	.potential_files = potential_files,
 	.fragname = fragname,
 	.geometry_xyzabc = xyzabc,
-		/* elec + pol + disp + xr from Q-Chem 4.0 */
-	.ref_energy =  0.001371996347 + -0.000190204501 +
-		      -0.001468808757 +  0.000844260733,
+		/* elec + pol + disp + xr from GAMESS */
+	.ref_energy =  0.0013721463 + -0.0001902044 +
+		      -0.0014688094 +  0.0008443933,
+	.energy_accuracy = 6,
 //	.ref_gradient = ref_gradient,
 	.opts = {
 		.terms = EFP_TERM_ELEC | EFP_TERM_POL |
 			 EFP_TERM_DISP | EFP_TERM_XR,
 		.disp_damp = EFP_DISP_DAMP_TT
-	},
-	.callbacks = {
-		.get_st_integrals = st_integrals_fn
 	}
 };
 

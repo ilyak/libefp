@@ -27,20 +27,7 @@
 #include "test_common.h"
 #include "geometry_2.h"
 
-static enum efp_result
-st_integrals_fn(const struct efp_st_block *block, int compute_derivatives,
-		struct efp_st_data *st, void *user_data)
-{
-	static const int expected_size_i = 345;
-	static const int expected_size_j = 345;
-	static const char *s_path = ABS_TOP_SRCDIR "/tests/data/sint_2";
-	static const char *t_path = ABS_TOP_SRCDIR "/tests/data/tint_2";
-
-	return st_integrals_from_file(block, compute_derivatives, st, user_data,
-			expected_size_i, expected_size_j, s_path, t_path);
-}
-
-static const double ref_gradient[] = { /* from Q-Chem 4.0 */
+static const double ref_gradient[] = { /* from GAMESS */
 	0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
 	0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
 	0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
@@ -52,13 +39,10 @@ static const struct test_data test_data = {
 	.potential_files = potential_files,
 	.fragname = fragname,
 	.geometry_xyzabc = xyzabc,
-	.ref_energy = 0.000844260733, /* from Q-Chem 4.0 */
+	.ref_energy = 0.0008443933, /* from GAMESS */
 //	.ref_gradient = ref_gradient,
 	.opts = {
 		.terms = EFP_TERM_XR
-	},
-	.callbacks = {
-		.get_st_integrals = st_integrals_fn
 	}
 };
 

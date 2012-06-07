@@ -39,7 +39,7 @@ error(const char *title, enum efp_result res)
 	fprintf(stderr, "    %s\n", efp_result_to_string(res));
 }
 
-static inline int
+static int
 eq(double a, double b, int accuracy)
 {
 	if (accuracy == 0)
@@ -117,7 +117,7 @@ test_numerical_gradient(struct efp *efp, const double *xyzabc,
 	return result;
 }
 
-static inline enum efp_result
+static enum efp_result
 print_atoms(struct efp *efp)
 {
 	enum efp_result res;
@@ -138,47 +138,6 @@ print_atoms(struct efp *efp)
 				ANGSTROM(x), ANGSTROM(y), ANGSTROM(z));
 		}
 	}
-	return EFP_RESULT_SUCCESS;
-}
-
-enum efp_result
-st_integrals_from_file(const struct efp_st_block *block,
-		       int compute_derivatives,
-		       struct efp_st_data *st, void *user_data,
-		       int expected_size_i, int expected_size_j,
-		       const char *s_path, const char *t_path)
-{
-	if (compute_derivatives)
-		return EFP_RESULT_NOT_IMPLEMENTED;
-
-	if (st->size_i != expected_size_i ||
-	    st->size_j != expected_size_j)
-		return EFP_RESULT_INVALID_ARRAY_SIZE;
-
-	FILE *fp;
-	double *ptr;
-
-	int size = st->size_i * st->size_j;
-
-	fp = fopen(s_path, "r");
-	if (!fp)
-		return EFP_RESULT_FILE_NOT_FOUND;
-
-	ptr = st->s;
-	for (int i = 0; i < size; i++, ptr++)
-		fscanf(fp, "%lf", ptr);
-
-	fclose(fp);
-
-	fp = fopen(t_path, "r");
-	if (!fp)
-		return EFP_RESULT_FILE_NOT_FOUND;
-
-	ptr = st->t;
-	for (int i = 0; i < size; i++, ptr++)
-		fscanf(fp, "%lf", ptr);
-
-	fclose(fp);
 	return EFP_RESULT_SUCCESS;
 }
 

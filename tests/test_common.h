@@ -93,15 +93,6 @@ struct test_data {
 
 int run_test(const struct test_data *test_data);
 
-enum efp_result st_integrals_from_file(const struct efp_st_block *block,
-				       int compute_derivatives,
-				       struct efp_st_data *st,
-				       void *user_data,
-				       int expected_size_i,
-				       int expected_size_j,
-				       const char *s_path,
-				       const char *t_path);
-
 #define DEFINE_TEST(test_data)                                               \
 int main(void)                                                               \
 {                                                                            \
