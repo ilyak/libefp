@@ -487,18 +487,13 @@ static enum efp_result
 parse_projection_basis(struct efp *efp, struct stream *stream)
 {
 	struct frag *frag = get_last_frag(efp);
-	int size = 128, n_shells = 0;
+	int atom_index = 0;
 
-	frag->shells = malloc(size);
 	next_line(stream);
 
 	while (stream->ptr) {
-		if (tok_stop(stream)) {
-			if (n_shells == size)
-				frag->shells = realloc(frag->shells, size + 1);
-			frag->shells[n_shells] = '\0';
+		if (tok_stop(stream))
 			return EFP_RESULT_SUCCESS;
-		}
 
 		next_line(stream);
 shell:
@@ -508,25 +503,45 @@ shell:
 		skip_space(stream);
 
 		if (!*stream->ptr) {
+			atom_index++;
 			next_line(stream);
 			continue;
 		}
 
-		char shell = *stream->ptr++;
-		if (!strchr("SPDFL", shell))
+		frag->n_xr_shells++;
+		frag->xr_shells = realloc(frag->xr_shells,
+				frag->n_xr_shells * sizeof(struct shell));
+
+		struct shell *shell = frag->xr_shells + frag->n_xr_shells - 1;
+
+		shell->atom_index = atom_index;
+		shell->type = *stream->ptr++;
+
+		if (!strchr("SLPDF", shell->type))
 			return EFP_RESULT_SYNTAX_ERROR;
 
-		if (n_shells == size)
-			frag->shells = realloc(frag->shells, size *= 2);
-		frag->shells[n_shells++] = shell;
-
-		int n_skip;
-		if (!tok_int(stream, &n_skip))
+		if (!tok_int(stream, &shell->n_funcs))
 			return EFP_RESULT_SYNTAX_ERROR;
 
-		while (n_skip-- >= 0)
+		next_line(stream);
+
+		shell->coef = malloc((shell->type == 'L' ? 3 : 2) *
+					shell->n_funcs * sizeof(double));
+
+		double *ptr = shell->coef;
+
+		for (int i = 0; i < shell->n_funcs; i++) {
+			if (!tok_int(stream, NULL) ||
+			    !tok_double(stream, ptr++) ||
+			    !tok_double(stream, ptr++))
+				return EFP_RESULT_SYNTAX_ERROR;
+
+			if (shell->type == 'L')
+				if (!tok_double(stream, ptr++))
+					return EFP_RESULT_SYNTAX_ERROR;
+
 			next_line(stream);
-
+		}
 		goto shell;
 	}
 	return EFP_RESULT_SYNTAX_ERROR;
@@ -767,36 +782,10 @@ parse_file(struct efp *efp, struct stream *stream)
 
 		tok_label(stream, &frag->name);
 		next_line(stream);
-
-		const char bs[] = "BASIS SET=";
-
-		if ((stream->ptr = strstr(stream->ptr, bs)) == NULL)
-			return EFP_RESULT_SYNTAX_ERROR;
-
-		stream->ptr += strlen(bs);
-
-		char *basis_name;
-		if (!tok_label(stream, &basis_name))
-			return EFP_RESULT_SYNTAX_ERROR;
-
-		if (strlen(basis_name) >= ARRAY_SIZE(frag->basis_name)) {
-			free(basis_name);
-			return EFP_RESULT_SYNTAX_ERROR;
-		}
-
-		strcpy(frag->basis_name, basis_name);
-		free(basis_name);
-
-		if (streq(frag->basis_name, "XXX"))
-			return EFP_RESULT_BASIS_NOT_SPECIFIED;
-
 		next_line(stream);
 
 		if ((res = parse_fragment(efp, stream)))
 			return res;
-
-		for (int i = 0; i < frag->n_atoms; i++)
-			strcpy(frag->atoms[i].basis, frag->basis_name);
 	}
 	return EFP_RESULT_SUCCESS;
 }

@@ -35,6 +35,13 @@
 #define ARRAY_SIZE(arr) ((int)(sizeof(arr)/sizeof(arr[0])))
 #define EFP_INIT_MAGIC 0xEF2012AD
 
+struct shell {
+	char type;       /* shell type - S,L,P,D,F */
+	int atom_index;  /* index of a corresponding fragment atom */
+	int n_funcs;     /* number of functions */
+	double *coef;    /* function coefficients */
+};
+
 struct frag {
 	/* fragment name */
 	char *name;
@@ -107,11 +114,11 @@ struct frag {
 	/* spin multiplicity */
 	int multiplicity;
 
-	/* name of the basis set used to generate fragment potential */
-	char basis_name[32];
+	/* number of exchange repulsion basis shells */
+	int n_xr_shells;
 
-	/* shells of fragment basis (S,P,D,F,L); zero terminated */
-	char *shells;
+	/* exchange repulsion basis shells */
+	struct shell *xr_shells;
 
 	/* upper triangle of fock matrix, size = n_lmo * (n_lmo + 1) / 2 */
 	double *xr_fock_mat;
@@ -135,12 +142,6 @@ struct efp {
 
 	/* array with the library of fragment initial parameters */
 	struct frag *lib;
-
-	/* number of blocks in xr integrals computation */
-	int n_xr_blocks;
-
-	/* offsets of fragments in their xr blocks */
-	int *xr_block_frag_offset;
 
 	/* contributions to dispersion damping from overlap integrals */
 	double *disp_damp_overlap;

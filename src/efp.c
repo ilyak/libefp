@@ -433,9 +433,13 @@ free_frag(struct frag *frag)
 	free(frag->lmo_centroids);
 	free(frag->xr_fock_mat);
 	free(frag->xr_wf);
-	free(frag->shells);
 	free(frag->screen_params);
 	free(frag->ai_screen_params);
+
+	for (int i = 0; i < frag->n_xr_shells; i++)
+		free(frag->xr_shells[i].coef);
+
+	free(frag->xr_shells);
 
 	/* don't do free(frag) here */
 }
@@ -454,7 +458,6 @@ efp_shutdown(struct efp *efp)
 
 	free(efp->frags);
 	free(efp->lib);
-	free(efp->xr_block_frag_offset);
 	free(efp->disp_damp_overlap_offset);
 	free(efp->disp_damp_overlap);
 	free(efp->qm_grad);
@@ -470,11 +473,6 @@ copy_frag(struct frag *dest, const struct frag *src)
 	if (src->name) {
 		dest->name = strdup(src->name);
 		if (!dest->name)
-			return EFP_RESULT_NO_MEMORY;
-	}
-	if (src->shells) {
-		dest->shells = strdup(src->shells);
-		if (!dest->shells)
 			return EFP_RESULT_NO_MEMORY;
 	}
 	if (src->atoms) {
@@ -527,6 +525,24 @@ copy_frag(struct frag *dest, const struct frag *src)
 		if (!dest->lmo_centroids)
 			return EFP_RESULT_NO_MEMORY;
 		memcpy(dest->lmo_centroids, src->lmo_centroids, size);
+	}
+	if (src->xr_shells) {
+		size = src->n_xr_shells * sizeof(struct shell);
+		dest->xr_shells = malloc(size);
+		if (!dest->xr_shells)
+			return EFP_RESULT_NO_MEMORY;
+		memcpy(dest->xr_shells, src->xr_shells, size);
+
+		for (int i = 0; i < src->n_xr_shells; i++) {
+			size = (src->xr_shells[i].type == 'L' ? 3 : 2) *
+				src->xr_shells[i].n_funcs * sizeof(double);
+
+			dest->xr_shells[i].coef = malloc(size);
+			if (!dest->xr_shells[i].coef)
+				return EFP_RESULT_NO_MEMORY;
+			memcpy(dest->xr_shells[i].coef,
+					src->xr_shells[i].coef, size);
+		}
 	}
 	if (src->xr_fock_mat) {
 		size = src->n_lmo * (src->n_lmo + 1) / 2 * sizeof(double);
@@ -612,41 +628,11 @@ check_params(struct efp *efp)
 				return EFP_RESULT_PARAMETERS_MISSING;
 	}
 	if (efp->opts.terms & EFP_TERM_XR) {
-		if (!efp->callbacks.get_st_integrals)
-			return EFP_RESULT_CALLBACK_NOT_SET;
-
 		for (int i = 0; i < efp->n_frag; i++)
 			if (!efp->frags[i].xr_fock_mat ||
 			    !efp->frags[i].xr_wf ||
 			    !efp->frags[i].lmo_centroids)
 				return EFP_RESULT_PARAMETERS_MISSING;
-	}
-	return EFP_RESULT_SUCCESS;
-}
-
-static enum efp_result
-setup_xr(struct efp *efp)
-{
-	static const int max_basis_per_block = 2000;
-
-	efp->n_xr_blocks = 0;
-	for (int i = 0; i < efp->n_frag; efp->n_xr_blocks++)
-		for (int n_basis = 0; i < efp->n_frag && n_basis +
-			efp->frags[i].xr_wf_size <= max_basis_per_block; i++)
-				n_basis += efp->frags[i].xr_wf_size;
-
-	size_t size = (efp->n_xr_blocks + 1) * sizeof(int);
-	efp->xr_block_frag_offset = malloc(size);
-	if (!efp->xr_block_frag_offset)
-		return EFP_RESULT_NO_MEMORY;
-
-	efp->xr_block_frag_offset[0] = 0;
-	for (int i = 0, block = 1; i < efp->n_frag; block++) {
-		for (int n_basis = 0; i < efp->n_frag && n_basis +
-			efp->frags[i].xr_wf_size <= max_basis_per_block; i++)
-				n_basis += efp->frags[i].xr_wf_size;
-		efp->xr_block_frag_offset[block] =
-			efp->xr_block_frag_offset[block - 1] + i;
 	}
 	return EFP_RESULT_SUCCESS;
 }
@@ -718,9 +704,6 @@ efp_init(struct efp **out, const struct efp_opts *opts,
 			return res;
 	}
 
-	if ((res = setup_xr(efp)))
-		return res;
-
 	if ((res = setup_disp(efp)))
 		return res;
 
@@ -790,8 +773,6 @@ return "efp was not properly initialized";
 return "file not found";
 	case EFP_RESULT_SYNTAX_ERROR:
 return "syntax error in potential data";
-	case EFP_RESULT_BASIS_NOT_SPECIFIED:
-return "no EFP basis specified";
 	case EFP_RESULT_UNKNOWN_FRAGMENT:
 return "unknown fragment type";
 	case EFP_RESULT_DUPLICATE_PARAMETERS:

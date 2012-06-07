@@ -72,8 +72,6 @@ enum efp_result {
 	EFP_RESULT_FILE_NOT_FOUND,
 	/** Syntax error in EFP parameters file. */
 	EFP_RESULT_SYNTAX_ERROR,
-	/** The basis name in EFP parameters file was not specified. */
-	EFP_RESULT_BASIS_NOT_SPECIFIED,
 	/** Unknown fragment type. */
 	EFP_RESULT_UNKNOWN_FRAGMENT,
 	/** EFP parameters contain duplicate fragments. */
@@ -192,7 +190,6 @@ struct efp_energy {
 /** EFP atom info. */
 struct efp_atom {
 	char label[32];   /**< Atom label. */
-	char basis[32];   /**< Name of a basis on this atom. */
 	double x;         /**< X coordinate of atom position. */
 	double y;         /**< Y coordinate of atom position. */
 	double z;         /**< Z coordinate of atom position. */
@@ -206,59 +203,6 @@ struct efp_qm_data {
 	double *atom_xyz;  /**< Array of atom \a x \a y \a z coordinates. */
 	double *atom_znuc; /**< Array of atom effective nuclear charges. */
 };
-
-/**
- * Information about a block of atoms for overlap and kinetic energy integral
- * computation by efp_callbacks::get_st_integrals callback function.
- *
- * The block represents a rectangular matrix. The
- * efp_callbacks::get_st_integrals callback function computes overlap and
- * kinetic energy integrals for each basis function from horizontal dimension
- * of a block with each basis function from vertical dimension of a block.
- */
-struct efp_st_block {
-	/** Number of atoms in block horizontal dimension. */
-	int n_atoms_i;
-
-	/** Atoms of horizontal block dimension. */
-	struct efp_atom *atoms_i;
-
-	/** Number of atoms in block vertical dimension. */
-	int n_atoms_j;
-
-	/** Atoms of vertical block dimension. */
-	struct efp_atom *atoms_j;
-};
-
-/** Overlap and kinetic energy integrals data. */
-struct efp_st_data {
-	double *s;   /**< Overlap integrals matrix. */
-	double *sx;  /**< X derivative of overlap integrals. */
-	double *sy;  /**< Y derivative of overlap integrals. */
-	double *sz;  /**< Z derivative of overlap integrals. */
-	double *t;   /**< Kinetic energy integrals matrix. */
-	double *tx;  /**< X derivative of kinetic energy integrals. */
-	double *ty;  /**< Y derivative of kinetic energy integrals. */
-	double *tz;  /**< Z derivative of kinetic energy integrals. */
-	int size_i;  /**< Number of columns in integral matrices. */
-	int size_j;  /**< Number of rows in integral matrices. */
-};
-
-/**
- * Compute overlap and kinetic energy integrals over Gaussian basis functions.
- *
- * \param[in] block Block information (see efp_st_block).
- * \param[in] compute_derivatives If nonzero also compute integral derivatives.
- * \param[out] st Structure where integrals should be stored (see efp_st_data).
- * \param[in] user_data User data which was specified during initialization.
- *
- * \return ::EFP_RESULT_CALLBACK_FAILED on error or ::EFP_RESULT_SUCCESS
- *         otherwise.
- */
-typedef enum efp_result (*efp_st_integrals_fn)(const struct efp_st_block *block,
-					       int compute_derivatives,
-					       struct efp_st_data *st,
-					       void *user_data);
 
 /**
  * Compute electric field form electrons in the specified points.
@@ -291,13 +235,6 @@ typedef enum efp_result (*efp_field_integrals_fn)(double *z,
 
 /** Callback function information. */
 struct efp_callbacks {
-	/** Callback function, see ::efp_st_integrals_fn. */
-	efp_st_integrals_fn get_st_integrals;
-
-	/** Will be passed as a last parameter to
-	 * efp_callbacks::get_st_integrals. */
-	void *get_st_integrals_user_data;
-
 	/** Callback function, see ::efp_electron_density_field_fn. */
 	efp_electron_density_field_fn get_electron_density_field;
 

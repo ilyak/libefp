@@ -29,6 +29,7 @@
 
 #include "efp_private.h"
 #include "disp.h"
+#include "int.h"
 
 static inline int
 fock_idx(int i, int j)
@@ -77,32 +78,33 @@ get_charge_penetration(double s_ij, double r_ij)
 	return -2.0 * s_ij * s_ij / r_ij / sqrt(-2.0 * ln_s);
 }
 
-static inline int
-get_block_frag_count(struct efp *efp, int i)
-{
-	return efp->xr_block_frag_offset[i + 1] - efp->xr_block_frag_offset[i];
-}
-
 static void
 frag_frag_xr_grad(struct efp *efp)
 {
+	/* XXX */
 }
 
-static double
-frag_frag_xr(struct efp *efp, int frag_i, int frag_j, int offset,
-	     const struct efp_st_data *st)
+static void
+frag_frag_xr(struct efp *efp, int frag_i, int frag_j)
 {
 	struct frag *fr_i = efp->frags + frag_i;
 	struct frag *fr_j = efp->frags + frag_j;
 
+	double s[fr_i->xr_wf_size * fr_j->xr_wf_size];
+	double t[fr_i->xr_wf_size * fr_j->xr_wf_size];
+
 	double lmo_s[fr_i->n_lmo][fr_j->n_lmo];
 	double lmo_t[fr_i->n_lmo][fr_j->n_lmo];
+
 	double tmp[fr_i->n_lmo * fr_j->xr_wf_size];
+
+	/* compute S and T integrals */
+	efp_st_int(efp, frag_i, frag_j, s, t);
 
 	/* lmo_s = wf_i * s * wf_j(t) */
 	cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
 		fr_i->n_lmo, fr_j->xr_wf_size, fr_i->xr_wf_size, 1.0,
-		fr_i->xr_wf, fr_i->xr_wf_size, st->s + offset, st->size_j, 0.0,
+		fr_i->xr_wf, fr_i->xr_wf_size, s, fr_j->xr_wf_size, 0.0,
 		tmp, fr_j->xr_wf_size);
 	cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
 		fr_i->n_lmo, fr_j->n_lmo, fr_j->xr_wf_size, 1.0,
@@ -112,7 +114,7 @@ frag_frag_xr(struct efp *efp, int frag_i, int frag_j, int offset,
 	/* lmo_t = wf_i * t * wf_j(t) */
 	cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
 		fr_i->n_lmo, fr_j->xr_wf_size, fr_i->xr_wf_size, 1.0,
-		fr_i->xr_wf, fr_i->xr_wf_size, st->t + offset, st->size_j, 0.0,
+		fr_i->xr_wf, fr_i->xr_wf_size, t, fr_j->xr_wf_size, 0.0,
 		tmp, fr_j->xr_wf_size);
 	cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
 		fr_i->n_lmo, fr_j->n_lmo, fr_j->xr_wf_size, 1.0,
@@ -175,92 +177,10 @@ frag_frag_xr(struct efp *efp, int frag_i, int frag_j, int offset,
 			energy -= s_ij * s_ij / r_ij;
 		}
 	}
-	energy *= 2.0;
+	efp->energy.exchange_repulsion += 2.0 * energy;
 
 	if (efp->do_gradient)
 		frag_frag_xr_grad(efp);
-
-	return energy;
-}
-
-static enum efp_result
-compute_xr_block(struct efp *efp, int block_i, int block_j, double *energy)
-{
-	enum efp_result res;
-
-	struct frag *frags_i = efp->frags + efp->xr_block_frag_offset[block_i];
-	struct frag *frags_j = efp->frags + efp->xr_block_frag_offset[block_j];
-	int n_block_i = get_block_frag_count(efp, block_i);
-	int n_block_j = get_block_frag_count(efp, block_j);
-
-	struct efp_st_block block;
-	memset(&block, 0, sizeof(struct efp_st_block));
-
-	struct efp_st_data st;
-	memset(&st, 0, sizeof(struct efp_st_data));
-
-	for (int i = 0; i < n_block_i; i++) {
-		block.n_atoms_i += frags_i[i].n_atoms;
-		st.size_i += frags_i[i].xr_wf_size;
-	}
-
-	for (int j = 0; j < n_block_j; j++) {
-		block.n_atoms_j += frags_j[j].n_atoms;
-		st.size_j += frags_j[j].xr_wf_size;
-	}
-
-	block.atoms_i = malloc(block.n_atoms_i * sizeof(struct efp_atom));
-	block.atoms_j = malloc(block.n_atoms_j * sizeof(struct efp_atom));
-
-	for (int i = 0, idx = 0; i < n_block_i; i++)
-		for (int a = 0; a < frags_i[i].n_atoms; a++)
-			block.atoms_i[idx++] = frags_i[i].atoms[a];
-
-	for (int j = 0, idx = 0; j < n_block_j; j++)
-		for (int a = 0; a < frags_j[j].n_atoms; a++)
-			block.atoms_j[idx++] = frags_j[j].atoms[a];
-
-	size_t size = st.size_i * st.size_j * sizeof(double);
-
-	st.s = malloc((efp->do_gradient ? 4 : 1) * size);
-	st.t = malloc((efp->do_gradient ? 4 : 1) * size);
-
-	if (efp->do_gradient) {
-		st.sx = st.s + 1 * size;
-		st.sy = st.s + 2 * size;
-		st.sz = st.s + 3 * size;
-		st.tx = st.t + 1 * size;
-		st.ty = st.t + 2 * size;
-		st.tz = st.t + 3 * size;
-	}
-
-	if ((res = efp->callbacks.get_st_integrals(&block, efp->do_gradient,
-			&st, efp->callbacks.get_st_integrals_user_data)))
-		goto fail;
-
-	for (int i = 0, offset = 0; i < n_block_i; i++) {
-		int j = 0;
-
-		if (block_i == block_j)
-			for (; j < i + 1; j++)
-				offset += frags_j[j].xr_wf_size;
-
-		for (; j < n_block_j; j++) {
-			int frag_i = i + efp->xr_block_frag_offset[block_i];
-			int frag_j = j + efp->xr_block_frag_offset[block_j];
-
-			*energy += frag_frag_xr(efp, frag_i, frag_j,
-						offset, &st);
-
-			offset += frags_j[j].xr_wf_size;
-		}
-		offset += (frags_i[i].xr_wf_size - 1) * st.size_j;
-	}
-
-fail:
-	free(block.atoms_i), free(block.atoms_j);
-	free(st.s), free(st.t);
-	return res;
 }
 
 enum efp_result
@@ -272,22 +192,13 @@ efp_compute_xr(struct efp *efp)
 	if (efp->do_gradient)
 		return EFP_RESULT_NOT_IMPLEMENTED;
 
-	enum efp_result res;
-	double energy = 0.0;
+	efp->energy.exchange_repulsion = 0.0;
 	efp->energy.charge_penetration = 0.0;
 
-	/* Because of potentially huge number of fragments we can't just
-	 * compute all overlap and kinetic energy integrals in one step.
-	 * Instead we process fragments in blocks so that number of basis
-	 * functions in each block is not greater than some reasonable number.
-	 * Also see setup_xr function in efp.c for block setup details.
-	 */
-	for (int i = 0; i < efp->n_xr_blocks; i++)
-		for (int j = i; j < efp->n_xr_blocks; j++)
-			if ((res = compute_xr_block(efp, i, j, &energy)))
-				return res;
+	for (int i = 0; i < efp->n_frag; i++)
+		for (int j = i + 1; j < efp->n_frag; j++)
+			frag_frag_xr(efp, i, j);
 
-	efp->energy.exchange_repulsion = energy;
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -297,7 +208,7 @@ func_d_idx(int a, int b)
 	/* order in which GAMESS stores D functions */
 	enum { xx = 0, yy, zz, xy, xz, yz };
 
-	static const int idx[3 * 3] = {
+	static const int idx[] = {
 		xx, xy, xz, xy, yy, yz, xz, yz, zz
 	};
 
@@ -310,7 +221,7 @@ func_f_idx(int a, int b, int c)
 	/* order in which GAMESS stores F functions */
 	enum { xxx = 0, yyy, zzz, xxy, xxz, xyy, yyz, xzz, yzz, xyz };
 
-	static const int idx[3 * 3 * 3] = {
+	static const int idx[] = {
 		xxx, xxy, xxz, xxy, xyy, xyz, xxz, xyz, xzz,
 		xxy, xyy, xyz, xyy, yyy, yyz, xyz, yyz, yzz,
 		xxz, xyz, xzz, xyz, yyz, yzz, xzz, yzz, zzz
@@ -399,8 +310,8 @@ efp_update_xr(struct frag *frag, const mat_t *rotmat)
 		const double *in = frag->lib->xr_wf + lmo * frag->xr_wf_size;
 		double *out = frag->xr_wf + lmo * frag->xr_wf_size;
 
-		for (int i = 0, func = 0; frag->shells[i]; i++) {
-			switch (frag->shells[i]) {
+		for (int i = 0, func = 0; i < frag->n_xr_shells; i++) {
+			switch (frag->xr_shells[i].type) {
 			case 'S':
 				func++;
 				break;

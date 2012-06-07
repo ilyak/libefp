@@ -48,6 +48,8 @@ src_libefp_la_SOURCES = \
 	src/elec.c \
 	src/elec.h \
 	src/elec_grad.c \
+	src/int.c \
+	src/int.h \
 	src/math_util.h \
 	src/parse.c \
 	src/pol.c \
@@ -56,9 +58,6 @@ src_libefp_la_SOURCES = \
 
 EXTRA_DIST += LICENSE
 EXTRA_DIST += src/libefp.sym
-EXTRA_DIST += \
-	tests/data/sint_1 \
-	tests/data/tint_1
 EXTRA_DIST += \
 	fraglib/makefp.inp \
 	fraglib/h2o.efp \
