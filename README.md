@@ -93,12 +93,7 @@ you can create EFP parameters for custom fragment types.
 
 After you created `.efp` file using GAMESS you should rename the fragment by
 replacing `$FRAGNAME` with your name of choice (e.g. rename `$FRAGNAME` to
-`$MYH2O`). You should also add the basis you used to generate fragment
-parameters to the `.efp` file by replacing "XXX" in the first line after
-`$FRAGNAME` with the name of your basis. Use basis set name in the format which
-the calling program would understand because it will be used as an argument to
-callback functions. Typically it should be the standard basis name such as
-6-311++G(3df,2p). The basis set name must not contain spaces.
+`$MYH2O`).
 
 For a complete description of EFP data file format consult FRAGNAME section in
 the GAMESS manual (see http://www.msg.ameslab.gov/gamess/).
