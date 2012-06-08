@@ -721,26 +721,36 @@ parse_screen(struct efp *efp, struct stream *stream)
 
 typedef enum efp_result (*parse_fn)(struct efp *efp, struct stream *stream);
 
-static const struct {
-	const char *label;
-	parse_fn fn;
-} parse_funcs[] = {
-	{ "COORDINATES",                parse_coordinates },
-	{ "MONOPOLES",                  parse_monopoles },
-	{ "DIPOLES",                    parse_dipoles },
-	{ "QUADRUPOLES",                parse_quadrupoles },
-	{ "OCTUPOLES",                  parse_octupoles },
-	{ "POLARIZABLE POINTS",         parse_polarizable_pts },
-	{ "DYNAMIC POLARIZABLE POINTS", parse_dynamic_polarizable_pts },
-	{ "PROJECTION BASIS SET",       parse_projection_basis },
-	{ "MULTIPLICITY",               parse_multiplicity },
-	{ "PROJECTION WAVEFUNCTION",    parse_projection_wf },
-	{ "FOCK MATRIX ELEMENTS",       parse_fock_mat },
-	{ "LMO CENTROIDS",              parse_lmo_centroids },
-	{ "CANONVEC",                   parse_canonvec },
-	{ "CANONFOK",                   parse_canonfok },
-	{ "SCREEN",                     parse_screen }
-};
+static parse_fn
+get_parse_fn(struct stream *stream)
+{
+	static const struct {
+		const char *label;
+		parse_fn fn;
+	} funcs[] = {
+		{ "COORDINATES",                parse_coordinates },
+		{ "MONOPOLES",                  parse_monopoles },
+		{ "DIPOLES",                    parse_dipoles },
+		{ "QUADRUPOLES",                parse_quadrupoles },
+		{ "OCTUPOLES",                  parse_octupoles },
+		{ "POLARIZABLE POINTS",         parse_polarizable_pts },
+		{ "DYNAMIC POLARIZABLE POINTS", parse_dynamic_polarizable_pts },
+		{ "PROJECTION BASIS SET",       parse_projection_basis },
+		{ "MULTIPLICITY",               parse_multiplicity },
+		{ "PROJECTION WAVEFUNCTION",    parse_projection_wf },
+		{ "FOCK MATRIX ELEMENTS",       parse_fock_mat },
+		{ "LMO CENTROIDS",              parse_lmo_centroids },
+		{ "CANONVEC",                   parse_canonvec },
+		{ "CANONFOK",                   parse_canonfok },
+		{ "SCREEN",                     parse_screen }
+	};
+
+	for (int i = 0; i < ARRAY_SIZE(funcs); i++)
+		if (tok(stream, funcs[i].label))
+			return funcs[i].fn;
+
+	return NULL;
+}
 
 static enum efp_result
 parse_fragment(struct efp *efp, struct stream *stream)
@@ -748,13 +758,17 @@ parse_fragment(struct efp *efp, struct stream *stream)
 	enum efp_result res;
 
 	while (stream->ptr) {
-		for (int i = 0; i < ARRAY_SIZE(parse_funcs); i++) {
-			if (tok(stream, parse_funcs[i].label))
-				if ((res = parse_funcs[i].fn(efp, stream)))
-					return res;
+		parse_fn fn = get_parse_fn(stream);
+
+		if (!fn) {
+			if (tok_end(stream))
+				return EFP_RESULT_SUCCESS;
+
+			return EFP_RESULT_SYNTAX_ERROR;
 		}
-		if (tok_end(stream))
-			return EFP_RESULT_SUCCESS;
+
+		if ((res = fn(efp, stream)))
+			return res;
 	}
 	return EFP_RESULT_SYNTAX_ERROR;
 }
