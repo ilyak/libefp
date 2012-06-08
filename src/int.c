@@ -24,10 +24,12 @@
  * SUCH DAMAGE.
  */
 
+#include <math.h>
+#include <string.h>
+
 #include "int.h"
 
-/* Overlap and kinetic energy integral computation routines.
- * Used by exchange-repulsion code. */
+/* Overlap and kinetic energy integral computation routines. */
 
 static void
 set_coef(double *con, char type, const double *coef)
@@ -149,7 +151,9 @@ shell_type(char type)
 }
 
 void
-efp_st_int(struct efp *efp, int frag_i, int frag_j, double *s, double *t)
+efp_st_int(int n_shells_i, const struct shell *shells_i,
+	   int n_shells_j, const struct shell *shells_j,
+	   int stride, double *s, double *t)
 {
 	static const int shift_ix[] = {
 		0, 5, 0,  0, 10, 0, 0, 5, 5, 0,
@@ -198,9 +202,6 @@ efp_st_int(struct efp *efp, int frag_i, int frag_j, double *s, double *t)
 		1, 2, 2, 3, 4
 	};
 
-	struct frag *fr_i = efp->frags + frag_i;
-	struct frag *fr_j = efp->frags + frag_j;
-
 	int shift_x[100];
 	int shift_y[100];
 	int shift_z[100];
@@ -213,9 +214,8 @@ efp_st_int(struct efp *efp, int frag_i, int frag_j, double *s, double *t)
 	double sblk[100], tblk[100];
 
 	/* shell i */
-	for (int ii = 0, loc_i = 0; ii < fr_i->n_xr_shells; ii++) {
-		struct shell *sh_i = fr_i->xr_shells + ii;
-		const vec_t *ri = VEC(fr_i->atoms[sh_i->atom_index].x);
+	for (int ii = 0, loc_i = 0; ii < n_shells_i; ii++) {
+		const struct shell *sh_i = shells_i + ii;
 
 		int type_i = shell_type(sh_i->type);
 		int start_i = primitive_start[type_i];
@@ -223,9 +223,8 @@ efp_st_int(struct efp *efp, int frag_i, int frag_j, double *s, double *t)
 		int count_i = end_i - start_i;
 
 		/* shell j */
-		for (int jj = 0, loc_j = 0; jj < fr_j->n_xr_shells; jj++) {
-			struct shell *sh_j = fr_j->xr_shells + jj;
-			const vec_t *rj = VEC(fr_j->atoms[sh_j->atom_index].x);
+		for (int jj = 0, loc_j = 0; jj < n_shells_j; jj++) {
+			const struct shell *sh_j = shells_j + jj;
 
 			int type_j = shell_type(sh_j->type);
 			int start_j = primitive_start[type_j];
@@ -274,7 +273,13 @@ efp_st_int(struct efp *efp, int frag_i, int frag_j, double *s, double *t)
 					double aj = *coef_j++;
 
 					double aa = 1.0 / (ai + aj);
-					double dum = aj * ai * vec_dist_2(ri, rj) * aa;
+
+					double dx = sh_j->x - sh_i->x;
+					double dy = sh_j->y - sh_i->y;
+					double dz = sh_j->z - sh_i->z;
+					double rr = dx * dx + dy * dy + dz * dz;
+
+					double dum = aj * ai * rr * aa;
 
 					if (dum > tolerance) {
 						coef_j++;
@@ -291,9 +296,9 @@ efp_st_int(struct efp *efp, int frag_i, int frag_j, double *s, double *t)
 					if (sh_j->type == 'L')
 						coef_j++;
 
-					double ax = (ai * ri->x + aj * rj->x) * aa;
-					double ay = (ai * ri->y + aj * rj->y) * aa;
-					double az = (ai * ri->z + aj * rj->z) * aa;
+					double ax = (ai * sh_i->x + aj * sh_j->x) * aa;
+					double ay = (ai * sh_i->y + aj * sh_j->y) * aa;
+					double az = (ai * sh_i->z + aj * sh_j->z) * aa;
 
 					double fac = exp(-dum);
 
@@ -310,16 +315,16 @@ efp_st_int(struct efp *efp, int frag_i, int frag_j, double *s, double *t)
 							double xint, yint, zint;
 
 							make_int(i, j, taa, ax, ay, az,
-								 ri->x, ri->y, ri->z,
-								 rj->x, rj->y, rj->z,
+								 sh_i->x, sh_i->y, sh_i->z,
+								 sh_j->x, sh_j->y, sh_j->z,
 								 &xint, &yint, &zint);
 							xin[idx + j] = xint * taa;
 							yin[idx + j] = yint * taa;
 							zin[idx + j] = zint * taa;
 
 							make_int(i, j + 2, taa, ax, ay, az,
-								 ri->x, ri->y, ri->z,
-								 rj->x, rj->y, rj->z,
+								 sh_i->x, sh_i->y, sh_i->z,
+								 sh_j->x, sh_j->y, sh_j->z,
 								 &xint, &yint, &zint);
 							xin[idx + j + 30] = xint * t1;
 							yin[idx + j + 30] = yint * t1;
@@ -327,8 +332,8 @@ efp_st_int(struct efp *efp, int frag_i, int frag_j, double *s, double *t)
 
 							if (j >= 2) {
 								make_int(i, j - 2, taa, ax, ay, az,
-									 ri->x, ri->y, ri->z,
-									 rj->x, rj->y, rj->z,
+									 sh_i->x, sh_i->y, sh_i->z,
+									 sh_j->x, sh_j->y, sh_j->z,
 									 &xint, &yint, &zint);
 							}
 							else {
@@ -358,7 +363,7 @@ efp_st_int(struct efp *efp, int frag_i, int frag_j, double *s, double *t)
 
 			/* store integrals */
 			for (int i = 0, idx = 0; i < count_i; i++) {
-				int idx2 = (loc_i + i) * fr_j->xr_wf_size + loc_j;
+				int idx2 = (loc_i + i) * stride + loc_j;
 
 				for (int j = 0; j < count_j; j++, idx++, idx2++) {
 					s[idx2] = sblk[idx];
@@ -372,7 +377,8 @@ efp_st_int(struct efp *efp, int frag_i, int frag_j, double *s, double *t)
 }
 
 void
-efp_st_int_deriv(struct efp *efp, int frag_i, int frag_j,
-		 double *sx, double *tx)
+efp_st_int_deriv(int n_shells_i, const struct shell *shells_i,
+		 int n_shells_j, const struct shell *shells_j,
+		 int stride, double *sx, double *tx)
 {
 }

@@ -29,7 +29,6 @@
 
 #include "efp_private.h"
 #include "disp.h"
-#include "int.h"
 
 static inline int
 fock_idx(int i, int j)
@@ -99,7 +98,9 @@ frag_frag_xr(struct efp *efp, int frag_i, int frag_j)
 	double tmp[fr_i->n_lmo * fr_j->xr_wf_size];
 
 	/* compute S and T integrals */
-	efp_st_int(efp, frag_i, frag_j, s, t);
+	efp_st_int(fr_i->n_xr_shells, fr_i->xr_shells,
+		   fr_j->n_xr_shells, fr_j->xr_shells,
+		   fr_j->xr_wf_size, s, t);
 
 	/* lmo_s = wf_i * s * wf_j(t) */
 	cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
@@ -300,10 +301,15 @@ rotate_func_f(const mat_t *rotmat, const double *in, double *out)
 void
 efp_update_xr(struct frag *frag, const mat_t *rotmat)
 {
-	/* move LMO centroids */
+	/* update LMO centroids */
 	for (int i = 0; i < frag->n_lmo; i++)
 		move_pt(VEC(frag->x), rotmat, frag->lib->lmo_centroids + i,
 				frag->lmo_centroids + i);
+
+	/* update shells */
+	for (int i = 0; i < frag->n_xr_shells; i++)
+		move_pt(VEC(frag->x), rotmat, VEC(frag->lib->xr_shells[i].x),
+				VEC(frag->xr_shells[i].x));
 
 	/* rotate wavefunction */
 	for (int lmo = 0; lmo < frag->n_lmo; lmo++) {

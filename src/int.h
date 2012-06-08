@@ -27,17 +27,26 @@
 #ifndef LIBEFP_INT_H
 #define LIBEFP_INT_H
 
-#include "efp_private.h"
+struct shell {
+	char type;       /* shell type - S,L,P,D,F */
+	double x, y, z;  /* coordinates of a corresponding atom */
+	int n_funcs;     /* number of functions */
+	double *coef;    /* function coefficients */
+};
 
-void efp_st_int(struct efp *efp,
-		int frag_i,
-		int frag_j,
+void efp_st_int(int n_shells_i,
+		const struct shell *shells_i,
+		int n_shells_j,
+		const struct shell *shells_j,
+		int stride,
 		double *s,
 		double *t);
 
-void efp_st_int_deriv(struct efp *efp,
-		      int frag_i,
-		      int frag_j,
+void efp_st_int_deriv(int n_shells_i,
+		      const struct shell *shells_i,
+		      int n_shells_j,
+		      const struct shell *shells_j,
+		      int stride,
 		      double *sx,
 		      double *tx);
 

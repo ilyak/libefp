@@ -487,13 +487,20 @@ static enum efp_result
 parse_projection_basis(struct efp *efp, struct stream *stream)
 {
 	struct frag *frag = get_last_frag(efp);
-	int atom_index = 0;
+	double x, y, z;
 
 	next_line(stream);
 
 	while (stream->ptr) {
 		if (tok_stop(stream))
 			return EFP_RESULT_SUCCESS;
+
+		stream->ptr += 8;
+
+		if (!tok_double(stream, &x) ||
+		    !tok_double(stream, &y) ||
+		    !tok_double(stream, &z))
+			return EFP_RESULT_SYNTAX_ERROR;
 
 		next_line(stream);
 shell:
@@ -503,7 +510,6 @@ shell:
 		skip_space(stream);
 
 		if (!*stream->ptr) {
-			atom_index++;
 			next_line(stream);
 			continue;
 		}
@@ -514,7 +520,7 @@ shell:
 
 		struct shell *shell = frag->xr_shells + frag->n_xr_shells - 1;
 
-		shell->atom_index = atom_index;
+		shell->x = x, shell->y = y, shell->z = z;
 		shell->type = *stream->ptr++;
 
 		if (!strchr("SLPDF", shell->type))

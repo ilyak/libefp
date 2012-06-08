@@ -28,19 +28,13 @@
 #define LIBEFP_EFP_PRIVATE_H
 
 #include "efp.h"
+#include "int.h"
 #include "math_util.h"
 #include "terms.h"
 
 #define EFP_EXPORT __attribute__((visibility("default")))
 #define ARRAY_SIZE(arr) ((int)(sizeof(arr)/sizeof(arr[0])))
 #define EFP_INIT_MAGIC 0xEF2012AD
-
-struct shell {
-	char type;       /* shell type - S,L,P,D,F */
-	int atom_index;  /* index of a corresponding fragment atom */
-	int n_funcs;     /* number of functions */
-	double *coef;    /* function coefficients */
-};
 
 struct frag {
 	/* fragment name */
