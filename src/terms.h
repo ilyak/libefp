@@ -27,6 +27,9 @@
 #ifndef LIBEFP_TERMS_H
 #define LIBEFP_TERMS_H
 
+struct efp;
+struct frag;
+
 enum efp_result efp_compute_elec(struct efp *efp);
 enum efp_result efp_compute_pol(struct efp *efp);
 enum efp_result efp_compute_disp(struct efp *efp);
@@ -36,5 +39,10 @@ enum efp_result efp_compute_ai_elec(struct efp *efp);
 enum efp_result efp_compute_ai_disp(struct efp *efp);
 enum efp_result efp_compute_ai_xr(struct efp *efp);
 enum efp_result efp_compute_ai_chtr(struct efp *efp);
+
+void efp_update_elec(struct frag *frag);
+void efp_update_pol(struct frag *frag);
+void efp_update_disp(struct frag *frag);
+void efp_update_xr(struct frag *frag);
 
 #endif /* LIBEFP_TERMS_H */

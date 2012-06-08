@@ -103,24 +103,6 @@ efp_update_qm_data(struct efp *efp, const struct efp_qm_data *qm_data)
 }
 
 static void
-update_fragment(struct efp *efp, int idx, double x, double y, double z,
-			const mat_t *rotmat)
-{
-	struct frag *frag = efp->frags + idx;
-	frag->x = x, frag->y = y, frag->z = z;
-
-	/* update atoms */
-	for (int i = 0; i < frag->n_atoms; i++)
-		move_pt(VEC(frag->x), rotmat, VEC(frag->lib->atoms[i].x),
-			VEC(frag->atoms[i].x));
-
-	efp_update_elec(frag, rotmat);
-	efp_update_pol(frag, rotmat);
-	efp_update_disp(frag, rotmat);
-	efp_update_xr(frag, rotmat);
-}
-
-static void
 euler_to_matrix(double a, double b, double c, mat_t *out)
 {
 	double sina = sin(a), cosa = cos(a);
@@ -137,6 +119,40 @@ euler_to_matrix(double a, double b, double c, mat_t *out)
 	out->zz =  cosb;
 }
 
+static void
+matrix_to_euler(const mat_t *rotmat, double *ea, double *eb, double *ec)
+{
+	double a, b, c, sinb;
+
+	b = acos(rotmat->zz);
+	sinb = sqrt(1.0 - rotmat->zz * rotmat->zz);
+
+	if (fabs(sinb) < 1.0e-6) {
+		a = atan2(-rotmat->xy, rotmat->xx);
+		c = 0.0;
+	}
+	else {
+		a = atan2(rotmat->xz, -rotmat->yz);
+		c = atan2(rotmat->zx, rotmat->zy);
+	}
+
+	*ea = a, *eb = b, *ec = c;
+}
+
+static void
+update_fragment(struct frag *frag)
+{
+	/* update atoms */
+	for (int i = 0; i < frag->n_atoms; i++)
+		move_pt(VEC(frag->x), &frag->rotmat, VEC(frag->lib->atoms[i].x),
+				VEC(frag->atoms[i].x));
+
+	efp_update_elec(frag);
+	efp_update_pol(frag);
+	efp_update_disp(frag);
+	efp_update_xr(frag);
+}
+
 EFP_EXPORT enum efp_result
 efp_set_coordinates(struct efp *efp, const double *xyzabc)
 {
@@ -146,14 +162,20 @@ efp_set_coordinates(struct efp *efp, const double *xyzabc)
 	if (!xyzabc)
 		return EFP_RESULT_INVALID_ARGUMENT;
 
-	for (int i = 0; i < efp->n_frag; i++, xyzabc += 6) {
-		double x = xyzabc[0], y = xyzabc[1], z = xyzabc[2];
-		double a = xyzabc[3], b = xyzabc[4], c = xyzabc[5];
+	for (int i = 0; i < efp->n_frag; i++) {
+		struct frag *frag = efp->frags + i;
 
-		mat_t rotmat;
-		euler_to_matrix(a, b, c, &rotmat);
+		frag->x = *xyzabc++;
+		frag->y = *xyzabc++;
+		frag->z = *xyzabc++;
 
-		update_fragment(efp, i, x, y, z, &rotmat);
+		double a = *xyzabc++;
+		double b = *xyzabc++;
+		double c = *xyzabc++;
+
+		euler_to_matrix(a, b, c, &frag->rotmat);
+
+		update_fragment(frag);
 	}
 	return EFP_RESULT_SUCCESS;
 }
@@ -220,18 +242,45 @@ efp_set_coordinates_2(struct efp *efp, const double *pts)
 		struct frag *frag = efp->frags + i;
 		const double *pt = pts + 9 * i;
 
-		mat_t rotmat;
-		points_to_matrix(pt, &rotmat);
+		points_to_matrix(pt, &frag->rotmat);
 
 		vec_t p1;
-		mat_vec(&rotmat, VEC(frag->lib->atoms[0].x), &p1);
+		mat_vec(&frag->rotmat, VEC(frag->lib->atoms[0].x), &p1);
 
 		/* center of mass */
-		double x = pt[0] - p1.x;
-		double y = pt[1] - p1.y;
-		double z = pt[2] - p1.z;
+		frag->x = pt[0] - p1.x;
+		frag->y = pt[1] - p1.y;
+		frag->z = pt[2] - p1.z;
 
-		update_fragment(efp, i, x, y, z, &rotmat);
+		update_fragment(frag);
+	}
+	return EFP_RESULT_SUCCESS;
+}
+
+EFP_EXPORT enum efp_result
+efp_get_coordinates(struct efp *efp, int size, double *xyzabc)
+{
+	if (!initialized(efp))
+		return EFP_RESULT_NOT_INITIALIZED;
+
+	if (!xyzabc)
+		return EFP_RESULT_INVALID_ARGUMENT;
+
+	if (size < 6 * efp->n_frag)
+		return EFP_RESULT_INVALID_ARRAY_SIZE;
+
+	for (int i = 0; i < efp->n_frag; i++) {
+		struct frag *frag = efp->frags + i;
+
+		double a, b, c;
+		matrix_to_euler(&frag->rotmat, &a, &b, &c);
+
+		*xyzabc++ = frag->x;
+		*xyzabc++ = frag->y;
+		*xyzabc++ = frag->z;
+		*xyzabc++ = a;
+		*xyzabc++ = b;
+		*xyzabc++ = c;
 	}
 	return EFP_RESULT_SUCCESS;
 }

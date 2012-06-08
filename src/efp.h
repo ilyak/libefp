@@ -335,6 +335,20 @@ enum efp_result efp_set_coordinates(struct efp *efp, const double *xyzabc);
 enum efp_result efp_set_coordinates_2(struct efp *efp, const double *pts);
 
 /**
+ * Get center of mass positions and Euler angles of the effective fragments.
+ *
+ * \param[in] efp The efp structure.
+ * \param[in] size Size of the xyzabc array. Must be greater than (6 * N),
+ *                 where N is the number of fragments.
+ * \param[out] xyzabc Upon return (6 * N) elements will be written to this
+ *                    array. The coordinates of the center of mass and Euler
+ *                    rotation angles for each fragment will be stored.
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_get_coordinates(struct efp *efp, int size, double *xyzabc);
+
+/**
  * Initialize SCF computation.
  *
  * Must be called before \a ab \a initio SCF cycle.

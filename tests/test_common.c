@@ -233,8 +233,13 @@ run_test(const struct test_data *test_data)
 		}
 
 		if (test_data->test_numerical_gradient) {
-			if(test_numerical_gradient(efp,
-					test_data->geometry_xyzabc, grad,
+			double xyzabc[n_grad];
+
+			if ((res = efp_get_coordinates(efp, n_grad, xyzabc))) {
+				error("efp_get_coordinates", res);
+				goto fail;
+			}
+			if (test_numerical_gradient(efp, xyzabc, grad,
 					test_data->gradient_accuracy)) {
 				message("wrong numerical gradient");
 				status = EXIT_FAILURE;

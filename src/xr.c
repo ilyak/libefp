@@ -299,8 +299,10 @@ rotate_func_f(const mat_t *rotmat, const double *in, double *out)
 }
 
 void
-efp_update_xr(struct frag *frag, const mat_t *rotmat)
+efp_update_xr(struct frag *frag)
 {
+	const mat_t *rotmat = &frag->rotmat;
+
 	/* update LMO centroids */
 	for (int i = 0; i < frag->n_lmo; i++)
 		move_pt(VEC(frag->x), rotmat, frag->lib->lmo_centroids + i,

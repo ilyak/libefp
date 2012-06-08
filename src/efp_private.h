@@ -43,6 +43,9 @@ struct frag {
 	/* fragment center of mass */
 	double x, y, z;
 
+	/* rotation matrix representing orientation of a fragment */
+	mat_t rotmat;
+
 	/* pointer to the initial fragment state in library */
 	const struct frag *lib;
 
@@ -196,9 +199,5 @@ add_force_torque_2(struct frag *fr_i, struct frag *fr_j, const vec_t *pt_i,
 enum efp_result efp_read_potential(struct efp *efp, const char **files);
 void efp_pol_scf_init(struct efp *efp);
 double efp_compute_pol_energy(struct efp *efp);
-void efp_update_elec(struct frag *frag, const mat_t *rotmat);
-void efp_update_pol(struct frag *frag, const mat_t *rotmat);
-void efp_update_disp(struct frag *frag, const mat_t *rotmat);
-void efp_update_xr(struct frag *frag, const mat_t *rotmat);
 
 #endif /* LIBEFP_EFP_PRIVATE_H */

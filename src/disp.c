@@ -162,8 +162,10 @@ efp_compute_disp(struct efp *efp)
 }
 
 void
-efp_update_disp(struct frag *frag, const mat_t *rotmat)
+efp_update_disp(struct frag *frag)
 {
+	const mat_t *rotmat = &frag->rotmat;
+
 	for (int i = 0; i < frag->n_dynamic_polarizable_pts; i++) {
 		const struct dynamic_polarizable_pt *pt_in =
 					frag->lib->dynamic_polarizable_pts + i;
