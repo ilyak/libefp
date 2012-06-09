@@ -31,10 +31,8 @@ AC_SUBST([cblas_libs], [$with_cblas_libs])
 developer_CFLAGS="-Wall -Wextra -pedantic \
 -Wno-unused-parameter \
 -Wmissing-declarations -Wmissing-prototypes \
--Wnested-externs -Wpointer-arith \
--Wsign-compare -Wchar-subscripts \
--Wstrict-prototypes -Wshadow \
--Wformat-security -Wtype-limits"
+-Wpointer-arith -Wsign-compare \
+-Wstrict-prototypes -Wshadow -Wformat-security"
 
 AC_ARG_ENABLE([developer-flags],
 	AS_HELP_STRING([--enable-developer-flags], [use developer GCC flags]),
