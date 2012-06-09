@@ -138,7 +138,7 @@ struct efp;
 /** Options controlling EFP computation. */
 struct efp_opts {
 	/** Specifies which energy terms to compute. */
-	enum efp_term terms;
+	unsigned terms;
 
 	/** Dispersion damping type (see #efp_disp_damp). */
 	enum efp_disp_damp disp_damp;

@@ -635,7 +635,7 @@ efp_opts_default(struct efp_opts *opts)
 static enum efp_result
 check_opts(const struct efp_opts *opts)
 {
-	enum efp_term terms = opts->terms;
+	unsigned terms = opts->terms;
 
 	if (((terms & EFP_TERM_AI_ELEC) && !(terms & EFP_TERM_ELEC)) ||
 	    ((terms & EFP_TERM_AI_POL) && !(terms & EFP_TERM_POL)) ||

@@ -145,8 +145,11 @@ int
 run_test(const struct test_data *test_data)
 {
 	enum efp_result res;
-	int status = EXIT_SUCCESS;
 	struct efp *efp;
+
+	int status = EXIT_SUCCESS;
+	int do_gradient = test_data->ref_gradient ||
+			  test_data->test_numerical_gradient;
 
 	if ((res = efp_init(&efp, &test_data->opts, &test_data->callbacks,
 			test_data->potential_files, test_data->fragname))) {
@@ -186,9 +189,6 @@ run_test(const struct test_data *test_data)
 		goto fail;
 	}
 	/* End imaginary SCF */
-
-	int do_gradient = test_data->ref_gradient ||
-			  test_data->test_numerical_gradient;
 
 	if ((res = efp_compute(efp, do_gradient))) {
 		error("efp_compute", res);
