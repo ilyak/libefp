@@ -84,11 +84,16 @@ TESTS = \
 	tests/pol_2 \
 	tests/disp_2 \
 	tests/xr_2 \
-	tests/total_2a
+	tests/total_2a \
+	tests/elec_3 \
+	tests/pol_3 \
+	tests/disp_3 \
+	tests/xr_3
 
 EXTRA_DIST += \
 	tests/geometry_1.h \
-	tests/geometry_2.h
+	tests/geometry_2.h \
+	tests/geometry_3.h
 
 check_PROGRAMS = $(TESTS)
 
@@ -135,3 +140,19 @@ tests_xr_2_CPPFLAGS = $(TESTS_CPPFLAGS)
 tests_total_2a_SOURCES = tests/total_2a.c $(TESTS_COMMON_FILES)
 tests_total_2a_LDADD = $(TESTS_LDADD)
 tests_total_2a_CPPFLAGS = $(TESTS_CPPFLAGS)
+
+tests_elec_3_SOURCES = tests/elec_3.c $(TESTS_COMMON_FILES)
+tests_elec_3_LDADD = $(TESTS_LDADD)
+tests_elec_3_CPPFLAGS = $(TESTS_CPPFLAGS)
+
+tests_pol_3_SOURCES = tests/pol_3.c $(TESTS_COMMON_FILES)
+tests_pol_3_LDADD = $(TESTS_LDADD)
+tests_pol_3_CPPFLAGS = $(TESTS_CPPFLAGS)
+
+tests_disp_3_SOURCES = tests/disp_3.c $(TESTS_COMMON_FILES)
+tests_disp_3_LDADD = $(TESTS_LDADD)
+tests_disp_3_CPPFLAGS = $(TESTS_CPPFLAGS)
+
+tests_xr_3_SOURCES = tests/xr_3.c $(TESTS_COMMON_FILES)
+tests_xr_3_LDADD = $(TESTS_LDADD)
+tests_xr_3_CPPFLAGS = $(TESTS_CPPFLAGS)
