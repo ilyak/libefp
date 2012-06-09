@@ -99,8 +99,8 @@ enum efp_result {
 	 * Inconsistent selection of EFP terms.
 	 *
 	 * This means that AI/EFP terms were selected without selecting their
-	 * EFP/EFP counterparts. Also enabling polarization without
-	 * electrostatics produces this error. */
+	 * EFP/EFP counterparts. Enabling polarization without electrostatics
+	 * also produces this error. */
 	EFP_RESULT_INCONSISTENT_TERMS
 };
 
@@ -183,7 +183,7 @@ struct efp_energy {
 	 * AI/EFP charge transfer energy. */
 	double ai_charge_transfer;
 	/**
-	 * Sum of all the above terms. */
+	 * Sum of all the above EFP energy terms. */
 	double total;
 };
 
@@ -242,14 +242,14 @@ struct efp_callbacks {
 	 * efp_callbacks::get_electron_density_field. */
 	void *get_electron_density_field_user_data;
 
-	/** Callback function, see ::efp_ao_integrals_fn . */
+	/** Callback function, see ::efp_ao_integrals_fn. */
 	efp_ao_integrals_fn get_ao_integrals;
 
 	/** Will be passed as a last parameter to
 	 * efp_callbacks::get_ao_integrals. */
 	void *get_ao_integrals_user_data;
 
-	/** Callback function, see ::efp_field_integrals_fn . */
+	/** Callback function, see ::efp_field_integrals_fn. */
 	efp_field_integrals_fn get_field_integrals;
 
 	/** Will be passed as a last parameter to
@@ -317,18 +317,19 @@ enum efp_result efp_set_coordinates(struct efp *efp, const double *xyzabc);
  * Update positions and orientations of effective fragments.
  *
  * This is a convenience function. It does the same as efp_set_coordinates.
- * However to specify position and orientation of fragments it takes
- * coordinates of 3 points in space for each fragment. For each fragment point
- * 1 and first atom of fragment are made to coincide. The vector connecting
- * points 1 and 2 is aligned with the corresponding vector connecting fragment
- * atoms. The plane defined by points 1, 2, and 3 is made to coincide with the
- * corresponding fragment plane.
+ * However to specify position and orientation of each fragment it takes
+ * coordinates of 3 points in space. For each fragment point 1 and first atom
+ * of fragment are made to coincide. The vector connecting points 1 and 2 is
+ * aligned with the corresponding vector connecting fragment atoms. The plane
+ * defined by points 1, 2, and 3 is made to coincide with the corresponding
+ * fragment plane.
  *
  * \param[in] efp The efp structure.
- * \param[in] pts Array of size 9 times the number of fragments. For each
- *                fragment specifies \a x \a y \a z coordinates of 3 points to
- *                determine the position and orientation of a corresponding
- *                fragment.
+ * \param[in] pts Array of points used to determine fragment positions and
+ *                orientations. The size of this array must be (9 * N), where N
+ *                is the number of fragments. For each fragment \a x \a y \a z
+ *                coordinates of 3 fragment points should be specified to
+ *                setup the position and orientation of a fragment.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
@@ -338,8 +339,8 @@ enum efp_result efp_set_coordinates_2(struct efp *efp, const double *pts);
  * Get center of mass positions and Euler angles of the effective fragments.
  *
  * \param[in] efp The efp structure.
- * \param[in] size Size of the xyzabc array. Must be greater than (6 * N),
- *                 where N is the number of fragments.
+ * \param[in] size Size of the xyzabc array. Must be at least (6 * N), where N
+ *                 is the number of fragments.
  * \param[out] xyzabc Upon return (6 * N) elements will be written to this
  *                    array. The coordinates of the center of mass and Euler
  *                    rotation angles for each fragment will be stored.
@@ -384,11 +385,12 @@ enum efp_result efp_scf_update(struct efp *efp, double *energy);
 enum efp_result efp_compute(struct efp *efp, int do_gradient);
 
 /**
- * Compute one-electron contributions to QM Hamiltonian from EFP fragments.
+ * Compute one-electron contributions to the quantum mechanical Hamiltonian
+ * from the effective fragments.
  *
  * \param[in] efp The efp structure.
  * \param[in] n_basis Number of basis functions.
- * \param[out] v One-electron contributions to QM Hamiltonian.
+ * \param[out] v One-electron contributions to the Hamiltonian.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
@@ -408,8 +410,8 @@ enum efp_result efp_get_energy(struct efp *efp, struct efp_energy *energy);
  * Get computed EFP energy gradient.
  *
  * \param[in] efp The efp structure.
- * \param[in] n_grad Length of the grad array. Must be greater than or equal to
- *                   six times number of fragments.
+ * \param[in] n_grad Length of the grad array. Must be at least (6 * N), where
+ *                   N is the number of fragments.
  * \param[out] grad For each fragment contains \a x \a y \a z components of
  *                  negative force and torque.
  *
@@ -451,7 +453,8 @@ int efp_get_frag_atom_count(struct efp *efp, int frag_idx);
 enum efp_result efp_get_frag_atoms(struct efp *efp, int frag_idx,
 				   struct efp_atom *atoms);
 
-/** Release all resources used by this \a efp.
+/**
+ * Release all resources used by this \a efp.
  *
  * \param[in] efp The efp structure to be released.
  */
