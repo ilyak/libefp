@@ -378,30 +378,18 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 
 			vec_t dr = vec_sub(VEC(pt_j->x), VEC(pt_i->x));
 
-			vec_t force1, add_i1, add_j1;
-			vec_t force2, add_i2, add_j2;
+			vec_t half_dipole_i = {
+				0.5 * pt_i->induced_dipole.x,
+				0.5 * pt_i->induced_dipole.y,
+				0.5 * pt_i->induced_dipole.z
+			};
 
-			efp_dipole_dipole_grad(&pt_i->induced_dipole,
+			vec_t force, add_i, add_j;
+
+			efp_dipole_dipole_grad(&half_dipole_i,
 					       &pt_j->induced_dipole_conj,
-					       &dr, &force1, &add_i1, &add_j1);
-			vec_negate(&add_j1);
-
-			efp_dipole_dipole_grad(&pt_i->induced_dipole_conj,
-					       &pt_j->induced_dipole,
-					       &dr, &force2, &add_i2, &add_j2);
-			vec_negate(&add_j2);
-
-			vec_t force = { 0.5 * (force1.x + force2.x),
-					0.5 * (force1.y + force2.y),
-					0.5 * (force1.z + force2.z) };
-
-			vec_t add_i = { 0.5 * (add_i1.x + add_i2.x),
-					0.5 * (add_i1.y + add_i2.y),
-					0.5 * (add_i1.z + add_i2.z) };
-
-			vec_t add_j = { 0.5 * (add_j1.x + add_j2.x),
-					0.5 * (add_j1.y + add_j2.y),
-					0.5 * (add_j1.z + add_j2.z) };
+					       &dr, &force, &add_i, &add_j);
+			vec_negate(&add_j);
 
 			add_force_torque_2(fr_i, fr_j,
 					   VEC(pt_i->x), VEC(pt_j->x),
