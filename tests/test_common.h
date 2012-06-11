@@ -55,12 +55,12 @@ struct test_data {
 
 	/**
 	 * Reference gradient values. Turns on gradient test if not NULL.
-	 * The size of this array must be 6N, where N is the number of
+	 * The size of this array must be (6 * N), where N is the number of
 	 * fragments. */
 	const double *ref_gradient;
 
 	/**
-	 * Specifies desired energy accuracy.
+	 * Specifies accuracy for comparison of energy values.
 	 *
 	 * The test will pass if energy differs from reference value by less
 	 * than (10 ^ -n), where n is energy_accuracy. If zero value is
@@ -68,7 +68,7 @@ struct test_data {
 	int energy_accuracy;
 
 	/**
-	 * Specifies desired gradient accuracy.
+	 * Specifies accuracy for comparison of gradient values.
 	 *
 	 * The test will pass if gradient differs from reference value by less
 	 * than (10 ^ -n), where n is gradient_accuracy. If zero value is
