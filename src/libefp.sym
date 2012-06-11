@@ -6,7 +6,6 @@ global:
 	efp_set_coordinates;
 	efp_set_coordinates_2;
 	efp_get_coordinates;
-	efp_scf_init;
 	efp_scf_update;
 	efp_compute;
 	efp_qm_contribution;

@@ -75,14 +75,12 @@ test_numerical_gradient(struct efp *efp,
 			struct efp_energy e1;
 			xyzabc_new[6 * i + j] = xyzabc[6 * i + j] - grad_delta;
 			efp_set_coordinates(efp, xyzabc_new);
-			efp_scf_init(efp);
 			efp_compute(efp, 0);
 			efp_get_energy(efp, &e1);
 
 			struct efp_energy e2;
 			xyzabc_new[6 * i + j] = xyzabc[6 * i + j] + grad_delta;
 			efp_set_coordinates(efp, xyzabc_new);
-			efp_scf_init(efp);
 			efp_compute(efp, 0);
 			efp_get_energy(efp, &e2);
 
@@ -178,18 +176,13 @@ run_test(const struct test_data *test_data)
 		goto fail;
 	}
 
-	if ((res = efp_scf_init(efp))) {
-		error("efp_scf_init", res);
-		goto fail;
-	}
-
-	/* Begin imaginary SCF */
+	/* Begin imaginary ab initio SCF */
 	double scf_energy;
 	if ((res = efp_scf_update(efp, &scf_energy))) {
 		error("efp_scf_update", res);
 		goto fail;
 	}
-	/* End imaginary SCF */
+	/* End imaginary ab initio SCF */
 
 	if ((res = efp_compute(efp, do_gradient))) {
 		error("efp_compute", res);

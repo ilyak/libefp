@@ -286,17 +286,6 @@ efp_get_coordinates(struct efp *efp, int size, double *xyzabc)
 }
 
 EFP_EXPORT enum efp_result
-efp_scf_init(struct efp *efp)
-{
-	if (!initialized(efp))
-		return EFP_RESULT_NOT_INITIALIZED;
-
-	efp_pol_scf_init(efp);
-
-	return EFP_RESULT_SUCCESS;
-}
-
-EFP_EXPORT enum efp_result
 efp_scf_update(struct efp *efp, double *energy)
 {
 	if (!initialized(efp))

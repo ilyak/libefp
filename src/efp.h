@@ -350,17 +350,6 @@ enum efp_result efp_set_coordinates_2(struct efp *efp, const double *pts);
 enum efp_result efp_get_coordinates(struct efp *efp, int size, double *xyzabc);
 
 /**
- * Initialize SCF computation.
- *
- * Must be called before \a ab \a initio SCF cycle.
- *
- * \param[in] efp The efp structure.
- *
- * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
- */
-enum efp_result efp_scf_init(struct efp *efp);
-
-/**
  * Update wave function dependent energy terms.
  *
  * Must be called during \a ab \a initio SCF.
