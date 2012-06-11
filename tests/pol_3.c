@@ -34,8 +34,7 @@ static const struct test_data test_data = {
 		/* elec + pol - from GAMESS */
 	.ref_energy = -0.0091760727 + -0.0034649076,
 	.energy_accuracy = 6,
-	.test_numerical_gradient = 0,
-	.gradient_accuracy = 4,
+	.test_numerical_gradient = 1,
 	.opts = {
 		.terms = EFP_TERM_ELEC | EFP_TERM_POL
 	}
