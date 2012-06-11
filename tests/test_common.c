@@ -54,8 +54,9 @@ eq(double a, double b, int accuracy)
 }
 
 static int
-test_numerical_gradient(struct efp *efp, const double *xyzabc,
-			const double *grad, int accuracy)
+test_numerical_gradient(struct efp *efp,
+			const double *xyzabc,
+			const double *grad)
 {
 	static const double grad_delta = 0.0001;
 
@@ -111,7 +112,7 @@ test_numerical_gradient(struct efp *efp, const double *xyzabc,
 		grad_euler[5] = sinb * sina * tx - sinb * cosa * ty + cosb * tz;
 
 		for (int j = 0; j < 6; j++)
-			if (!eq(grad_num[j], grad_euler[j], accuracy))
+			if (!eq(grad_num[j], grad_euler[j], 7))
 				result = 1;
 	}
 	return result;
@@ -239,8 +240,7 @@ run_test(const struct test_data *test_data)
 				error("efp_get_coordinates", res);
 				goto fail;
 			}
-			if (test_numerical_gradient(efp, xyzabc, grad,
-					test_data->gradient_accuracy)) {
+			if (test_numerical_gradient(efp, xyzabc, grad)) {
 				message("wrong numerical gradient");
 				status = EXIT_FAILURE;
 			}
