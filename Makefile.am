@@ -98,7 +98,7 @@ EXTRA_DIST += \
 check_PROGRAMS = $(TESTS)
 
 TESTS_COMMON_FILES = tests/test_common.c tests/test_common.h
-TESTS_LDADD = src/libefp.la
+TESTS_LDADD = $(cblas_libs) src/libefp.la
 TESTS_CPPFLAGS = $(AM_CPPFLAGS) -DABS_TOP_SRCDIR=\"$(abs_top_srcdir)\"
 
 tests_elec_1_SOURCES = tests/elec_1.c $(TESTS_COMMON_FILES)
