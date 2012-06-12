@@ -89,7 +89,7 @@ point_point_disp(struct efp *efp, int fr_i_idx, int fr_j_idx,
 	double r2 = r * r;
 	double r6 = r2 * r2 * r2;
 
-	double damp;
+	double damp = 1.0;
 
 	switch (efp->opts.disp_damp) {
 	case EFP_DISP_DAMP_TT:
@@ -104,7 +104,7 @@ point_point_disp(struct efp *efp, int fr_i_idx, int fr_j_idx,
 	double energy = -4.0 / 3.0 * sum * damp / r6;
 
 	if (efp->do_gradient) {
-		double gdamp;
+		double gdamp = 1.0;
 
 		switch (efp->opts.disp_damp) {
 		case EFP_DISP_DAMP_TT:
