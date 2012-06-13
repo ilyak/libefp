@@ -35,7 +35,7 @@ developer_CFLAGS="-Wall -Wextra -pedantic \
 -Wstrict-prototypes -Wshadow -Wformat-security"
 
 AC_ARG_ENABLE([developer-flags],
-	AS_HELP_STRING([--enable-developer-flags], [use developer GCC flags]),
+	AS_HELP_STRING([--enable-developer-flags], [use developer flags]),
 	[enable_developer_flags=$developer_CFLAGS],
 	[enable_developer_flags=""])
 AC_SUBST([my_CFLAGS], [$enable_developer_flags])
