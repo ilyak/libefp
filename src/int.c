@@ -137,23 +137,22 @@ make_int(int ni, int nj, double tt, double x, double y, double z,
 	*outz = zint;
 }
 
-static int
-shell_type(char type)
+static void
+init_shell(char type, int *start, int *end, int *sl)
 {
 	switch (type) {
-		case 'S': return 0;
-		case 'L': return 1;
-		case 'P': return 2;
-		case 'D': return 3;
-		case 'F': return 4;
+		case 'S': *start =  0; *end =  1; *sl = 1; return;
+		case 'L': *start =  0; *end =  4; *sl = 2; return;
+		case 'P': *start =  1; *end =  4; *sl = 2; return;
+		case 'D': *start =  4; *end = 10; *sl = 3; return;
+		case 'F': *start = 10; *end = 20; *sl = 4; return;
 	}
-	return -1;
 }
 
-void
-efp_st_int(int n_shells_i, const struct shell *shells_i,
-	   int n_shells_j, const struct shell *shells_j,
-	   int stride, double *s, double *t)
+static void
+init_int(int start_i, int end_i, int start_j, int end_j,
+	 double *ft, double *sblk, double *tblk,
+	 int *shift_x, int *shift_y, int *shift_z)
 {
 	static const int shift_ix[] = {
 		0, 5, 0,  0, 10, 0, 0, 5, 5, 0,
@@ -180,6 +179,24 @@ efp_st_int(int n_shells_i, const struct shell *shells_i,
 		0, 0, 3, 0, 1, 0, 1, 2, 2, 1
 	};
 
+	for (int i = start_i; i < end_i; i++) {
+		for (int j = start_j; j < end_j; j++) {
+			*ft++ = j < 1 ? 3.0 :
+				j < 4 ? 5.0 :
+				j < 10 ? 7.0 : 9.0;
+			*sblk++ = *tblk++ = 0.0;
+			*shift_x++ = shift_ix[i] + shift_jx[j];
+			*shift_y++ = shift_iy[i] + shift_jy[j];
+			*shift_z++ = shift_iz[i] + shift_jz[j];
+		}
+	}
+}
+
+void
+efp_st_int(int n_shells_i, const struct shell *shells_i,
+	   int n_shells_j, const struct shell *shells_j,
+	   int stride, double *s, double *t)
+{
 	static const double norm[] = {
 		1.0000000000000000, 1.0000000000000000, 1.0000000000000000,
 		1.0000000000000000, 1.0000000000000000, 1.0000000000000000,
@@ -190,17 +207,7 @@ efp_st_int(int n_shells_i, const struct shell *shells_i,
 		2.2360679774997898, 3.8729833462074232
 	};
 
-	static const double tolerance = 46.051701859881; /* 20 ln10 */
-
-	static const int primitive_start[] = {
-		0, 0, 1, 4, 10
-	};
-	static const int primitive_end[] = {
-		1, 4, 4, 10, 20
-	};
-	static const int shell_l[] = {
-		1, 2, 2, 3, 4
-	};
+	static const double tolerance = 46.051701859881; /* 20 * ln10 */
 
 	int shift_x[100];
 	int shift_y[100];
@@ -217,41 +224,22 @@ efp_st_int(int n_shells_i, const struct shell *shells_i,
 	for (int ii = 0, loc_i = 0; ii < n_shells_i; ii++) {
 		const struct shell *sh_i = shells_i + ii;
 
-		int type_i = shell_type(sh_i->type);
-		int start_i = primitive_start[type_i];
-		int end_i = primitive_end[type_i];
+		int start_i, end_i, sl_i;
+		init_shell(sh_i->type, &start_i, &end_i, &sl_i);
+
 		int count_i = end_i - start_i;
 
 		/* shell j */
 		for (int jj = 0, loc_j = 0; jj < n_shells_j; jj++) {
 			const struct shell *sh_j = shells_j + jj;
 
-			int type_j = shell_type(sh_j->type);
-			int start_j = primitive_start[type_j];
-			int end_j = primitive_end[type_j];
+			int start_j, end_j, sl_j;
+			init_shell(sh_j->type, &start_j, &end_j, &sl_j);
+
 			int count_j = end_j - start_j;
 
-			int count = 0;
-
-			for (int i = start_i; i < end_i; i++) {
-				for (int j = start_j; j < end_j; j++, count++) {
-					shift_x[count] = shift_ix[i] + shift_jx[j];
-					shift_y[count] = shift_iy[i] + shift_jy[j];
-					shift_z[count] = shift_iz[i] + shift_jz[j];
-
-					if (j < 1)
-						ft[count] = 3.0;
-					else if (j >= 1 && j < 4)
-						ft[count] = 5.0;
-					else if (j >= 4 && j < 10)
-						ft[count] = 7.0;
-					else
-						ft[count] = 9.0;
-				}
-			}
-
-			memset(sblk, 0, count * sizeof(double));
-			memset(tblk, 0, count * sizeof(double));
+			init_int(start_i, end_i, start_j, end_j,
+				 ft, sblk, tblk, shift_x, shift_y, shift_z);
 
 			const double *coef_i = sh_i->coef;
 
@@ -277,8 +265,8 @@ efp_st_int(int n_shells_i, const struct shell *shells_i,
 					double dx = sh_j->x - sh_i->x;
 					double dy = sh_j->y - sh_i->y;
 					double dz = sh_j->z - sh_i->z;
-					double rr = dx * dx + dy * dy + dz * dz;
 
+					double rr = dx * dx + dy * dy + dz * dz;
 					double dum = aj * ai * rr * aa;
 
 					if (dum > tolerance) {
@@ -310,8 +298,8 @@ efp_st_int(int n_shells_i, const struct shell *shells_i,
 					double t1 = -2.0 * aj * aj * taa;
 					double t2 = -0.5 * taa;
 
-					for (int i = 0, idx = 0; i < shell_l[type_i]; i++, idx += 5) {
-						for (int j = 0; j < shell_l[type_j]; j++) {
+					for (int i = 0, idx = 0; i < sl_i; i++, idx += 5) {
+						for (int j = 0; j < sl_j; j++) {
 							double xint, yint, zint;
 
 							make_int(i, j, taa, ax, ay, az,
@@ -347,16 +335,16 @@ efp_st_int(int n_shells_i, const struct shell *shells_i,
 							zin[idx + j + 60] = zint * t3;
 						}
 					}
-					for (int i = 0; i < count; i++) {
+					for (int i = 0; i < count_i * count_j; i++) {
 						int nx = shift_x[i];
 						int ny = shift_y[i];
 						int nz = shift_z[i];
-						double tmp1 = xin[nx] * yin[ny] * zin[nz];
-						double tmp2 = (xin[nx + 30] + xin[nx + 60]) * yin[ny] * zin[nz] +
-							      (yin[ny + 30] + yin[ny + 60]) * xin[nx] * zin[nz] +
-							      (zin[nz + 30] + zin[nz + 60]) * xin[nx] * yin[ny];
-						sblk[i] = sblk[i] + dij[i] * tmp1;
-						tblk[i] = tblk[i] + dij[i] * (tmp1 * aj * ft[i] + tmp2);
+						double xyz = xin[nx] * yin[ny] * zin[nz];
+						double add = (xin[nx + 30] + xin[nx + 60]) * yin[ny] * zin[nz] +
+							     (yin[ny + 30] + yin[ny + 60]) * xin[nx] * zin[nz] +
+							     (zin[nz + 30] + zin[nz + 60]) * xin[nx] * yin[ny];
+						sblk[i] = sblk[i] + dij[i] * xyz;
+						tblk[i] = tblk[i] + dij[i] * (xyz * aj * ft[i] + add);
 					}
 				}
 			}
