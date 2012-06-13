@@ -23,10 +23,8 @@ AC_PREFIX_DEFAULT([/usr])
 AC_PROG_SED
 AC_PROG_MKDIR_P
 
-AC_ARG_WITH([cblas-libs],
-	AS_HELP_STRING([--with-cblas-libs=LIBS], [use cblas libraries]),
-	[], [with_cblas_libs=""])
-AC_SUBST([cblas_libs], [$with_cblas_libs])
+AC_CHECK_LIB([m], [cos])
+AC_CHECK_LIB([cblas], [cblas_dgemm])
 
 developer_CFLAGS="-Wall -Wextra -pedantic \
 -Wno-unused-parameter \
@@ -59,6 +57,5 @@ AC_MSG_RESULT([
         cflags:             ${CFLAGS}
         ldflags:            ${LDFLAGS}
 
-        cblas libs:         ${cblas_libs}
         developer cflags:   ${my_CFLAGS}
 ])

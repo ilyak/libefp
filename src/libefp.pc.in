@@ -7,5 +7,4 @@ Name: libefp
 Description: The Effective Fragment Potential method implementation
 Version: @VERSION@
 Libs: -L${libdir} -lefp
-Libs.private: -lm @cblas_libs@
 Cflags: -I${includedir}

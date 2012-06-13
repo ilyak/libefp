@@ -23,7 +23,6 @@ SED_PROCESS = \
 	-e 's,@exec_prefix\@,$(exec_prefix),g' \
 	-e 's,@libdir\@,$(libdir),g' \
 	-e 's,@includedir\@,$(includedir),g' \
-	-e 's,@cblas_libs\@,$(cblas_libs),g' \
 	< $< > $@ || rm $@
 
 %.pc: %.pc.in Makefile
@@ -67,7 +66,6 @@ src_libefp_la_LDFLAGS = $(AM_LDFLAGS) \
 	-version-info $(LIBEFP_CURRENT):$(LIBEFP_REVISION):$(LIBEFP_AGE) \
 	-Wl,--version-script=$(top_srcdir)/src/libefp.sym
 src_libefp_la_DEPENDENCIES = ${top_srcdir}/src/libefp.sym
-src_libefp_la_LIBADD = -lm $(cblas_libs)
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = src/libefp.pc
@@ -98,7 +96,7 @@ EXTRA_DIST += \
 check_PROGRAMS = $(TESTS)
 
 TESTS_COMMON_FILES = tests/test_common.c tests/test_common.h
-TESTS_LDADD = $(cblas_libs) src/libefp.la
+TESTS_LDADD = src/libefp.la
 TESTS_CPPFLAGS = $(AM_CPPFLAGS) -DABS_TOP_SRCDIR=\"$(abs_top_srcdir)\"
 
 tests_elec_1_SOURCES = tests/elec_1.c $(TESTS_COMMON_FILES)
