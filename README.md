@@ -25,10 +25,11 @@ and comments to ilya.kaliman@gmail.com.
 
 To compile libefp from source issue the following commands:
 
-	./configure --prefix=INSTALL_PATH --with-cblas-libs=CBLAS_LIBS
+	./configure LIBS=CBLAS_LIBS --prefix=INSTALL_PATH
 
-In the above command `INSTALL_PATH` is the path to install the library and
-`CBLAS_LIBS` are libraries providing CBLAS implementation.
+In the above command `INSTALL_PATH` is the path to install the library
+(e.g. --prefix=/usr) and `CBLAS_LIBS` are libraries providing CBLAS
+implementation (e.g. LIBS='-lcblas -lblas').
 
 To compile the library issue:
 
@@ -56,7 +57,7 @@ library is available at http://libefp.github.com/.
 To obtain an executable program link with provided shared (recommended) or
 static libraries:
 
-	gcc -o prog prog.c -lefp
+	gcc -o prog prog.c CBLAS_LIBS -lm -lefp
 
 or
 
@@ -73,12 +74,6 @@ You can use pkg-config to easily get all required arguments:
 
 In this case the program will be linked against CBLAS libraries specified
 during configuration.
-
-To be able to compute all EFP energy terms the calling program must set
-callback functions which will provide various integrals (e.g., overlap or
-kinetic energy integrals over Gaussian basis functions) as well as information
-about quantum subsystem. Please see API documentation at
-http://libefp.github.com/ for the full description of public interface.
 
 
 ## How to create custom EFP fragment types

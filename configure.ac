@@ -24,7 +24,6 @@ AC_PROG_SED
 AC_PROG_MKDIR_P
 
 AC_CHECK_LIB([m], [cos])
-AC_CHECK_LIB([cblas], [cblas_dgemm])
 
 developer_CFLAGS="-Wall -Wextra -pedantic \
 -Wno-unused-parameter \
