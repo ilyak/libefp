@@ -203,8 +203,12 @@ parse_coordinates(struct efp *efp, struct stream *stream)
 	next_line(stream);
 
 	while (stream->ptr) {
-		if (tok_stop(stream))
+		if (tok_stop(stream)) {
+			if (frag->n_atoms < 1)
+				return EFP_RESULT_SYNTAX_ERROR;
+
 			return EFP_RESULT_SUCCESS;
+		}
 
 		char *label;
 		struct efp_atom atom;
