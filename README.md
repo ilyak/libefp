@@ -83,12 +83,19 @@ chemistry package (see http://www.msg.ameslab.gov/gamess/). A version of GAMESS
 from August 11, 2011 is the currently a recommended and tested version. A set
 of pre generated library fragments are available in fraglib directory. If you
 want to generate parameters for custom fragments you should create GAMESS
-makefp job input file similar to the `fraglib/makefp.inp`. Using this input file
-you can create EFP parameters for custom fragment types.
+makefp job input file similar to the `fraglib/makefp.inp`. Using this input
+file you can create EFP parameters for custom fragment types.
 
 After you created `.efp` file using GAMESS you should rename the fragment by
 replacing `$FRAGNAME` with your name of choice (e.g. rename `$FRAGNAME` to
-`$MYH2O`).
+`$MYH2O`). Also note that there is a bug in GAMESS which makes it print
+excessive line continuation mark (which is a '>' sign) at the end of some
+strings. For example if the number of elements in your 'FOCK MATRIX ELEMENTS'
+section is divisible by four then GAMESS will print an unneeded '>' sing at the
+end of last line. If parsing of your newly generated EFP potential fails with
+syntax error then you probably have these extra marks somewhere. Check if
+GAMESS placed extra line continuation mark in the last line of a string and
+remove it for the parsing of a potential file to work.
 
 For a complete description of EFP data file format consult FRAGNAME section in
 the GAMESS manual (see http://www.msg.ameslab.gov/gamess/).
