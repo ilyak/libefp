@@ -28,8 +28,8 @@ To compile libefp from source issue the following commands:
 	./configure LIBS=CBLAS_LIBS --prefix=INSTALL_PATH
 
 In the above command `INSTALL_PATH` is the path to install the library
-(e.g. --prefix=/usr) and `CBLAS_LIBS` are libraries providing CBLAS
-implementation (e.g. LIBS='-lcblas -lblas').
+(e.g. `--prefix=/usr`) and `CBLAS_LIBS` are libraries providing CBLAS
+implementation (e.g. `LIBS='-lcblas -lblas'`).
 
 To compile the library issue:
 
