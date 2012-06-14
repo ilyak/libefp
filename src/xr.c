@@ -134,9 +134,12 @@ frag_frag_xr(struct efp *efp, int frag_i, int frag_j)
 			calc_disp_damp_overlap(efp, frag_i, frag_j, i, j, s_ij);
 
 			if ((efp->opts.terms & EFP_TERM_ELEC) &&
-			    (efp->opts.elec_damp == EFP_ELEC_DAMP_OVERLAP))
-				efp->energy.charge_penetration +=
-					get_charge_penetration(s_ij, r_ij);
+			    (efp->opts.elec_damp == EFP_ELEC_DAMP_OVERLAP)) {
+				double ecp = get_charge_penetration(s_ij, r_ij);
+
+				#pragma omp atomic
+				efp->energy.charge_penetration += ecp;
+			}
 
 			/* xr - first part */
 			if (fabs(s_ij) > 1.0e-6)
@@ -178,6 +181,8 @@ frag_frag_xr(struct efp *efp, int frag_i, int frag_j)
 			energy -= s_ij * s_ij / r_ij;
 		}
 	}
+
+	#pragma omp atomic
 	efp->energy.exchange_repulsion += 2.0 * energy;
 
 	if (efp->do_gradient)
@@ -196,6 +201,7 @@ efp_compute_xr(struct efp *efp)
 	efp->energy.exchange_repulsion = 0.0;
 	efp->energy.charge_penetration = 0.0;
 
+	#pragma omp parallel for schedule(guided)
 	for (int i = 0; i < efp->n_frag; i++)
 		for (int j = i + 1; j < efp->n_frag; j++)
 			frag_frag_xr(efp, i, j);

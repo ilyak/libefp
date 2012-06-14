@@ -179,11 +179,39 @@ add_force_torque(struct frag *fr_i, struct frag *fr_j,
 	vec_t torque_i = vec_cross(&dr_i, force);
 	vec_t torque_j = vec_cross(&dr_j, force);
 
-	fr_i->force = vec_add(&fr_i->force, force);
-	fr_i->torque = vec_add(&fr_i->torque, &torque_i);
+	#pragma omp atomic
+	fr_i->force.x += force->x;
+	#pragma omp atomic
+	fr_i->force.y += force->y;
+	#pragma omp atomic
+	fr_i->force.z += force->z;
 
-	fr_j->force = vec_sub(&fr_j->force, force);
-	fr_j->torque = vec_sub(&fr_j->torque, &torque_j);
+	#pragma omp atomic
+	fr_i->torque.x += torque_i.x;
+	#pragma omp atomic
+	fr_i->torque.y += torque_i.y;
+	#pragma omp atomic
+	fr_i->torque.z += torque_i.z;
+
+	#pragma omp atomic
+	fr_j->force.x -= force->x;
+	#pragma omp atomic
+	fr_j->force.y -= force->y;
+	#pragma omp atomic
+	fr_j->force.z -= force->z;
+
+	#pragma omp atomic
+	fr_j->torque.x -= torque_j.x;
+	#pragma omp atomic
+	fr_j->torque.y -= torque_j.y;
+	#pragma omp atomic
+	fr_j->torque.z -= torque_j.z;
+
+//	fr_i->force = vec_add(&fr_i->force, force);
+//	fr_i->torque = vec_add(&fr_i->torque, &torque_i);
+
+//	fr_j->force = vec_sub(&fr_j->force, force);
+//	fr_j->torque = vec_sub(&fr_j->torque, &torque_j);
 }
 
 static inline void
@@ -192,8 +220,23 @@ add_force_torque_2(struct frag *fr_i, struct frag *fr_j,
 		   const vec_t *force, const vec_t *add_i, const vec_t *add_j)
 {
 	add_force_torque(fr_i, fr_j, pt_i, pt_j, force);
-	fr_i->torque = vec_add(&fr_i->torque, add_i);
-	fr_j->torque = vec_sub(&fr_j->torque, add_j);
+
+	#pragma omp atomic
+	fr_i->torque.x += add_i->x;
+	#pragma omp atomic
+	fr_i->torque.y += add_i->y;
+	#pragma omp atomic
+	fr_i->torque.z += add_i->z;
+
+	#pragma omp atomic
+	fr_j->torque.x -= add_j->x;
+	#pragma omp atomic
+	fr_j->torque.y -= add_j->y;
+	#pragma omp atomic
+	fr_j->torque.z -= add_j->z;
+
+//	fr_i->torque = vec_add(&fr_i->torque, add_i);
+//	fr_j->torque = vec_sub(&fr_j->torque, add_j);
 }
 
 enum efp_result efp_read_potential(struct efp *efp, const char **files);

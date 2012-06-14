@@ -512,6 +512,7 @@ efp_compute_elec(struct efp *efp)
 
 	double energy = 0.0;
 
+	#pragma omp parallel for schedule(guided) reduction(+:energy)
 	for (int i = 0; i < efp->n_frag; i++)
 		for (int j = i + 1; j < efp->n_frag; j++)
 			energy += frag_frag_elec(efp, i, j);
