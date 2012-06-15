@@ -703,11 +703,13 @@ setup_disp(struct efp *efp)
 }
 
 EFP_EXPORT enum efp_result
-efp_init(struct efp **out, const struct efp_opts *opts,
+efp_init(struct efp **out,
+	 const struct efp_opts *opts,
 	 const struct efp_callbacks *callbacks,
-	 const char **potential_files, const char **fragname)
+	 const char **potential_file_list,
+	 const char **frag_name_list)
 {
-	if (!out || !opts || !callbacks || !potential_files || !fragname)
+	if (!out || !opts || !potential_file_list || !frag_name_list)
 		return EFP_RESULT_INVALID_ARGUMENT;
 
 	*out = calloc(1, sizeof(struct efp));
@@ -721,12 +723,15 @@ efp_init(struct efp **out, const struct efp_opts *opts,
 		return res;
 
 	memcpy(&efp->opts, opts, sizeof(struct efp_opts));
-	memcpy(&efp->callbacks, callbacks, sizeof(struct efp_callbacks));
 
-	if ((res = efp_read_potential(efp, potential_files)))
+	if (callbacks)
+		memcpy(&efp->callbacks, callbacks,
+				sizeof(struct efp_callbacks));
+
+	if ((res = efp_read_potential(efp, potential_file_list)))
 		return res;
 
-	while (fragname[efp->n_frag])
+	while (frag_name_list[efp->n_frag])
 		efp->n_frag++;
 
 	efp->frags = calloc(efp->n_frag, sizeof(struct frag));
@@ -734,7 +739,8 @@ efp_init(struct efp **out, const struct efp_opts *opts,
 		return EFP_RESULT_NO_MEMORY;
 
 	for (int i = 0; i < efp->n_frag; i++) {
-		struct frag *frag = find_frag_in_library(efp, fragname[i]);
+		struct frag *frag = find_frag_in_library(efp,
+							 frag_name_list[i]);
 		if (!frag)
 			return EFP_RESULT_UNKNOWN_FRAGMENT;
 

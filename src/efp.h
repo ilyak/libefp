@@ -277,18 +277,18 @@ void efp_opts_default(struct efp_opts *opts);
  * \param[out] out Initialized efp structure.
  * \param[in] opts User defined options controlling the computation.
  * \param[in] callbacks User supplied callback functions (see efp_callbacks).
- * \param[in] potential_files NULL-terminated array with paths to the files
- *                            with EFP parameters.
- * \param[in] fragname NULL-terminated array with names of the fragments
- *                     comprising the molecular system.
+ * \param[in] potential_file_list NULL-terminated array with paths to the files
+ *                                with EFP parameters.
+ * \param[in] frag_name_list NULL-terminated array with names of the fragments
+ *                           comprising the molecular system.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
 enum efp_result efp_init(struct efp **out,
 			 const struct efp_opts *opts,
 			 const struct efp_callbacks *callbacks,
-			 const char **potential_files,
-			 const char **fragname);
+			 const char **potential_file_list,
+			 const char **frag_name_list);
 
 /**
  * Update information about \a ab \a initio region.
