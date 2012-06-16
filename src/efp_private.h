@@ -206,12 +206,6 @@ add_force_torque(struct frag *fr_i, struct frag *fr_j,
 	fr_j->torque.y -= torque_j.y;
 	#pragma omp atomic
 	fr_j->torque.z -= torque_j.z;
-
-//	fr_i->force = vec_add(&fr_i->force, force);
-//	fr_i->torque = vec_add(&fr_i->torque, &torque_i);
-
-//	fr_j->force = vec_sub(&fr_j->force, force);
-//	fr_j->torque = vec_sub(&fr_j->torque, &torque_j);
 }
 
 static inline void
@@ -234,9 +228,6 @@ add_force_torque_2(struct frag *fr_i, struct frag *fr_j,
 	fr_j->torque.y -= add_j->y;
 	#pragma omp atomic
 	fr_j->torque.z -= add_j->z;
-
-//	fr_i->torque = vec_add(&fr_i->torque, add_i);
-//	fr_j->torque = vec_sub(&fr_j->torque, add_j);
 }
 
 enum efp_result efp_read_potential(struct efp *efp, const char **files);
