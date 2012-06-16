@@ -82,7 +82,7 @@ point_point_disp(struct efp *efp, int fr_i_idx, int fr_j_idx,
 
 	double sum = 0.0;
 
-	for (int k = 0; k < ARRAY_SIZE(disp_weights); k++)
+	for (size_t k = 0; k < ARRAY_SIZE(disp_weights); k++)
 		sum += disp_weights[k] * pt_i->trace[k] * pt_j->trace[k];
 
 	double r = vec_dist(VEC(pt_i->x), VEC(pt_j->x));

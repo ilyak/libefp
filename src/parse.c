@@ -755,7 +755,7 @@ get_parse_fn(struct stream *stream)
 		{ "SCREEN",                     parse_screen }
 	};
 
-	for (int i = 0; i < ARRAY_SIZE(funcs); i++)
+	for (size_t i = 0; i < ARRAY_SIZE(funcs); i++)
 		if (tok(stream, funcs[i].label))
 			return funcs[i].fn;
 

@@ -33,7 +33,7 @@
 #include "terms.h"
 
 #define EFP_EXPORT __attribute__((visibility("default")))
-#define ARRAY_SIZE(arr) ((int)(sizeof(arr)/sizeof(arr[0])))
+#define ARRAY_SIZE(arr) (sizeof(arr)/sizeof(arr[0]))
 #define EFP_INIT_MAGIC 0xEF2012AD
 
 struct frag {

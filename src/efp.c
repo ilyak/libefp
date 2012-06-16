@@ -327,7 +327,7 @@ efp_compute(struct efp *efp, int do_gradient)
 
 	enum efp_result res;
 
-	for (int i = 0; i < ARRAY_SIZE(term_list); i++)
+	for (size_t i = 0; i < ARRAY_SIZE(term_list); i++)
 		if ((res = term_list[i](efp)))
 			return res;
 
