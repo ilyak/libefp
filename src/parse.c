@@ -33,6 +33,8 @@
 
 #define streq(a, b) (strcmp((a), (b)) == 0)
 
+enum efp_result efp_read_potential(struct efp *, const char **);
+
 struct stream {
 	char *buffer;
 	char *ptr;

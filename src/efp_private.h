@@ -230,6 +230,4 @@ add_force_torque_2(struct frag *fr_i, struct frag *fr_j,
 	fr_j->torque.z -= add_j->z;
 }
 
-enum efp_result efp_read_potential(struct efp *efp, const char **files);
-
 #endif /* LIBEFP_EFP_PRIVATE_H */
