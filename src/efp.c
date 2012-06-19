@@ -44,7 +44,7 @@ efp_get_energy(struct efp *efp, struct efp_energy *energy)
 		return EFP_RESULT_NOT_INITIALIZED;
 
 	if (!energy)
-		return EFP_RESULT_INVALID_ARGUMENT;
+		return EFP_RESULT_ARGUMENT_NULL;
 
 	memcpy(energy, &efp->energy, sizeof(struct efp_energy));
 	return EFP_RESULT_SUCCESS;
@@ -57,7 +57,7 @@ efp_get_gradient(struct efp *efp, int n_grad, double *grad)
 		return EFP_RESULT_NOT_INITIALIZED;
 
 	if (!grad)
-		return EFP_RESULT_INVALID_ARGUMENT;
+		return EFP_RESULT_ARGUMENT_NULL;
 
 	if (!efp->do_gradient)
 		return EFP_RESULT_GRADIENT_NOT_REQUESTED;
@@ -83,7 +83,7 @@ efp_update_qm_data(struct efp *efp, const struct efp_qm_data *qm_data)
 		return EFP_RESULT_NOT_INITIALIZED;
 
 	if (!qm_data)
-		return EFP_RESULT_INVALID_ARGUMENT;
+		return EFP_RESULT_ARGUMENT_NULL;
 
 	memset(&efp->qm_data, 0, sizeof(struct efp_qm_data));
 
@@ -162,7 +162,7 @@ efp_set_coordinates(struct efp *efp, const double *xyzabc)
 		return EFP_RESULT_NOT_INITIALIZED;
 
 	if (!xyzabc)
-		return EFP_RESULT_INVALID_ARGUMENT;
+		return EFP_RESULT_ARGUMENT_NULL;
 
 	for (int i = 0; i < efp->n_frag; i++) {
 		struct frag *frag = efp->frags + i;
@@ -238,7 +238,7 @@ efp_set_coordinates_2(struct efp *efp, const double *pts)
 		return EFP_RESULT_NOT_INITIALIZED;
 
 	if (!pts)
-		return EFP_RESULT_INVALID_ARGUMENT;
+		return EFP_RESULT_ARGUMENT_NULL;
 
 	for (int i = 0; i < efp->n_frag; i++) {
 		struct frag *frag = efp->frags + i;
@@ -266,7 +266,7 @@ efp_get_coordinates(struct efp *efp, int size, double *xyzabc)
 		return EFP_RESULT_NOT_INITIALIZED;
 
 	if (!xyzabc)
-		return EFP_RESULT_INVALID_ARGUMENT;
+		return EFP_RESULT_ARGUMENT_NULL;
 
 	if (size < 6 * efp->n_frag)
 		return EFP_RESULT_INVALID_ARRAY_SIZE;
@@ -712,7 +712,7 @@ efp_init(struct efp **out,
 	 const char **frag_name_list)
 {
 	if (!out || !opts || !potential_file_list || !frag_name_list)
-		return EFP_RESULT_INVALID_ARGUMENT;
+		return EFP_RESULT_ARGUMENT_NULL;
 
 	*out = calloc(1, sizeof(struct efp));
 	if (!*out)
@@ -760,17 +760,52 @@ efp_init(struct efp **out,
 	return EFP_RESULT_SUCCESS;
 }
 
-EFP_EXPORT int
-efp_get_frag_count(struct efp *efp)
+EFP_EXPORT enum efp_result
+efp_get_frag_count(struct efp *efp, int *n_frag)
 {
-	return initialized(efp) ? efp->n_frag : -1;
+	if (!initialized(efp))
+		return EFP_RESULT_NOT_INITIALIZED;
+
+	if (!n_frag)
+		return EFP_RESULT_ARGUMENT_NULL;
+
+	*n_frag = efp->n_frag;
+	return EFP_RESULT_SUCCESS;
 }
 
-EFP_EXPORT int
-efp_get_frag_atom_count(struct efp *efp, int frag_idx)
+EFP_EXPORT enum efp_result
+efp_get_frag_name(struct efp *efp, int frag_idx, int size, char *frag_name)
 {
-	return initialized(efp) && frag_idx >= 0 && frag_idx < efp->n_frag ?
-			efp->frags[frag_idx].n_atoms : -1;
+	if (!initialized(efp))
+		return EFP_RESULT_NOT_INITIALIZED;
+
+	if (!frag_name)
+		return EFP_RESULT_ARGUMENT_NULL;
+
+	if (frag_idx < 0 || frag_idx >= efp->n_frag)
+		return EFP_RESULT_INDEX_OUT_OF_RANGE;
+
+	if ((int)strlen(efp->frags[frag_idx].name) >= size)
+		return EFP_RESULT_INVALID_ARRAY_SIZE;
+
+	strcpy(frag_name, efp->frags[frag_idx].name);
+	return EFP_RESULT_SUCCESS;
+}
+
+EFP_EXPORT enum efp_result
+efp_get_frag_atom_count(struct efp *efp, int frag_idx, int *n_atoms)
+{
+	if (!initialized(efp))
+		return EFP_RESULT_NOT_INITIALIZED;
+
+	if (!n_atoms)
+		return EFP_RESULT_ARGUMENT_NULL;
+
+	if (frag_idx < 0 || frag_idx >= efp->n_frag)
+		return EFP_RESULT_INDEX_OUT_OF_RANGE;
+
+	*n_atoms = efp->frags[frag_idx].n_atoms;
+	return EFP_RESULT_SUCCESS;
 }
 
 EFP_EXPORT enum efp_result
@@ -779,8 +814,11 @@ efp_get_frag_atoms(struct efp *efp, int frag_idx, struct efp_atom *atoms)
 	if (!initialized(efp))
 		return EFP_RESULT_NOT_INITIALIZED;
 
-	if (!atoms || frag_idx < 0 || frag_idx >= efp->n_frag)
-		return EFP_RESULT_INVALID_ARGUMENT;
+	if (!atoms)
+		return EFP_RESULT_ARGUMENT_NULL;
+
+	if (frag_idx < 0 || frag_idx >= efp->n_frag)
+		return EFP_RESULT_INDEX_OUT_OF_RANGE;
 
 	struct frag *frag = efp->frags + frag_idx;
 	memcpy(atoms, frag->atoms, frag->n_atoms * sizeof(struct efp_atom));
@@ -811,8 +849,8 @@ return "no error";
 return "out of memory";
 	case EFP_RESULT_NOT_IMPLEMENTED:
 return "operation is not implemented";
-	case EFP_RESULT_INVALID_ARGUMENT:
-return "invalid argument to function";
+	case EFP_RESULT_ARGUMENT_NULL:
+return "unexpected NULL argument to function";
 	case EFP_RESULT_NOT_INITIALIZED:
 return "efp was not properly initialized";
 	case EFP_RESULT_FILE_NOT_FOUND:
@@ -833,6 +871,8 @@ return "overlap based damping requires exchange repulsion";
 return "gradient computation was not requested";
 	case EFP_RESULT_PARAMETERS_MISSING:
 return "required EFP fragment parameters are missing";
+	case EFP_RESULT_INDEX_OUT_OF_RANGE:
+return "index is out of range";
 	case EFP_RESULT_INVALID_ARRAY_SIZE:
 return "invalid array size";
 	case EFP_RESULT_UNSUPPORTED_SCREEN:

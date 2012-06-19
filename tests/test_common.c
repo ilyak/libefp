@@ -60,7 +60,11 @@ test_numerical_gradient(struct efp *efp,
 {
 	static const double grad_delta = 0.0001;
 
-	int n_frag = efp_get_frag_count(efp);
+	/* XXX check result */
+
+	int n_frag;
+	efp_get_frag_count(efp, &n_frag);
+
 	int n_grad = 6 * n_frag;
 
 	double xyzabc_new[n_grad];
@@ -119,11 +123,16 @@ test_numerical_gradient(struct efp *efp,
 static enum efp_result
 print_atoms(struct efp *efp)
 {
+	int n_frag;
 	enum efp_result res;
-	int n_frags = efp_get_frag_count(efp);
 
-	for (int i = 0; i < n_frags; i++) {
-		int n_atoms = efp_get_frag_atom_count(efp, i);
+	if ((res = efp_get_frag_count(efp, &n_frag)))
+		return res;
+
+	for (int i = 0; i < n_frag; i++) {
+		int n_atoms;
+		if ((res = efp_get_frag_atom_count(efp, i, &n_atoms)))
+			return res;
 
 		struct efp_atom atoms[n_atoms];
 		if ((res = efp_get_frag_atoms(efp, i, atoms)))
@@ -203,7 +212,12 @@ run_test(const struct test_data *test_data)
 	}
 
 	if (do_gradient) {
-		int n_frag = efp_get_frag_count(efp);
+		int n_frag;
+		if ((res = efp_get_frag_count(efp, &n_frag))) {
+			error("efp_get_frag_count", res);
+			goto fail;
+		}
+
 		int n_grad = 6 * n_frag;
 		double grad[n_grad];
 

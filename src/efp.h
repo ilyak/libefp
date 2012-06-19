@@ -64,8 +64,8 @@ enum efp_result {
 	EFP_RESULT_NO_MEMORY,
 	/** Operation is not implemented. */
 	EFP_RESULT_NOT_IMPLEMENTED,
-	/** Argument to function was invalid. */
-	EFP_RESULT_INVALID_ARGUMENT,
+	/** Unexpected NULL argument to function was specified. */
+	EFP_RESULT_ARGUMENT_NULL,
 	/** EFP structure was not properly initialized. */
 	EFP_RESULT_NOT_INITIALIZED,
 	/** File not found on disk. */
@@ -91,6 +91,8 @@ enum efp_result {
 	EFP_RESULT_GRADIENT_NOT_REQUESTED,
 	/** Certain EFP parameters are missing. */
 	EFP_RESULT_PARAMETERS_MISSING,
+	/** Index is out of range. */
+	EFP_RESULT_INDEX_OUT_OF_RANGE,
 	/** Wrong array length. */
 	EFP_RESULT_INVALID_ARRAY_SIZE,
 	/** Unsupported SCREEN group in EFP parameters file. */
@@ -409,24 +411,44 @@ enum efp_result efp_get_energy(struct efp *efp, struct efp_energy *energy);
 enum efp_result efp_get_gradient(struct efp *efp, int n_grad, double *grad);
 
 /**
- * Return number of fragments in this computation.
+ * Get the number of fragments in this computation.
  *
  * \param[in] efp The efp structure.
+ * \param[out] n_frag Total number of fragments in this simulation.
  *
- * \return Number of EFP fragments in this computation.
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-int efp_get_frag_count(struct efp *efp);
+enum efp_result efp_get_frag_count(struct efp *efp, int *n_frag);
 
 /**
- * Get number of atoms in the specified fragment.
+ * Get the name of the specified effective fragment.
  *
  * \param[in] efp The efp structure.
  * \param[in] frag_idx Index of a fragment between zero and total number of
  *                     fragments minus one.
+ * \param[in] size Size of frag_name buffer.
+ * \param[out] frag_name A buffer where name of the fragment will be stored.
  *
- * \return Number of atoms in the specified fragment.
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-int efp_get_frag_atom_count(struct efp *efp, int frag_idx);
+enum efp_result efp_get_frag_name(struct efp *efp,
+				  int frag_idx,
+				  int size,
+				  char *frag_name);
+
+/**
+ * Get the number of atoms in the specified fragment.
+ *
+ * \param[in] efp The efp structure.
+ * \param[in] frag_idx Index of a fragment between zero and total number of
+ *                     fragments minus one.
+ * \param[out] n_atoms Total number of atoms in the fragment.
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_get_frag_atom_count(struct efp *efp,
+					int frag_idx,
+					int *n_atoms);
 
 /**
  * Get atoms comprising the specified fragment.
@@ -439,7 +461,8 @@ int efp_get_frag_atom_count(struct efp *efp, int frag_idx);
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_frag_atoms(struct efp *efp, int frag_idx,
+enum efp_result efp_get_frag_atoms(struct efp *efp,
+				   int frag_idx,
 				   struct efp_atom *atoms);
 
 /**
