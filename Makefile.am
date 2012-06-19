@@ -34,6 +34,7 @@ LIBEFP_AGE = 0
 
 include_HEADERS = src/efp.h
 lib_LTLIBRARIES = src/libefp.la
+bin_PROGRAMS = efpmd/efpmd
 
 src_libefp_la_SOURCES = \
 	src/ai_disp.c \
@@ -71,6 +72,24 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = src/libefp.pc
 EXTRA_DIST += src/libefp.pc.in
 CLEANFILES += src/libefp.pc
+
+efpmd_efpmd_SOURCES = \
+	efpmd/cg.c \
+	efpmd/common.c \
+	efpmd/common.h \
+	efpmd/grad.c \
+	efpmd/main.c \
+	efpmd/nve.c \
+	efpmd/nvt.c \
+	efpmd/parse.c \
+	efpmd/sp.c
+
+efpmd_efpmd_LDADD = src/libefp.la
+
+EXTRA_DIST += \
+	efpmd/tests/h2o-ch3oh_cg.in \
+	efpmd/tests/h2o-nh3_grad.in \
+	efpmd/tests/h2o_sp.in
 
 TESTS = \
 	tests/elec_1 \
