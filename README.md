@@ -131,7 +131,7 @@ the GAMESS manual (see http://www.msg.ameslab.gov/gamess/).
 
 - To debug using tests do `libtool --mode=execute gdb ./mytest` in tests
   directory. This will start gdb so you will be able to set breakpoints and
-  inspect variables in mytest test program.
+  inspect variables in your test program.
 
 
 ## References
