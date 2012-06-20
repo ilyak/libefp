@@ -58,12 +58,17 @@ oct_idx(int a, int b, int c)
 static inline double
 quadrupole_sum(const double *quad, const vec_t *dr)
 {
-	const double *pdr = (const double *)dr;
+	/* order in which GAMESS stores quadrupoles */
+	enum { xx = 0, yy, zz, xy, xz, yz };
+
 	double sum = 0.0;
 
-	for (int a = 0; a < 3; a++)
-		for (int b = 0; b < 3; b++)
-			sum += quad[quad_idx(a, b)] * pdr[a] * pdr[b];
+	sum += quad[xx] * dr->x * dr->x;
+	sum += quad[yy] * dr->y * dr->y;
+	sum += quad[zz] * dr->z * dr->z;
+	sum += quad[xy] * dr->x * dr->y * 2.0;
+	sum += quad[xz] * dr->x * dr->z * 2.0;
+	sum += quad[yz] * dr->y * dr->z * 2.0;
 
 	return sum;
 }
@@ -71,14 +76,21 @@ quadrupole_sum(const double *quad, const vec_t *dr)
 static inline double
 octupole_sum(const double *oct, const vec_t *dr)
 {
-	const double *pdr = (const double *)dr;
+	/* order in which GAMESS stores octupoles */
+	enum { xxx = 0, yyy, zzz, xxy, xxz, xyy, yyz, xzz, yzz, xyz };
+
 	double sum = 0.0;
 
-	for (int a = 0; a < 3; a++)
-		for (int b = 0; b < 3; b++)
-			for (int c = 0; c < 3; c++)
-				sum += oct[oct_idx(a, b, c)] * pdr[a] *
-						pdr[b] * pdr[c];
+	sum += oct[xxx] * dr->x * dr->x * dr->x;
+	sum += oct[yyy] * dr->y * dr->y * dr->y;
+	sum += oct[zzz] * dr->z * dr->z * dr->z;
+	sum += oct[xxy] * dr->x * dr->x * dr->y * 3.0;
+	sum += oct[xxz] * dr->x * dr->x * dr->z * 3.0;
+	sum += oct[xyy] * dr->x * dr->y * dr->y * 3.0;
+	sum += oct[yyz] * dr->y * dr->y * dr->z * 3.0;
+	sum += oct[xzz] * dr->x * dr->z * dr->z * 3.0;
+	sum += oct[yzz] * dr->y * dr->z * dr->z * 3.0;
+	sum += oct[xyz] * dr->x * dr->y * dr->z * 6.0;
 
 	return sum;
 }
