@@ -207,27 +207,27 @@ get_induced_dipole_field(struct efp *efp, int frag_idx,
 
 			vec_t dr = vec_sub(VEC(pt->x), VEC(pt_j->x));
 
-			double r = vec_len(&dr);
-			double r3 = r * r * r;
-			double r5 = r3 * r * r;
+			double ir = 1.0 / vec_len(&dr);
+			double ir3 = ir * ir * ir;
+			double ir5 = ir3 * ir * ir;
 
 			double t1 = vec_dot(&pt_j->induced_dipole, &dr);
 
-			field->x -= pt_j->induced_dipole.x / r3 -
-						3.0 * t1 * dr.x / r5;
-			field->y -= pt_j->induced_dipole.y / r3 -
-						3.0 * t1 * dr.y / r5;
-			field->z -= pt_j->induced_dipole.z / r3 -
-						3.0 * t1 * dr.z / r5;
+			field->x -= pt_j->induced_dipole.x * ir3 -
+						3.0 * t1 * dr.x * ir5;
+			field->y -= pt_j->induced_dipole.y * ir3 -
+						3.0 * t1 * dr.y * ir5;
+			field->z -= pt_j->induced_dipole.z * ir3 -
+						3.0 * t1 * dr.z * ir5;
 
 			double t2 = vec_dot(&pt_j->induced_dipole_conj, &dr);
 
-			field_conj->x -= pt_j->induced_dipole_conj.x / r3 -
-						3.0 * t2 * dr.x / r5;
-			field_conj->y -= pt_j->induced_dipole_conj.y / r3 -
-						3.0 * t2 * dr.y / r5;
-			field_conj->z -= pt_j->induced_dipole_conj.z / r3 -
-						3.0 * t2 * dr.z / r5;
+			field_conj->x -= pt_j->induced_dipole_conj.x * ir3 -
+						3.0 * t2 * dr.x * ir5;
+			field_conj->y -= pt_j->induced_dipole_conj.y * ir3 -
+						3.0 * t2 * dr.y * ir5;
+			field_conj->z -= pt_j->induced_dipole_conj.z * ir3 -
+						3.0 * t2 * dr.z * ir5;
 		}
 	}
 }
