@@ -24,6 +24,7 @@
  * SUCH DAMAGE.
  */
 
+#include <assert.h>
 #include <math.h>
 #include <string.h>
 
@@ -147,6 +148,7 @@ init_shell(char type, int *start, int *end, int *sl)
 		case 'D': *start =  4; *end = 10; *sl = 3; return;
 		case 'F': *start = 10; *end = 20; *sl = 4; return;
 	}
+	assert(0);
 }
 
 static void
