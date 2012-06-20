@@ -56,10 +56,13 @@ src_libefp_la_SOURCES = \
 	src/terms.h \
 	src/xr.c
 
-EXTRA_DIST += LICENSE
-EXTRA_DIST += src/libefp.sym
 EXTRA_DIST += \
+	Doxyfile \
+	LICENSE \
+	README.md \
+	src/libefp.sym \
 	fraglib/makefp.inp \
+	fraglib/ch3oh.efp \
 	fraglib/h2o.efp \
 	fraglib/nh3.efp
 
@@ -87,6 +90,7 @@ efpmd_efpmd_SOURCES = \
 efpmd_efpmd_LDADD = src/libefp.la
 
 EXTRA_DIST += \
+	efpmd/README.md \
 	efpmd/tests/h2o-ch3oh_cg.in \
 	efpmd/tests/h2o-nh3_grad.in \
 	efpmd/tests/h2o_sp.in
