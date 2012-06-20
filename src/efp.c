@@ -293,8 +293,10 @@ efp_scf_update(struct efp *efp, double *energy)
 	if (!initialized(efp))
 		return EFP_RESULT_NOT_INITIALIZED;
 
-	*energy = efp_compute_pol_energy(efp);
+	if (!energy)
+		return EFP_RESULT_ARGUMENT_NULL;
 
+	*energy = efp_compute_pol_energy(efp);
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -352,6 +354,9 @@ efp_qm_contribution(struct efp *efp, int n_basis, double *v)
 {
 	if (!initialized(efp))
 		return EFP_RESULT_NOT_INITIALIZED;
+
+	if (!v)
+		return EFP_RESULT_ARGUMENT_NULL;
 
 	int n_charges = 0;
 	for (int i = 0; i < efp->n_frag; i++) {
