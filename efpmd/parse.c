@@ -143,7 +143,7 @@ static int parse_coord(struct stream *stream, struct config *config)
 			return 0;
 		}
 
-	return error("Unknows coord value specified.");
+	return error("Unknown coord option value specified.");
 }
 
 static int parse_units(struct stream *stream, struct config *config)
@@ -191,7 +191,6 @@ static int parse_terms(struct stream *stream, struct config *config)
 			}
 		}
 		return error("Unknown energy term specified.");
-
 next:
 		skip_space(stream);
 	}
@@ -385,10 +384,10 @@ static char **make_potential_file_list(const char **frag_name,
 				       const char *fraglib_path,
 				       const char *userlib_path)
 {
-	/* This function constructs the list of library potential
-	   data files. For each unique fragment if fragment name contains _l
-	   suffix append fraglib_path prefix and remove _l suffix. Otherwise
-	   append userlib_path prefix. Add .efp extension in both cases. */
+	/* This function constructs the list of library potential data files.
+	 * For each unique fragment if fragment name contains an _l suffix
+	 * append fraglib_path prefix and remove _l suffix. Otherwise append
+	 * userlib_path prefix. Add .efp extension in both cases. */
 
 	int n_frag = 0;
 

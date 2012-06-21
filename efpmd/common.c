@@ -33,17 +33,20 @@ int error(const char *format, ...)
 {
 	va_list args;
 
+	fprintf(stderr, "ERROR: ");
 	va_start(args, format);
 	vfprintf(stderr, format, args);
 	va_end(args);
 	fprintf(stderr, "\n");
+	fflush(stderr);
 
 	return -1;
 }
 
 int lib_error(enum efp_result res)
 {
-	return error("LIBEFP: %s.", efp_result_to_string(res));
+	fprintf(stderr, "LIBEFP ");
+	return error("%s.", efp_result_to_string(res));
 }
 
 enum efp_result set_coord(struct efp *efp,
@@ -88,6 +91,7 @@ enum efp_result print_geometry(struct efp *efp)
 	}
 
 	printf("\n\n");
+	fflush(stdout);
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -108,6 +112,7 @@ printf("------------------------------------------------\n");
 printf("             TOTAL ENERGY = %16.10lf\n", energy.total);
 printf("\n\n");
 
+	fflush(stdout);
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -138,5 +143,6 @@ printf("\n");
 	}
 
 	printf("\n");
+	fflush(stdout);
 	return EFP_RESULT_SUCCESS;
 }
