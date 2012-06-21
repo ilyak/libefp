@@ -36,6 +36,8 @@ include_HEADERS = src/efp.h
 lib_LTLIBRARIES = src/libefp.la
 bin_PROGRAMS = efpmd/efpmd
 
+CLEANFILES += gmon.out efpmd/gmon.out
+
 src_libefp_la_SOURCES = \
 	src/ai_disp.c \
 	src/ai_xr.c \
@@ -50,6 +52,7 @@ src_libefp_la_SOURCES = \
 	src/elec_grad.c \
 	src/int.c \
 	src/int.h \
+	src/int_shift.h \
 	src/math_util.h \
 	src/parse.c \
 	src/pol.c \
@@ -91,6 +94,7 @@ efpmd_efpmd_LDADD = src/libefp.la
 
 EXTRA_DIST += \
 	efpmd/README.md \
+	efpmd/cubegen/cubegen.c \
 	efpmd/tests/h2o-ch3oh_cg.in \
 	efpmd/tests/h2o-nh3_grad.in \
 	efpmd/tests/h2o_sp.in
