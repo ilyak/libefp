@@ -1,7 +1,7 @@
 run_type sp
 coord points
 units angs
-terms elec pol disp
+terms elec pol disp xr
 elec_damp screen
 disp_damp tt
 fraglib_path ../fraglib
