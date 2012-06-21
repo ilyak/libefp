@@ -685,6 +685,9 @@ check_params(struct efp *efp)
 static enum efp_result
 setup_disp(struct efp *efp)
 {
+	if (efp->opts.disp_damp != EFP_DISP_DAMP_OVERLAP)
+		return EFP_RESULT_SUCCESS;
+
 	int n_disp = 0;
 	for (int i = 0; i < efp->n_frag; i++)
 		n_disp += efp->frags[i].n_dynamic_polarizable_pts;
@@ -702,6 +705,7 @@ setup_disp(struct efp *efp)
 			efp->disp_damp_overlap_offset[i - 1] +
 			efp->frags[i - 1].n_dynamic_polarizable_pts;
 
+	/* XXX fix this - requires too much memory */
 	efp->disp_damp_overlap = malloc(n_disp * n_disp * sizeof(double));
 	if (!efp->disp_damp_overlap)
 		return EFP_RESULT_NO_MEMORY;
