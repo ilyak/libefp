@@ -86,7 +86,16 @@ static int parse_frag(char *name_arg, char *ratio_arg,
 
 static void print_usage(void)
 {
-	puts("usage: cubegen <n1:n2:...> <r1:r2:...> <space> <na> <nb> <nc>");
+	puts("usage: cubegen <n1:n2:...> <r1:r2:...> <space> <nx> <ny> <nz>");
+	puts("");
+	puts("  <n1:n2:...>  a colon separated list of fragment names");
+	puts("  <r1:r2:...>  a colon separated list of fragment ratios");
+	puts("      <space>  distance between the molecules");
+	puts("         <nx>  number of molecules in x direction");
+	puts("         <ny>  number of molecules in y direction");
+	puts("         <nz>  number of molecules in z direction");
+	puts("");
+	puts("example: cubegen c2h5oh_l:h2o_l 40:60 3.0 20 20 20 > vodka.in");
 }
 
 int main(int argc, char **argv)
