@@ -29,14 +29,13 @@
 #include <string.h>
 
 #include "int.h"
+#include "int_shift.h"
 
 /* Overlap and kinetic energy integral computation routines. */
 
 static void
 set_coef(double *con, char type, const double *coef)
 {
-	memset(con, 0, 20 * sizeof(double));
-
 	switch (type) {
 		case 'S':
 			con[0] = *coef;
@@ -138,10 +137,23 @@ make_int(int ni, int nj, double tt, double x, double y, double z,
 	*outz = zint;
 }
 
-static void
-init_shell(char type, int *start, int *end, int *sl)
+static inline int
+shell_type_idx(char shell_type)
 {
-	switch (type) {
+	switch (shell_type) {
+		case 'S': return 0;
+		case 'L': return 1;
+		case 'P': return 2;
+		case 'D': return 3;
+		case 'F': return 4;
+	}
+	assert(0);
+}
+
+static void
+init_shell(char shell_type, int *start, int *end, int *sl)
+{
+	switch (shell_type) {
 		case 'S': *start =  0; *end =  1; *sl = 1; return;
 		case 'L': *start =  0; *end =  4; *sl = 2; return;
 		case 'P': *start =  1; *end =  4; *sl = 2; return;
@@ -151,47 +163,56 @@ init_shell(char type, int *start, int *end, int *sl)
 	assert(0);
 }
 
-static void
-init_int(int start_i, int end_i, int start_j, int end_j,
-	 double *ft, double *sblk, double *tblk,
-	 int *shift_x, int *shift_y, int *shift_z)
+static inline void
+init_ft(int count_i, char type_j, double *ft)
 {
-	static const int shift_ix[] = {
-		0, 5, 0,  0, 10, 0, 0, 5, 5, 0,
-		5, 0, 0, 10, 10, 5, 0, 5, 0, 5
-	};
-	static const int shift_iy[] = {
-		0,  0, 5, 0, 0, 10,  0, 5, 0, 5,
-		0, 15, 0, 5, 0, 10, 10, 0, 5, 5
-	};
-	static const int shift_iz[] = {
-		0, 0,  0, 5, 0, 0, 10,  0,  5, 5,
-		0, 0, 15, 0, 5, 0,  5, 10, 10, 5
-	};
-	static const int shift_jx[] = {
-		0, 1, 0, 0, 2, 0, 0, 1, 1, 0,
-		3, 0, 0, 2, 2, 1, 0, 1, 0, 1
-	};
-	static const int shift_jy[] = {
-		0, 0, 1, 0, 0, 2, 0, 1, 0, 1,
-		0, 3, 0, 1, 0, 2, 2, 0, 1, 1
-	};
-	static const int shift_jz[] = {
-		0, 0, 0, 1, 0, 0, 2, 0, 1, 1,
-		0, 0, 3, 0, 1, 0, 1, 2, 2, 1
-	};
-
-	for (int i = start_i; i < end_i; i++) {
-		for (int j = start_j; j < end_j; j++) {
-			*ft++ = j < 1 ? 3.0 :
-				j < 4 ? 5.0 :
-				j < 10 ? 7.0 : 9.0;
-			*sblk++ = *tblk++ = 0.0;
-			*shift_x++ = shift_ix[i] + shift_jx[j];
-			*shift_y++ = shift_iy[i] + shift_jy[j];
-			*shift_z++ = shift_iz[i] + shift_jz[j];
-		}
+	switch (type_j) {
+		case 'S':
+			for (int i = 0; i < count_i; i++) {
+				*ft++ = 3.0;
+			}
+			return;
+		case 'L':
+			for (int i = 0; i < count_i; i++) {
+				*ft++ = 3.0;
+				*ft++ = 5.0;
+				*ft++ = 5.0;
+				*ft++ = 5.0;
+			}
+			return;
+		case 'P':
+			for (int i = 0; i < count_i; i++) {
+				*ft++ = 5.0;
+				*ft++ = 5.0;
+				*ft++ = 5.0;
+			}
+			return;
+		case 'D':
+			for (int i = 0; i < count_i; i++) {
+				*ft++ = 7.0;
+				*ft++ = 7.0;
+				*ft++ = 7.0;
+				*ft++ = 7.0;
+				*ft++ = 7.0;
+				*ft++ = 7.0;
+			}
+			return;
+		case 'F':
+			for (int i = 0; i < count_i; i++) {
+				*ft++ = 9.0;
+				*ft++ = 9.0;
+				*ft++ = 9.0;
+				*ft++ = 9.0;
+				*ft++ = 9.0;
+				*ft++ = 9.0;
+				*ft++ = 9.0;
+				*ft++ = 9.0;
+				*ft++ = 9.0;
+				*ft++ = 9.0;
+			}
+			return;
 	}
+	assert(0);
 }
 
 void
@@ -211,10 +232,6 @@ efp_st_int(int n_shells_i, const struct shell *shells_i,
 
 	static const double tolerance = 46.051701859881; /* 20 * ln10 */
 
-	int shift_x[100];
-	int shift_y[100];
-	int shift_z[100];
-
 	double xin[90];
 	double yin[90];
 	double zin[90];
@@ -229,6 +246,7 @@ efp_st_int(int n_shells_i, const struct shell *shells_i,
 		int start_i, end_i, sl_i;
 		init_shell(sh_i->type, &start_i, &end_i, &sl_i);
 
+		int type_i = shell_type_idx(sh_i->type);
 		int count_i = end_i - start_i;
 
 		/* shell j */
@@ -238,10 +256,19 @@ efp_st_int(int n_shells_i, const struct shell *shells_i,
 			int start_j, end_j, sl_j;
 			init_shell(sh_j->type, &start_j, &end_j, &sl_j);
 
+			int type_j = shell_type_idx(sh_j->type);
 			int count_j = end_j - start_j;
 
-			init_int(start_i, end_i, start_j, end_j,
-				 ft, sblk, tblk, shift_x, shift_y, shift_z);
+			int count = count_i * count_j;
+
+			memset(sblk, 0, count * sizeof(double));
+			memset(tblk, 0, count * sizeof(double));
+
+			init_ft(count_i, sh_j->type, ft);
+
+			const int *shift_x = shift_table_x[type_i * 5 + type_j];
+			const int *shift_y = shift_table_y[type_i * 5 + type_j];
+			const int *shift_z = shift_table_z[type_i * 5 + type_j];
 
 			const double *coef_i = sh_i->coef;
 
@@ -337,7 +364,7 @@ efp_st_int(int n_shells_i, const struct shell *shells_i,
 							zin[idx + j + 60] = zint * t3;
 						}
 					}
-					for (int i = 0; i < count_i * count_j; i++) {
+					for (int i = 0; i < count; i++) {
 						int nx = shift_x[i];
 						int ny = shift_y[i];
 						int nz = shift_z[i];
