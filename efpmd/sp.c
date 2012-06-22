@@ -25,10 +25,7 @@
  */
 
 #include "common.h"
-
-int sim_sp(struct efp *,
-	   const struct config *,
-	   struct sys *);
+#include "sim.h"
 
 int sim_sp(struct efp *efp,
 	   const struct config *config,

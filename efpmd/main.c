@@ -27,36 +27,12 @@
 #include <stdlib.h>
 
 #include "common.h"
-
-int parse_config(const char *,
-		 struct config *,
-		 struct sys *);
-
-void free_config(struct config *, struct sys *);
+#include "parse.h"
+#include "sim.h"
 
 typedef int (*sim_fn_t)(struct efp *,
 			const struct config *,
 			struct sys *);
-
-int sim_sp(struct efp *,
-	   const struct config *,
-	   struct sys *);
-
-int sim_grad(struct efp *,
-	     const struct config *,
-	     struct sys *);
-
-int sim_cg(struct efp *,
-	   const struct config *,
-	   struct sys *);
-
-int sim_nve(struct efp *,
-	    const struct config *,
-	    struct sys *);
-
-int sim_nvt(struct efp *,
-	    const struct config *,
-	    struct sys *);
 
 static sim_fn_t get_sim_fn(const char *run_type)
 {
@@ -104,6 +80,7 @@ int main(int argc, char **argv)
 
 	struct efp *efp;
 	enum efp_result res;
+	sim_fn_t sim_fn;
 
 	if ((res = efp_init(&efp, &config.efp_opts, NULL,
 				(const char **)config.potential_file_list,
@@ -112,7 +89,7 @@ int main(int argc, char **argv)
 		goto fail;
 	}
 
-	sim_fn_t sim_fn = get_sim_fn(config.run_type);
+	sim_fn = get_sim_fn(config.run_type);
 
 	if (!sim_fn) {
 		error("Unknown run_type option specified.");

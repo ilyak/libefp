@@ -30,19 +30,13 @@
 #include <stdlib.h>
 
 #include "common.h"
+#include "parse.h"
 
 struct stream {
 	char *buffer;
 	char *ptr;
 	FILE *in;
 };
-
-int parse_config(const char *,
-		 struct config *,
-		 struct sys *);
-
-void free_config(struct config *,
-		 struct sys *);
 
 static char *read_line(FILE *in)
 {

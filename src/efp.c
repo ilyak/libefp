@@ -28,8 +28,7 @@
 
 #include "efp_private.h"
 #include "elec.h"
-
-enum efp_result efp_read_potential(struct efp *, const char **);
+#include "parse.h"
 
 static inline int
 initialized(struct efp *efp)
