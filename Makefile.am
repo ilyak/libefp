@@ -34,7 +34,7 @@ LIBEFP_AGE = 0
 
 include_HEADERS = src/efp.h
 lib_LTLIBRARIES = src/libefp.la
-bin_PROGRAMS = efpmd/efpmd
+bin_PROGRAMS = efpmd/efpmd efpmd/cubegen/cubegen
 
 CLEANFILES += gmon.out efpmd/gmon.out
 
@@ -92,9 +92,11 @@ efpmd_efpmd_SOURCES = \
 
 efpmd_efpmd_LDADD = src/libefp.la
 
+efpmd_cubegen_cubegen_SOURCES = \
+	efpmd/cubegen/cubegen.c
+
 EXTRA_DIST += \
 	efpmd/README.md \
-	efpmd/cubegen/cubegen.c \
 	efpmd/tests/h2o-ch3oh_cg.in \
 	efpmd/tests/h2o-nh3_grad.in \
 	efpmd/tests/h2o_sp.in
