@@ -55,6 +55,7 @@ src_libefp_la_SOURCES = \
 	src/int_shift.h \
 	src/math_util.h \
 	src/parse.c \
+	src/parse.h \
 	src/pol.c \
 	src/terms.h \
 	src/xr.c
@@ -88,6 +89,8 @@ efpmd_efpmd_SOURCES = \
 	efpmd/nve.c \
 	efpmd/nvt.c \
 	efpmd/parse.c \
+	efpmd/parse.h \
+	efpmd/sim.h \
 	efpmd/sp.c
 
 efpmd_efpmd_LDADD = src/libefp.la

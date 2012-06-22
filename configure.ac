@@ -23,8 +23,6 @@ AC_PREFIX_DEFAULT([/usr])
 AC_PROG_SED
 AC_PROG_MKDIR_P
 
-AC_CHECK_LIB([m], [cos])
-
 developer_CFLAGS="-Wall -Wextra -pedantic \
 -Wno-unused-parameter \
 -Wmissing-declarations -Wmissing-prototypes \
