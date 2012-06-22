@@ -153,7 +153,7 @@ efp_compute_disp(struct efp *efp)
 
 	double energy = 0.0;
 
-	#pragma omp parallel for schedule(guided) reduction(+:energy)
+	#pragma omp parallel for schedule(dynamic, 4) reduction(+:energy)
 	for (int i = 0; i < efp->n_frag; i++)
 		for (int j = i + 1; j < efp->n_frag; j++)
 			energy += frag_frag_disp(efp, i, j);

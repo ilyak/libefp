@@ -201,7 +201,7 @@ efp_compute_xr(struct efp *efp)
 	efp->energy.exchange_repulsion = 0.0;
 	efp->energy.charge_penetration = 0.0;
 
-	#pragma omp parallel for schedule(guided)
+	#pragma omp parallel for schedule(dynamic, 4)
 	for (int i = 0; i < efp->n_frag; i++)
 		for (int j = i + 1; j < efp->n_frag; j++)
 			frag_frag_xr(efp, i, j);
