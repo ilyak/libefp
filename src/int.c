@@ -108,10 +108,22 @@ make_int(int ni, int nj, double tt, double x, double y, double z,
 			double ay = tmp + y - yi;
 			double az = tmp + z - zi;
 
-			for (int j = 0; j < ni; j++) {
-				px *= ax;
-				py *= ay;
-				pz *= az;
+			switch (ni) {
+				case 3:
+					px *= ax;
+					py *= ay;
+					pz *= az;
+				case 2:
+					px *= ax;
+					py *= ay;
+					pz *= az;
+				case 1:
+					px *= ax;
+					py *= ay;
+					pz *= az;
+					break;
+				default:
+					assert(0);
 			}
 		}
 
@@ -120,10 +132,30 @@ make_int(int ni, int nj, double tt, double x, double y, double z,
 			double by = tmp + y - yj;
 			double bz = tmp + z - zj;
 
-			for (int j = 0; j < nj; j++) {
-				px *= bx;
-				py *= by;
-				pz *= bz;
+			switch (nj) {
+				case 5:
+					px *= bx;
+					py *= by;
+					pz *= bz;
+				case 4:
+					px *= bx;
+					py *= by;
+					pz *= bz;
+				case 3:
+					px *= bx;
+					py *= by;
+					pz *= bz;
+				case 2:
+					px *= bx;
+					py *= by;
+					pz *= bz;
+				case 1:
+					px *= bx;
+					py *= by;
+					pz *= bz;
+					break;
+				default:
+					assert(0);
 			}
 		}
 
