@@ -1,7 +1,0 @@
-.dirstamp
-.deps/
-.libs/
-*.o
-cubegen/cubegen
-efpmd
-gmon.out
