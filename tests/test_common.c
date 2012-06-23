@@ -60,8 +60,6 @@ test_numerical_gradient(struct efp *efp,
 {
 	static const double grad_delta = 0.0001;
 
-	/* XXX check result */
-
 	int n_frag;
 	efp_get_frag_count(efp, &n_frag);
 
