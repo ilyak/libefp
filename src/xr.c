@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "cblas.h"
 #include "efp_private.h"
 #include "disp.h"
 

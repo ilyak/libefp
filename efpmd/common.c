@@ -84,9 +84,9 @@ enum efp_result print_geometry(struct efp *efp)
 		for (int a = 0; a < n_atoms; a++) {
 			struct efp_atom *atom = atoms + a;
 			printf("%s %12.8lf %12.8lf %12.8lf\n", atom->label,
-					BOHR_TO_ANGSTROM * atom->x,
-					BOHR_TO_ANGSTROM * atom->y,
-					BOHR_TO_ANGSTROM * atom->z);
+					BOHR_TO_ANGSTROM(atom->x),
+					BOHR_TO_ANGSTROM(atom->y),
+					BOHR_TO_ANGSTROM(atom->z));
 		}
 	}
 

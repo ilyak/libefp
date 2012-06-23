@@ -29,14 +29,17 @@
 
 #include <stdio.h>
 #include <string.h>
+
 #include <efp.h>
+#include <phys_const.h>
 
 #define streq(a, b) (strcmp(a, b) == 0)
 #define strneq(a, b, n) (strncmp(a, b, n) == 0)
 
 #define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))
-#define BOHR_TO_ANGSTROM 0.52917721092
-#define ANGSTROM_TO_BOHR (1.0 / BOHR_TO_ANGSTROM)
+
+#define ANGSTROM_TO_BOHR(x) ((x) / BOHR_RADIUS)
+#define BOHR_TO_ANGSTROM(x) ((x) * BOHR_RADIUS)
 
 enum coord_type {
 	COORD_TYPE_POINTS = 0,

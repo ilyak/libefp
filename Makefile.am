@@ -56,6 +56,7 @@ src_libefp_la_SOURCES = \
 	src/math_util.h \
 	src/parse.c \
 	src/parse.h \
+	src/phys_const.h \
 	src/pol.c \
 	src/terms.h \
 	src/xr.c

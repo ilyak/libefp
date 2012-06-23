@@ -31,7 +31,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <efp.h>
+#include <phys_const.h>
+
+#define BOHR(x) ((x) / BOHR_RADIUS)
+#define ANGSTROM(x) ((x) * BOHR_RADIUS)
 
 struct test_data {
 	/** Array of paths to EFP data files, NULL-terminated. */
@@ -88,8 +93,6 @@ struct test_data {
 };
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
-#define BOHR(x) ((x) / 0.52917721092)
-#define ANGSTROM(x) ((x) * 0.52917721092)
 
 int run_test(const struct test_data *test_data);
 

@@ -147,7 +147,7 @@ static int parse_units(struct stream *stream, struct config *config)
 		double value;
 	} list[] = {
 		{ "bohr", 1.0 },
-		{ "angs", ANGSTROM_TO_BOHR }
+		{ "angs", 1.0 / BOHR_RADIUS }
 	};
 
 	for (size_t i = 0; i < ARRAY_SIZE(list); i++)
@@ -440,7 +440,7 @@ static void config_defaults(struct config *config,
 	config->efp_opts.terms = EFP_TERM_ELEC | EFP_TERM_POL |
 				 EFP_TERM_DISP | EFP_TERM_XR;
 
-	config->units_factor = ANGSTROM_TO_BOHR;
+	config->units_factor = 1.0 / BOHR_RADIUS;
 	config->fraglib_path = strdup(".");
 	config->userlib_path = strdup(".");
 }

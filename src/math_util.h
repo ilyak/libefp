@@ -30,9 +30,8 @@
 #include <math.h>
 #include <string.h>
 
-#include "cblas.h"
-
 #define PI 3.14159265358979323846
+#define VEC(x) ((vec_t *)(&(x)))
 
 typedef struct {
 	double x, y, z;
@@ -41,8 +40,6 @@ typedef struct {
 typedef struct {
 	double xx, xy, xz, yx, yy, yz, zx, zy, zz;
 } mat_t;
-
-#define VEC(x) ((vec_t *)(&(x)))
 
 static inline double
 vec_el(const vec_t *vec, int idx)
