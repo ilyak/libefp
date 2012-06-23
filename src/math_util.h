@@ -147,11 +147,13 @@ mat_trans_vec(const mat_t *mat, const vec_t *vec, vec_t *out)
 }
 
 static inline void
-move_pt(const vec_t *pos, const mat_t *rotmat,
-	const vec_t *init, vec_t *out)
+move_pt(const vec_t *com, const mat_t *rotmat,
+	const vec_t *com_init, const vec_t *pos_init,
+	vec_t *out)
 {
-	mat_vec(rotmat, init, out);
-	out->x += pos->x, out->y += pos->y, out->z += pos->z;
+	vec_t pos = vec_sub(pos_init, com_init);
+	mat_vec(rotmat, &pos, out);
+	out->x += com->x, out->y += com->y, out->z += com->z;
 }
 
 static inline void

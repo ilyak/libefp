@@ -145,8 +145,8 @@ update_fragment(struct frag *frag)
 {
 	/* update atoms */
 	for (int i = 0; i < frag->n_atoms; i++)
-		move_pt(VEC(frag->x), &frag->rotmat, VEC(frag->lib->atoms[i].x),
-				VEC(frag->atoms[i].x));
+		move_pt(VEC(frag->x), &frag->rotmat, VEC(frag->lib->x),
+			VEC(frag->lib->atoms[i].x), VEC(frag->atoms[i].x));
 
 	efp_update_elec(frag);
 	efp_update_pol(frag);

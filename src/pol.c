@@ -449,7 +449,7 @@ efp_update_pol(struct frag *frag)
 	const mat_t *rotmat = &frag->rotmat;
 
 	for (int i = 0; i < frag->n_polarizable_pts; i++) {
-		move_pt(VEC(frag->x), rotmat,
+		move_pt(VEC(frag->x), rotmat, VEC(frag->lib->x),
 			VEC(frag->lib->polarizable_pts[i].x),
 			VEC(frag->polarizable_pts[i].x));
 
