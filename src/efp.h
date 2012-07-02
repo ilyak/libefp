@@ -226,16 +226,16 @@ struct efp_callbacks {
 };
 
 /**
- * Get a human readable banner with the information about the library.
+ * Get a human readable banner string with information about the library.
  *
  * \return Banner string, zero-terminated.
  */
 const char *efp_banner(void);
 
 /**
- * Set options to default values.
+ * Get default values of simulation options.
  *
- * \param[out] opts Structure to store default option values.
+ * \param[out] opts Structure to store the defaults.
  */
 void efp_opts_default(struct efp_opts *opts);
 
@@ -263,8 +263,8 @@ enum efp_result efp_init(struct efp **out,
  *
  * \param[in] efp The efp structure.
  * \param[in] n_atoms Number of atoms in \a ab \a initio region.
- * \param[in] znuc Array of n_atoms elements with atom nuclear charges.
- * \param[in] xyz Array of (3 * n_atoms) elements with \a x \a y \a z
+ * \param[in] znuc Array of \a n_atoms elements with atom nuclear charges.
+ * \param[in] xyz Array of [3 * \a n_atoms] elements with \a x \a y \a z
  *                coordinates of atom positions.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
@@ -289,7 +289,7 @@ enum efp_result efp_set_coordinates(struct efp *efp, const double *xyzabc);
 /**
  * Update positions and orientations of effective fragments.
  *
- * This is a convenience function. It does the same as efp_set_coordinates.
+ * This is a convenience function. It does the same as ::efp_set_coordinates.
  * However to specify position and orientation of each fragment it takes
  * coordinates of 3 points in space. For each fragment point 1 and first atom
  * of fragment are made to coincide. The vector connecting points 1 and 2 is
@@ -299,10 +299,11 @@ enum efp_result efp_set_coordinates(struct efp *efp, const double *xyzabc);
  *
  * \param[in] efp The efp structure.
  * \param[in] pts Array of points used to determine fragment positions and
- *                orientations. The size of this array must be (9 * N), where N
- *                is the number of fragments. For each fragment \a x \a y \a z
- *                coordinates of 3 fragment points should be specified to
- *                setup the position and orientation of a fragment.
+ *                orientations. The size of this array must be at least [9 * \a
+ *                n] elements, where \a n is the number of fragments. For each
+ *                fragment \a x \a y \a z coordinates of 3 fragment points
+ *                should be specified to setup the position and orientation of
+ *                a fragment.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
@@ -312,9 +313,9 @@ enum efp_result efp_set_coordinates_2(struct efp *efp, const double *pts);
  * Get center of mass positions and Euler angles of the effective fragments.
  *
  * \param[in] efp The efp structure.
- * \param[in] size Size of the xyzabc array. Must be at least (6 * N), where N
- *                 is the number of fragments.
- * \param[out] xyzabc Upon return (6 * N) elements will be written to this
+ * \param[in] size Size of the xyzabc array. Must be at least [6 * \a n]
+ *                 elements, where \a n is the number of fragments.
+ * \param[out] xyzabc Upon return [6 * \a n] elements will be written to this
  *                    array. The coordinates of the center of mass and Euler
  *                    rotation angles for each fragment will be stored.
  *
@@ -362,15 +363,15 @@ enum efp_result efp_get_multipole_count(struct efp *efp, int *n_mult);
  *
  * \param[in] efp The efp structure.
  * \param[out] xyz Array where multipole point coordinates will be stored. The
- *                 size of this array must be at least (3 * n_mult) elements,
- *                 where n_mult is the value returned by the
- *                 efp_get_multipole_count function.
+ *                 size of this array must be at least [3 * \a n_mult]
+ *                 elements, where \a n_mult is the value returned by the
+ *                 ::efp_get_multipole_count function.
  * \param[out] z Array where the multipoles will be stored. The size of this
- *               array must be at least (20 * n_mult) elements, where n_mult is
- *               the value returned by the efp_get_multipole_count function.
- *               For each multipole point these 20 elements are charge, 3
- *               dipole components, 6 quadrupole components, 10 octupole
- *               components.
+ *               array must be at least [20 * \a n_mult] elements, where \a
+ *               n_mult is the value returned by the ::efp_get_multipole_count
+ *               function. For each multipole point these 20 elements are
+ *               charge, 3 dipole components, 6 quadrupole components, 10
+ *               octupole components.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
@@ -391,13 +392,14 @@ enum efp_result efp_get_induced_dipole_count(struct efp *efp, int *n_dip);
  *
  * \param[in] efp The efp structure.
  * \param[out] xyz Array where induced dipole coordinates will be stored. The
- *                 size of this array must be at least (3 * n_dip) elements,
- *                 where n_dip is the value returned by the
- *                 efp_get_induced_dipole_count function.
+ *                 size of this array must be at least [3 * \a n_dip] elements,
+ *                 where \a n_dip is the value returned by the
+ *                 ::efp_get_induced_dipole_count function.
  * \param[out] dip Array where the dipoles will be stored. The size of this
- *                 array must be at least (3 * n_dip) elements, where n_dip is
- *                 the value returned by the efp_get_induced_dipole_count
- *                 function. For each point 3 dipole components are stored.
+ *                 array must be at least [3 * \a n_dip] elements, where \a
+ *                 n_dip is the value returned by the
+ *                 ::efp_get_induced_dipole_count function. For each point 3
+ *                 dipole components are stored.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
@@ -419,8 +421,8 @@ enum efp_result efp_get_energy(struct efp *efp, struct efp_energy *energy);
  * Get computed EFP energy gradient.
  *
  * \param[in] efp The efp structure.
- * \param[in] n_grad Length of the grad array. Must be at least (6 * N), where
- *                   N is the number of fragments.
+ * \param[in] n_grad Length of the grad array. Must be at least [6 * \a n]
+ *                   elements, where \a n is the number of fragments.
  * \param[out] grad For each fragment contains \a x \a y \a z components of
  *                  negative force and torque.
  *
@@ -444,7 +446,7 @@ enum efp_result efp_get_frag_count(struct efp *efp, int *n_frag);
  * \param[in] efp The efp structure.
  * \param[in] frag_idx Index of a fragment between zero and total number of
  *                     fragments minus one.
- * \param[in] size Size of frag_name buffer.
+ * \param[in] size Size of \a frag_name buffer.
  * \param[out] frag_name A buffer where name of the fragment will be stored.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
@@ -474,7 +476,7 @@ enum efp_result efp_get_frag_atom_count(struct efp *efp,
  * \param[in] efp The efp structure.
  * \param[in] frag_idx Index of a fragment between zero and total number of
  *                     fragments minus one.
- * \param[out] atoms Array of size returned by efp_get_frag_atom_count. Atom
+ * \param[out] atoms Array of size returned by ::efp_get_frag_atom_count. Atom
  *                   information is stored here.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
