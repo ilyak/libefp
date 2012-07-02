@@ -3,12 +3,16 @@ global:
 	efp_banner;
 	efp_opts_default;
 	efp_init;
+	efp_set_qm_atoms;
 	efp_set_coordinates;
 	efp_set_coordinates_2;
 	efp_get_coordinates;
 	efp_scf_update;
 	efp_compute;
-	efp_qm_contribution;
+	efp_get_multipole_count;
+	efp_get_multipoles;
+	efp_get_induced_dipole_count;
+	efp_get_induced_dipoles;
 	efp_get_energy;
 	efp_get_gradient;
 	efp_get_frag_count;

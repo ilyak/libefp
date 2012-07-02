@@ -199,13 +199,6 @@ struct efp_atom {
 	double znuc;      /**< Nuclear charge. */
 };
 
-/** Information about \a ab \a initio region. */
-struct efp_qm_data {
-	int n_atoms;       /**< Number of atoms in QM subsystem. */
-	double *atom_xyz;  /**< Array of atom \a x \a y \a z coordinates. */
-	double *atom_znuc; /**< Array of atom effective nuclear charges. */
-};
-
 /**
  * Compute electric field form electrons in the specified points.
  *
@@ -222,19 +215,6 @@ typedef enum efp_result (*efp_electron_density_field_fn)(int n_pt,
 							 double *field,
 							 void *user_data);
 
-/** XXX */
-typedef enum efp_result (*efp_ao_integrals_fn)(int n_charges,
-					       const double *charges,
-					       const double *xyz,
-					       int n_basis,
-					       double *ints,
-					       void *user_data);
-
-/** XXX */
-typedef enum efp_result (*efp_field_integrals_fn)(double *z,
-						  int order,
-						  void *user_data);
-
 /** Callback function information. */
 struct efp_callbacks {
 	/** Callback function, see ::efp_electron_density_field_fn. */
@@ -243,20 +223,6 @@ struct efp_callbacks {
 	/** Will be passed as a last parameter to
 	 * efp_callbacks::get_electron_density_field. */
 	void *get_electron_density_field_user_data;
-
-	/** Callback function, see ::efp_ao_integrals_fn. */
-	efp_ao_integrals_fn get_ao_integrals;
-
-	/** Will be passed as a last parameter to
-	 * efp_callbacks::get_ao_integrals. */
-	void *get_ao_integrals_user_data;
-
-	/** Callback function, see ::efp_field_integrals_fn. */
-	efp_field_integrals_fn get_field_integrals;
-
-	/** Will be passed as a last parameter to
-	 * efp_callbacks::get_field_integrals. */
-	void *get_field_integrals_user_data;
 };
 
 /**
@@ -296,12 +262,17 @@ enum efp_result efp_init(struct efp **out,
  * Update information about \a ab \a initio region.
  *
  * \param[in] efp The efp structure.
- * \param[in] qm_data Information about \a ab \a initio region.
+ * \param[in] n_atoms Number of atoms in \a ab \a initio region.
+ * \param[in] znuc Array of n_atoms elements with atom nuclear charges.
+ * \param[in] xyz Array of (3 * n_atoms) elements with \a x \a y \a z
+ *                coordinates of atom positions.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_update_qm_data(struct efp *efp,
-				   const struct efp_qm_data *qm_data);
+enum efp_result efp_set_qm_atoms(struct efp *efp,
+				 int n_atoms,
+				 const double *znuc,
+				 const double *xyz);
 
 /**
  * Update positions and orientations of effective fragments.
@@ -369,23 +340,70 @@ enum efp_result efp_scf_update(struct efp *efp, double *energy);
  * This call can take long time to complete.
  *
  * \param[in] efp The efp structure.
- * \param[in] do_gradient Also compute gradient if nonzero value specified.
+ * \param[in] do_gradient Also compute energy gradient if nonzero value is
+ *                        specified.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
 enum efp_result efp_compute(struct efp *efp, int do_gradient);
 
 /**
- * Compute one-electron contributions to the quantum mechanical Hamiltonian
- * from the effective fragments.
+ * Get total number of EFP multipole points.
  *
  * \param[in] efp The efp structure.
- * \param[in] n_basis Number of basis functions.
- * \param[out] v One-electron contributions to the Hamiltonian.
+ * \param[out] n_mult Total number of EFP multipole points.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_qm_contribution(struct efp *efp, int n_basis, double *v);
+enum efp_result efp_get_multipole_count(struct efp *efp, int *n_mult);
+
+/**
+ * Get multipoles from all fragments.
+ *
+ * \param[in] efp The efp structure.
+ * \param[out] xyz Array where multipole point coordinates will be stored. The
+ *                 size of this array must be at least (3 * n_mult) elements,
+ *                 where n_mult is the value returned by the
+ *                 efp_get_multipole_count function.
+ * \param[out] z Array where the multipoles will be stored. The size of this
+ *               array must be at least (20 * n_mult) elements, where n_mult is
+ *               the value returned by the efp_get_multipole_count function.
+ *               For each multipole point these 20 elements are charge, 3
+ *               dipole components, 6 quadrupole components, 10 octupole
+ *               components.
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_get_multipoles(struct efp *efp, double *xyz, double *z);
+
+/**
+ * Get total number of induced dipoles on EFP fragments.
+ *
+ * \param[in] efp The efp structure.
+ * \param[out] n_dip Total number of induced dipoles on EFP fragments.
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_get_induced_dipole_count(struct efp *efp, int *n_dip);
+
+/**
+ * Get induced dipoles from all EFP fragments.
+ *
+ * \param[in] efp The efp structure.
+ * \param[out] xyz Array where induced dipole coordinates will be stored. The
+ *                 size of this array must be at least (3 * n_dip) elements,
+ *                 where n_dip is the value returned by the
+ *                 efp_get_induced_dipole_count function.
+ * \param[out] dip Array where the dipoles will be stored. The size of this
+ *                 array must be at least (3 * n_dip) elements, where n_dip is
+ *                 the value returned by the efp_get_induced_dipole_count
+ *                 function. For each point 3 dipole components are stored.
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_get_induced_dipoles(struct efp *efp,
+					double *xyz,
+					double *dip);
 
 /**
  * Get computed energies of corresponding EFP terms.

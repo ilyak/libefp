@@ -631,19 +631,19 @@ compute_ai_elec_frag(struct efp *efp, int frag_idx)
 	struct frag *fr_i = efp->frags + frag_idx;
 
 	for (int i = 0; i < fr_i->n_atoms; i++) {
-		for (int j = 0; j < efp->qm_data.n_atoms; j++) {
+		for (int j = 0; j < efp->qm.n_atoms; j++) {
 			struct efp_atom *at_i = fr_i->atoms + i;
-			const double *xyz_j = efp->qm_data.atom_xyz + 3 * j;
-			double znuc_j = efp->qm_data.atom_znuc[j];
+			const double *xyz_j = efp->qm.xyz + 3 * j;
+			double znuc_j = efp->qm.znuc[j];
 
 			double r = vec_dist(VEC(at_i->x), (const vec_t *)xyz_j);
 			energy += at_i->znuc * znuc_j / r;
 		}
 	}
 	for (int i = 0; i < fr_i->n_multipole_pts; i++) {
-		for (int j = 0; j < efp->qm_data.n_atoms; j++) {
-			const double *xyz = efp->qm_data.atom_xyz + 3 * j;
-			double znuc = efp->qm_data.atom_znuc[j];
+		for (int j = 0; j < efp->qm.n_atoms; j++) {
+			const double *xyz = efp->qm.xyz + 3 * j;
+			double znuc = efp->qm.znuc[j];
 
 			energy += atom_mult_energy(efp, znuc,
 					(const vec_t *)xyz, frag_idx, i);

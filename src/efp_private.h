@@ -156,13 +156,15 @@ struct efp {
 	int do_gradient;
 
 	/* information about ab initio region */
-	struct efp_qm_data qm_data;
+	struct {
+		int n_atoms;
+		double *znuc;
+		double *xyz;
+		double *grad;
+	} qm;
 
 	/* EFP energy terms */
 	struct efp_energy energy;
-
-	/* gradient on QM atoms */
-	double *qm_grad;
 
 	/* initialization check */
 	unsigned magic;
