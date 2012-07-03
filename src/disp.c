@@ -34,11 +34,15 @@ get_damp_tt(double r)
 {
 	static const double a = 1.5; /* Tang-Toennies damping parameter */
 
-	double ra[7];
-	powers(r * a, 7, ra);
+	double ra = r * a;
+	double ra2 = ra * ra;
+	double ra3 = ra2 * ra;
+	double ra4 = ra3 * ra;
+	double ra5 = ra4 * ra;
+	double ra6 = ra5 * ra;
 
-	return 1.0 - exp(-ra[1]) * (1.0 + ra[1] + ra[2] / 2.0 + ra[3] / 6.0 +
-			ra[4] / 24.0 + ra[5] / 120.0 + ra[6] / 720.0);
+	return 1.0 - exp(-ra) * (1.0 + ra + ra2 / 2.0 + ra3 / 6.0 +
+			ra4 / 24.0 + ra5 / 120.0 + ra6 / 720.0);
 }
 
 static double
@@ -99,12 +103,14 @@ point_point_disp(struct efp *efp, int fr_i_idx, int fr_j_idx,
 		damp = get_damp_overlap(efp, fr_i_idx, fr_j_idx,
 					pt_i_idx, pt_j_idx);
 		break;
+	case EFP_DISP_DAMP_OFF:
+		break;
 	}
 
 	double energy = -4.0 / 3.0 * sum * damp / r6;
 
 	if (efp->do_gradient) {
-		double gdamp = 1.0;
+		double gdamp = 0.0;
 
 		switch (efp->opts.disp_damp) {
 		case EFP_DISP_DAMP_TT:
@@ -113,6 +119,8 @@ point_point_disp(struct efp *efp, int fr_i_idx, int fr_j_idx,
 		case EFP_DISP_DAMP_OVERLAP:
 			gdamp = get_damp_overlap_grad(efp, fr_i_idx, fr_j_idx,
 						      pt_i_idx, pt_j_idx);
+			break;
+		case EFP_DISP_DAMP_OFF:
 			break;
 		}
 

@@ -157,17 +157,6 @@ move_pt(const vec_t *com, const mat_t *rotmat,
 }
 
 static inline void
-powers(double x, int n, double *p)
-{
-	p[0] = 1.0;
-
-	while (--n > 0) {
-		p[1] = p[0] * x;
-		p++;
-	}
-}
-
-static inline void
 rotate_t2(const mat_t *rotmat, const double *in, double *out)
 {
 	const double *rm = (const double *)rotmat;

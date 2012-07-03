@@ -123,13 +123,15 @@ enum efp_term {
 /** Fragment-fragment dispersion damping type. */
 enum efp_disp_damp {
 	EFP_DISP_DAMP_OVERLAP = 0, /**< Overlap-based damping (default). */
-	EFP_DISP_DAMP_TT           /**< Tang-Toennies damping. */
+	EFP_DISP_DAMP_TT,          /**< Tang-Toennies damping. */
+	EFP_DISP_DAMP_OFF          /**< No dispersion damping. */
 };
 
 /** Fragment-fragment electrostatic damping type. */
 enum efp_elec_damp {
 	EFP_ELEC_DAMP_SCREEN = 0,  /**< SCREEN controlled damping (default). */
-	EFP_ELEC_DAMP_OVERLAP      /**< Overlap-based damping. */
+	EFP_ELEC_DAMP_OVERLAP,     /**< Overlap-based damping. */
+	EFP_ELEC_DAMP_OFF          /**< No electrostatic damping. */
 };
 
 /** \struct efp
