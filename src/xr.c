@@ -83,6 +83,7 @@ static void
 frag_frag_xr_grad(struct efp *efp)
 {
 	/* XXX */
+	assert(0);
 }
 
 static void
@@ -198,9 +199,6 @@ efp_compute_xr(struct efp *efp)
 {
 	if (!(efp->opts.terms & EFP_TERM_XR))
 		return EFP_RESULT_SUCCESS;
-
-	if (efp->do_gradient)
-		return EFP_RESULT_NOT_IMPLEMENTED;
 
 	double exr = 0.0;
 	double ecp = 0.0;

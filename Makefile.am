@@ -34,9 +34,10 @@ LIBEFP_AGE = 0
 
 include_HEADERS = src/efp.h
 lib_LTLIBRARIES = src/libefp.la
-bin_PROGRAMS = efpmd/efpmd efpmd/cubegen/cubegen
 
-CLEANFILES += gmon.out efpmd/gmon.out
+bin_PROGRAMS = \
+	efpmd/efpmd \
+	efpmd/cubegen/cubegen
 
 src_libefp_la_SOURCES = \
 	src/ai_disp.c \

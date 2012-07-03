@@ -169,30 +169,39 @@ make_int(int ni, int nj, double tt, double x, double y, double z,
 	*outz = zint;
 }
 
-static inline int
-shell_type_idx(char shell_type)
+static int
+shell_idx(char type)
 {
-	switch (shell_type) {
-		case 'S': return 0;
-		case 'L': return 1;
-		case 'P': return 2;
-		case 'D': return 3;
-		case 'F': return 4;
-	}
-	assert(0);
+	static const int idx[] = {
+		 3, -1,  4, -1, /* D - G */
+		-1, -1, -1, -1, /* H - K */
+		 1, -1, -1, -1, /* L - O */
+		 2, -1, -1,  0  /* P - S */
+	};
+
+	return idx[type - 'D'];
 }
 
 static void
-init_shell(char shell_type, int *start, int *end, int *sl)
+init_shell(char type, int *start_out, int *end_out, int *sl_out)
 {
-	switch (shell_type) {
-		case 'S': *start =  0; *end =  1; *sl = 1; return;
-		case 'L': *start =  0; *end =  4; *sl = 2; return;
-		case 'P': *start =  1; *end =  4; *sl = 2; return;
-		case 'D': *start =  4; *end = 10; *sl = 3; return;
-		case 'F': *start = 10; *end = 20; *sl = 4; return;
-	}
-	assert(0);
+	static const int start[] = {
+		0, 0, 1, 4, 10
+	};
+
+	static const int end[] = {
+		1, 4, 4, 10, 20
+	};
+
+	static const int sl[] = {
+		1, 2, 2, 3, 4
+	};
+
+	int idx = shell_idx(type);
+
+	*start_out = start[idx];
+	*end_out = end[idx];
+	*sl_out = sl[idx];
 }
 
 static inline void
@@ -278,7 +287,7 @@ efp_st_int(int n_shells_i, const struct shell *shells_i,
 		int start_i, end_i, sl_i;
 		init_shell(sh_i->type, &start_i, &end_i, &sl_i);
 
-		int type_i = shell_type_idx(sh_i->type);
+		int type_i = shell_idx(sh_i->type);
 		int count_i = end_i - start_i;
 
 		/* shell j */
@@ -288,7 +297,7 @@ efp_st_int(int n_shells_i, const struct shell *shells_i,
 			int start_j, end_j, sl_j;
 			init_shell(sh_j->type, &start_j, &end_j, &sl_j);
 
-			int type_j = shell_type_idx(sh_j->type);
+			int type_j = shell_idx(sh_j->type);
 			int count_j = end_j - start_j;
 
 			int count = count_i * count_j;

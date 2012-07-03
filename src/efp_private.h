@@ -27,6 +27,8 @@
 #ifndef LIBEFP_EFP_PRIVATE_H
 #define LIBEFP_EFP_PRIVATE_H
 
+#include <assert.h>
+
 #include "efp.h"
 #include "int.h"
 #include "math_util.h"

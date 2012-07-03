@@ -417,6 +417,7 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 
 	if (efp->opts.terms & EFP_TERM_AI_POL) {
 		/* XXX */
+		assert(0);
 	}
 }
 

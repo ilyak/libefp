@@ -374,6 +374,10 @@ enum efp_result efp_get_multipole_count(struct efp *efp, int *n_mult);
  *               function. For each multipole point these 20 elements are
  *               charge, 3 dipole components, 6 quadrupole components, 10
  *               octupole components.
+ *               Quadrupoles are stored in the following order:
+ *                   xx, yy, zz, xy, xz, yz
+ *               Octupoles are stored in the following order:
+ *                   xxx, yyy, zzz, xxy, xxz, xyy, yyz, xzz, yzz, xyz
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */

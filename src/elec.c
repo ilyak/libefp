@@ -652,19 +652,28 @@ compute_ai_elec_frag(struct efp *efp, int frag_idx)
 	return energy;
 }
 
+static void
+compute_ai_elec_frag_grad(struct efp *efp, int frag_idx)
+{
+	/* XXX */
+	assert(0);
+}
+
 enum efp_result
 efp_compute_ai_elec(struct efp *efp)
 {
 	if (!(efp->opts.terms & EFP_TERM_AI_ELEC))
 		return EFP_RESULT_SUCCESS;
 
-	if (efp->do_gradient)
-		return EFP_RESULT_NOT_IMPLEMENTED;
-
 	double energy = 0.0;
 
-	for (int i = 0; i < efp->n_frag; i++)
+	#pragma omp parallel for schedule(dynamic, 4) reduction(+:energy)
+	for (int i = 0; i < efp->n_frag; i++) {
 		energy += compute_ai_elec_frag(efp, i);
+
+		if (efp->do_gradient)
+			compute_ai_elec_frag_grad(efp, i);
+	}
 
 	efp->energy.ai_electrostatic = energy;
 	return EFP_RESULT_SUCCESS;

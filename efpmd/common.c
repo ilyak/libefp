@@ -103,13 +103,13 @@ enum efp_result print_energy(struct efp *efp)
 	if ((res = efp_get_energy(efp, &energy)))
 		return res;
 
-printf("     ELECTROSTATIC ENERGY = %16.10lf\n", energy.electrostatic);
-printf("      POLARIZATION ENERGY = %16.10lf\n", energy.polarization);
-printf("        DISPERSION ENERGY = %16.10lf\n", energy.dispersion);
-printf("EXCHANGE REPULSION ENERGY = %16.10lf\n", energy.exchange_repulsion);
-printf("CHARGE PENETRATION ENERGY = %16.10lf\n", energy.charge_penetration);
+printf("         ELECTROSTATIC ENERGY = %16.10lf\n", energy.electrostatic);
+printf("          POLARIZATION ENERGY = %16.10lf\n", energy.polarization);
+printf("            DISPERSION ENERGY = %16.10lf\n", energy.dispersion);
+printf("    EXCHANGE REPULSION ENERGY = %16.10lf\n", energy.exchange_repulsion);
+printf("    CHARGE PENETRATION ENERGY = %16.10lf\n", energy.charge_penetration);
 printf("------------------------------------------------\n");
-printf("             TOTAL ENERGY = %16.10lf\n", energy.total);
+printf("                 TOTAL ENERGY = %16.10lf\n", energy.total);
 printf("\n\n");
 
 	fflush(stdout);
