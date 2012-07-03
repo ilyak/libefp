@@ -202,7 +202,8 @@ static int parse_disp_damp(struct stream *stream, struct config *config)
 		enum efp_disp_damp value;
 	} list[] = {
 		{ "tt",      EFP_DISP_DAMP_TT      },
-		{ "overlap", EFP_DISP_DAMP_OVERLAP }
+		{ "overlap", EFP_DISP_DAMP_OVERLAP },
+		{ "off",     EFP_DISP_DAMP_OFF     }
 	};
 
 	for (size_t i = 0; i < ARRAY_SIZE(list); i++)
@@ -222,7 +223,8 @@ static int parse_elec_damp(struct stream *stream, struct config *config)
 		enum efp_elec_damp value;
 	} list[] = {
 		{ "screen",  EFP_ELEC_DAMP_SCREEN  },
-		{ "overlap", EFP_ELEC_DAMP_OVERLAP }
+		{ "overlap", EFP_ELEC_DAMP_OVERLAP },
+		{ "off",     EFP_ELEC_DAMP_OFF     }
 	};
 
 	for (size_t i = 0; i < ARRAY_SIZE(list); i++)
