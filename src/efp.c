@@ -690,7 +690,7 @@ setup_disp(struct efp *efp)
 			efp->disp_damp_overlap_offset[i - 1] +
 			efp->frags[i - 1].n_dynamic_polarizable_pts;
 
-	/* XXX fix this - requires too much memory */
+	/* XXX - this needs a lot of memory */
 	efp->disp_damp_overlap = malloc(n_disp * n_disp * sizeof(double));
 	if (!efp->disp_damp_overlap)
 		return EFP_RESULT_NO_MEMORY;

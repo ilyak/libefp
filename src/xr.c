@@ -50,20 +50,21 @@ valence(double n)
 }
 
 static inline double
-get_disp_damp_overlap(double s_ij)
+get_disp_damp(double s_ij)
 {
+	if (fabs(s_ij) < 1.0e-6)
+		return 0.0;
+
 	double ln_s = log(fabs(s_ij));
+
 	return 1.0 - s_ij * s_ij * (1.0 - 2.0 * ln_s + 2.0 * ln_s * ln_s);
 }
 
-static void
-calc_disp_damp_overlap(struct efp *efp, int frag_i, int frag_j,
-		       int i, int j, double s_ij)
+static inline void
+calc_disp_damp(struct efp *efp, int frag_i, int frag_j,
+	       int i, int j, double s_ij)
 {
-	if (!efp->disp_damp_overlap)
-		return;
-
-	double damp = fabs(s_ij) > 1.0e-6 ? get_disp_damp_overlap(s_ij) : 0.0;
+	double damp = get_disp_damp(s_ij);
 
 	efp->disp_damp_overlap[
 		disp_damp_overlap_idx(efp, frag_i, frag_j, i, j)] = damp;
@@ -134,7 +135,10 @@ frag_frag_xr(struct efp *efp, int frag_i, int frag_j,
 			double r_ij = vec_dist(fr_i->lmo_centroids + i,
 					       fr_j->lmo_centroids + j);
 
-			calc_disp_damp_overlap(efp, frag_i, frag_j, i, j, s_ij);
+			if ((efp->opts.terms & EFP_TERM_DISP) &&
+			    (efp->opts.disp_damp == EFP_DISP_DAMP_OVERLAP)) {
+				calc_disp_damp(efp, frag_i, frag_j, i, j, s_ij);
+			}
 
 			if ((efp->opts.terms & EFP_TERM_ELEC) &&
 			    (efp->opts.elec_damp == EFP_ELEC_DAMP_OVERLAP)) {
