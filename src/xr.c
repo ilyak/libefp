@@ -85,7 +85,8 @@ frag_frag_xr_grad(struct efp *efp)
 }
 
 static void
-frag_frag_xr(struct efp *efp, int frag_i, int frag_j)
+frag_frag_xr(struct efp *efp, int frag_i, int frag_j,
+	     double *exr_out, double *ecp_out)
 {
 	struct frag *fr_i = efp->frags + frag_i;
 	struct frag *fr_j = efp->frags + frag_j;
@@ -123,7 +124,8 @@ frag_frag_xr(struct efp *efp, int frag_i, int frag_j)
 		tmp, fr_j->xr_wf_size, fr_j->xr_wf, fr_j->xr_wf_size, 0.0,
 		&lmo_t[0][0], fr_j->n_lmo);
 
-	double energy = 0.0;
+	double exr = 0.0;
+	double ecp = 0.0;
 
 	for (int i = 0; i < fr_i->n_lmo; i++) {
 		for (int j = 0; j < fr_j->n_lmo; j++) {
@@ -136,55 +138,52 @@ frag_frag_xr(struct efp *efp, int frag_i, int frag_j)
 
 			if ((efp->opts.terms & EFP_TERM_ELEC) &&
 			    (efp->opts.elec_damp == EFP_ELEC_DAMP_OVERLAP)) {
-				double ecp = get_charge_penetration(s_ij, r_ij);
-
-				#pragma omp atomic
-				efp->energy.charge_penetration += ecp;
+				ecp += get_charge_penetration(s_ij, r_ij);
 			}
 
 			/* xr - first part */
 			if (fabs(s_ij) > 1.0e-6)
-				energy += -2.0 * sqrt(-2.0 * log(fabs(s_ij)) /
+				exr += -2.0 * sqrt(-2.0 * log(fabs(s_ij)) /
 						PI) * s_ij * s_ij / r_ij;
 
 			/* xr - second part */
 			for (int k = 0; k < fr_i->n_lmo; k++)
-				energy -= s_ij * lmo_s[k][j] *
+				exr -= s_ij * lmo_s[k][j] *
 					fr_i->xr_fock_mat[fock_idx(i, k)];
 			for (int l = 0; l < fr_j->n_lmo; l++)
-				energy -= s_ij * lmo_s[i][l] *
+				exr -= s_ij * lmo_s[i][l] *
 					fr_j->xr_fock_mat[fock_idx(j, l)];
-			energy += 2.0 * s_ij * t_ij;
+			exr += 2.0 * s_ij * t_ij;
 
 			/* xr - third part */
 			for (int jj = 0; jj < fr_j->n_atoms; jj++) {
 				struct efp_atom *at = fr_j->atoms + jj;
 				double r = vec_dist(fr_i->lmo_centroids + i,
 							VEC(at->x));
-				energy -= s_ij * s_ij * valence(at->znuc) / r;
+				exr -= s_ij * s_ij * valence(at->znuc) / r;
 			}
 			for (int l = 0; l < fr_j->n_lmo; l++) {
 				double r = vec_dist(fr_i->lmo_centroids + i,
 						    fr_j->lmo_centroids + l);
-				energy += 2.0 * s_ij * s_ij / r;
+				exr += 2.0 * s_ij * s_ij / r;
 			}
 			for (int ii = 0; ii < fr_i->n_atoms; ii++) {
 				struct efp_atom *at = fr_i->atoms + ii;
 				double r = vec_dist(fr_j->lmo_centroids + j,
 							VEC(at->x));
-				energy -= s_ij * s_ij * valence(at->znuc) / r;
+				exr -= s_ij * s_ij * valence(at->znuc) / r;
 			}
 			for (int k = 0; k < fr_i->n_lmo; k++) {
 				double r = vec_dist(fr_i->lmo_centroids + k,
 						    fr_j->lmo_centroids + j);
-				energy += 2.0 * s_ij * s_ij / r;
+				exr += 2.0 * s_ij * s_ij / r;
 			}
-			energy -= s_ij * s_ij / r_ij;
+			exr -= s_ij * s_ij / r_ij;
 		}
 	}
 
-	#pragma omp atomic
-	efp->energy.exchange_repulsion += 2.0 * energy;
+	*exr_out = 2.0 * exr;
+	*ecp_out = ecp;
 
 	if (efp->do_gradient)
 		frag_frag_xr_grad(efp);
@@ -199,13 +198,23 @@ efp_compute_xr(struct efp *efp)
 	if (efp->do_gradient)
 		return EFP_RESULT_NOT_IMPLEMENTED;
 
-	efp->energy.exchange_repulsion = 0.0;
-	efp->energy.charge_penetration = 0.0;
+	double exr = 0.0;
+	double ecp = 0.0;
 
-	#pragma omp parallel for schedule(dynamic, 4)
-	for (int i = 0; i < efp->n_frag; i++)
-		for (int j = i + 1; j < efp->n_frag; j++)
-			frag_frag_xr(efp, i, j);
+	#pragma omp parallel for schedule(dynamic, 4) reduction(+:exr,ecp)
+	for (int i = 0; i < efp->n_frag; i++) {
+		for (int j = i + 1; j < efp->n_frag; j++) {
+			double exr_out, ecp_out;
+
+			frag_frag_xr(efp, i, j, &exr_out, &ecp_out);
+
+			exr += exr_out;
+			ecp += ecp_out;
+		}
+	}
+
+	efp->energy.exchange_repulsion = exr;
+	efp->energy.charge_penetration = ecp;
 
 	return EFP_RESULT_SUCCESS;
 }
