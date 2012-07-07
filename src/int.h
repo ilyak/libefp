@@ -27,6 +27,8 @@
 #ifndef LIBEFP_INT_H
 #define LIBEFP_INT_H
 
+#include "math_util.h"
+
 struct shell {
 	char type;       /* shell type - S,L,P,D,F */
 	double x, y, z;  /* coordinates of a corresponding atom */
@@ -46,8 +48,10 @@ void efp_st_int_deriv(int n_shells_i,
 		      const struct shell *shells_i,
 		      int n_shells_j,
 		      const struct shell *shells_j,
-		      int stride,
-		      double *sx,
-		      double *tx);
+		      const vec_t *com_i,
+		      int size_i,
+		      int size_j,
+		      double *ds,
+		      double *dt);
 
 #endif /* LIBEFP_INT_H */

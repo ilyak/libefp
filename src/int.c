@@ -25,7 +25,6 @@
  */
 
 #include <assert.h>
-#include <math.h>
 #include <string.h>
 
 #include "int.h"
@@ -33,8 +32,19 @@
 
 /* Overlap and kinetic energy integral computation routines. */
 
-static void
-set_coef(double *con, char type, const double *coef)
+/* Tolerance for integrals (20 * ln10) */
+static const double int_tol = 46.051701859881;
+
+/* Normalization constants */
+static const double int_norm[] = {
+	1.0000000000000000, 1.0000000000000000, 1.0000000000000000, 1.0000000000000000,
+	1.0000000000000000, 1.0000000000000000, 1.0000000000000000, 1.7320508075688801,
+	1.7320508075688801, 1.7320508075688801, 1.0000000000000000, 1.0000000000000000,
+	1.0000000000000000, 2.2360679774997898, 2.2360679774997898, 2.2360679774997898,
+	2.2360679774997898, 2.2360679774997898, 2.2360679774997898, 3.8729833462074232
+};
+
+static void set_coef(double *con, char type, const double *coef)
 {
 	switch (type) {
 		case 'S':
@@ -58,10 +68,8 @@ set_coef(double *con, char type, const double *coef)
 	}
 }
 
-static void
-make_int(int ni, int nj, double tt, double x, double y, double z,
-	 double xi, double yi, double zi, double xj, double yj, double zj,
-	 double *outx, double *outy, double *outz)
+static void make_int(int ni, int nj, double tt, const vec_t *p,
+		     const vec_t *p_i, const vec_t *p_j, vec_t *out)
 {
 	static const int imin[] = { 0, 1, 3,  6, 10, 15, 21, 28, 36, 45 };
 	static const int imax[] = { 1, 3, 6, 10, 15, 21, 28, 36, 45, 55 };
@@ -104,11 +112,16 @@ make_int(int ni, int nj, double tt, double x, double y, double z,
 		double tmp = h[i] * tt;
 
 		if(ni > 0) {
-			double ax = tmp + x - xi;
-			double ay = tmp + y - yi;
-			double az = tmp + z - zi;
+			double ax = tmp + p->x - p_i->x;
+			double ay = tmp + p->y - p_i->y;
+			double az = tmp + p->z - p_i->z;
 
+			/* fancy loop unrolling */
 			switch (ni) {
+				case 4:
+					px *= ax;
+					py *= ay;
+					pz *= az;
 				case 3:
 					px *= ax;
 					py *= ay;
@@ -128,10 +141,11 @@ make_int(int ni, int nj, double tt, double x, double y, double z,
 		}
 
 		if(nj > 0) {
-			double bx = tmp + x - xj;
-			double by = tmp + y - yj;
-			double bz = tmp + z - zj;
+			double bx = tmp + p->x - p_j->x;
+			double by = tmp + p->y - p_j->y;
+			double bz = tmp + p->z - p_j->z;
 
+			/* fancy loop unrolling */
 			switch (nj) {
 				case 5:
 					px *= bx;
@@ -164,13 +178,12 @@ make_int(int ni, int nj, double tt, double x, double y, double z,
 		zint += pz;
 	}
 
-	*outx = xint;
-	*outy = yint;
-	*outz = zint;
+	out->x = xint;
+	out->y = yint;
+	out->z = zint;
 }
 
-static int
-shell_idx(char type)
+static int get_shell_idx(char type)
 {
 	static const int idx[] = {
 		 3, -1,  4, -1, /* D - G */
@@ -182,30 +195,34 @@ shell_idx(char type)
 	return idx[type - 'D'];
 }
 
-static void
-init_shell(char type, int *start_out, int *end_out, int *sl_out)
+static int get_shell_start(int shell_idx)
 {
 	static const int start[] = {
 		0, 0, 1, 4, 10
 	};
 
+	return start[shell_idx];
+}
+
+static int get_shell_end(int shell_idx)
+{
 	static const int end[] = {
 		1, 4, 4, 10, 20
 	};
 
+	return end[shell_idx];
+}
+
+static int get_shell_sl(int shell_idx)
+{
 	static const int sl[] = {
 		1, 2, 2, 3, 4
 	};
 
-	int idx = shell_idx(type);
-
-	*start_out = start[idx];
-	*end_out = end[idx];
-	*sl_out = sl[idx];
+	return sl[shell_idx];
 }
 
-static inline void
-init_ft(int count_i, char type_j, double *ft)
+static void init_ft(int count_i, char type_j, double *ft)
 {
 	switch (type_j) {
 		case 'S':
@@ -256,23 +273,10 @@ init_ft(int count_i, char type_j, double *ft)
 	assert(0);
 }
 
-void
-efp_st_int(int n_shells_i, const struct shell *shells_i,
-	   int n_shells_j, const struct shell *shells_j,
-	   int stride, double *s, double *t)
+void efp_st_int(int n_shells_i, const struct shell *shells_i,
+		int n_shells_j, const struct shell *shells_j,
+		int stride, double *s, double *t)
 {
-	static const double norm[] = {
-		1.0000000000000000, 1.0000000000000000, 1.0000000000000000,
-		1.0000000000000000, 1.0000000000000000, 1.0000000000000000,
-		1.0000000000000000, 1.7320508075688801, 1.7320508075688801,
-		1.7320508075688801, 1.0000000000000000, 1.0000000000000000,
-		1.0000000000000000, 2.2360679774997898, 2.2360679774997898,
-		2.2360679774997898, 2.2360679774997898, 2.2360679774997898,
-		2.2360679774997898, 3.8729833462074232
-	};
-
-	static const double tolerance = 46.051701859881; /* 20 * ln10 */
-
 	double xin[90];
 	double yin[90];
 	double zin[90];
@@ -284,20 +288,20 @@ efp_st_int(int n_shells_i, const struct shell *shells_i,
 	for (int ii = 0, loc_i = 0; ii < n_shells_i; ii++) {
 		const struct shell *sh_i = shells_i + ii;
 
-		int start_i, end_i, sl_i;
-		init_shell(sh_i->type, &start_i, &end_i, &sl_i);
-
-		int type_i = shell_idx(sh_i->type);
+		int type_i = get_shell_idx(sh_i->type);
+		int start_i = get_shell_start(type_i);
+		int end_i = get_shell_end(type_i);
+		int sl_i = get_shell_sl(type_i);
 		int count_i = end_i - start_i;
 
 		/* shell j */
 		for (int jj = 0, loc_j = 0; jj < n_shells_j; jj++) {
 			const struct shell *sh_j = shells_j + jj;
 
-			int start_j, end_j, sl_j;
-			init_shell(sh_j->type, &start_j, &end_j, &sl_j);
-
-			int type_j = shell_idx(sh_j->type);
+			int type_j = get_shell_idx(sh_j->type);
+			int start_j = get_shell_start(type_j);
+			int end_j = get_shell_end(type_j);
+			int sl_j = get_shell_sl(type_j);
 			int count_j = end_j - start_j;
 
 			int count = count_i * count_j;
@@ -306,6 +310,8 @@ efp_st_int(int n_shells_i, const struct shell *shells_i,
 			memset(tblk, 0, count * sizeof(double));
 
 			init_ft(count_i, sh_j->type, ft);
+
+			double rr = vec_dist_2(VEC(sh_i->x), VEC(sh_j->x));
 
 			const int *shift_x = shift_table_x[type_i * 5 + type_j];
 			const int *shift_y = shift_table_y[type_i * 5 + type_j];
@@ -331,15 +337,9 @@ efp_st_int(int n_shells_i, const struct shell *shells_i,
 					double aj = *coef_j++;
 
 					double aa = 1.0 / (ai + aj);
+					double tmp = aj * ai * rr * aa;
 
-					double dx = sh_j->x - sh_i->x;
-					double dy = sh_j->y - sh_i->y;
-					double dz = sh_j->z - sh_i->z;
-
-					double rr = dx * dx + dy * dy + dz * dz;
-					double dum = aj * ai * rr * aa;
-
-					if (dum > tolerance) {
+					if (tmp > int_tol) {
 						coef_j++;
 						if (sh_j->type == 'L')
 							coef_j++;
@@ -354,15 +354,17 @@ efp_st_int(int n_shells_i, const struct shell *shells_i,
 					if (sh_j->type == 'L')
 						coef_j++;
 
-					double ax = (ai * sh_i->x + aj * sh_j->x) * aa;
-					double ay = (ai * sh_i->y + aj * sh_j->y) * aa;
-					double az = (ai * sh_i->z + aj * sh_j->z) * aa;
+					vec_t a = {
+						(ai * sh_i->x + aj * sh_j->x) * aa,
+						(ai * sh_i->y + aj * sh_j->y) * aa,
+						(ai * sh_i->z + aj * sh_j->z) * aa
+					};
 
-					double fac = exp(-dum);
+					double fac = exp(-tmp);
 
 					for (int i = start_i, idx = 0; i < end_i; i++)
 						for (int j = start_j; j < end_j; j++, idx++)
-							dij[idx] = fac * con_i[i] * norm[i] * con_j[j] * norm[j];
+							dij[idx] = fac * con_i[i] * int_norm[i] * con_j[j] * int_norm[j];
 
 					double taa = sqrt(aa);
 					double t1 = -2.0 * aj * aj * taa;
@@ -370,39 +372,30 @@ efp_st_int(int n_shells_i, const struct shell *shells_i,
 
 					for (int i = 0, idx = 0; i < sl_i; i++, idx += 5) {
 						for (int j = 0; j < sl_j; j++) {
-							double xint, yint, zint;
+							vec_t iout;
 
-							make_int(i, j, taa, ax, ay, az,
-								 sh_i->x, sh_i->y, sh_i->z,
-								 sh_j->x, sh_j->y, sh_j->z,
-								 &xint, &yint, &zint);
-							xin[idx + j] = xint * taa;
-							yin[idx + j] = yint * taa;
-							zin[idx + j] = zint * taa;
+							make_int(i, j, taa, &a, VEC(sh_i->x), VEC(sh_j->x), &iout);
+							xin[idx + j] = iout.x * taa;
+							yin[idx + j] = iout.y * taa;
+							zin[idx + j] = iout.z * taa;
 
-							make_int(i, j + 2, taa, ax, ay, az,
-								 sh_i->x, sh_i->y, sh_i->z,
-								 sh_j->x, sh_j->y, sh_j->z,
-								 &xint, &yint, &zint);
-							xin[idx + j + 30] = xint * t1;
-							yin[idx + j + 30] = yint * t1;
-							zin[idx + j + 30] = zint * t1;
+							make_int(i, j + 2, taa, &a, VEC(sh_i->x), VEC(sh_j->x), &iout);
+							xin[idx + j + 30] = iout.x * t1;
+							yin[idx + j + 30] = iout.y * t1;
+							zin[idx + j + 30] = iout.z * t1;
 
 							if (j >= 2) {
-								make_int(i, j - 2, taa, ax, ay, az,
-									 sh_i->x, sh_i->y, sh_i->z,
-									 sh_j->x, sh_j->y, sh_j->z,
-									 &xint, &yint, &zint);
+								make_int(i, j - 2, taa, &a, VEC(sh_i->x), VEC(sh_j->x), &iout);
+								double t3 = j * (j - 1) * t2;
+								xin[idx + j + 60] = iout.x * t3;
+								yin[idx + j + 60] = iout.y * t3;
+								zin[idx + j + 60] = iout.z * t3;
 							}
 							else {
-								xint = 0.0;
-								yint = 0.0;
-								zint = 0.0;
+								xin[idx + j + 60] = 0.0;
+								yin[idx + j + 60] = 0.0;
+								zin[idx + j + 60] = 0.0;
 							}
-							double t3 = j * (j - 1) * t2;
-							xin[idx + j + 60] = xint * t3;
-							yin[idx + j + 60] = yint * t3;
-							zin[idx + j + 60] = zint * t3;
 						}
 					}
 					for (int i = 0; i < count; i++) {
@@ -434,9 +427,222 @@ efp_st_int(int n_shells_i, const struct shell *shells_i,
 	}
 }
 
-void
-efp_st_int_deriv(int n_shells_i, const struct shell *shells_i,
-		 int n_shells_j, const struct shell *shells_j,
-		 int stride, double *sx, double *tx)
+void efp_st_int_deriv(int n_shells_i, const struct shell *shells_i,
+		      int n_shells_j, const struct shell *shells_j,
+		      const vec_t *com_i, int size_i, int size_j,
+		      double *ds, double *dt)
 {
+	static const int shift_x[] = { 0, 1, 0, 0, 2, 0, 0, 1, 1, 0,
+				       3, 0, 0, 2, 2, 1, 0, 1, 0, 1 };
+
+	static const int shift_y[] = { 0, 0, 1, 0, 0, 2, 0, 1, 0, 1,
+				       0, 3, 0, 1, 0, 2, 2, 0, 1, 1 };
+
+	static const int shift_z[] = { 0, 0, 0, 1, 0, 0, 2, 0, 1, 1,
+				       0, 0, 3, 0, 1, 0, 1, 2, 2, 1 };
+
+	double dij[100];
+	double xs[5][6], ys[5][6], zs[5][6];
+	double xt[5][4], yt[5][4], zt[5][4];
+	double dxs[4][4], dys[4][4], dzs[4][4];
+	double dxt[4][4], dyt[4][4], dzt[4][4];
+
+	int size = size_i * size_j;
+
+	memset(ds, 0, 6 * size * sizeof(double));
+	memset(dt, 0, 6 * size * sizeof(double));
+
+	double *ds_x = ds + 0 * size;
+	double *ds_y = ds + 1 * size;
+	double *ds_z = ds + 2 * size;
+	double *ds_a = ds + 3 * size;
+	double *ds_b = ds + 4 * size;
+	double *ds_c = ds + 5 * size;
+
+	double *dt_x = dt + 0 * size;
+	double *dt_y = dt + 1 * size;
+	double *dt_z = dt + 2 * size;
+	double *dt_a = dt + 3 * size;
+	double *dt_b = dt + 4 * size;
+	double *dt_c = dt + 5 * size;
+
+	/* shell i */
+	for (int ii = 0, loc_i = 0; ii < n_shells_i; ii++) {
+		const struct shell *sh_i = shells_i + ii;
+
+		int type_i = get_shell_idx(sh_i->type);
+		int start_i = get_shell_start(type_i);
+		int end_i = get_shell_end(type_i);
+		int sl_i = get_shell_sl(type_i);
+		int count_i = end_i - start_i;
+
+		/* shell j */
+		for (int jj = 0, loc_j = 0; jj < n_shells_j; jj++) {
+			const struct shell *sh_j = shells_j + jj;
+
+			int type_j = get_shell_idx(sh_j->type);
+			int start_j = get_shell_start(type_j);
+			int end_j = get_shell_end(type_j);
+			int sl_j = get_shell_sl(type_j);
+			int count_j = end_j - start_j;
+
+			double rr = vec_dist_2(VEC(sh_i->x), VEC(sh_j->x));
+
+			const double *coef_i = sh_i->coef;
+
+			/* primitive i */
+			for (int ig = 0; ig < sh_i->n_funcs; ig++) {
+				double ai = *coef_i++;
+
+				double con_i[20];
+				set_coef(con_i, sh_i->type, coef_i);
+
+				coef_i++;
+				if (sh_i->type == 'L')
+					coef_i++;
+
+				const double *coef_j = sh_j->coef;
+
+				/* primitive j */
+				for (int jg = 0; jg < sh_j->n_funcs; jg++) {
+					double aj = *coef_j++;
+
+					double aa = 1.0 / (ai + aj);
+					double tmp = ai * aj * rr * aa;
+
+					if (tmp > int_tol) {
+						coef_j++;
+						if (sh_j->type == 'L')
+							coef_j++;
+
+						continue;
+					}
+
+					double con_j[20];
+					set_coef(con_j, sh_j->type, coef_j);
+
+					coef_j++;
+					if (sh_j->type == 'L')
+						coef_j++;
+
+					double fac = exp(-tmp);
+
+					for (int i = start_i, idx = 0; i < end_i; i++)
+						for (int j = start_j; j < end_j; j++, idx++)
+							dij[idx] = fac * con_i[i] * int_norm[i] * con_j[j] * int_norm[j];
+
+					double taa = sqrt(aa);
+
+					vec_t a = {
+						(ai * sh_i->x + aj * sh_j->x) * aa,
+						(ai * sh_i->y + aj * sh_j->y) * aa,
+						(ai * sh_i->z + aj * sh_j->z) * aa
+					};
+
+					for (int i = 0; i < sl_i + 1; i++) {
+						for (int j = 0; j < sl_j + 2; j++) {
+							vec_t iout;
+							make_int(i, j, taa, &a, VEC(sh_i->x), VEC(sh_j->x), &iout);
+							xs[i][j] = iout.x * taa;
+							ys[i][j] = iout.y * taa;
+							zs[i][j] = iout.z * taa;
+						}
+					}
+
+					double ai2 = 2.0 * ai;
+					double aj2 = 2.0 * aj;
+
+					for (int i = 0; i < sl_i + 1; i++) {
+						xt[i][0] = (xs[i][0] - xs[i][2] * aj2) * aj;
+						yt[i][0] = (ys[i][0] - ys[i][2] * aj2) * aj;
+						zt[i][0] = (zs[i][0] - zs[i][2] * aj2) * aj;
+					}
+
+					if (sl_j > 1) {
+						for (int i = 0; i < sl_i + 1; i++) {
+							xt[i][1] = (xs[i][1] * 3.0 - xs[i][3] * aj2) * aj;
+							yt[i][1] = (ys[i][1] * 3.0 - ys[i][3] * aj2) * aj;
+							zt[i][1] = (zs[i][1] * 3.0 - zs[i][3] * aj2) * aj;
+						}
+
+						for (int j = 2; j < sl_j; j++) {
+							for (int i = 0; i < sl_i + 1; i++) {
+								int n1 = 2 * j + 1;
+								int n2 = j * (j - 1) / 2;
+								xt[i][j] = (xs[i][j] * n1 - xs[i][j + 2] * aj2) * aj - xs[i][j - 2] * n2;
+								yt[i][j] = (ys[i][j] * n1 - ys[i][j + 2] * aj2) * aj - ys[i][j - 2] * n2;
+								zt[i][j] = (zs[i][j] * n1 - zs[i][j + 2] * aj2) * aj - zs[i][j - 2] * n2;
+							}
+						}
+					}
+
+					for (int j = 0; j < sl_j; j++) {
+						dxs[0][j] = xs[1][j] * ai2;
+						dys[0][j] = ys[1][j] * ai2;
+						dzs[0][j] = zs[1][j] * ai2;
+
+						dxt[0][j] = xt[1][j] * ai2;
+						dyt[0][j] = yt[1][j] * ai2;
+						dzt[0][j] = zt[1][j] * ai2;
+					}
+
+					for (int i = 1; i < sl_i; i++) {
+						for (int j = 0; j < sl_j; j++) {
+							dxs[i][j] = xs[i + 1][j] * ai2 - xs[i - 1][j] * i;
+							dys[i][j] = ys[i + 1][j] * ai2 - ys[i - 1][j] * i;
+							dzs[i][j] = zs[i + 1][j] * ai2 - zs[i - 1][j] * i;
+
+							dxt[i][j] = xt[i + 1][j] * ai2 - xt[i - 1][j] * i;
+							dyt[i][j] = yt[i + 1][j] * ai2 - yt[i - 1][j] * i;
+							dzt[i][j] = zt[i + 1][j] * ai2 - zt[i - 1][j] * i;
+						}
+					}
+
+					for (int i = start_i, idx = 0; i < end_i; i++) {
+						int ix = shift_x[i];
+						int iy = shift_y[i];
+						int iz = shift_z[i];
+
+						for (int j = start_j; j < end_j; j++, idx++) {
+							int jx = shift_x[j];
+							int jy = shift_y[j];
+							int jz = shift_z[j];
+
+							double txs = dxs[ix][jx] * ys[iy][jy] * zs[iz][jz];
+							double tys = xs[ix][jx] * dys[iy][jy] * zs[iz][jz];
+							double tzs = xs[ix][jx] * ys[iy][jy] * dzs[iz][jz];
+
+							double txt = dxt[ix][jx] * ys[iy][jy] * zs[iz][jz] +
+								     dxs[ix][jx] * yt[iy][jy] * zs[iz][jz] +
+								     dxs[ix][jx] * ys[iy][jy] * zt[iz][jz];
+							double tyt = xt[ix][jx] * dys[iy][jy] * zs[iz][jz] +
+								     xs[ix][jx] * dyt[iy][jy] * zs[iz][jz] +
+								     xs[ix][jx] * dys[iy][jy] * zt[iz][jz];
+							double tzt = xt[ix][jx] * ys[iy][jy] * dzs[iz][jz] +
+								     xs[ix][jx] * yt[iy][jy] * dzs[iz][jz] +
+								     xs[ix][jx] * ys[iy][jy] * dzt[iz][jz];
+
+							int idx2 = (loc_i + i - start_i) * size_j + (loc_j + j - start_j);
+
+							ds_x[idx2] += txs * dij[idx];
+							ds_y[idx2] += tys * dij[idx];
+							ds_z[idx2] += tzs * dij[idx];
+							ds_a[idx2] += (tys * (sh_i->z - com_i->z) - tzs * (sh_i->y - com_i->y)) * dij[idx];
+							ds_b[idx2] += (tzs * (sh_i->x - com_i->x) - txs * (sh_i->z - com_i->z)) * dij[idx];
+							ds_c[idx2] += (txs * (sh_i->y - com_i->y) - tys * (sh_i->x - com_i->x)) * dij[idx];
+
+							dt_x[idx2] += txt * dij[idx];
+							dt_y[idx2] += tyt * dij[idx];
+							dt_z[idx2] += tzt * dij[idx];
+							dt_a[idx2] += (tyt * (sh_i->z - com_i->z) - tzt * (sh_i->y - com_i->y)) * dij[idx];
+							dt_b[idx2] += (tzt * (sh_i->x - com_i->x) - txt * (sh_i->z - com_i->z)) * dij[idx];
+							dt_c[idx2] += (txt * (sh_i->y - com_i->y) - tyt * (sh_i->x - com_i->x)) * dij[idx];
+						}
+					}
+				}
+			}
+			loc_j += count_j;
+		}
+		loc_i += count_i;
+	}
 }

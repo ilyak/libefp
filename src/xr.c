@@ -80,10 +80,37 @@ get_charge_penetration(double s_ij, double r_ij)
 }
 
 static void
-frag_frag_xr_grad(struct efp *efp)
+frag_frag_xr_grad(struct efp *efp, int frag_i, int frag_j)
 {
-	/* XXX */
-	assert(0);
+	struct frag *fr_i = efp->frags + frag_i;
+	struct frag *fr_j = efp->frags + frag_j;
+
+	int size = fr_i->xr_wf_size * fr_j->xr_wf_size;
+
+	double *ds = malloc(6 * size * sizeof(double));
+	double *dt = malloc(6 * size * sizeof(double));
+
+	efp_st_int_deriv(fr_i->n_xr_shells, fr_i->xr_shells,
+			 fr_j->n_xr_shells, fr_j->xr_shells,
+			 VEC(fr_i->x), fr_i->xr_wf_size, fr_j->xr_wf_size,
+			 ds, dt);
+
+//	double *ds_x = ds + 0 * size;
+//	double *ds_y = ds + 1 * size;
+//	double *ds_z = ds + 2 * size;
+//	double *ds_a = ds + 3 * size;
+//	double *ds_b = ds + 4 * size;
+//	double *ds_c = ds + 5 * size;
+//
+//	double *dt_x = dt + 0 * size;
+//	double *dt_y = dt + 1 * size;
+//	double *dt_z = dt + 2 * size;
+//	double *dt_a = dt + 3 * size;
+//	double *dt_b = dt + 4 * size;
+//	double *dt_c = dt + 5 * size;
+
+	free(ds);
+	free(dt);
 }
 
 static void
@@ -148,8 +175,8 @@ frag_frag_xr(struct efp *efp, int frag_i, int frag_j,
 
 			/* xr - first part */
 			if (fabs(s_ij) > 1.0e-6)
-				exr += -2.0 * sqrt(-2.0 * log(fabs(s_ij)) /
-						PI) * s_ij * s_ij / r_ij;
+				exr += -2.0 * sqrt(-2.0 * log(fabs(s_ij)) / PI)
+							* s_ij * s_ij / r_ij;
 
 			/* xr - second part */
 			for (int k = 0; k < fr_i->n_lmo; k++)
@@ -191,7 +218,7 @@ frag_frag_xr(struct efp *efp, int frag_i, int frag_j,
 	*ecp_out = ecp;
 
 	if (efp->do_gradient)
-		frag_frag_xr_grad(efp);
+		frag_frag_xr_grad(efp, frag_i, frag_j);
 }
 
 enum efp_result
