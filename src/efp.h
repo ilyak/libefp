@@ -419,14 +419,32 @@ enum efp_result efp_get_energy(struct efp *efp, struct efp_energy *energy);
  * Get computed EFP energy gradient.
  *
  * \param[in] efp The efp structure.
- * \param[in] n_grad Length of the grad array. Must be at least [6 * \a n]
- *                   elements, where \a n is the number of fragments.
+ * \param[in] size Size of the grad array. Must be at least [6 * \a n]
+ *                 elements, where \a n is the number of fragments.
  * \param[out] grad For each fragment contains \a x \a y \a z components of
  *                  negative force and torque.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_gradient(struct efp *efp, int n_grad, double *grad);
+enum efp_result efp_get_gradient(struct efp *efp, int size, double *grad);
+
+/**
+ * Get the gradient on atoms in \a ab \a initio subsystem due to EFP
+ * interaction.
+ *
+ * This does not include additional correction due to changes in the
+ * \a ab \a initio wave function affected by EFP subsystem.
+ *
+ * \param[in] efp The efp structure.
+ * \param[in] size Size of the grad array. Must be at least [3 * \a n]
+ *                 elements, where \a n is the number of atoms in the
+ *                 \a ab \a initio subsystem.
+ * \param[out] grad For each atom \a x \a y \a z components of energy
+ *                  gradient are stored.
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_get_qm_gradient(struct efp *efp, int size, double *grad);
 
 /**
  * Get the number of fragments in this computation.

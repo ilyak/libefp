@@ -50,7 +50,7 @@ efp_get_energy(struct efp *efp, struct efp_energy *energy)
 }
 
 EFP_EXPORT enum efp_result
-efp_get_gradient(struct efp *efp, int n_grad, double *grad)
+efp_get_gradient(struct efp *efp, int size, double *grad)
 {
 	if (!initialized(efp))
 		return EFP_RESULT_NOT_INITIALIZED;
@@ -61,7 +61,7 @@ efp_get_gradient(struct efp *efp, int n_grad, double *grad)
 	if (!efp->do_gradient)
 		return EFP_RESULT_GRADIENT_NOT_REQUESTED;
 
-	if (n_grad < 6 * efp->n_frag)
+	if (size < 6 * efp->n_frag)
 		return EFP_RESULT_INVALID_ARRAY_SIZE;
 
 	for (int i = 0; i < efp->n_frag; i++) {
@@ -72,6 +72,25 @@ efp_get_gradient(struct efp *efp, int n_grad, double *grad)
 		*grad++ = efp->frags[i].torque.y;
 		*grad++ = efp->frags[i].torque.z;
 	}
+	return EFP_RESULT_SUCCESS;
+}
+
+EFP_EXPORT enum efp_result
+efp_get_qm_gradient(struct efp *efp, int size, double *grad)
+{
+	if (!initialized(efp))
+		return EFP_RESULT_NOT_INITIALIZED;
+
+	if (!grad)
+		return EFP_RESULT_ARGUMENT_NULL;
+
+	if (!efp->do_gradient)
+		return EFP_RESULT_GRADIENT_NOT_REQUESTED;
+
+	if (size < 3 * efp->qm.n_atoms)
+		return EFP_RESULT_INVALID_ARRAY_SIZE;
+
+	memcpy(grad, efp->qm.grad, 3 * efp->qm.n_atoms * sizeof(double));
 	return EFP_RESULT_SUCCESS;
 }
 
