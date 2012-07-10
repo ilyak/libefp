@@ -328,7 +328,7 @@ enum efp_result efp_get_coordinates(struct efp *efp, int size, double *xyzabc);
 /**
  * Update wave function dependent energy terms.
  *
- * Must be called during \a ab \a initio SCF.
+ * This function must be called during \a ab \a initio SCF.
  *
  * \param[in] efp The efp structure.
  * \param[out] energy Wave function dependent EFP energy.
@@ -354,7 +354,6 @@ enum efp_result efp_compute(struct efp *efp, int do_gradient);
  * Get total number of EFP multipoles.
  *
  * \param[in] efp The efp structure.
- *
  * \param[out] n_mult Array of 4 integers where the total number of charges,
  *                    dipoles, quadrupoles and octupoles will be stored.
  *
@@ -373,8 +372,8 @@ enum efp_result efp_get_multipole_count(struct efp *efp, int *n_mult);
  *                 \a n_mult is the corresponding value in the array returned
  *                 by the ::efp_get_multipole_count function.
  *
- * \param[out] z Array of four pointers to arrays where the corresponding
- *               multipoles will be stored.
+ * \param[out] z Array of four pointers to arrays where the charges, dipoles,
+ *               quadrupoles, and octupoles will be stored.
  *
  *               The size of the first array (charges) must be at least
  *               [\a n_mult] elements, where \a n_mult is the corresponding
@@ -407,7 +406,7 @@ enum efp_result efp_get_multipole_count(struct efp *efp, int *n_mult);
 enum efp_result efp_get_multipoles(struct efp *efp, double **xyz, double **z);
 
 /**
- * Get computed energies of corresponding EFP terms.
+ * Get computed energy components.
  *
  * \param[in] efp The efp structure.
  * \param[out] energy Computed EFP energy components (see efp_energy).
