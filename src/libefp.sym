@@ -11,8 +11,6 @@ global:
 	efp_compute;
 	efp_get_multipole_count;
 	efp_get_multipoles;
-	efp_get_induced_dipole_count;
-	efp_get_induced_dipoles;
 	efp_get_energy;
 	efp_get_gradient;
 	efp_get_frag_count;

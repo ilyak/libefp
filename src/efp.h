@@ -351,67 +351,60 @@ enum efp_result efp_scf_update(struct efp *efp, double *energy);
 enum efp_result efp_compute(struct efp *efp, int do_gradient);
 
 /**
- * Get total number of EFP multipole points.
+ * Get total number of EFP multipoles.
  *
  * \param[in] efp The efp structure.
- * \param[out] n_mult Total number of EFP multipole points.
+ *
+ * \param[out] n_mult Array of 4 integers where the total number of charges,
+ *                    dipoles, quadrupoles and octupoles will be stored.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
 enum efp_result efp_get_multipole_count(struct efp *efp, int *n_mult);
 
 /**
- * Get multipoles from all fragments.
+ * Get all electrostatic multipoles from all fragments.
  *
  * \param[in] efp The efp structure.
- * \param[out] xyz Array where multipole point coordinates will be stored. The
- *                 size of this array must be at least [3 * \a n_mult]
- *                 elements, where \a n_mult is the value returned by the
- *                 ::efp_get_multipole_count function.
- * \param[out] z Array where the multipoles will be stored. The size of this
- *               array must be at least [20 * \a n_mult] elements, where \a
- *               n_mult is the value returned by the ::efp_get_multipole_count
- *               function. For each multipole point these 20 elements are
- *               charge, 3 dipole components, 6 quadrupole components, 10
- *               octupole components.
+ *
+ * \param[out] xyz Array of four pointers to arrays where the corresponding
+ *                 multipole point coordinates will be stored. The size of
+ *                 each array must be at least [3 * \a n_mult] elements, where
+ *                 \a n_mult is the corresponding value in the array returned
+ *                 by the ::efp_get_multipole_count function.
+ *
+ * \param[out] z Array of four pointers to arrays where the corresponding
+ *               multipoles will be stored.
+ *
+ *               The size of the first array (charges) must be at least
+ *               [\a n_mult] elements, where \a n_mult is the corresponding
+ *               first element of the array returned by the
+ *               ::efp_get_multipole_count function.
+ *
+ *               The size of the second array (dipoles) must be at least
+ *               [3 * \a n_mult] elements, where \a n_mult is the corresponding
+ *               second element of the array returned by the
+ *               ::efp_get_multipole_count function.
+ *
+ *               The size of the third array (quadrupoles) must be at least
+ *               [6 * \a n_mult] elements, where \a n_mult is the corresponding
+ *               third element of the array returned by the
+ *               ::efp_get_multipole_count function.
+ *
  *               Quadrupoles are stored in the following order:
  *                   xx, yy, zz, xy, xz, yz
+ *
+ *               The size of the fourth array (octupoles) must be at least
+ *               [10 * \a n_mult] elements, where \a n_mult is the
+ *               corresponding fourth element of the array returned by the
+ *               ::efp_get_multipole_count function.
+ *
  *               Octupoles are stored in the following order:
  *                   xxx, yyy, zzz, xxy, xxz, xyy, yyz, xzz, yzz, xyz
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_multipoles(struct efp *efp, double *xyz, double *z);
-
-/**
- * Get total number of induced dipoles on EFP fragments.
- *
- * \param[in] efp The efp structure.
- * \param[out] n_dip Total number of induced dipoles on EFP fragments.
- *
- * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
- */
-enum efp_result efp_get_induced_dipole_count(struct efp *efp, int *n_dip);
-
-/**
- * Get induced dipoles from all EFP fragments.
- *
- * \param[in] efp The efp structure.
- * \param[out] xyz Array where induced dipole coordinates will be stored. The
- *                 size of this array must be at least [3 * \a n_dip] elements,
- *                 where \a n_dip is the value returned by the
- *                 ::efp_get_induced_dipole_count function.
- * \param[out] dip Array where the dipoles will be stored. The size of this
- *                 array must be at least [3 * \a n_dip] elements, where \a
- *                 n_dip is the value returned by the
- *                 ::efp_get_induced_dipole_count function. For each point 3
- *                 dipole components are stored.
- *
- * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
- */
-enum efp_result efp_get_induced_dipoles(struct efp *efp,
-					double *xyz,
-					double *dip);
+enum efp_result efp_get_multipoles(struct efp *efp, double **xyz, double **z);
 
 /**
  * Get computed energies of corresponding EFP terms.
