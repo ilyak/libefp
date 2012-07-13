@@ -280,8 +280,8 @@ enum efp_result efp_set_qm_atoms(struct efp *efp,
  * Update positions and orientations of effective fragments.
  *
  * \param[in] efp The efp structure.
- * \param[in] xyzabc for each fragment specifies \a x \a y \a z components of
- *                   fragment center of mass position and three Euler rotation
+ * \param[in] xyzabc For each fragment specifies \a x \a y \a z components of
+ *                   the center of mass position and three Euler rotation
  *                   angles representing orientation of a fragment.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
@@ -301,11 +301,11 @@ enum efp_result efp_set_coordinates(struct efp *efp, const double *xyzabc);
  *
  * \param[in] efp The efp structure.
  * \param[in] pts Array of points used to determine fragment positions and
- *                orientations. The size of this array must be at least [9 * \a
- *                n] elements, where \a n is the number of fragments. For each
- *                fragment \a x \a y \a z coordinates of 3 fragment points
- *                should be specified to setup the position and orientation of
- *                a fragment.
+ *                orientations. The size of this array must be at least
+ *                [9 * \a n] elements, where \a n is the number of fragments.
+ *                For each fragment \a x \a y \a z coordinates of 3 fragment
+ *                points should be specified to setup the position and
+ *                orientation of a fragment.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
@@ -391,7 +391,7 @@ enum efp_result efp_get_multipole_count(struct efp *efp, int *n_mult);
  *               ::efp_get_multipole_count function.
  *
  *               Quadrupoles are stored in the following order:
- *                   xx, yy, zz, xy, xz, yz
+ *                   \a xx, \a yy, \a zz, \a xy, \a xz, \a yz
  *
  *               The size of the fourth array (octupoles) must be at least
  *               [10 * \a n_mult] elements, where \a n_mult is the
@@ -399,7 +399,8 @@ enum efp_result efp_get_multipole_count(struct efp *efp, int *n_mult);
  *               ::efp_get_multipole_count function.
  *
  *               Octupoles are stored in the following order:
- *                   xxx, yyy, zzz, xxy, xxz, xyy, yyz, xzz, yzz, xyz
+ *                   \a xxx, \a yyy, \a zzz, \a xxy, \a xxz,
+ *                   \a xyy, \a yyz, \a xzz, \a yzz, \a xyz
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
@@ -460,9 +461,9 @@ enum efp_result efp_get_frag_count(struct efp *efp, int *n_frag);
  * Get the name of the specified effective fragment.
  *
  * \param[in] efp The efp structure.
- * \param[in] frag_idx Index of a fragment between zero and total number of
- *                     fragments minus one.
- * \param[in] size Size of \a frag_name buffer.
+ * \param[in] frag_idx Index of a fragment. Must be a value between zero and
+ *                     the total number of fragments minus one.
+ * \param[in] size Size of a \a frag_name buffer.
  * \param[out] frag_name A buffer where name of the fragment will be stored.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
@@ -476,8 +477,8 @@ enum efp_result efp_get_frag_name(struct efp *efp,
  * Get the number of atoms in the specified fragment.
  *
  * \param[in] efp The efp structure.
- * \param[in] frag_idx Index of a fragment between zero and total number of
- *                     fragments minus one.
+ * \param[in] frag_idx Index of a fragment. Must be a value between zero and
+ *                     the total number of fragments minus one.
  * \param[out] n_atoms Total number of atoms in the fragment.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
@@ -490,15 +491,17 @@ enum efp_result efp_get_frag_atom_count(struct efp *efp,
  * Get atoms comprising the specified fragment.
  *
  * \param[in] efp The efp structure.
- * \param[in] frag_idx Index of a fragment between zero and total number of
- *                     fragments minus one.
- * \param[out] atoms Array of size returned by ::efp_get_frag_atom_count. Atom
- *                   information is stored here.
+ * \param[in] frag_idx Index of a fragment. Must be a value between zero and
+ *                     the total number of fragments minus one.
+ * \param[in] size Size of the \a atoms array. Must be greater than or equal to
+ *                 the size returned by the ::efp_get_frag_atom_count function.
+ * \param[out] atoms Array where atom information will be stored.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
 enum efp_result efp_get_frag_atoms(struct efp *efp,
 				   int frag_idx,
+				   int size,
 				   struct efp_atom *atoms);
 
 /**

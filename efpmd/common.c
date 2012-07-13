@@ -78,7 +78,7 @@ enum efp_result print_geometry(struct efp *efp)
 			return res;
 
 		struct efp_atom atoms[n_atoms];
-		if ((res = efp_get_frag_atoms(efp, i, atoms)))
+		if ((res = efp_get_frag_atoms(efp, i, n_atoms, atoms)))
 			return res;
 
 		for (int a = 0; a < n_atoms; a++) {

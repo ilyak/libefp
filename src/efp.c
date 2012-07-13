@@ -811,7 +811,7 @@ efp_get_frag_name(struct efp *efp, int frag_idx, int size, char *frag_name)
 	if (frag_idx < 0 || frag_idx >= efp->n_frag)
 		return EFP_RESULT_INDEX_OUT_OF_RANGE;
 
-	if ((int)strlen(efp->frags[frag_idx].name) >= size)
+	if ((unsigned)size <= strlen(efp->frags[frag_idx].name))
 		return EFP_RESULT_INVALID_ARRAY_SIZE;
 
 	strcpy(frag_name, efp->frags[frag_idx].name);
@@ -835,7 +835,8 @@ efp_get_frag_atom_count(struct efp *efp, int frag_idx, int *n_atoms)
 }
 
 EFP_EXPORT enum efp_result
-efp_get_frag_atoms(struct efp *efp, int frag_idx, struct efp_atom *atoms)
+efp_get_frag_atoms(struct efp *efp, int frag_idx,
+		   int size, struct efp_atom *atoms)
 {
 	if (!initialized(efp))
 		return EFP_RESULT_NOT_INITIALIZED;
@@ -847,8 +848,11 @@ efp_get_frag_atoms(struct efp *efp, int frag_idx, struct efp_atom *atoms)
 		return EFP_RESULT_INDEX_OUT_OF_RANGE;
 
 	struct frag *frag = efp->frags + frag_idx;
-	memcpy(atoms, frag->atoms, frag->n_atoms * sizeof(struct efp_atom));
 
+	if (size < frag->n_atoms)
+		return EFP_RESULT_INVALID_ARRAY_SIZE;
+
+	memcpy(atoms, frag->atoms, frag->n_atoms * sizeof(struct efp_atom));
 	return EFP_RESULT_SUCCESS;
 }
 
