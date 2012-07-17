@@ -115,7 +115,7 @@ static int parse_run_type(struct stream *stream, struct config *config)
 	while (*ptr && !isspace(*ptr))
 		ptr++;
 
-	config->run_type = strndup(stream->ptr, ptr - stream->ptr);
+	config->run_type = c_strndup(stream->ptr, ptr - stream->ptr);
 	stream->ptr = ptr;
 	return 0;
 }
@@ -255,7 +255,7 @@ static char *parse_path(struct stream *stream)
 			stream->ptr++;
 	}
 
-	return strndup(ptr, stream->ptr - ptr);
+	return c_strndup(ptr, stream->ptr - ptr);
 }
 
 static int parse_fraglib_path(struct stream *stream, struct config *config)
@@ -324,7 +324,7 @@ static int parse_frag(struct stream *stream,
 	while (stream->ptr[len] && !isspace(stream->ptr[len]))
 		len++;
 
-	sys->frag_name[sys->n_frag - 1] = strndup(stream->ptr, len);
+	sys->frag_name[sys->n_frag - 1] = c_strndup(stream->ptr, len);
 	next_line(stream);
 
 	switch (config->coord_type) {
@@ -373,7 +373,7 @@ static int string_compare(const void *a, const void *b)
 	const char *s1 = *(const char **)a;
 	const char *s2 = *(const char **)b;
 
-	return strcasecmp(s1, s2);
+	return c_strcasecmp(s1, s2);
 }
 
 static char **make_potential_file_list(const char **frag_name,
@@ -400,7 +400,7 @@ static char **make_potential_file_list(const char **frag_name,
 	int n_unique = 1;
 
 	for (int i = 1; i < n_frag; i++)
-		if (strcasecmp(unique[i - 1], unique[i])) {
+		if (c_strcasecmp(unique[i - 1], unique[i])) {
 			unique[n_unique] = unique[i];
 			n_unique++;
 		}
@@ -443,8 +443,8 @@ static void config_defaults(struct config *config,
 				 EFP_TERM_DISP | EFP_TERM_XR;
 
 	config->units_factor = 1.0 / BOHR_RADIUS;
-	config->fraglib_path = strdup(".");
-	config->userlib_path = strdup(".");
+	config->fraglib_path = c_strdup(".");
+	config->userlib_path = c_strdup(".");
 }
 
 int parse_config(const char *path,

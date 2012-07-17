@@ -33,7 +33,8 @@
 #include <string.h>
 
 #include <efp.h>
-#include <phys_const.h>
+
+#include "../common/phys_const.h"
 
 #define BOHR(x) ((x) / BOHR_RADIUS)
 #define ANGSTROM(x) ((x) * BOHR_RADIUS)

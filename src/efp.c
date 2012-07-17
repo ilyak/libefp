@@ -533,7 +533,7 @@ copy_frag(struct frag *dest, const struct frag *src)
 	memcpy(dest, src, sizeof(struct frag));
 
 	if (src->name) {
-		dest->name = strdup(src->name);
+		dest->name = c_strdup(src->name);
 		if (!dest->name)
 			return EFP_RESULT_NO_MEMORY;
 	}
@@ -627,7 +627,7 @@ static struct frag *
 find_frag_in_library(struct efp *efp, const char *name)
 {
 	for (int i = 0; i < efp->n_lib; i++)
-		if (!strcasecmp(efp->lib[i].name, name))
+		if (!c_strcasecmp(efp->lib[i].name, name))
 			return efp->lib + i;
 
 	return NULL;

@@ -40,6 +40,8 @@ bin_PROGRAMS = \
 	efpmd/cubegen/cubegen
 
 src_libefp_la_SOURCES = \
+	common/util.c \
+	common/util.h \
 	src/ai_disp.c \
 	src/ai_xr.c \
 	src/cblas.h \
@@ -57,7 +59,6 @@ src_libefp_la_SOURCES = \
 	src/math_util.h \
 	src/parse.c \
 	src/parse.h \
-	src/phys_const.h \
 	src/pol.c \
 	src/terms.h \
 	src/xr.c
@@ -83,6 +84,9 @@ EXTRA_DIST += src/libefp.pc.in
 CLEANFILES += src/libefp.pc
 
 efpmd_efpmd_SOURCES = \
+	common/phys_const.h \
+	common/util.c \
+	common/util.h \
 	efpmd/cg.c \
 	efpmd/common.c \
 	efpmd/common.h \
@@ -96,6 +100,7 @@ efpmd_efpmd_SOURCES = \
 	efpmd/sp.c
 
 efpmd_efpmd_LDADD = src/libefp.la
+efpmd_efpmd_CFLAGS = $(AM_CFLAGS)
 
 efpmd_cubegen_cubegen_SOURCES = \
 	efpmd/cubegen/cubegen.c

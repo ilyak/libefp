@@ -31,7 +31,9 @@
 #include <string.h>
 
 #include <efp.h>
-#include <phys_const.h>
+
+#include "../common/phys_const.h"
+#include "../common/util.h"
 
 #define streq(a, b) (strcmp(a, b) == 0)
 #define strneq(a, b, n) (strncmp(a, b, n) == 0)
