@@ -2,6 +2,7 @@ EXTRA_DIST =
 CLEANFILES =
 ACLOCAL_AMFLAGS = -I m4 ${ACLOCAL_FLAGS}
 AM_MAKEFLAGS = --no-print-directory
+AM_LDFLAGS =
 
 AM_CPPFLAGS = \
 	-include $(top_builddir)/config.h \
@@ -11,10 +12,6 @@ AM_CPPFLAGS = \
 
 AM_CFLAGS = ${my_CFLAGS} ${OPENMP_CFLAGS} \
 	-fvisibility=hidden
-
-AM_LDFLAGS = \
-	-Wl,--gc-sections \
-	-Wl,--as-needed
 
 SED_PROCESS = \
 	$(AM_V_GEN)$(MKDIR_P) $(dir $@) && $(SED) \
