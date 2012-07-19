@@ -120,13 +120,13 @@ frag_frag_xr(struct efp *efp, int frag_i, int frag_j,
 	struct frag *fr_i = efp->frags + frag_i;
 	struct frag *fr_j = efp->frags + frag_j;
 
-	double s[fr_i->xr_wf_size * fr_j->xr_wf_size];
-	double t[fr_i->xr_wf_size * fr_j->xr_wf_size];
+	double *s = malloc(fr_i->xr_wf_size * fr_j->xr_wf_size * sizeof(double));
+	double *t = malloc(fr_i->xr_wf_size * fr_j->xr_wf_size * sizeof(double));
 
 	double lmo_s[fr_i->n_lmo][fr_j->n_lmo];
 	double lmo_t[fr_i->n_lmo][fr_j->n_lmo];
 
-	double tmp[fr_i->n_lmo * fr_j->xr_wf_size];
+	double *tmp = malloc(fr_i->n_lmo * fr_j->xr_wf_size * sizeof(double));
 
 	/* compute S and T integrals */
 	efp_st_int(fr_i->n_xr_shells, fr_i->xr_shells,
@@ -219,6 +219,8 @@ frag_frag_xr(struct efp *efp, int frag_i, int frag_j,
 
 	if (efp->do_gradient)
 		frag_frag_xr_grad(efp, frag_i, frag_j);
+
+	free(s), free(t), free(tmp);
 }
 
 enum efp_result
