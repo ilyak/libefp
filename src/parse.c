@@ -598,13 +598,17 @@ parse_projection_wf(struct efp *efp, struct stream *stream)
 					return EFP_RESULT_SYNTAX_ERROR;
 			next_line(stream);
 		}
-		for (int k = 0; k < frag->xr_wf_size % 5; k++) {
-			stream->ptr += 5;
+
+		if (frag->xr_wf_size % 5 == 0)
+			continue;
+
+		stream->ptr += 5;
+
+		for (int k = 0; k < frag->xr_wf_size % 5; k++)
 			if (!tok_double(stream, ptr++))
 				return EFP_RESULT_SYNTAX_ERROR;
-		}
-		if (frag->xr_wf_size % 5)
-			next_line(stream);
+
+		next_line(stream);
 	}
 	return EFP_RESULT_SUCCESS;
 }
