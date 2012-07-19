@@ -122,10 +122,10 @@ compute_elec_field_pt(struct efp *efp, int frag_idx, int pt_idx)
 	if (efp->opts.terms & EFP_TERM_AI_POL) {
 		/* field due to QM nuclei */
 		for (int i = 0; i < efp->qm.n_atoms; i++) {
-			const double *xyz = efp->qm.xyz + 3 * i;
+			const vec_t *xyz = efp->qm.xyz + i;
 			double znuc = efp->qm.znuc[i];
 
-			vec_t dr = vec_sub(VEC(pt->x), (const vec_t *)xyz);
+			vec_t dr = vec_sub(VEC(pt->x), xyz);
 
 			double r = vec_len(&dr);
 			double r3 = r * r * r;
@@ -415,9 +415,23 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 		}
 	}
 
+	/* induced dipole - ab initio nuclei */
 	if (efp->opts.terms & EFP_TERM_AI_POL) {
-		/* XXX */
-		assert(0);
+		for (int j = 0; j < efp->qm.n_atoms; j++) {
+			double znuc_j = efp->qm.znuc[j];
+			const vec_t *xyz_j = efp->qm.xyz + j;
+
+			vec_t dr = vec_sub(xyz_j, VEC(pt_i->x));
+			vec_t force, add_i, add_j;
+
+			efp_charge_dipole_grad(znuc_j, &dipole_i, &dr,
+					       &force, &add_j, &add_i);
+			vec_negate(&force);
+
+			vec_t *grad_j = efp->qm.grad + j;
+			add_force_torque_frag_point(fr_i, VEC(pt_i->x), xyz_j,
+						    grad_j, &force, &add_i);
+		}
 	}
 }
 

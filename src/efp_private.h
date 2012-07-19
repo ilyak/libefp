@@ -163,8 +163,8 @@ struct efp {
 	struct {
 		int n_atoms;
 		double *znuc;
-		double *xyz;
-		double *grad;
+		vec_t *xyz;
+		vec_t *grad;
 	} qm;
 
 	/* EFP energy terms */
@@ -219,21 +219,81 @@ add_force_torque_2(struct frag *fr_i, struct frag *fr_j,
 		   const vec_t *pt_i, const vec_t *pt_j,
 		   const vec_t *force, const vec_t *add_i, const vec_t *add_j)
 {
-	add_force_torque(fr_i, fr_j, pt_i, pt_j, force);
+	vec_t dr_i = vec_sub(VEC(pt_i->x), VEC(fr_i->x));
+	vec_t dr_j = vec_sub(VEC(pt_j->x), VEC(fr_j->x));
+
+	vec_t torque_i = vec_cross(&dr_i, force);
+	vec_t torque_j = vec_cross(&dr_j, force);
+
+	torque_i.x += add_i->x;
+	torque_i.y += add_i->y;
+	torque_i.z += add_i->z;
+
+	torque_j.x += add_j->x;
+	torque_j.y += add_j->y;
+	torque_j.z += add_j->z;
 
 	#pragma omp atomic
-	fr_i->torque.x += add_i->x;
+	fr_i->force.x += force->x;
 	#pragma omp atomic
-	fr_i->torque.y += add_i->y;
+	fr_i->force.y += force->y;
 	#pragma omp atomic
-	fr_i->torque.z += add_i->z;
+	fr_i->force.z += force->z;
 
 	#pragma omp atomic
-	fr_j->torque.x -= add_j->x;
+	fr_i->torque.x += torque_i.x;
 	#pragma omp atomic
-	fr_j->torque.y -= add_j->y;
+	fr_i->torque.y += torque_i.y;
 	#pragma omp atomic
-	fr_j->torque.z -= add_j->z;
+	fr_i->torque.z += torque_i.z;
+
+	#pragma omp atomic
+	fr_j->force.x -= force->x;
+	#pragma omp atomic
+	fr_j->force.y -= force->y;
+	#pragma omp atomic
+	fr_j->force.z -= force->z;
+
+	#pragma omp atomic
+	fr_j->torque.x -= torque_j.x;
+	#pragma omp atomic
+	fr_j->torque.y -= torque_j.y;
+	#pragma omp atomic
+	fr_j->torque.z -= torque_j.z;
+}
+
+static inline void
+add_force_torque_frag_point(struct frag *fr_i, const vec_t *pt_i,
+			    const vec_t *pt_j, vec_t *grad_j,
+			    const vec_t *force, const vec_t *add_i)
+{
+	vec_t dr_i = vec_sub(VEC(pt_i->x), VEC(fr_i->x));
+	vec_t torque_i = vec_cross(&dr_i, force);
+
+	torque_i.x += add_i->x;
+	torque_i.y += add_i->y;
+	torque_i.z += add_i->z;
+
+	#pragma omp atomic
+	fr_i->force.x += force->x;
+	#pragma omp atomic
+	fr_i->force.y += force->y;
+	#pragma omp atomic
+	fr_i->force.z += force->z;
+
+	#pragma omp atomic
+	fr_i->torque.x += torque_i.x;
+	#pragma omp atomic
+	fr_i->torque.y += torque_i.y;
+	#pragma omp atomic
+	fr_i->torque.z += torque_i.z;
+
+	#pragma omp atomic
+	grad_j->x -= force->x;
+	#pragma omp atomic
+	grad_j->y -= force->y;
+	#pragma omp atomic
+	grad_j->z -= force->z;
 }
 
 #endif /* LIBEFP_EFP_PRIVATE_H */

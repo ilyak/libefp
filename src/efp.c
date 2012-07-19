@@ -108,13 +108,13 @@ efp_set_qm_atoms(struct efp *efp, int n_atoms,
 		efp->qm.znuc =
 			realloc(efp->qm.znuc, n_atoms * sizeof(double));
 		efp->qm.xyz =
-			realloc(efp->qm.xyz, 3 * n_atoms * sizeof(double));
+			realloc(efp->qm.xyz, n_atoms * sizeof(vec_t));
 		efp->qm.grad =
-			realloc(efp->qm.grad, 3 * n_atoms * sizeof(double));
+			realloc(efp->qm.grad, n_atoms * sizeof(vec_t));
 	}
 
 	memcpy(efp->qm.znuc, znuc, n_atoms * sizeof(double));
-	memcpy(efp->qm.xyz, xyz, 3 * n_atoms * sizeof(double));
+	memcpy(efp->qm.xyz, xyz, n_atoms * sizeof(vec_t));
 
 	return EFP_RESULT_SUCCESS;
 }
@@ -238,9 +238,12 @@ points_to_matrix(const double *pts, mat_t *rotmat)
 
 	for (int j = 0; j < 3; j++) {
 		double vecsq = 0.0;
+
 		for (int i = 0; i < 3; i++)
 			vecsq += rm[i][j] * rm[i][j];
+
 		vecsq = sqrt(vecsq);
+
 		for (int i = 0; i < 3; i++)
 			rm[i][j] /= vecsq;
 	}
