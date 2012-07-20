@@ -129,6 +129,12 @@ struct frag {
 
 	/* exchange repulsion wavefunction, size = n_lmo * xr_wf_size */
 	double *xr_wf;
+
+	/* overlap-based dispersion damping */
+	double *disp_damp_overlap;
+
+	/* overlap-based dispersion damping derivative */
+	double *disp_damp_overlap_grad;
 };
 
 struct efp {
@@ -143,12 +149,6 @@ struct efp {
 
 	/* array with the library of fragment initial parameters */
 	struct frag *lib;
-
-	/* contributions to dispersion damping from overlap integrals */
-	double *disp_damp_overlap;
-
-	/* fragment offsets in disp_damp_overlap array */
-	int *disp_damp_overlap_offset;
 
 	/* callbacks */
 	struct efp_callbacks callbacks;

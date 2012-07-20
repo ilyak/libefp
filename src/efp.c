@@ -503,6 +503,8 @@ free_frag(struct frag *frag)
 		free(frag->xr_shells[i].coef);
 
 	free(frag->xr_shells);
+	free(frag->disp_damp_overlap);
+	free(frag->disp_damp_overlap_grad);
 
 	/* don't do free(frag) here */
 }
@@ -521,8 +523,6 @@ efp_shutdown(struct efp *efp)
 
 	free(efp->frags);
 	free(efp->lib);
-	free(efp->disp_damp_overlap_offset);
-	free(efp->disp_damp_overlap);
 	free(efp->qm.znuc);
 	free(efp->qm.xyz);
 	free(efp->qm.grad);
@@ -708,27 +708,20 @@ setup_disp(struct efp *efp)
 	if (efp->opts.disp_damp != EFP_DISP_DAMP_OVERLAP)
 		return EFP_RESULT_SUCCESS;
 
-	int n_disp = 0;
-	for (int i = 0; i < efp->n_frag; i++)
-		n_disp += efp->frags[i].n_dynamic_polarizable_pts;
+	for (int i = 0; i < efp->n_frag; i++) {
+		struct frag *frag = efp->frags + i;
+		size_t size = 0;
 
-	if (n_disp == 0)
-		return EFP_RESULT_SUCCESS;
+		for (int j = i + 1; j < efp->n_frag; j++)
+			size += frag->n_dynamic_polarizable_pts *
+				efp->frags[j].n_dynamic_polarizable_pts;
 
-	efp->disp_damp_overlap_offset = malloc((efp->n_frag + 1) * sizeof(int));
-	if (!efp->disp_damp_overlap_offset)
-		return EFP_RESULT_NO_MEMORY;
+		frag->disp_damp_overlap = malloc(size * sizeof(double));
+		frag->disp_damp_overlap_grad = malloc(size * sizeof(double));
 
-	efp->disp_damp_overlap_offset[0] = 0;
-	for (int i = 1; i <= efp->n_frag; i++)
-		efp->disp_damp_overlap_offset[i] =
-			efp->disp_damp_overlap_offset[i - 1] +
-			efp->frags[i - 1].n_dynamic_polarizable_pts;
-
-	/* XXX - this needs a lot of memory */
-	efp->disp_damp_overlap = malloc(n_disp * n_disp * sizeof(double));
-	if (!efp->disp_damp_overlap)
-		return EFP_RESULT_NO_MEMORY;
+		if (!frag->disp_damp_overlap || !frag->disp_damp_overlap_grad)
+			return EFP_RESULT_NO_MEMORY;
+	}
 
 	return EFP_RESULT_SUCCESS;
 }

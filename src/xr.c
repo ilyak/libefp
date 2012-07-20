@@ -60,18 +60,6 @@ get_disp_damp(double s_ij)
 	return 1.0 - s_ij * s_ij * (1.0 - 2.0 * ln_s + 2.0 * ln_s * ln_s);
 }
 
-static inline void
-calc_disp_damp(struct efp *efp, int frag_i, int frag_j,
-	       int i, int j, double s_ij)
-{
-	double damp = get_disp_damp(s_ij);
-
-	efp->disp_damp_overlap[
-		disp_damp_overlap_idx(efp, frag_i, frag_j, i, j)] = damp;
-	efp->disp_damp_overlap[
-		disp_damp_overlap_idx(efp, frag_j, frag_i, j, i)] = damp;
-}
-
 static inline double
 get_charge_penetration(double s_ij, double r_ij)
 {
@@ -115,7 +103,7 @@ frag_frag_xr_grad(struct efp *efp, int frag_i, int frag_j)
 
 static void
 frag_frag_xr(struct efp *efp, int frag_i, int frag_j,
-	     double *exr_out, double *ecp_out)
+	     double *exr_out, double *ecp_out, int *overlap_damp_idx)
 {
 	struct frag *fr_i = efp->frags + frag_i;
 	struct frag *fr_j = efp->frags + frag_j;
@@ -165,7 +153,12 @@ frag_frag_xr(struct efp *efp, int frag_i, int frag_j,
 
 			if ((efp->opts.terms & EFP_TERM_DISP) &&
 			    (efp->opts.disp_damp == EFP_DISP_DAMP_OVERLAP)) {
-				calc_disp_damp(efp, frag_i, frag_j, i, j, s_ij);
+				fr_i->disp_damp_overlap[*overlap_damp_idx] =
+						get_disp_damp(s_ij);
+
+				/* XXX damp grad */
+
+				(*overlap_damp_idx)++;
 			}
 
 			if ((efp->opts.terms & EFP_TERM_ELEC) &&
@@ -234,10 +227,13 @@ efp_compute_xr(struct efp *efp)
 
 	#pragma omp parallel for schedule(dynamic, 4) reduction(+:exr,ecp)
 	for (int i = 0; i < efp->n_frag; i++) {
+		int overlap_damp_idx = 0;
+
 		for (int j = i + 1; j < efp->n_frag; j++) {
 			double exr_out, ecp_out;
 
-			frag_frag_xr(efp, i, j, &exr_out, &ecp_out);
+			frag_frag_xr(efp, i, j, &exr_out, &ecp_out,
+				     &overlap_damp_idx);
 
 			exr += exr_out;
 			ecp += ecp_out;

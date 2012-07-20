@@ -36,16 +36,4 @@ static const double disp_weights[] = {
 	0.69792344511487082324E+01, 0.83248093882965845391E+02
 };
 
-static inline int
-disp_damp_overlap_idx(struct efp *efp, int frag_i, int frag_j,
-		      int pt_i, int pt_j)
-{
-	int n_disp = efp->disp_damp_overlap_offset[efp->n_frag];
-
-	int offset_i = efp->disp_damp_overlap_offset[frag_i] + pt_i;
-	int offset_j = efp->disp_damp_overlap_offset[frag_j] + pt_j;
-
-	return offset_i * n_disp + offset_j;
-}
-
 #endif /* LIBEFP_DISP_H */
