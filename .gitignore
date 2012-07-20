@@ -27,15 +27,19 @@ gmon.out
 
 /tests/elec_1
 /tests/pol_1
-/tests/disp_1
+/tests/disp_1a
+/tests/disp_1b
 /tests/xr_1
 /tests/total_1a
 /tests/elec_2
 /tests/pol_2
-/tests/disp_2
+/tests/disp_2a
+/tests/disp_2b
 /tests/xr_2
 /tests/total_2a
 /tests/elec_3
 /tests/pol_3
-/tests/disp_3
+/tests/disp_3a
+/tests/disp_3b
 /tests/xr_3
+/tests/total_4a

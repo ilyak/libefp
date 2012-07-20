@@ -66,7 +66,16 @@ EXTRA_DIST += \
 	README.md \
 	src/libefp.sym \
 	fraglib/makefp.inp \
+	fraglib/acetone.efp \
+	fraglib/c2h5oh.efp \
+	fraglib/c6h6.efp \
+	fraglib/ccl4.efp \
 	fraglib/ch3oh.efp \
+	fraglib/ch4.efp \
+	fraglib/cl2.efp \
+	fraglib/dcm.efp \
+	fraglib/dmso.efp \
+	fraglib/h2.efp \
 	fraglib/h2o.efp \
 	fraglib/nh3.efp
 
@@ -111,23 +120,28 @@ EXTRA_DIST += \
 TESTS = \
 	tests/elec_1 \
 	tests/pol_1 \
-	tests/disp_1 \
+	tests/disp_1a \
+	tests/disp_1b \
 	tests/xr_1 \
 	tests/total_1a \
 	tests/elec_2 \
 	tests/pol_2 \
-	tests/disp_2 \
+	tests/disp_2a \
+	tests/disp_2b \
 	tests/xr_2 \
 	tests/total_2a \
 	tests/elec_3 \
 	tests/pol_3 \
-	tests/disp_3 \
-	tests/xr_3
+	tests/disp_3a \
+	tests/disp_3b \
+	tests/xr_3 \
+	tests/total_4a
 
 EXTRA_DIST += \
 	tests/geometry_1.h \
 	tests/geometry_2.h \
-	tests/geometry_3.h
+	tests/geometry_3.h \
+	tests/geometry_4.h
 
 check_PROGRAMS = $(TESTS)
 
@@ -143,9 +157,13 @@ tests_pol_1_SOURCES = tests/pol_1.c $(TESTS_COMMON_FILES)
 tests_pol_1_LDADD = $(TESTS_LDADD)
 tests_pol_1_CPPFLAGS = $(TESTS_CPPFLAGS)
 
-tests_disp_1_SOURCES = tests/disp_1.c $(TESTS_COMMON_FILES)
-tests_disp_1_LDADD = $(TESTS_LDADD)
-tests_disp_1_CPPFLAGS = $(TESTS_CPPFLAGS)
+tests_disp_1a_SOURCES = tests/disp_1a.c $(TESTS_COMMON_FILES)
+tests_disp_1a_LDADD = $(TESTS_LDADD)
+tests_disp_1a_CPPFLAGS = $(TESTS_CPPFLAGS)
+
+tests_disp_1b_SOURCES = tests/disp_1b.c $(TESTS_COMMON_FILES)
+tests_disp_1b_LDADD = $(TESTS_LDADD)
+tests_disp_1b_CPPFLAGS = $(TESTS_CPPFLAGS)
 
 tests_xr_1_SOURCES = tests/xr_1.c $(TESTS_COMMON_FILES)
 tests_xr_1_LDADD = $(TESTS_LDADD)
@@ -163,9 +181,13 @@ tests_pol_2_SOURCES = tests/pol_2.c $(TESTS_COMMON_FILES)
 tests_pol_2_LDADD = $(TESTS_LDADD)
 tests_pol_2_CPPFLAGS = $(TESTS_CPPFLAGS)
 
-tests_disp_2_SOURCES = tests/disp_2.c $(TESTS_COMMON_FILES)
-tests_disp_2_LDADD = $(TESTS_LDADD)
-tests_disp_2_CPPFLAGS = $(TESTS_CPPFLAGS)
+tests_disp_2a_SOURCES = tests/disp_2a.c $(TESTS_COMMON_FILES)
+tests_disp_2a_LDADD = $(TESTS_LDADD)
+tests_disp_2a_CPPFLAGS = $(TESTS_CPPFLAGS)
+
+tests_disp_2b_SOURCES = tests/disp_2b.c $(TESTS_COMMON_FILES)
+tests_disp_2b_LDADD = $(TESTS_LDADD)
+tests_disp_2b_CPPFLAGS = $(TESTS_CPPFLAGS)
 
 tests_xr_2_SOURCES = tests/xr_2.c $(TESTS_COMMON_FILES)
 tests_xr_2_LDADD = $(TESTS_LDADD)
@@ -183,10 +205,18 @@ tests_pol_3_SOURCES = tests/pol_3.c $(TESTS_COMMON_FILES)
 tests_pol_3_LDADD = $(TESTS_LDADD)
 tests_pol_3_CPPFLAGS = $(TESTS_CPPFLAGS)
 
-tests_disp_3_SOURCES = tests/disp_3.c $(TESTS_COMMON_FILES)
-tests_disp_3_LDADD = $(TESTS_LDADD)
-tests_disp_3_CPPFLAGS = $(TESTS_CPPFLAGS)
+tests_disp_3a_SOURCES = tests/disp_3a.c $(TESTS_COMMON_FILES)
+tests_disp_3a_LDADD = $(TESTS_LDADD)
+tests_disp_3a_CPPFLAGS = $(TESTS_CPPFLAGS)
+
+tests_disp_3b_SOURCES = tests/disp_3b.c $(TESTS_COMMON_FILES)
+tests_disp_3b_LDADD = $(TESTS_LDADD)
+tests_disp_3b_CPPFLAGS = $(TESTS_CPPFLAGS)
 
 tests_xr_3_SOURCES = tests/xr_3.c $(TESTS_COMMON_FILES)
 tests_xr_3_LDADD = $(TESTS_LDADD)
 tests_xr_3_CPPFLAGS = $(TESTS_CPPFLAGS)
+
+tests_total_4a_SOURCES = tests/total_4a.c $(TESTS_COMMON_FILES)
+tests_total_4a_LDADD = $(TESTS_LDADD)
+tests_total_4a_CPPFLAGS = $(TESTS_CPPFLAGS)
