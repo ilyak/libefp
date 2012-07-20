@@ -112,12 +112,12 @@ enum efp_term {
 	EFP_TERM_POL = 1 << 1,      /**< EFP/EFP polarization */
 	EFP_TERM_DISP = 1 << 2,     /**< EFP/EFP dispersion */
 	EFP_TERM_XR = 1 << 3,       /**< EFP/EFP exchange repulsion */
-	EFP_TERM_CHTR = 1 << 4,     /**< EFP/EFP charge transfer */
+	EFP_TERM_CHTR = 1 << 4,     /**< EFP/EFP charge transfer, reserved */
 	EFP_TERM_AI_ELEC = 1 << 5,  /**< Ab initio/EFP electrostatics */
 	EFP_TERM_AI_POL = 1 << 6,   /**< Ab initio/EFP polarization */
 	EFP_TERM_AI_DISP = 1 << 7,  /**< Ab initio/EFP dispersion */
 	EFP_TERM_AI_XR = 1 << 8,    /**< Ab initio/EFP exchange repulsion */
-	EFP_TERM_AI_CHTR = 1 << 9   /**< Ab initio/EFP charge transfer */
+	EFP_TERM_AI_CHTR = 1 << 9   /**< Ab initio/EFP charge transfer, reserved */
 };
 
 /** Fragment-fragment dispersion damping type. */
