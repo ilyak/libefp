@@ -36,6 +36,10 @@ struct shell {
 	double *coef;    /* function coefficients */
 };
 
+struct deriv {
+	double *der[6];
+};
+
 void efp_st_int(int n_shells_i,
 		const struct shell *shells_i,
 		int n_shells_j,
@@ -51,7 +55,7 @@ void efp_st_int_deriv(int n_shells_i,
 		      const vec_t *com_i,
 		      int size_i,
 		      int size_j,
-		      double *ds,
-		      double *dt);
+		      struct deriv *ds,
+		      struct deriv *dt);
 
 #endif /* LIBEFP_INT_H */

@@ -50,60 +50,56 @@ valence(double n)
 }
 
 static inline double
-get_disp_damp(double s_ij)
+get_charge_penetration(double s_ij, double r_ij)
 {
 	if (fabs(s_ij) < 1.0e-6)
 		return 0.0;
 
 	double ln_s = log(fabs(s_ij));
 
-	return 1.0 - s_ij * s_ij * (1.0 - 2.0 * ln_s + 2.0 * ln_s * ln_s);
-}
-
-static inline double
-get_charge_penetration(double s_ij, double r_ij)
-{
-	double ln_s = log(fabs(s_ij));
 	return -2.0 * s_ij * s_ij / r_ij / sqrt(-2.0 * ln_s);
 }
 
 static void
-frag_frag_xr_grad(struct efp *efp, int frag_i, int frag_j)
+frag_frag_xr_grad(struct efp *efp, int frag_i, int frag_j, int overlap_idx)
 {
 	struct frag *fr_i = efp->frags + frag_i;
 	struct frag *fr_j = efp->frags + frag_j;
 
 	int size = fr_i->xr_wf_size * fr_j->xr_wf_size;
 
-	double *ds = malloc(6 * size * sizeof(double));
-	double *dt = malloc(6 * size * sizeof(double));
+	struct deriv ds;
+	struct deriv dt;
 
+	for (int i = 0; i < 6; i++) {
+		ds.der[i] = malloc(size * sizeof(double));
+		dt.der[i] = malloc(size * sizeof(double));
+	}
+
+	/* compute derivatives of S and T integrals */
 	efp_st_int_deriv(fr_i->n_xr_shells, fr_i->xr_shells,
 			 fr_j->n_xr_shells, fr_j->xr_shells,
 			 VEC(fr_i->x), fr_i->xr_wf_size, fr_j->xr_wf_size,
-			 ds, dt);
+			 &ds, &dt);
 
-//	double *ds_x = ds + 0 * size;
-//	double *ds_y = ds + 1 * size;
-//	double *ds_z = ds + 2 * size;
-//	double *ds_a = ds + 3 * size;
-//	double *ds_b = ds + 4 * size;
-//	double *ds_c = ds + 5 * size;
-//
-//	double *dt_x = dt + 0 * size;
-//	double *dt_y = dt + 1 * size;
-//	double *dt_z = dt + 2 * size;
-//	double *dt_a = dt + 3 * size;
-//	double *dt_b = dt + 4 * size;
-//	double *dt_c = dt + 5 * size;
+	for (int i = 0, idx = overlap_idx; i < fr_i->n_lmo; i++) {
+		for (int j = 0; j < fr_j->n_lmo; j++, idx++) {
+			if ((efp->opts.terms & EFP_TERM_DISP) &&
+			    (efp->opts.disp_damp == EFP_DISP_DAMP_OVERLAP)) {
+				/* XXX */
+			}
+		}
+	}
 
-	free(ds);
-	free(dt);
+	for (int i = 0; i < 6; i++) {
+		free(ds.der[i]);
+		free(dt.der[i]);
+	}
 }
 
 static void
-frag_frag_xr(struct efp *efp, int frag_i, int frag_j,
-	     double *exr_out, double *ecp_out, int *overlap_damp_idx)
+frag_frag_xr(struct efp *efp, int frag_i, int frag_j, int overlap_idx,
+	     double *exr_out, double *ecp_out)
 {
 	struct frag *fr_i = efp->frags + frag_i;
 	struct frag *fr_j = efp->frags + frag_j;
@@ -144,27 +140,20 @@ frag_frag_xr(struct efp *efp, int frag_i, int frag_j,
 	double exr = 0.0;
 	double ecp = 0.0;
 
-	for (int i = 0; i < fr_i->n_lmo; i++) {
-		for (int j = 0; j < fr_j->n_lmo; j++) {
+	for (int i = 0, idx = overlap_idx; i < fr_i->n_lmo; i++) {
+		for (int j = 0; j < fr_j->n_lmo; j++, idx++) {
 			double s_ij = lmo_s[i][j];
 			double t_ij = lmo_t[i][j];
 			double r_ij = vec_dist(fr_i->lmo_centroids + i,
 					       fr_j->lmo_centroids + j);
 
 			if ((efp->opts.terms & EFP_TERM_DISP) &&
-			    (efp->opts.disp_damp == EFP_DISP_DAMP_OVERLAP)) {
-				fr_i->disp_damp_overlap[*overlap_damp_idx] =
-						get_disp_damp(s_ij);
-
-				/* XXX damp grad */
-
-				(*overlap_damp_idx)++;
-			}
+			    (efp->opts.disp_damp == EFP_DISP_DAMP_OVERLAP))
+				fr_i->overlap_int[idx] = s_ij;
 
 			if ((efp->opts.terms & EFP_TERM_ELEC) &&
-			    (efp->opts.elec_damp == EFP_ELEC_DAMP_OVERLAP)) {
+			    (efp->opts.elec_damp == EFP_ELEC_DAMP_OVERLAP))
 				ecp += get_charge_penetration(s_ij, r_ij);
-			}
 
 			/* xr - first part */
 			if (fabs(s_ij) > 1.0e-6)
@@ -211,7 +200,7 @@ frag_frag_xr(struct efp *efp, int frag_i, int frag_j,
 	*ecp_out = ecp;
 
 	if (efp->do_gradient)
-		frag_frag_xr_grad(efp, frag_i, frag_j);
+		frag_frag_xr_grad(efp, frag_i, frag_j, overlap_idx);
 
 	free(s), free(t), free(tmp);
 }
@@ -227,16 +216,15 @@ efp_compute_xr(struct efp *efp)
 
 	#pragma omp parallel for schedule(dynamic, 4) reduction(+:exr,ecp)
 	for (int i = 0; i < efp->n_frag; i++) {
-		int overlap_damp_idx = 0;
-
-		for (int j = i + 1; j < efp->n_frag; j++) {
+		for (int j = i + 1, idx = 0; j < efp->n_frag; j++) {
 			double exr_out, ecp_out;
 
-			frag_frag_xr(efp, i, j, &exr_out, &ecp_out,
-				     &overlap_damp_idx);
+			frag_frag_xr(efp, i, j, idx, &exr_out, &ecp_out);
 
 			exr += exr_out;
 			ecp += ecp_out;
+
+			idx += efp->frags[i].n_lmo * efp->frags[j].n_lmo;
 		}
 	}
 

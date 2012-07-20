@@ -324,10 +324,10 @@ efp_compute(struct efp *efp, int do_gradient)
 	typedef enum efp_result (*term_fn)(struct efp *);
 
 	static const term_fn term_list[] = {
+		efp_compute_xr, /* xr must be first */
 		efp_compute_elec,
 		efp_compute_pol,
 		efp_compute_disp,
-		efp_compute_xr,
 		efp_compute_chtr,
 		efp_compute_ai_elec,
 		efp_compute_ai_disp,
@@ -503,8 +503,10 @@ free_frag(struct frag *frag)
 		free(frag->xr_shells[i].coef);
 
 	free(frag->xr_shells);
-	free(frag->disp_damp_overlap);
-	free(frag->disp_damp_overlap_grad);
+	free(frag->overlap_int);
+
+	for (int i = 0; i < 6; i++)
+		free(frag->overlap_int_deriv.der[i]);
 
 	/* don't do free(frag) here */
 }
@@ -675,30 +677,43 @@ check_opts(const struct efp_opts *opts)
 }
 
 static enum efp_result
+check_params_frag(const struct efp_opts *opts, const struct frag *frag)
+{
+	if (opts->terms & EFP_TERM_ELEC) {
+		if (!frag->multipole_pts)
+			return EFP_RESULT_PARAMETERS_MISSING;
+	}
+	if (opts->terms & EFP_TERM_POL) {
+		if (!frag->polarizable_pts)
+			return EFP_RESULT_PARAMETERS_MISSING;
+	}
+	if (opts->terms & EFP_TERM_DISP) {
+		if (!frag->dynamic_polarizable_pts)
+			return EFP_RESULT_PARAMETERS_MISSING;
+
+		if (opts->disp_damp == EFP_DISP_DAMP_OVERLAP &&
+		    frag->n_lmo != frag->n_dynamic_polarizable_pts)
+			return EFP_RESULT_PARAMETERS_MISSING;
+	}
+	if (opts->terms & EFP_TERM_XR) {
+		if (!frag->xr_shells ||
+		    !frag->xr_fock_mat ||
+		    !frag->xr_wf ||
+		    !frag->lmo_centroids)
+			return EFP_RESULT_PARAMETERS_MISSING;
+	}
+	return EFP_RESULT_SUCCESS;
+}
+
+static enum efp_result
 check_params(struct efp *efp)
 {
-	if (efp->opts.terms & EFP_TERM_ELEC) {
-		for (int i = 0; i < efp->n_frag; i++)
-			if (!efp->frags[i].multipole_pts)
-				return EFP_RESULT_PARAMETERS_MISSING;
-	}
-	if (efp->opts.terms & EFP_TERM_POL) {
-		for (int i = 0; i < efp->n_frag; i++)
-			if (!efp->frags[i].polarizable_pts)
-				return EFP_RESULT_PARAMETERS_MISSING;
-	}
-	if (efp->opts.terms & EFP_TERM_DISP) {
-		for (int i = 0; i < efp->n_frag; i++)
-			if (!efp->frags[i].dynamic_polarizable_pts)
-				return EFP_RESULT_PARAMETERS_MISSING;
-	}
-	if (efp->opts.terms & EFP_TERM_XR) {
-		for (int i = 0; i < efp->n_frag; i++)
-			if (!efp->frags[i].xr_fock_mat ||
-			    !efp->frags[i].xr_wf ||
-			    !efp->frags[i].lmo_centroids)
-				return EFP_RESULT_PARAMETERS_MISSING;
-	}
+	enum efp_result res;
+
+	for (int i = 0; i < efp->n_frag; i++)
+		if ((res = check_params_frag(&efp->opts, efp->frags + i)))
+			return res;
+
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -713,14 +728,17 @@ setup_disp(struct efp *efp)
 		size_t size = 0;
 
 		for (int j = i + 1; j < efp->n_frag; j++)
-			size += frag->n_dynamic_polarizable_pts *
-				efp->frags[j].n_dynamic_polarizable_pts;
+			size += efp->frags[i].n_lmo * efp->frags[j].n_lmo;
 
-		frag->disp_damp_overlap = malloc(size * sizeof(double));
-		frag->disp_damp_overlap_grad = malloc(size * sizeof(double));
-
-		if (!frag->disp_damp_overlap || !frag->disp_damp_overlap_grad)
+		frag->overlap_int = malloc(size * sizeof(double));
+		if (!frag->overlap_int)
 			return EFP_RESULT_NO_MEMORY;
+
+		for (int k = 0; k < 6; k++) {
+			frag->overlap_int_deriv.der[k] = malloc(size * sizeof(double));
+			if (!frag->overlap_int_deriv.der[k])
+				return EFP_RESULT_NO_MEMORY;
+		}
 	}
 
 	return EFP_RESULT_SUCCESS;

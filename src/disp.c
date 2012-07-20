@@ -55,9 +55,20 @@ get_damp_tt_grad(double r)
 	return a * exp(-ra) * ra6 / 720.0;
 }
 
+static inline double
+get_damp_overlap(double s_ij)
+{
+	if (fabs(s_ij) < 1.0e-6)
+		return 0.0;
+
+	double ln_s = log(fabs(s_ij));
+
+	return 1.0 - s_ij * s_ij * (1.0 - 2.0 * ln_s + 2.0 * ln_s * ln_s);
+}
+
 static double
 point_point_disp(struct efp *efp, int fr_i_idx, int fr_j_idx,
-		 int pt_i_idx, int pt_j_idx, int overlap_damp_idx)
+		 int pt_i_idx, int pt_j_idx, int overlap_idx)
 {
 	struct frag *fr_i = efp->frags + fr_i_idx;
 	struct frag *fr_j = efp->frags + fr_j_idx;
@@ -83,7 +94,7 @@ point_point_disp(struct efp *efp, int fr_i_idx, int fr_j_idx,
 		damp = get_damp_tt(r);
 		break;
 	case EFP_DISP_DAMP_OVERLAP:
-		damp = fr_i->disp_damp_overlap[overlap_damp_idx];
+		damp = get_damp_overlap(fr_i->overlap_int[overlap_idx]);
 		break;
 	case EFP_DISP_DAMP_OFF:
 		break;
@@ -99,7 +110,7 @@ point_point_disp(struct efp *efp, int fr_i_idx, int fr_j_idx,
 			gdamp = get_damp_tt_grad(r);
 			break;
 		case EFP_DISP_DAMP_OVERLAP:
-			gdamp = fr_i->disp_damp_overlap_grad[overlap_damp_idx];
+			/* XXX */
 			break;
 		case EFP_DISP_DAMP_OFF:
 			break;
@@ -120,17 +131,16 @@ point_point_disp(struct efp *efp, int fr_i_idx, int fr_j_idx,
 }
 
 static double
-frag_frag_disp(struct efp *efp, int frag_i, int frag_j, int *overlap_damp_idx)
+frag_frag_disp(struct efp *efp, int frag_i, int frag_j, int overlap_idx)
 {
 	double sum = 0.0;
 
 	int n_disp_i = efp->frags[frag_i].n_dynamic_polarizable_pts;
 	int n_disp_j = efp->frags[frag_j].n_dynamic_polarizable_pts;
 
-	for (int ii = 0; ii < n_disp_i; ii++)
-		for (int jj = 0; jj < n_disp_j; jj++)
-			sum += point_point_disp(efp, frag_i, frag_j, ii, jj,
-					(*overlap_damp_idx)++);
+	for (int ii = 0, idx = overlap_idx; ii < n_disp_i; ii++)
+		for (int jj = 0; jj < n_disp_j; jj++, idx++)
+			sum += point_point_disp(efp, frag_i, frag_j, ii, jj, idx);
 
 	return sum;
 }
@@ -145,10 +155,10 @@ efp_compute_disp(struct efp *efp)
 
 	#pragma omp parallel for schedule(dynamic, 4) reduction(+:energy)
 	for (int i = 0; i < efp->n_frag; i++) {
-		int overlap_damp_idx = 0;
-
-		for (int j = i + 1; j < efp->n_frag; j++)
-			energy += frag_frag_disp(efp, i, j, &overlap_damp_idx);
+		for (int j = i + 1, idx = 0; j < efp->n_frag; j++) {
+			energy += frag_frag_disp(efp, i, j, idx);
+			idx += efp->frags[i].n_lmo * efp->frags[j].n_lmo;
+		}
 	}
 
 	efp->energy.dispersion = energy;

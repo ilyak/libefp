@@ -130,11 +130,11 @@ struct frag {
 	/* exchange repulsion wavefunction, size = n_lmo * xr_wf_size */
 	double *xr_wf;
 
-	/* overlap-based dispersion damping */
-	double *disp_damp_overlap;
+	/* overlap integrals; used for overlap-based dispersion damping */
+	double *overlap_int;
 
-	/* overlap-based dispersion damping derivative */
-	double *disp_damp_overlap_grad;
+	/* derivatives of overlap integrals */
+	struct deriv overlap_int_deriv;
 };
 
 struct efp {
