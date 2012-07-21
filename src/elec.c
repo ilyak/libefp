@@ -635,8 +635,8 @@ compute_ai_elec_frag(struct efp *efp, int frag_idx)
 			struct efp_atom *at_i = fr_i->atoms + i;
 			const vec_t *xyz_j = efp->qm.xyz + j;
 			double znuc_j = efp->qm.znuc[j];
-
 			double r = vec_dist(VEC(at_i->x), xyz_j);
+
 			energy += at_i->znuc * znuc_j / r;
 		}
 	}
@@ -670,9 +670,6 @@ compute_ai_elec_frag_grad(struct efp *efp, int frag_idx)
 
 			efp_charge_charge_grad(at_i->znuc, znuc_j, &dr,
 					       &force, &add_i, &add_j);
-
-			/* XXX screening */
-
 			add_force_torque_frag_point(fr_i, VEC(at_i->x), xyz_j,
 						    grad_j, &force, &add_i);
 		}
@@ -685,9 +682,6 @@ compute_ai_elec_frag_grad(struct efp *efp, int frag_idx)
 			/* monopole */
 			efp_charge_charge_grad(pt_i->monopole, znuc_j, &dr,
 					       &force, &add_i, &add_j);
-
-			/* XXX screening */
-
 			add_force_torque_frag_point(fr_i, VEC(pt_i->x), xyz_j,
 						    grad_j, &force, &add_i);
 
