@@ -27,14 +27,6 @@
 #include "test_common.h"
 #include "geometry_2.h"
 
-static const double ref_gradient[] = { /* from GAMESS */
-	0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-	0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-	0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-	0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-	0.0, 0.0, 0.0, 0.0, 0.0, 0.0
-};
-
 static const struct test_data test_data = {
 	.potential_files = potential_files,
 	.fragname = fragname,
@@ -43,7 +35,7 @@ static const struct test_data test_data = {
 	.ref_energy =  0.0013721463 + -0.0001902044 +
 		      -0.0014688094 +  0.0008443933,
 	.energy_accuracy = 6,
-//	.ref_gradient = ref_gradient,
+//	.test_gradient = 1,
 	.opts = {
 		.terms = EFP_TERM_ELEC | EFP_TERM_POL |
 			 EFP_TERM_DISP | EFP_TERM_XR,

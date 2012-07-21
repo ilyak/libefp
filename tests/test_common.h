@@ -60,12 +60,6 @@ struct test_data {
 	double ref_energy;
 
 	/**
-	 * Reference gradient values. Turns on gradient test if not NULL.
-	 * The size of this array must be (6 * N), where N is the number of
-	 * fragments. */
-	const double *ref_gradient;
-
-	/**
 	 * Specifies accuracy for comparison of energy values.
 	 *
 	 * The test will pass if energy differs from reference value by less
@@ -73,18 +67,8 @@ struct test_data {
 	 * specified then the default value of 7 is used. */
 	int energy_accuracy;
 
-	/**
-	 * Specifies accuracy for comparison of gradient values.
-	 *
-	 * The test will pass if gradient differs from reference value by less
-	 * than (10 ^ -n), where n is gradient_accuracy. If zero value is
-	 * specified then the default value of 7 is used. */
-	int gradient_accuracy;
-
-	/**
-	 * Turns on comparison of analytical and numerical gradients if
-	 * nonzero. */
-	int test_numerical_gradient;
+	/** If nonzero gradient test will also be performed. */
+	int test_gradient;
 
 	/** Simulation settings. */
 	struct efp_opts opts;

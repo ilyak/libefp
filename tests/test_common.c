@@ -147,15 +147,11 @@ print_atoms(struct efp *efp)
 	return EFP_RESULT_SUCCESS;
 }
 
-int
-run_test(const struct test_data *test_data)
+int run_test(const struct test_data *test_data)
 {
 	enum efp_result res;
 	struct efp *efp;
-
 	int status = EXIT_SUCCESS;
-	int do_gradient = test_data->ref_gradient ||
-			  test_data->test_numerical_gradient;
 
 	if ((res = efp_init(&efp, &test_data->opts, &test_data->callbacks,
 			test_data->potential_files, test_data->fragname))) {
@@ -191,7 +187,7 @@ run_test(const struct test_data *test_data)
 	}
 	/* End imaginary ab initio SCF */
 
-	if ((res = efp_compute(efp, do_gradient))) {
+	if ((res = efp_compute(efp, test_data->test_gradient))) {
 		error("efp_compute", res);
 		goto fail;
 	}
@@ -209,46 +205,28 @@ run_test(const struct test_data *test_data)
 		status = EXIT_FAILURE;
 	}
 
-	if (do_gradient) {
+	if (test_data->test_gradient) {
 		int n_frag;
+
 		if ((res = efp_get_frag_count(efp, &n_frag))) {
 			error("efp_get_frag_count", res);
 			goto fail;
 		}
 
-		int n_grad = 6 * n_frag;
-		double grad[n_grad];
+		double grad[6 * n_frag];
+		double xyzabc[6 * n_frag];
 
-		if ((res = efp_get_gradient(efp, n_grad, grad))) {
+		if ((res = efp_get_gradient(efp, 6 * n_frag, grad))) {
 			error("efp_get_gradient", res);
 			goto fail;
 		}
-
-		if (test_data->ref_gradient) {
-			int wrong_grad = 0;
-
-			for (int i = 0; i < n_grad; i++)
-				if (!eq(grad[i], test_data->ref_gradient[i],
-						test_data->gradient_accuracy))
-					wrong_grad = 1;
-
-			if (wrong_grad) {
-				message("wrong gradient");
-				status = EXIT_FAILURE;
-			}
+		if ((res = efp_get_coordinates(efp, 6 * n_frag, xyzabc))) {
+			error("efp_get_coordinates", res);
+			goto fail;
 		}
-
-		if (test_data->test_numerical_gradient) {
-			double xyzabc[n_grad];
-
-			if ((res = efp_get_coordinates(efp, n_grad, xyzabc))) {
-				error("efp_get_coordinates", res);
-				goto fail;
-			}
-			if (test_numerical_gradient(efp, xyzabc, grad)) {
-				message("wrong numerical gradient");
-				status = EXIT_FAILURE;
-			}
+		if (test_numerical_gradient(efp, xyzabc, grad)) {
+			message("wrong gradient");
+			status = EXIT_FAILURE;
 		}
 	}
 

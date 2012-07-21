@@ -34,7 +34,7 @@ static const struct test_data test_data = {
 		/* disp + xr - from GAMESS */
 	.ref_energy = -0.0197372155 + 0.0205771978,
 	.energy_accuracy = 6,
-//	.test_numerical_gradient = 1,
+//	.test_gradient = 1,
 	.opts = {
 		.terms = EFP_TERM_DISP | EFP_TERM_XR,
 		.disp_damp = EFP_DISP_DAMP_OVERLAP
