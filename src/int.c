@@ -430,7 +430,7 @@ void efp_st_int(int n_shells_i, const struct shell *shells_i,
 void efp_st_int_deriv(int n_shells_i, const struct shell *shells_i,
 		      int n_shells_j, const struct shell *shells_j,
 		      const vec_t *com_i, int size_i, int size_j,
-		      struct deriv *ds, struct deriv *dt)
+		      six_t *ds, six_t *dt)
 {
 	static const int shift_x[] = { 0, 1, 0, 0, 2, 0, 0, 1, 1, 0,
 				       3, 0, 0, 2, 2, 1, 0, 1, 0, 1 };
@@ -447,12 +447,8 @@ void efp_st_int_deriv(int n_shells_i, const struct shell *shells_i,
 	double dxs[4][4], dys[4][4], dzs[4][4];
 	double dxt[4][4], dyt[4][4], dzt[4][4];
 
-	int size = size_i * size_j;
-
-	for (int i = 0; i < 6; i++) {
-		memset(ds->der[i], 0, size * sizeof(double));
-		memset(dt->der[i], 0, size * sizeof(double));
-	}
+	memset(ds, 0, size_i * size_j * sizeof(six_t));
+	memset(dt, 0, size_i * size_j * sizeof(six_t));
 
 	/* shell i */
 	for (int ii = 0, loc_i = 0; ii < n_shells_i; ii++) {
@@ -612,19 +608,19 @@ void efp_st_int_deriv(int n_shells_i, const struct shell *shells_i,
 
 							int idx2 = (loc_i + i - start_i) * size_j + (loc_j + j - start_j);
 
-							ds->der[0][idx2] += txs * dij[idx];
-							ds->der[1][idx2] += tys * dij[idx];
-							ds->der[2][idx2] += tzs * dij[idx];
-							ds->der[3][idx2] += (tys * (sh_i->z - com_i->z) - tzs * (sh_i->y - com_i->y)) * dij[idx];
-							ds->der[4][idx2] += (tzs * (sh_i->x - com_i->x) - txs * (sh_i->z - com_i->z)) * dij[idx];
-							ds->der[5][idx2] += (txs * (sh_i->y - com_i->y) - tys * (sh_i->x - com_i->x)) * dij[idx];
+							ds[idx2].x += txs * dij[idx];
+							ds[idx2].y += tys * dij[idx];
+							ds[idx2].z += tzs * dij[idx];
+							ds[idx2].a += (tys * (sh_i->z - com_i->z) - tzs * (sh_i->y - com_i->y)) * dij[idx];
+							ds[idx2].b += (tzs * (sh_i->x - com_i->x) - txs * (sh_i->z - com_i->z)) * dij[idx];
+							ds[idx2].c += (txs * (sh_i->y - com_i->y) - tys * (sh_i->x - com_i->x)) * dij[idx];
 
-							dt->der[0][idx2] += txt * dij[idx];
-							dt->der[1][idx2] += tyt * dij[idx];
-							dt->der[2][idx2] += tzt * dij[idx];
-							dt->der[3][idx2] += (tyt * (sh_i->z - com_i->z) - tzt * (sh_i->y - com_i->y)) * dij[idx];
-							dt->der[4][idx2] += (tzt * (sh_i->x - com_i->x) - txt * (sh_i->z - com_i->z)) * dij[idx];
-							dt->der[5][idx2] += (txt * (sh_i->y - com_i->y) - tyt * (sh_i->x - com_i->x)) * dij[idx];
+							dt[idx2].x += txt * dij[idx];
+							dt[idx2].y += tyt * dij[idx];
+							dt[idx2].z += tzt * dij[idx];
+							dt[idx2].a += (tyt * (sh_i->z - com_i->z) - tzt * (sh_i->y - com_i->y)) * dij[idx];
+							dt[idx2].b += (tzt * (sh_i->x - com_i->x) - txt * (sh_i->z - com_i->z)) * dij[idx];
+							dt[idx2].c += (txt * (sh_i->y - com_i->y) - tyt * (sh_i->x - com_i->x)) * dij[idx];
 						}
 					}
 				}

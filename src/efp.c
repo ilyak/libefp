@@ -504,9 +504,7 @@ free_frag(struct frag *frag)
 
 	free(frag->xr_shells);
 	free(frag->overlap_int);
-
-	for (int i = 0; i < 6; i++)
-		free(frag->overlap_int_deriv.der[i]);
+	free(frag->overlap_int_deriv);
 
 	/* don't do free(frag) here */
 }
@@ -734,11 +732,9 @@ setup_disp(struct efp *efp)
 		if (!frag->overlap_int)
 			return EFP_RESULT_NO_MEMORY;
 
-		for (int k = 0; k < 6; k++) {
-			frag->overlap_int_deriv.der[k] = malloc(size * sizeof(double));
-			if (!frag->overlap_int_deriv.der[k])
-				return EFP_RESULT_NO_MEMORY;
-		}
+		frag->overlap_int_deriv = malloc(size * sizeof(six_t));
+		if (!frag->overlap_int_deriv)
+			return EFP_RESULT_NO_MEMORY;
 	}
 
 	return EFP_RESULT_SUCCESS;

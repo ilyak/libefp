@@ -38,6 +38,10 @@ typedef struct {
 } vec_t;
 
 typedef struct {
+	double x, y, z, a, b, c;
+} six_t;
+
+typedef struct {
 	double xx, xy, xz, yx, yy, yz, zx, zy, zz;
 } mat_t;
 

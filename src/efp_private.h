@@ -27,8 +27,6 @@
 #ifndef LIBEFP_EFP_PRIVATE_H
 #define LIBEFP_EFP_PRIVATE_H
 
-#include <assert.h>
-
 #include "efp.h"
 #include "int.h"
 #include "math_util.h"
@@ -134,7 +132,7 @@ struct frag {
 	double *overlap_int;
 
 	/* derivatives of overlap integrals */
-	struct deriv overlap_int_deriv;
+	six_t *overlap_int_deriv;
 };
 
 struct efp {
