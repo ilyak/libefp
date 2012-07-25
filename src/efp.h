@@ -59,13 +59,6 @@ enum efp_result {
 	EFP_RESULT_CALLBACK_NOT_SET,
 	/** Call to callback function failed. */
 	EFP_RESULT_CALLBACK_FAILED,
-	/**
-	 * Exchange-repulsion must be turned on.
-	 *
-	 * Exchange-repulsion must be enabled to compute overlap-based
-	 * electrostatic and dispersion damping. Overlap integrals need to be
-	 * computed for these damping types. */
-	EFP_RESULT_OVERLAP_INTEGRALS_REQUIRED,
 	/** Gradient computation was not requested. */
 	EFP_RESULT_GRADIENT_NOT_REQUESTED,
 	/** Certain EFP parameters are missing. */

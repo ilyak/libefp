@@ -499,6 +499,9 @@ free_frag(struct frag *frag)
 	free(frag->screen_params);
 	free(frag->ai_screen_params);
 
+	for (int i = 0; i < 3; i++)
+		free(frag->xr_wf_deriv[i]);
+
 	for (int i = 0; i < frag->n_xr_shells; i++)
 		free(frag->xr_shells[i].coef);
 
@@ -661,16 +664,6 @@ check_opts(const struct efp_opts *opts)
 	    ((terms & EFP_TERM_AI_CHTR) && !(terms & EFP_TERM_CHTR)))
 		return EFP_RESULT_INCONSISTENT_TERMS;
 
-	if (terms & EFP_TERM_ELEC) {
-		if (opts->elec_damp == EFP_ELEC_DAMP_OVERLAP &&
-				!(terms & EFP_TERM_XR))
-			return EFP_RESULT_OVERLAP_INTEGRALS_REQUIRED;
-	}
-	if (terms & EFP_TERM_DISP) {
-		if (opts->disp_damp == EFP_DISP_DAMP_OVERLAP &&
-				!(terms & EFP_TERM_XR))
-			return EFP_RESULT_OVERLAP_INTEGRALS_REQUIRED;
-	}
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -740,6 +733,22 @@ setup_disp(struct efp *efp)
 	return EFP_RESULT_SUCCESS;
 }
 
+static enum efp_result
+setup_xr(struct efp *efp)
+{
+	for (int i = 0; i < efp->n_frag; i++) {
+		struct frag *frag = efp->frags + i;
+
+		for (int a = 0; a < 3; a++) {
+			size_t size = frag->xr_wf_size * frag->n_lmo;
+			frag->xr_wf_deriv[a] = calloc(size, sizeof(double));
+			if (!frag->xr_wf_deriv[a])
+				return EFP_RESULT_NO_MEMORY;
+		}
+	}
+	return EFP_RESULT_SUCCESS;
+}
+
 EFP_EXPORT enum efp_result
 efp_init(struct efp **out,
 	 const struct efp_opts *opts,
@@ -787,6 +796,9 @@ efp_init(struct efp **out,
 	}
 
 	if ((res = setup_disp(efp)))
+		return res;
+
+	if ((res = setup_xr(efp)))
 		return res;
 
 	if ((res = check_params(efp)))
@@ -905,8 +917,6 @@ return "fragment parameters contain fragments with the same name";
 return "required callback function is not set";
 	case EFP_RESULT_CALLBACK_FAILED:
 return "callback function failed";
-	case EFP_RESULT_OVERLAP_INTEGRALS_REQUIRED:
-return "overlap based damping requires exchange repulsion";
 	case EFP_RESULT_GRADIENT_NOT_REQUESTED:
 return "gradient computation was not requested";
 	case EFP_RESULT_PARAMETERS_MISSING:

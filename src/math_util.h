@@ -80,6 +80,28 @@ vec_cross(const vec_t *a, const vec_t *b)
 	return c;
 }
 
+static inline void
+vec_atomic_add(vec_t *a, const vec_t *b)
+{
+	#pragma omp atomic
+	a->x += b->x;
+	#pragma omp atomic
+	a->y += b->y;
+	#pragma omp atomic
+	a->z += b->z;
+}
+
+static inline void
+vec_atomic_sub(vec_t *a, const vec_t *b)
+{
+	#pragma omp atomic
+	a->x -= b->x;
+	#pragma omp atomic
+	a->y -= b->y;
+	#pragma omp atomic
+	a->z -= b->z;
+}
+
 static inline vec_t
 vec_add(const vec_t *a, const vec_t *b)
 {

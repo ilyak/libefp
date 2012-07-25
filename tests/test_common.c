@@ -112,7 +112,7 @@ test_numerical_gradient(struct efp *efp,
 		grad_euler[5] = sinb * sina * tx - sinb * cosa * ty + cosb * tz;
 
 		for (int j = 0; j < 6; j++)
-			if (!eq(grad_num[j], grad_euler[j], 7))
+			if (!eq(grad_num[j], grad_euler[j], 6))
 				result = 1;
 	}
 	return result;

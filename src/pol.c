@@ -40,23 +40,23 @@ add_multipole_field(struct polarizable_pt *pt,
 	double r5 = r3 * r * r;
 	double r7 = r5 * r * r;
 
+	vec_t field;
+
 	/* charge */
-	#pragma omp atomic
-	pt->elec_field.x += mult_pt->monopole * dr.x / r3;
-	#pragma omp atomic
-	pt->elec_field.y += mult_pt->monopole * dr.y / r3;
-	#pragma omp atomic
-	pt->elec_field.z += mult_pt->monopole * dr.z / r3;
+	field.x = mult_pt->monopole * dr.x / r3;
+	field.y = mult_pt->monopole * dr.y / r3;
+	field.z = mult_pt->monopole * dr.z / r3;
+
+	vec_atomic_add(&pt->elec_field, &field);
 
 	/* dipole */
 	t1 = vec_dot(&mult_pt->dipole, &dr);
 
-	#pragma omp atomic
-	pt->elec_field.x -= mult_pt->dipole.x / r3 - 3.0 / r5 * t1 * dr.x;
-	#pragma omp atomic
-	pt->elec_field.y -= mult_pt->dipole.y / r3 - 3.0 / r5 * t1 * dr.y;
-	#pragma omp atomic
-	pt->elec_field.z -= mult_pt->dipole.z / r3 - 3.0 / r5 * t1 * dr.z;
+	field.x = -mult_pt->dipole.x / r3 + 3.0 / r5 * t1 * dr.x;
+	field.y = -mult_pt->dipole.y / r3 + 3.0 / r5 * t1 * dr.y;
+	field.z = -mult_pt->dipole.z / r3 + 3.0 / r5 * t1 * dr.z;
+
+	vec_atomic_add(&pt->elec_field, &field);
 
 	/* quadrupole */
 	t1 = quadrupole_sum(mult_pt->quadrupole, &dr);
@@ -64,20 +64,19 @@ add_multipole_field(struct polarizable_pt *pt,
 	t2 = mult_pt->quadrupole[quad_idx(0, 0)] * dr.x +
 	     mult_pt->quadrupole[quad_idx(1, 0)] * dr.y +
 	     mult_pt->quadrupole[quad_idx(2, 0)] * dr.z;
-	#pragma omp atomic
-	pt->elec_field.x -= 2.0 / r5 * t2 - 5.0 / r7 * t1 * dr.x;
+	field.x = -2.0 / r5 * t2 + 5.0 / r7 * t1 * dr.x;
 
 	t2 = mult_pt->quadrupole[quad_idx(0, 1)] * dr.x +
 	     mult_pt->quadrupole[quad_idx(1, 1)] * dr.y +
 	     mult_pt->quadrupole[quad_idx(2, 1)] * dr.z;
-	#pragma omp atomic
-	pt->elec_field.y -= 2.0 / r5 * t2 - 5.0 / r7 * t1 * dr.y;
+	field.y = -2.0 / r5 * t2 + 5.0 / r7 * t1 * dr.y;
 
 	t2 = mult_pt->quadrupole[quad_idx(0, 2)] * dr.x +
 	     mult_pt->quadrupole[quad_idx(1, 2)] * dr.y +
 	     mult_pt->quadrupole[quad_idx(2, 2)] * dr.z;
-	#pragma omp atomic
-	pt->elec_field.z -= 2.0 / r5 * t2 - 5.0 / r7 * t1 * dr.z;
+	field.z = -2.0 / r5 * t2 + 5.0 / r7 * t1 * dr.z;
+
+	vec_atomic_add(&pt->elec_field, &field);
 
 	/* octupole-polarizability interactions are ignored */
 }
@@ -103,12 +102,13 @@ compute_elec_field_pt(struct efp *efp, int frag_idx, int pt_idx)
 			double r = vec_len(&dr);
 			double r3 = r * r * r;
 
-			#pragma omp atomic
-			pt->elec_field.x += at->znuc * dr.x / r3;
-			#pragma omp atomic
-			pt->elec_field.y += at->znuc * dr.y / r3;
-			#pragma omp atomic
-			pt->elec_field.z += at->znuc * dr.z / r3;
+			vec_t field;
+
+			field.x = at->znuc * dr.x / r3;
+			field.y = at->znuc * dr.y / r3;
+			field.z = at->znuc * dr.z / r3;
+
+			vec_atomic_add(&pt->elec_field, &field);
 		}
 
 		/* field due to multipoles */
@@ -130,12 +130,13 @@ compute_elec_field_pt(struct efp *efp, int frag_idx, int pt_idx)
 			double r = vec_len(&dr);
 			double r3 = r * r * r;
 
-			#pragma omp atomic
-			pt->elec_field.x += znuc * dr.x / r3;
-			#pragma omp atomic
-			pt->elec_field.y += znuc * dr.y / r3;
-			#pragma omp atomic
-			pt->elec_field.z += znuc * dr.z / r3;
+			vec_t field;
+
+			field.x = znuc * dr.x / r3;
+			field.y = znuc * dr.y / r3;
+			field.z = znuc * dr.z / r3;
+
+			vec_atomic_add(&pt->elec_field, &field);
 		}
 	}
 }

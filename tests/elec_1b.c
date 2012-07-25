@@ -31,11 +31,11 @@ static const struct test_data test_data = {
 	.potential_files = potential_files,
 	.fragname = fragname,
 	.geometry_xyzabc = xyzabc,
-		/* elec + xr from GAMESS */
-	.ref_energy = 0.0002575234 + 0.0000134716,
-//	.test_gradient = 1,
+		/* elec from GAMESS */
+	.ref_energy = 0.0002575234,
+	.test_gradient = 1,
 	.opts = {
-		.terms = EFP_TERM_ELEC | EFP_TERM_XR,
+		.terms = EFP_TERM_ELEC,
 		.elec_damp = EFP_ELEC_DAMP_OVERLAP
 	}
 };

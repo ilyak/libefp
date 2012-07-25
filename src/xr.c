@@ -31,6 +31,8 @@
 #include "efp_private.h"
 #include "disp.h"
 
+static const double integral_threshold = 1.0e-7;
+
 static inline int
 fock_idx(int i, int j)
 {
@@ -52,7 +54,7 @@ valence(double n)
 static double
 charge_penetration_energy(double s_ij, double r_ij)
 {
-	if (fabs(s_ij) < 1.0e-6)
+	if (fabs(s_ij) < integral_threshold)
 		return 0.0;
 
 	double ln_s = log(fabs(s_ij));
@@ -65,13 +67,13 @@ charge_penetration_grad(struct frag *fr_i, struct frag *fr_j,
 			int lmo_i_idx, int lmo_j_idx, double s_ij,
 			const six_t *ds_ij)
 {
-	if (fabs(s_ij) < 1.0e-6)
+	if (fabs(s_ij) < integral_threshold)
 		return;
 
 	const vec_t *ct_i = fr_i->lmo_centroids + lmo_i_idx;
 	const vec_t *ct_j = fr_j->lmo_centroids + lmo_j_idx;
 
-	vec_t dr = vec_sub(ct_j, ct_i);
+	vec_t dr = vec_sub(ct_i, ct_j);
 
 	double r_ij = vec_len(&dr);
 	double ln_s = log(fabs(s_ij));
@@ -86,42 +88,25 @@ charge_penetration_grad(struct frag *fr_i, struct frag *fr_j,
 	force.y = t2 * ds_ij->y + t1 * dr.y;
 	force.z = t2 * ds_ij->z + t1 * dr.z;
 
-	torque_i.x = t2 * ds_ij->a + t1 * (dr.y * (ct_i->z - fr_j->z) -
-					   dr.z * (ct_i->y - fr_j->y));
-	torque_i.y = t2 * ds_ij->b + t1 * (dr.z * (ct_i->x - fr_j->x) -
-					   dr.x * (ct_i->z - fr_j->z));
-	torque_i.z = t2 * ds_ij->c + t1 * (dr.x * (ct_i->y - fr_j->y) -
-					   dr.y * (ct_i->x - fr_j->x));
+	torque_i.x = -t2 * ds_ij->a - t1 * (dr.y * (ct_i->z - fr_i->z) -
+					    dr.z * (ct_i->y - fr_i->y));
+	torque_i.y = -t2 * ds_ij->b - t1 * (dr.z * (ct_i->x - fr_i->x) -
+					    dr.x * (ct_i->z - fr_i->z));
+	torque_i.z = -t2 * ds_ij->c - t1 * (dr.x * (ct_i->y - fr_i->y) -
+					    dr.y * (ct_i->x - fr_i->x));
 
-	torque_j.x = force.y * (fr_j->z - fr_i->z) - force.z * (fr_j->y - fr_i->y);
-	torque_j.y = force.z * (fr_j->x - fr_i->x) - force.x * (fr_j->z - fr_i->z);
-	torque_j.z = force.x * (fr_j->y - fr_i->y) - force.y * (fr_j->x - fr_i->x);
+	torque_j.x = torque_i.x + force.y * (fr_j->z - fr_i->z) -
+				  force.z * (fr_j->y - fr_i->y);
+	torque_j.y = torque_i.y + force.z * (fr_j->x - fr_i->x) -
+				  force.x * (fr_j->z - fr_i->z);
+	torque_j.z = torque_i.z + force.x * (fr_j->y - fr_i->y) -
+				  force.y * (fr_j->x - fr_i->x);
 
-	#pragma omp atomic
-	fr_i->force.x += force.x;
-	#pragma omp atomic
-	fr_i->force.y += force.y;
-	#pragma omp atomic
-	fr_i->force.z += force.z;
-	#pragma omp atomic
-	fr_i->torque.x += torque_i.x;
-	#pragma omp atomic
-	fr_i->torque.y += torque_i.y;
-	#pragma omp atomic
-	fr_i->torque.z += torque_i.z;
+	vec_atomic_add(&fr_i->force, &force);
+	vec_atomic_add(&fr_i->torque, &torque_i);
 
-	#pragma omp atomic
-	fr_j->force.x -= force.x;
-	#pragma omp atomic
-	fr_j->force.y -= force.y;
-	#pragma omp atomic
-	fr_j->force.z -= force.z;
-	#pragma omp atomic
-	fr_j->torque.x -= torque_j.x;
-	#pragma omp atomic
-	fr_j->torque.y -= torque_j.y;
-	#pragma omp atomic
-	fr_j->torque.z -= torque_j.z;
+	vec_atomic_sub(&fr_j->force, &force);
+	vec_atomic_sub(&fr_j->torque, &torque_j);
 }
 
 static void
@@ -144,51 +129,60 @@ static void
 transform_integral_derivatives(int n_lmo_i, int n_lmo_j,
 			       int wf_size_i, int wf_size_j,
 			       const double *wf_i, const double *wf_j,
-			       const six_t *s, six_t *lmo_s)
+			       const six_t *ds, six_t *lmo_ds)
 {
 	int wf_size = wf_size_i * wf_size_j;
 	int lmo_size = n_lmo_i * n_lmo_j;
 
-	double *ss = malloc(wf_size * 6 * sizeof(double));
-	double *lmo_ss = malloc(lmo_size * 6 * sizeof(double));
+	double *ds2 = malloc(wf_size * 6 * sizeof(double));
+	double *lmo_ds2 = malloc(lmo_size * 6 * sizeof(double));
 
 	/* unpack */
-	const six_t *s_ptr = s;
+	const six_t *ds_ptr = ds;
 
-	for (int i = 0; i < wf_size; i++, s_ptr++) {
-		ss[0 * wf_size + i] = s_ptr->x;
-		ss[1 * wf_size + i] = s_ptr->y;
-		ss[2 * wf_size + i] = s_ptr->z;
-		ss[3 * wf_size + i] = s_ptr->a;
-		ss[4 * wf_size + i] = s_ptr->b;
-		ss[5 * wf_size + i] = s_ptr->c;
+	for (int i = 0; i < wf_size; i++, ds_ptr++) {
+		ds2[0 * wf_size + i] = ds_ptr->x;
+		ds2[1 * wf_size + i] = ds_ptr->y;
+		ds2[2 * wf_size + i] = ds_ptr->z;
+		ds2[3 * wf_size + i] = ds_ptr->a;
+		ds2[4 * wf_size + i] = ds_ptr->b;
+		ds2[5 * wf_size + i] = ds_ptr->c;
 	}
 
 	/* transform */
 	for (int k = 0; k < 6; k++) {
 		transform_integrals(n_lmo_i, n_lmo_j, wf_size_i, wf_size_j,
-				wf_i, wf_j, ss + k * wf_size, lmo_ss + k * lmo_size);
+				wf_i, wf_j, ds2 + k * wf_size, lmo_ds2 + k * lmo_size);
 	}
 
 	/* pack */
-	six_t *lmo_s_ptr = lmo_s;
+	six_t *lmo_ds_ptr = lmo_ds;
 
-	for (int i = 0; i < lmo_size; i++, lmo_s_ptr++) {
-		lmo_s_ptr->x = lmo_ss[0 * lmo_size + i];
-		lmo_s_ptr->y = lmo_ss[1 * lmo_size + i];
-		lmo_s_ptr->z = lmo_ss[2 * lmo_size + i];
-		lmo_s_ptr->a = lmo_ss[3 * lmo_size + i];
-		lmo_s_ptr->b = lmo_ss[4 * lmo_size + i];
-		lmo_s_ptr->c = lmo_ss[5 * lmo_size + i];
+	for (int i = 0; i < lmo_size; i++, lmo_ds_ptr++) {
+		lmo_ds_ptr->x = lmo_ds2[0 * lmo_size + i];
+		lmo_ds_ptr->y = lmo_ds2[1 * lmo_size + i];
+		lmo_ds_ptr->z = lmo_ds2[2 * lmo_size + i];
+		lmo_ds_ptr->a = lmo_ds2[3 * lmo_size + i];
+		lmo_ds_ptr->b = lmo_ds2[4 * lmo_size + i];
+		lmo_ds_ptr->c = lmo_ds2[5 * lmo_size + i];
 	}
 
-	free(ss);
-	free(lmo_ss);
+	free(ds2), free(lmo_ds2);
 }
 
 static void
-frag_frag_xr_grad(struct efp *efp, const double *lmo_s, const double *lmo_t,
-		  int frag_i, int frag_j, int overlap_idx)
+add_six_vec(int el, int size, const double *vec, six_t *six)
+{
+	double *ptr = (double *)six + el;
+
+	for (int i = 0; i < size; i++, vec++, ptr += 6)
+		*ptr += *vec;
+}
+
+static void
+frag_frag_xr_grad(struct efp *efp, const double *s, const double *t,
+		  const double *lmo_s, const double *lmo_t, int frag_i,
+		  int frag_j, int overlap_idx)
 {
 	struct frag *fr_i = efp->frags + frag_i;
 	struct frag *fr_j = efp->frags + frag_j;
@@ -214,6 +208,22 @@ frag_frag_xr_grad(struct efp *efp, const double *lmo_s, const double *lmo_t,
 				       fr_i->xr_wf, fr_j->xr_wf,
 				       dt, lmo_dt);
 
+	double lmo_tmp[fr_i->n_lmo * fr_j->n_lmo];
+
+	for (int a = 0; a < 3; a++) {
+		transform_integrals(fr_i->n_lmo, fr_j->n_lmo,
+				    fr_i->xr_wf_size, fr_j->xr_wf_size,
+				    fr_i->xr_wf_deriv[a], fr_j->xr_wf,
+				    s, lmo_tmp);
+		add_six_vec(3 + a, fr_i->n_lmo * fr_j->n_lmo, lmo_tmp, lmo_ds);
+
+		transform_integrals(fr_i->n_lmo, fr_j->n_lmo,
+				    fr_i->xr_wf_size, fr_j->xr_wf_size,
+				    fr_i->xr_wf_deriv[a], fr_j->xr_wf,
+				    t, lmo_tmp);
+		add_six_vec(3 + a, fr_i->n_lmo * fr_j->n_lmo, lmo_tmp, lmo_dt);
+	}
+
 	for (int i = 0, idx = overlap_idx; i < fr_i->n_lmo; i++) {
 		for (int j = 0; j < fr_j->n_lmo; j++, idx++) {
 			int ij = i * fr_j->n_lmo + j;
@@ -233,6 +243,58 @@ frag_frag_xr_grad(struct efp *efp, const double *lmo_s, const double *lmo_t,
 
 	free(ds), free(lmo_ds);
 	free(dt), free(lmo_dt);
+}
+
+static double
+lmo_lmo_xr_energy(struct frag *fr_i, struct frag *fr_j, int i, int j,
+		  const double *lmo_s, const double *lmo_t)
+{
+	double s_ij = lmo_s[i * fr_j->n_lmo + j];
+	double t_ij = lmo_t[i * fr_j->n_lmo + j];
+	double r_ij = vec_dist(fr_i->lmo_centroids + i,
+			       fr_j->lmo_centroids + j);
+
+	double exr = 0.0;
+
+	/* xr - first part */
+	if (fabs(s_ij) > integral_threshold)
+		exr += -2.0 * sqrt(-2.0 * log(fabs(s_ij)) / PI) * s_ij * s_ij / r_ij;
+
+	/* xr - second part */
+	for (int k = 0; k < fr_i->n_lmo; k++) {
+		exr -= s_ij * lmo_s[k * fr_j->n_lmo + j] *
+				fr_i->xr_fock_mat[fock_idx(i, k)];
+	}
+	for (int l = 0; l < fr_j->n_lmo; l++) {
+		exr -= s_ij * lmo_s[i * fr_j->n_lmo + l] *
+				fr_j->xr_fock_mat[fock_idx(j, l)];
+	}
+	exr += 2.0 * s_ij * t_ij;
+
+	/* xr - third part */
+	for (int jj = 0; jj < fr_j->n_atoms; jj++) {
+		struct efp_atom *at = fr_j->atoms + jj;
+		double r = vec_dist(fr_i->lmo_centroids + i, VEC(at->x));
+		exr -= s_ij * s_ij * valence(at->znuc) / r;
+	}
+	for (int l = 0; l < fr_j->n_lmo; l++) {
+		double r = vec_dist(fr_i->lmo_centroids + i,
+				    fr_j->lmo_centroids + l);
+		exr += 2.0 * s_ij * s_ij / r;
+	}
+	for (int ii = 0; ii < fr_i->n_atoms; ii++) {
+		struct efp_atom *at = fr_i->atoms + ii;
+		double r = vec_dist(fr_j->lmo_centroids + j, VEC(at->x));
+		exr -= s_ij * s_ij * valence(at->znuc) / r;
+	}
+	for (int k = 0; k < fr_i->n_lmo; k++) {
+		double r = vec_dist(fr_i->lmo_centroids + k,
+				    fr_j->lmo_centroids + j);
+		exr += 2.0 * s_ij * s_ij / r;
+	}
+	exr -= s_ij * s_ij / r_ij;
+
+	return 2.0 * exr;
 }
 
 static void
@@ -268,7 +330,6 @@ frag_frag_xr(struct efp *efp, int frag_i, int frag_j, int overlap_idx,
 	for (int i = 0, idx = overlap_idx; i < fr_i->n_lmo; i++) {
 		for (int j = 0; j < fr_j->n_lmo; j++, idx++) {
 			double s_ij = lmo_s[i * fr_j->n_lmo + j];
-			double t_ij = lmo_t[i * fr_j->n_lmo + j];
 			double r_ij = vec_dist(fr_i->lmo_centroids + i,
 					       fr_j->lmo_centroids + j);
 
@@ -280,52 +341,18 @@ frag_frag_xr(struct efp *efp, int frag_i, int frag_j, int overlap_idx,
 			    (efp->opts.elec_damp == EFP_ELEC_DAMP_OVERLAP))
 				ecp += charge_penetration_energy(s_ij, r_ij);
 
-			/* xr - first part */
-			if (fabs(s_ij) > 1.0e-6)
-				exr += -2.0 * sqrt(-2.0 * log(fabs(s_ij)) / PI)
-							* s_ij * s_ij / r_ij;
-
-			/* xr - second part */
-			for (int k = 0; k < fr_i->n_lmo; k++)
-				exr -= s_ij * lmo_s[k * fr_j->n_lmo + j] *
-					fr_i->xr_fock_mat[fock_idx(i, k)];
-			for (int l = 0; l < fr_j->n_lmo; l++)
-				exr -= s_ij * lmo_s[i * fr_j->n_lmo + l] *
-					fr_j->xr_fock_mat[fock_idx(j, l)];
-			exr += 2.0 * s_ij * t_ij;
-
-			/* xr - third part */
-			for (int jj = 0; jj < fr_j->n_atoms; jj++) {
-				struct efp_atom *at = fr_j->atoms + jj;
-				double r = vec_dist(fr_i->lmo_centroids + i,
-							VEC(at->x));
-				exr -= s_ij * s_ij * valence(at->znuc) / r;
-			}
-			for (int l = 0; l < fr_j->n_lmo; l++) {
-				double r = vec_dist(fr_i->lmo_centroids + i,
-						    fr_j->lmo_centroids + l);
-				exr += 2.0 * s_ij * s_ij / r;
-			}
-			for (int ii = 0; ii < fr_i->n_atoms; ii++) {
-				struct efp_atom *at = fr_i->atoms + ii;
-				double r = vec_dist(fr_j->lmo_centroids + j,
-							VEC(at->x));
-				exr -= s_ij * s_ij * valence(at->znuc) / r;
-			}
-			for (int k = 0; k < fr_i->n_lmo; k++) {
-				double r = vec_dist(fr_i->lmo_centroids + k,
-						    fr_j->lmo_centroids + j);
-				exr += 2.0 * s_ij * s_ij / r;
-			}
-			exr -= s_ij * s_ij / r_ij;
+			if (efp->opts.terms & EFP_TERM_XR)
+				exr += lmo_lmo_xr_energy(fr_i, fr_j, i, j,
+							 lmo_s, lmo_t);
 		}
 	}
 
-	*exr_out = 2.0 * exr;
+	*exr_out = exr;
 	*ecp_out = ecp;
 
 	if (efp->do_gradient)
-		frag_frag_xr_grad(efp, lmo_s, lmo_t, frag_i, frag_j, overlap_idx);
+		frag_frag_xr_grad(efp, s, t, lmo_s, lmo_t,
+				  frag_i, frag_j, overlap_idx);
 
 	free(s), free(t);
 }
@@ -333,7 +360,13 @@ frag_frag_xr(struct efp *efp, int frag_i, int frag_j, int overlap_idx,
 enum efp_result
 efp_compute_xr(struct efp *efp)
 {
-	if (!(efp->opts.terms & EFP_TERM_XR))
+	int do_xr = (efp->opts.terms & EFP_TERM_XR);
+	int do_cp = (efp->opts.terms & EFP_TERM_ELEC) &&
+		    (efp->opts.elec_damp == EFP_ELEC_DAMP_OVERLAP);
+	int do_dd = (efp->opts.terms & EFP_TERM_DISP) &&
+		    (efp->opts.disp_damp == EFP_DISP_DAMP_OVERLAP);
+
+	if (!do_xr && !do_cp && !do_dd)
 		return EFP_RESULT_SUCCESS;
 
 	double exr = 0.0;
@@ -454,6 +487,107 @@ rotate_func_f(const mat_t *rotmat, const double *in, double *out)
 			}
 }
 
+static void
+coef_deriv_p(int axis, const double *coef, double *der)
+{
+	switch (axis) {
+	case 0:
+		der[0] = 0.0;
+		der[1] = coef[2];
+		der[2] = -coef[1];
+		break;
+	case 1:
+		der[0] = -coef[2];
+		der[1] = 0.0;
+		der[2] = coef[0];
+		break;
+	case 2:
+		der[0] = coef[1];
+		der[1] = -coef[0];
+		der[2] = 0.0;
+		break;
+	};
+}
+
+static void
+coef_deriv_d(int axis, const double *coef, double *der)
+{
+	const double sqrt3 = sqrt(3.0);
+
+	switch (axis) {
+	case 0:
+		der[0] = 0.0;
+		der[1] = sqrt3 * coef[5];
+		der[2] = -sqrt3 * coef[5];
+		der[3] = coef[4];
+		der[4] = -coef[3];
+		der[5] = 2.0 / sqrt3 * (coef[2] - coef[1]);
+		break;
+	case 1:
+		der[0] = -sqrt3 * coef[4];
+		der[1] = 0.0;
+		der[2] = sqrt3 * coef[4];
+		der[3] = -coef[5];
+		der[4] = 2.0 / sqrt3 * (coef[0] - coef[2]);
+		der[5] = coef[3];
+		break;
+	case 2:
+		der[0] = sqrt3 * coef[3];
+		der[1] = -sqrt3 * coef[3];
+		der[2] = 0.0;
+		der[3] = 2.0 / sqrt3 * (coef[1] - coef[0]);
+		der[4] = coef[5];
+		der[5] = -coef[4];
+		break;
+	};
+}
+
+static void
+coef_deriv_f(int axis, const double *coef, double *der)
+{
+	const double sqrt3 = sqrt(3.0);
+	const double sqrt5 = sqrt(5.0);
+
+	switch (axis) {
+	case 0:
+		der[0] = 0.0;
+		der[1] = sqrt5 * coef[6];
+		der[2] = -sqrt5 * coef[8];
+		der[3] = coef[4];
+		der[4] = -coef[3];
+		der[5] = sqrt3 * coef[9];
+		der[6] = -3.0 / sqrt5 * coef[1] + 2.0 * coef[8];
+		der[7] = -sqrt3 * coef[9];
+		der[8] = 3.0 / sqrt5 * coef[2] - 2.0 * coef[6];
+		der[9] = 2.0 / sqrt3 * (coef[7] - coef[5]);
+		break;
+	case 1:
+		der[0] = -sqrt5 * coef[4];
+		der[1] = 0.0;
+		der[2] = sqrt5 * coef[7];
+		der[3] = -sqrt3 * coef[9];
+		der[4] = 3.0 / sqrt5 * coef[0] - 2.0 * coef[7];
+		der[5] = -coef[6];
+		der[6] = coef[5];
+		der[7] = -3.0 / sqrt5 * coef[2] + 2.0 * coef[4];
+		der[8] = sqrt3 * coef[9];
+		der[9] = 2.0 / sqrt3 * (coef[3] - coef[8]);
+		break;
+	case 2:
+		der[0] = sqrt5 * coef[3];
+		der[1] = -sqrt5 * coef[5];
+		der[2] = 0.0;
+		der[3] = -3.0 / sqrt5 * coef[0] + 2.0 * coef[5];
+		der[4] = sqrt3 * coef[9];
+		der[5] = 3.0 / sqrt5 * coef[1] - 2.0 * coef[3];
+		der[6] = -sqrt3 * coef[9];
+		der[7] = coef[8];
+		der[8] = -coef[7];
+		der[9] = 2.0 / sqrt3 * (coef[6] - coef[4]);
+		break;
+	};
+}
+
 void
 efp_update_xr(struct frag *frag)
 {
@@ -471,9 +605,14 @@ efp_update_xr(struct frag *frag)
 			VEC(frag->xr_shells[i].x));
 
 	/* rotate wavefunction */
-	for (int lmo = 0; lmo < frag->n_lmo; lmo++) {
-		const double *in = frag->lib->xr_wf + lmo * frag->xr_wf_size;
-		double *out = frag->xr_wf + lmo * frag->xr_wf_size;
+	for (int k = 0; k < frag->n_lmo; k++) {
+		double *deriv[3];
+
+		for (int a = 0; a < 3; a++)
+			deriv[a] = frag->xr_wf_deriv[a] + k * frag->xr_wf_size;
+
+		const double *in = frag->lib->xr_wf + k * frag->xr_wf_size;
+		double *out = frag->xr_wf + k * frag->xr_wf_size;
 
 		for (int i = 0, func = 0; i < frag->n_xr_shells; i++) {
 			switch (frag->xr_shells[i].type) {
@@ -486,14 +625,26 @@ efp_update_xr(struct frag *frag)
 			case 'P':
 				mat_vec(rotmat, (const vec_t *)(in + func),
 						(vec_t *)(out + func));
+
+				for (int a = 0; a < 3; a++)
+					coef_deriv_p(a, out + func, deriv[a] + func);
+
 				func += 3;
 				break;
 			case 'D':
 				rotate_func_d(rotmat, in + func, out + func);
+
+				for (int a = 0; a < 3; a++)
+					coef_deriv_d(a, out + func, deriv[a] + func);
+
 				func += 6;
 				break;
 			case 'F':
 				rotate_func_f(rotmat, in + func, out + func);
+
+				for (int a = 0; a < 3; a++)
+					coef_deriv_f(a, out + func, deriv[a] + func);
+
 				func += 10;
 				break;
 			}

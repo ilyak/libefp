@@ -128,6 +128,9 @@ struct frag {
 	/* exchange repulsion wavefunction, size = n_lmo * xr_wf_size */
 	double *xr_wf;
 
+	/* rotational derivatives of MO coefficients */
+	double *xr_wf_deriv[3];
+
 	/* overlap integrals; used for overlap-based dispersion damping */
 	double *overlap_int;
 
@@ -183,33 +186,11 @@ add_force_torque(struct frag *fr_i, struct frag *fr_j,
 	vec_t torque_i = vec_cross(&dr_i, force);
 	vec_t torque_j = vec_cross(&dr_j, force);
 
-	#pragma omp atomic
-	fr_i->force.x += force->x;
-	#pragma omp atomic
-	fr_i->force.y += force->y;
-	#pragma omp atomic
-	fr_i->force.z += force->z;
+	vec_atomic_add(&fr_i->force, force);
+	vec_atomic_add(&fr_i->torque, &torque_i);
 
-	#pragma omp atomic
-	fr_i->torque.x += torque_i.x;
-	#pragma omp atomic
-	fr_i->torque.y += torque_i.y;
-	#pragma omp atomic
-	fr_i->torque.z += torque_i.z;
-
-	#pragma omp atomic
-	fr_j->force.x -= force->x;
-	#pragma omp atomic
-	fr_j->force.y -= force->y;
-	#pragma omp atomic
-	fr_j->force.z -= force->z;
-
-	#pragma omp atomic
-	fr_j->torque.x -= torque_j.x;
-	#pragma omp atomic
-	fr_j->torque.y -= torque_j.y;
-	#pragma omp atomic
-	fr_j->torque.z -= torque_j.z;
+	vec_atomic_sub(&fr_j->force, force);
+	vec_atomic_sub(&fr_j->torque, &torque_j);
 }
 
 static inline void
@@ -231,33 +212,11 @@ add_force_torque_2(struct frag *fr_i, struct frag *fr_j,
 	torque_j.y += add_j->y;
 	torque_j.z += add_j->z;
 
-	#pragma omp atomic
-	fr_i->force.x += force->x;
-	#pragma omp atomic
-	fr_i->force.y += force->y;
-	#pragma omp atomic
-	fr_i->force.z += force->z;
+	vec_atomic_add(&fr_i->force, force);
+	vec_atomic_add(&fr_i->torque, &torque_i);
 
-	#pragma omp atomic
-	fr_i->torque.x += torque_i.x;
-	#pragma omp atomic
-	fr_i->torque.y += torque_i.y;
-	#pragma omp atomic
-	fr_i->torque.z += torque_i.z;
-
-	#pragma omp atomic
-	fr_j->force.x -= force->x;
-	#pragma omp atomic
-	fr_j->force.y -= force->y;
-	#pragma omp atomic
-	fr_j->force.z -= force->z;
-
-	#pragma omp atomic
-	fr_j->torque.x -= torque_j.x;
-	#pragma omp atomic
-	fr_j->torque.y -= torque_j.y;
-	#pragma omp atomic
-	fr_j->torque.z -= torque_j.z;
+	vec_atomic_sub(&fr_j->force, force);
+	vec_atomic_sub(&fr_j->torque, &torque_j);
 }
 
 static inline void
@@ -272,26 +231,10 @@ add_force_torque_frag_point(struct frag *fr_i, const vec_t *pt_i,
 	torque_i.y += add_i->y;
 	torque_i.z += add_i->z;
 
-	#pragma omp atomic
-	fr_i->force.x += force->x;
-	#pragma omp atomic
-	fr_i->force.y += force->y;
-	#pragma omp atomic
-	fr_i->force.z += force->z;
+	vec_atomic_add(&fr_i->force, force);
+	vec_atomic_add(&fr_i->torque, &torque_i);
 
-	#pragma omp atomic
-	fr_i->torque.x += torque_i.x;
-	#pragma omp atomic
-	fr_i->torque.y += torque_i.y;
-	#pragma omp atomic
-	fr_i->torque.z += torque_i.z;
-
-	#pragma omp atomic
-	grad_j->x -= force->x;
-	#pragma omp atomic
-	grad_j->y -= force->y;
-	#pragma omp atomic
-	grad_j->z -= force->z;
+	vec_atomic_sub(grad_j, force);
 }
 
 #endif /* LIBEFP_EFP_PRIVATE_H */
