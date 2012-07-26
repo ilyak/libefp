@@ -125,23 +125,23 @@ disp_overlap(struct frag *fr_i, struct frag *fr_j, int pt_i_idx,
 		vec_t dr_j = vec_sub(VEC(pt_j->x), VEC(fr_j->x));
 		vec_t dr_com = vec_sub(VEC(fr_j->x), VEC(fr_i->x));
 
-		force.x = t1 * dr.x + t2 * ds_ij.x;
-		force.y = t1 * dr.y + t2 * ds_ij.y;
-		force.z = t1 * dr.z + t2 * ds_ij.z;
+		force.x = t1 * dr.x - t2 * ds_ij.x;
+		force.y = t1 * dr.y - t2 * ds_ij.y;
+		force.z = t1 * dr.z - t2 * ds_ij.z;
 
-		torque_i.x = t1 * (dr.z * dr_i.y - dr.y * dr_i.z) +
-			     t2 * (ds_ij.z * dr_com.y - ds_ij.y * dr_com.z) -
+		torque_i.x = t1 * (dr.z * dr_i.y - dr.y * dr_i.z) + t2 * ds_ij.a;
+		torque_i.y = t1 * (dr.x * dr_i.z - dr.z * dr_i.x) + t2 * ds_ij.b;
+		torque_i.z = t1 * (dr.y * dr_i.x - dr.x * dr_i.y) + t2 * ds_ij.c;
+
+		torque_j.x = t1 * (dr.z * dr_j.y - dr.y * dr_j.z) +
+			     t2 * (ds_ij.z * dr_com.y - ds_ij.y * dr_com.z) +
 			     t2 * ds_ij.a;
-		torque_i.y = t1 * (dr.x * dr_i.z - dr.z * dr_i.x) +
-			     t2 * (ds_ij.x * dr_com.z - ds_ij.z * dr_com.x) -
+		torque_j.y = t1 * (dr.x * dr_j.z - dr.z * dr_j.x) +
+			     t2 * (ds_ij.x * dr_com.z - ds_ij.z * dr_com.x) +
 			     t2 * ds_ij.b;
-		torque_i.z = t1 * (dr.y * dr_i.x - dr.x * dr_i.y) +
-			     t2 * (ds_ij.y * dr_com.x - ds_ij.x * dr_com.y) -
+		torque_j.z = t1 * (dr.y * dr_j.x - dr.x * dr_j.y) +
+			     t2 * (ds_ij.y * dr_com.x - ds_ij.x * dr_com.y) +
 			     t2 * ds_ij.c;
-
-		torque_j.x = t1 * (dr.z * dr_j.y - dr.y * dr_j.z) + t2 * ds_ij.a;
-		torque_j.y = t1 * (dr.x * dr_j.z - dr.z * dr_j.x) + t2 * ds_ij.b;
-		torque_j.z = t1 * (dr.y * dr_j.x - dr.x * dr_j.y) + t2 * ds_ij.c;
 
 		vec_atomic_add(&fr_i->force, &force);
 		vec_atomic_add(&fr_i->torque, &torque_i);
