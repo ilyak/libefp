@@ -32,8 +32,9 @@ static const struct test_data test_data = {
 	.fragname = fragname,
 	.geometry_points = geometry,
 		/* elec + pol + disp + xr from GAMESS */
-	.ref_energy = 0.0,
-	.energy_accuracy = 6,
+	.ref_energy = -0.0091760727 + -0.0034649076 +
+		      -0.0158589370 +  0.0205771978,
+	.energy_accuracy = 5,
 //	.test_gradient = 1,
 	.opts = {
 		.terms = EFP_TERM_ELEC | EFP_TERM_POL |
