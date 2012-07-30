@@ -65,7 +65,7 @@ charge_penetration_energy(double s_ij, double r_ij)
 static void
 charge_penetration_grad(struct frag *fr_i, struct frag *fr_j,
 			int lmo_i_idx, int lmo_j_idx, double s_ij,
-			const six_t *ds_ij)
+			const six_t ds_ij)
 {
 	if (fabs(s_ij) < integral_threshold)
 		return;
@@ -84,16 +84,16 @@ charge_penetration_grad(struct frag *fr_i, struct frag *fr_j,
 
 	vec_t force, torque_i, torque_j;
 
-	force.x = t2 * ds_ij->x + t1 * dr.x;
-	force.y = t2 * ds_ij->y + t1 * dr.y;
-	force.z = t2 * ds_ij->z + t1 * dr.z;
+	force.x = t2 * ds_ij.x + t1 * dr.x;
+	force.y = t2 * ds_ij.y + t1 * dr.y;
+	force.z = t2 * ds_ij.z + t1 * dr.z;
 
-	torque_i.x = -t2 * ds_ij->a - t1 * (dr.y * (ct_i->z - fr_i->z) -
-					    dr.z * (ct_i->y - fr_i->y));
-	torque_i.y = -t2 * ds_ij->b - t1 * (dr.z * (ct_i->x - fr_i->x) -
-					    dr.x * (ct_i->z - fr_i->z));
-	torque_i.z = -t2 * ds_ij->c - t1 * (dr.x * (ct_i->y - fr_i->y) -
-					    dr.y * (ct_i->x - fr_i->x));
+	torque_i.x = -t2 * ds_ij.a - t1 * (dr.y * (ct_i->z - fr_i->z) -
+					   dr.z * (ct_i->y - fr_i->y));
+	torque_i.y = -t2 * ds_ij.b - t1 * (dr.z * (ct_i->x - fr_i->x) -
+					   dr.x * (ct_i->z - fr_i->z));
+	torque_i.z = -t2 * ds_ij.c - t1 * (dr.x * (ct_i->y - fr_i->y) -
+					   dr.y * (ct_i->x - fr_i->x));
 
 	torque_j.x = torque_i.x + force.y * (fr_j->z - fr_i->z) -
 				  force.z * (fr_j->y - fr_i->y);
@@ -180,6 +180,229 @@ add_six_vec(int el, int size, const double *vec, six_t *six)
 }
 
 static void
+lmo_lmo_xr_grad(struct frag *fr_i, struct frag *fr_j, int i, int j,
+		const double *lmo_s, const double *lmo_t, const six_t *lmo_ds,
+		const six_t *lmo_dt)
+{
+	int ij = i * fr_j->n_lmo + j;
+
+	const vec_t *ct_i = fr_i->lmo_centroids + i;
+	const vec_t *ct_j = fr_j->lmo_centroids + j;
+
+	vec_t dr = vec_sub(ct_j, ct_i);
+
+	double s_ij = lmo_s[ij];
+	double t_ij = lmo_t[ij];
+	double r_ij = vec_len(&dr);
+	double r_ij3 = r_ij * r_ij * r_ij;
+
+	six_t ds_ij = lmo_ds[ij];
+	six_t dt_ij = lmo_dt[ij];
+
+	double t1, t2;
+	vec_t force, torque_i, torque_j;
+
+	vec_zero(&force);
+	vec_zero(&torque_i);
+
+	/* first part */
+	if (fabs(s_ij) > integral_threshold) {
+		double ln_s = log(fabs(s_ij));
+
+		t1 = s_ij / r_ij * (-sqrt(-2.0 / PI / ln_s) + 4.0 * sqrt(-2.0 / PI * ln_s));
+		t2 = 2.0 * sqrt(-2.0 / PI * ln_s) * s_ij * s_ij / r_ij3;
+
+		force.x += -t1 * ds_ij.x - t2 * dr.x;
+		force.y += -t1 * ds_ij.y - t2 * dr.y;
+		force.z += -t1 * ds_ij.z - t2 * dr.z;
+
+		torque_i.x += t1 * ds_ij.a + t2 * (dr.y * (ct_i->z - fr_i->z) -
+						   dr.z * (ct_i->y - fr_i->y));
+		torque_i.y += t1 * ds_ij.b + t2 * (dr.z * (ct_i->x - fr_i->x) -
+						   dr.x * (ct_i->z - fr_i->z));
+		torque_i.z += t1 * ds_ij.c + t2 * (dr.x * (ct_i->y - fr_i->y) -
+						   dr.y * (ct_i->x - fr_i->x));
+	}
+
+	/* second part */
+	six_t dfij, dfji;
+	double fij = 0.0, fji = 0.0;
+
+	memset(&dfij, 0, sizeof(six_t));
+	memset(&dfji, 0, sizeof(six_t));
+
+	for (int k = 0; k < fr_i->n_lmo; k++) {
+		double fe = fr_i->xr_fock_mat[fock_idx(i, k)];
+		const six_t *ds = lmo_ds + k * fr_j->n_lmo + j;
+
+		fij += fe * lmo_s[k * fr_j->n_lmo + j];
+
+		dfij.x += fe * ds->x;
+		dfij.y += fe * ds->y;
+		dfij.z += fe * ds->z;
+		dfij.a += fe * ds->a;
+		dfij.b += fe * ds->b;
+		dfij.c += fe * ds->c;
+	}
+
+	for (int l = 0; l < fr_j->n_lmo; l++) {
+		double fe = fr_j->xr_fock_mat[fock_idx(j, l)];
+		const six_t *ds = lmo_ds + i * fr_j->n_lmo + l;
+
+		fji += fe * lmo_s[i * fr_j->n_lmo + l];
+
+		dfji.x += fe * ds->x;
+		dfji.y += fe * ds->y;
+		dfji.z += fe * ds->z;
+		dfji.a += fe * ds->a;
+		dfji.b += fe * ds->b;
+		dfji.c += fe * ds->c;
+	}
+
+	t1 = (fij + fji - 2.0 * t_ij);
+
+	force.x += -t1 * ds_ij.x - s_ij * (dfij.x + dfji.x - 2.0 * dt_ij.x);
+	force.y += -t1 * ds_ij.y - s_ij * (dfij.y + dfji.y - 2.0 * dt_ij.y);
+	force.z += -t1 * ds_ij.z - s_ij * (dfij.z + dfji.z - 2.0 * dt_ij.z);
+
+	torque_i.x += t1 * ds_ij.a + s_ij * (dfij.a + dfji.a - 2.0 * dt_ij.a);
+	torque_i.y += t1 * ds_ij.b + s_ij * (dfij.b + dfji.b - 2.0 * dt_ij.b);
+	torque_i.z += t1 * ds_ij.c + s_ij * (dfij.c + dfji.c - 2.0 * dt_ij.c);
+
+	/* third part */
+	six_t dvib, dvja;
+	double vib = 0.0, vja = 0.0;
+
+	memset(&dvib, 0, sizeof(six_t));
+	memset(&dvja, 0, sizeof(six_t));
+
+	for (int l = 0; l < fr_j->n_atoms; l++) {
+		struct efp_atom *at_l = fr_j->atoms + l;
+
+		vec_t dr_a = vec_sub(ct_i, VEC(at_l->x));
+		double r = vec_len(&dr_a);
+
+		vib -= valence(at_l->znuc) / r;
+
+		double tmp = valence(at_l->znuc) / (r * r * r);
+
+		dvib.x += tmp * dr_a.x;
+		dvib.y += tmp * dr_a.y;
+		dvib.z += tmp * dr_a.z;
+
+		dvib.a += tmp * (dr_a.y * (ct_i->z - fr_i->z) -
+				 dr_a.z * (ct_i->y - fr_i->y));
+		dvib.b += tmp * (dr_a.z * (ct_i->x - fr_i->x) -
+				 dr_a.x * (ct_i->z - fr_i->z));
+		dvib.c += tmp * (dr_a.x * (ct_i->y - fr_i->y) -
+				 dr_a.y * (ct_i->x - fr_i->x));
+	}
+
+	for (int l = 0; l < fr_j->n_lmo; l++) {
+		vec_t *ct_l = fr_j->lmo_centroids + l;
+
+		vec_t dr_a = vec_sub(ct_i, ct_l);
+		double r = vec_len(&dr_a);
+
+		vib += 2.0 / r;
+
+		double tmp = 2.0 / (r * r * r);
+
+		dvib.x -= tmp * dr_a.x;
+		dvib.y -= tmp * dr_a.y;
+		dvib.z -= tmp * dr_a.z;
+
+		dvib.a -= tmp * (dr_a.y * (ct_i->z - fr_i->z) -
+				 dr_a.z * (ct_i->y - fr_i->y));
+		dvib.b -= tmp * (dr_a.z * (ct_i->x - fr_i->x) -
+				 dr_a.x * (ct_i->z - fr_i->z));
+		dvib.c -= tmp * (dr_a.x * (ct_i->y - fr_i->y) -
+				 dr_a.y * (ct_i->x - fr_i->x));
+	}
+
+	for (int k = 0; k < fr_i->n_atoms; k++) {
+		struct efp_atom *at_k = fr_i->atoms + k;
+
+		vec_t dr_a = vec_sub(VEC(at_k->x), ct_j);
+		double r = vec_len(&dr_a);
+
+		vja -= valence(at_k->znuc) / r;
+
+		double tmp = valence(at_k->znuc) / (r * r * r);
+
+		dvja.x += tmp * dr_a.x;
+		dvja.y += tmp * dr_a.y;
+		dvja.z += tmp * dr_a.z;
+
+		dvja.a += tmp * (dr_a.y * (at_k->z - fr_i->z) -
+				 dr_a.z * (at_k->y - fr_i->y));
+		dvja.b += tmp * (dr_a.z * (at_k->x - fr_i->x) -
+				 dr_a.x * (at_k->z - fr_i->z));
+		dvja.c += tmp * (dr_a.x * (at_k->y - fr_i->y) -
+				 dr_a.y * (at_k->x - fr_i->x));
+	}
+
+	for (int k = 0; k < fr_i->n_lmo; k++) {
+		vec_t *ct_k = fr_i->lmo_centroids + k;
+
+		vec_t dr_a = vec_sub(ct_k, ct_j);
+		double r = vec_len(&dr_a);
+
+		vja += 2.0 / r;
+
+		double tmp = 2.0 / (r * r * r);
+
+		dvja.x -= tmp * dr_a.x;
+		dvja.y -= tmp * dr_a.y;
+		dvja.z -= tmp * dr_a.z;
+
+		dvja.a -= tmp * (dr_a.y * (ct_k->z - fr_i->z) -
+				 dr_a.z * (ct_k->y - fr_i->y));
+		dvja.b -= tmp * (dr_a.z * (ct_k->x - fr_i->x) -
+				 dr_a.x * (ct_k->z - fr_i->z));
+		dvja.c -= tmp * (dr_a.x * (ct_k->y - fr_i->y) -
+				 dr_a.y * (ct_k->x - fr_i->x));
+	}
+
+	t1 = 2.0 * s_ij * (vib + vja - 1.0 / r_ij);
+
+	force.x += t1 * ds_ij.x + s_ij * s_ij * (dvib.x + dvja.x - dr.x / r_ij3);
+	force.y += t1 * ds_ij.y + s_ij * s_ij * (dvib.y + dvja.y - dr.y / r_ij3);
+	force.z += t1 * ds_ij.z + s_ij * s_ij * (dvib.z + dvja.z - dr.z / r_ij3);
+
+	torque_i.x += -t1 * ds_ij.a - s_ij * s_ij * (dvib.a + dvja.a -
+			(dr.y * (ct_i->z - fr_i->z) -
+			 dr.z * (ct_i->y - fr_i->y)) / r_ij3);
+	torque_i.y += -t1 * ds_ij.b - s_ij * s_ij * (dvib.b + dvja.b -
+			(dr.z * (ct_i->x - fr_i->x) -
+			 dr.x * (ct_i->z - fr_i->z)) / r_ij3);
+	torque_i.z += -t1 * ds_ij.c - s_ij * s_ij * (dvib.c + dvja.c -
+			(dr.x * (ct_i->y - fr_i->y) -
+			 dr.y * (ct_i->x - fr_i->x)) / r_ij3);
+
+	force.x *= 2.0;
+	force.y *= 2.0;
+	force.z *= 2.0;
+
+	torque_i.x *= 2.0;
+	torque_i.y *= 2.0;
+	torque_i.z *= 2.0;
+
+	torque_j.x = torque_i.x + force.y * (fr_j->z - fr_i->z) -
+				  force.z * (fr_j->y - fr_i->y);
+	torque_j.y = torque_i.y + force.z * (fr_j->x - fr_i->x) -
+				  force.x * (fr_j->z - fr_i->z);
+	torque_j.z = torque_i.z + force.x * (fr_j->y - fr_i->y) -
+				  force.y * (fr_j->x - fr_i->x);
+
+	vec_atomic_add(&fr_i->force, &force);
+	vec_atomic_add(&fr_i->torque, &torque_i);
+
+	vec_atomic_sub(&fr_j->force, &force);
+	vec_atomic_sub(&fr_j->torque, &torque_j);
+}
+
+static void
 frag_frag_xr_grad(struct efp *efp, const double *s, const double *t,
 		  const double *lmo_s, const double *lmo_t, int frag_i,
 		  int frag_j, int overlap_idx)
@@ -229,15 +452,17 @@ frag_frag_xr_grad(struct efp *efp, const double *s, const double *t,
 			int ij = i * fr_j->n_lmo + j;
 
 			if ((efp->opts.terms & EFP_TERM_DISP) &&
-			    (efp->opts.disp_damp == EFP_DISP_DAMP_OVERLAP)) {
+			    (efp->opts.disp_damp == EFP_DISP_DAMP_OVERLAP))
 				fr_i->overlap_int_deriv[idx] = lmo_ds[ij];
-			}
 
 			if ((efp->opts.terms & EFP_TERM_ELEC) &&
-			    (efp->opts.elec_damp == EFP_ELEC_DAMP_OVERLAP)) {
+			    (efp->opts.elec_damp == EFP_ELEC_DAMP_OVERLAP))
 				charge_penetration_grad(fr_i, fr_j, i, j,
-							lmo_s[ij], lmo_ds + ij);
-			}
+							lmo_s[ij], lmo_ds[ij]);
+
+			if (efp->opts.terms & EFP_TERM_XR)
+				lmo_lmo_xr_grad(fr_i, fr_j, i, j, lmo_s, lmo_t,
+						lmo_ds, lmo_dt);
 		}
 	}
 
