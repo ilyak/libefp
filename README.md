@@ -69,13 +69,6 @@ In the above command `CBLAS_LIBS` are CBLAS libraries. You should substitute
 of your choice. Probably you want to use the same `CBLAS_LIBS` as you specified
 during configuration.
 
-You can use pkg-config to easily get all required arguments:
-
-	gcc -o prog prog.c $(pkg-config --libs --cflags libefp)
-
-In this case the program will be linked against CBLAS libraries specified
-during configuration.
-
 
 ## How to create custom EFP fragment types
 

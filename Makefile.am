@@ -13,18 +13,6 @@ AM_CPPFLAGS = \
 AM_CFLAGS = ${my_CFLAGS} ${OPENMP_CFLAGS} \
 	-fvisibility=hidden
 
-SED_PROCESS = \
-	$(AM_V_GEN)$(MKDIR_P) $(dir $@) && $(SED) \
-	-e 's,@VERSION\@,$(VERSION),g' \
-	-e 's,@prefix\@,$(prefix),g' \
-	-e 's,@exec_prefix\@,$(exec_prefix),g' \
-	-e 's,@libdir\@,$(libdir),g' \
-	-e 's,@includedir\@,$(includedir),g' \
-	< $< > $@ || rm $@
-
-%.pc: %.pc.in Makefile
-	$(SED_PROCESS)
-
 LIBEFP_CURRENT = 0
 LIBEFP_REVISION = 0
 LIBEFP_AGE = 0
@@ -83,11 +71,6 @@ src_libefp_la_LDFLAGS = $(AM_LDFLAGS) \
 	-version-info $(LIBEFP_CURRENT):$(LIBEFP_REVISION):$(LIBEFP_AGE) \
 	-Wl,--version-script=$(top_srcdir)/src/libefp.sym
 src_libefp_la_DEPENDENCIES = ${top_srcdir}/src/libefp.sym
-
-pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = src/libefp.pc
-EXTRA_DIST += src/libefp.pc.in
-CLEANFILES += src/libefp.pc
 
 efpmd_efpmd_SOURCES = \
 	common/phys_const.h \

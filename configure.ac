@@ -7,8 +7,7 @@ AC_INIT([libefp],
 AC_CONFIG_SRCDIR([src/efp.c])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([
-	foreign 1.11 -Wall -Wno-portability silent-rules tar-pax
-	no-dist-gzip dist-xz subdir-objects color-tests
+	foreign 1.11 -Wall silent-rules subdir-objects color-tests
 ])
 AC_PROG_CC_STDC
 AC_OPENMP
