@@ -3,7 +3,6 @@
  *
  * \section API Public API Documentation
  *
- * The library is still in active development and API is UNSTABLE.
  * Documentation for public API is available <a href="efp_8h.html">here</a>.
  * For additional information see
  * <a href="http://github.com/libefp/libefp/blob/master/README.md">README</a>

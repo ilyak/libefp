@@ -80,16 +80,26 @@ enum efp_result {
 
 /** Flags to specify EFP energy terms. */
 enum efp_term {
-	EFP_TERM_ELEC = 1 << 0,     /**< EFP/EFP electrostatics */
-	EFP_TERM_POL = 1 << 1,      /**< EFP/EFP polarization */
-	EFP_TERM_DISP = 1 << 2,     /**< EFP/EFP dispersion */
-	EFP_TERM_XR = 1 << 3,       /**< EFP/EFP exchange repulsion */
-	EFP_TERM_CHTR = 1 << 4,     /**< EFP/EFP charge transfer, reserved */
-	EFP_TERM_AI_ELEC = 1 << 5,  /**< Ab initio/EFP electrostatics */
-	EFP_TERM_AI_POL = 1 << 6,   /**< Ab initio/EFP polarization */
-	EFP_TERM_AI_DISP = 1 << 7,  /**< Ab initio/EFP dispersion */
-	EFP_TERM_AI_XR = 1 << 8,    /**< Ab initio/EFP exchange repulsion */
-	EFP_TERM_AI_CHTR = 1 << 9   /**< Ab initio/EFP charge transfer, reserved */
+	/** EFP/EFP electrostatics. */
+	EFP_TERM_ELEC = 1 << 0,
+	/** EFP/EFP polarization. */
+	EFP_TERM_POL = 1 << 1,
+	/** EFP/EFP dispersion. */
+	EFP_TERM_DISP = 1 << 2,
+	/** EFP/EFP exchange repulsion. */
+	EFP_TERM_XR = 1 << 3,
+	/** EFP/EFP charge transfer, reserved for future use. */
+	EFP_TERM_CHTR = 1 << 4,
+	/** Ab initio/EFP electrostatics. */
+	EFP_TERM_AI_ELEC = 1 << 5,
+	/** Ab initio/EFP polarization. */
+	EFP_TERM_AI_POL = 1 << 6,
+	/** Ab initio/EFP dispersion, reserved for future use. */
+	EFP_TERM_AI_DISP = 1 << 7,
+	/** Ab initio/EFP exchange repulsion, reserved for future use. */
+	EFP_TERM_AI_XR = 1 << 8,
+	/** Ab initio/EFP charge transfer, reserved for future use. */
+	EFP_TERM_AI_CHTR = 1 << 9
 };
 
 /** Fragment-fragment dispersion damping type. */
@@ -101,7 +111,7 @@ enum efp_disp_damp {
 
 /** Fragment-fragment electrostatic damping type. */
 enum efp_elec_damp {
-	EFP_ELEC_DAMP_SCREEN = 0,  /**< SCREEN controlled damping (default). */
+	EFP_ELEC_DAMP_SCREEN = 0,  /**< SCREEN-controlled damping (default). */
 	EFP_ELEC_DAMP_OVERLAP,     /**< Overlap-based damping. */
 	EFP_ELEC_DAMP_OFF          /**< No electrostatic damping. */
 };
