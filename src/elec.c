@@ -33,7 +33,7 @@ get_screen_damping(double r_ij, double pi, double pj)
 	if (pj == HUGE_VAL) {   /* j is nucleus */
 		return 1.0 - exp(-pi * r_ij);
 	}
-	else if (fabs((pi - pj) * r_ij) < 1.0e-5) {
+	else if (fabs(pi - pj) < 1.0e-5) {
 		return 1.0 - (1.0 + 0.5 * pi * r_ij) * exp(-pi * r_ij);
 	}
 	else {
@@ -48,7 +48,7 @@ get_screen_damping_grad(double r_ij, double pi, double pj)
 	if (pj == HUGE_VAL) {   /* j is nucleus */
 		return 1.0 - exp(-r_ij * pi) * (1.0 + pi * r_ij);
 	}
-	else if (fabs((pi - pj) * r_ij) < 1.0e-5) {
+	else if (fabs(pi - pj) < 1.0e-5) {
 		return 1.0 - exp(-r_ij * pi) * (1.0 + pi * r_ij +
 						0.5 * pi * pi * r_ij * r_ij);
 	}
