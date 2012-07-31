@@ -31,8 +31,8 @@ static const struct test_data test_data = {
 	.potential_files = potential_files,
 	.fragname = fragname,
 	.geometry_points = geometry,
-	.ref_energy = -0.0091760727, /* from GAMESS */
-	.energy_accuracy = 6,
+		/* elec from GAMESS */
+	.ref_energy = -0.0091760727,
 	.test_gradient = 1,
 	.opts = {
 		.terms = EFP_TERM_ELEC

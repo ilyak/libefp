@@ -40,15 +40,9 @@ error(const char *title, enum efp_result res)
 }
 
 static int
-eq(double a, double b, int accuracy)
+eq(double a, double b)
 {
-	if (accuracy == 0)
-		accuracy = 7;
-
-	double eps = 1.0;
-
-	while (accuracy--)
-		eps /= 10.0;
+	static const double eps = 5.0e-6;
 
 	return fabs(a - b) < eps;
 }
@@ -112,7 +106,7 @@ test_numerical_gradient(struct efp *efp,
 		grad_euler[5] = sinb * sina * tx - sinb * cosa * ty + cosb * tz;
 
 		for (int j = 0; j < 6; j++)
-			if (!eq(grad_num[j], grad_euler[j], 6))
+			if (!eq(grad_num[j], grad_euler[j]))
 				result = 1;
 	}
 	return result;
@@ -199,8 +193,7 @@ int run_test(const struct test_data *test_data)
 		goto fail;
 	}
 
-	if (!eq(energy.total, test_data->ref_energy,
-				test_data->energy_accuracy)) {
+	if (!eq(energy.total, test_data->ref_energy)) {
 		message("wrong energy");
 		status = EXIT_FAILURE;
 	}

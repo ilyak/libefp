@@ -59,14 +59,6 @@ struct test_data {
 	/** Reference energy value. */
 	double ref_energy;
 
-	/**
-	 * Specifies accuracy for comparison of energy values.
-	 *
-	 * The test will pass if energy differs from reference value by less
-	 * than (10 ^ -n), where n is energy_accuracy. If zero value is
-	 * specified then the default value of 7 is used. */
-	int energy_accuracy;
-
 	/** If nonzero gradient test will also be performed. */
 	int test_gradient;
 
