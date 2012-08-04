@@ -27,9 +27,7 @@
 #include "common.h"
 #include "sim.h"
 
-int sim_nvt(struct efp *efp,
-	    const struct config *config,
-	    struct sys *sys)
+void sim_nvt(struct efp *efp, const struct config *config)
 {
-	return error("Not implemented.");
+	error("NVT IS NOT IMPLEMENTED");
 }

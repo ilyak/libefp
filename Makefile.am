@@ -83,6 +83,8 @@ efpmd_efpmd_SOURCES = \
 	efpmd/main.c \
 	efpmd/nve.c \
 	efpmd/nvt.c \
+	efpmd/opt.c \
+	efpmd/opt.h \
 	efpmd/parse.c \
 	efpmd/parse.h \
 	efpmd/sim.h \

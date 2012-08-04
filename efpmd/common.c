@@ -26,60 +26,58 @@
 
 #include <assert.h>
 #include <stdarg.h>
+#include <stdlib.h>
 
 #include "common.h"
 
-int error(const char *format, ...)
+void NORETURN die(const char *format, ...)
 {
 	va_list args;
 
-	fprintf(stderr, "ERROR: ");
 	va_start(args, format);
 	vfprintf(stderr, format, args);
 	va_end(args);
 	fprintf(stderr, "\n");
 	fflush(stderr);
 
-	return -1;
+	exit(128);
 }
 
-int lib_error(enum efp_result res)
+void NORETURN error(const char *format, ...)
 {
-	fprintf(stderr, "LIBEFP ");
-	return error("%s.", efp_result_to_string(res));
+	char buf[4096];
+	va_list args;
+
+	va_start(args, format);
+	vsnprintf(buf, sizeof(buf), format, args);
+	va_end(args);
+
+	die("ERROR: %s", buf);
 }
 
-enum efp_result set_coord(struct efp *efp,
-			  const struct config *config,
-			  struct sys *sys)
+void NORETURN lib_error(enum efp_result res)
 {
-	switch (config->coord_type) {
-		case COORD_TYPE_XYZABC:
-			return efp_set_coordinates(efp, sys->frag_coord);
-		case COORD_TYPE_POINTS:
-			return efp_set_coordinates_2(efp, sys->frag_coord);
-	}
-	assert(0);
+	die("LIBEFP ERROR: %s", efp_result_to_string(res));
 }
 
-enum efp_result print_geometry(struct efp *efp)
+void print_geometry(struct efp *efp)
 {
 	int n_frag;
 	enum efp_result res;
 
 	if ((res = efp_get_frag_count(efp, &n_frag)))
-		return res;
+		lib_error(res);
 
 	printf("SYSTEM GEOMETRY (ANGSTROM):\n\n");
 
 	for (int i = 0; i < n_frag; i++) {
 		int n_atoms;
 		if ((res = efp_get_frag_atom_count(efp, i, &n_atoms)))
-			return res;
+			lib_error(res);
 
 		struct efp_atom atoms[n_atoms];
 		if ((res = efp_get_frag_atoms(efp, i, n_atoms, atoms)))
-			return res;
+			lib_error(res);
 
 		for (int a = 0; a < n_atoms; a++) {
 			struct efp_atom *atom = atoms + a;
@@ -92,16 +90,15 @@ enum efp_result print_geometry(struct efp *efp)
 
 	printf("\n\n");
 	fflush(stdout);
-	return EFP_RESULT_SUCCESS;
 }
 
-enum efp_result print_energy(struct efp *efp)
+void print_energy(struct efp *efp)
 {
 	enum efp_result res;
 	struct efp_energy energy;
 
 	if ((res = efp_get_energy(efp, &energy)))
-		return res;
+		lib_error(res);
 
 printf("         ELECTROSTATIC ENERGY = %16.10lf\n", energy.electrostatic);
 printf("          POLARIZATION ENERGY = %16.10lf\n", energy.polarization);
@@ -113,26 +110,25 @@ printf("                 TOTAL ENERGY = %16.10lf\n", energy.total);
 printf("\n\n");
 
 	fflush(stdout);
-	return EFP_RESULT_SUCCESS;
 }
 
-enum efp_result print_gradient(struct efp *efp)
+void print_gradient(struct efp *efp)
 {
 	int n_frag;
 	enum efp_result res;
 
 	if ((res = efp_get_frag_count(efp, &n_frag)))
-		return res;
+		lib_error(res);
 
 	char frag_name[64];
 	double grad[6 * n_frag];
 
 	if ((res = efp_get_gradient(efp, 6 * n_frag, grad)))
-		return res;
+		lib_error(res);
 
 	for (int i = 0; i < n_frag; i++) {
 		if ((res = efp_get_frag_name(efp, i, 64, frag_name)))
-			return res;
+			lib_error(res);
 
 		double *ptr = grad + 6 * i;
 
@@ -144,5 +140,4 @@ printf("\n");
 
 	printf("\n");
 	fflush(stdout);
-	return EFP_RESULT_SUCCESS;
 }

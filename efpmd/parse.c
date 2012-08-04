@@ -26,8 +26,8 @@
 
 #include <assert.h>
 #include <ctype.h>
-#include <math.h>
-#include <stdlib.h>
+#include <stddef.h>
+#include <stdbool.h>
 
 #include "common.h"
 #include "parse.h"
@@ -94,53 +94,84 @@ static void skip_space(struct stream *stream)
 		stream->ptr++;
 }
 
-static double read_double(struct stream *stream)
+static bool parse_string(char **str, void *out)
 {
-	skip_space(stream);
+	size_t len = 0;
+	char *ptr = *str, *start;
 
-	char *endptr;
-	double val = strtod(stream->ptr, &endptr);
-
-	if (endptr == stream->ptr)
-		return NAN;
-
-	stream->ptr = endptr;
-	return val;
-}
-
-static int parse_run_type(struct stream *stream, struct config *config)
-{
-	char *ptr = stream->ptr;
-
-	while (*ptr && !isspace(*ptr))
+	while (*ptr && isspace(*ptr))
 		ptr++;
 
-	config->run_type = c_strndup(stream->ptr, ptr - stream->ptr);
-	stream->ptr = ptr;
-	return 0;
+	if (*ptr == '"') {
+		start = ++ptr;
+
+		while (*ptr && *ptr != '"')
+			ptr++, len++;
+
+		if (!*ptr)
+			return false;
+
+		ptr++;
+	}
+	else {
+		start = ptr;
+
+		while (*ptr && !isspace(*ptr))
+			ptr++, len++;
+	}
+
+	*str = ptr;
+	*(char **)out = u_strndup(start, len);
+	return true;
 }
 
-static int parse_coord(struct stream *stream, struct config *config)
+static bool parse_int(char **str, void *out)
+{
+	char *endptr;
+	int val = strtol(*str, &endptr, 10);
+
+	if (endptr == *str)
+		return false;
+
+	*str = endptr;
+	*(int *)out = val;
+	return true;
+}
+
+static bool parse_double(char **str, void *out)
+{
+	char *endptr;
+	double val = strtod(*str, &endptr);
+
+	if (endptr == *str)
+		return false;
+
+	*str = endptr;
+	*(double *)out = val;
+	return true;
+}
+
+static bool parse_coord(char **str, void *out)
 {
 	static const struct {
 		const char *name;
-		enum coord_type value;
+		enum efp_coord_type value;
 	} list[] = {
-		{ "points", COORD_TYPE_POINTS },
-		{ "xyzabc", COORD_TYPE_XYZABC }
+		{ "points", EFP_COORD_TYPE_POINTS },
+		{ "xyzabc", EFP_COORD_TYPE_XYZABC }
 	};
 
-	for (size_t i = 0; i < ARRAY_SIZE(list); i++)
-		if (strneq(list[i].name, stream->ptr, strlen(list[i].name))) {
-			stream->ptr += strlen(list[i].name);
-			config->coord_type = list[i].value;
-			return 0;
+	for (size_t i = 0; i < ARRAY_SIZE(list); i++) {
+		if (strneq(list[i].name, *str, strlen(list[i].name))) {
+			*str += strlen(list[i].name);
+			*(enum efp_coord_type *)out = list[i].value;
+			return true;
 		}
-
-	return error("Unknown coord option value specified.");
+	}
+	return false;
 }
 
-static int parse_units(struct stream *stream, struct config *config)
+static bool parse_units(char **str, void *out)
 {
 	static const struct {
 		const char *name;
@@ -150,17 +181,17 @@ static int parse_units(struct stream *stream, struct config *config)
 		{ "angs", 1.0 / BOHR_RADIUS }
 	};
 
-	for (size_t i = 0; i < ARRAY_SIZE(list); i++)
-		if (strneq(list[i].name, stream->ptr, strlen(list[i].name))) {
-			stream->ptr += strlen(list[i].name);
-			config->units_factor = list[i].value;
-			return 0;
+	for (size_t i = 0; i < ARRAY_SIZE(list); i++) {
+		if (strneq(list[i].name, *str, strlen(list[i].name))) {
+			*str += strlen(list[i].name);
+			*(double *)out = list[i].value;
+			return true;
 		}
-
-	return error("Unknown units specified.");
+	}
+	return false;
 }
 
-static int parse_terms(struct stream *stream, struct config *config)
+static bool parse_terms(char **str, void *out)
 {
 	static const struct {
 		const char *name;
@@ -172,51 +203,30 @@ static int parse_terms(struct stream *stream, struct config *config)
 		{ "xr",   EFP_TERM_XR   }
 	};
 
-	config->efp_opts.terms = 0;
+	char *ptr = *str;
+	unsigned terms = 0;
 
-	while (*stream->ptr) {
+	while (*ptr) {
 		for (size_t i = 0; i < ARRAY_SIZE(list); i++) {
-			size_t len = strlen(list[i].name);
+			if (strneq(list[i].name, ptr, strlen(list[i].name))) {
+				ptr += strlen(list[i].name);
+				terms |= list[i].value;
 
-			if (strneq(stream->ptr, list[i].name, len)) {
-				stream->ptr += len;
-				config->efp_opts.terms |= list[i].value;
-				goto next;
+				while (*ptr && isspace(*ptr))
+					ptr++;
+			}
+			else {
+				return false;
 			}
 		}
-		return error("Unknown energy term specified.");
-next:
-		skip_space(stream);
 	}
 
-	if (config->efp_opts.terms == 0)
-		return error("At least one energy term is required.");
-
-	return 0;
+	*(unsigned *)out = terms;
+	*str = ptr;
+	return terms != 0;
 }
 
-static int parse_disp_damp(struct stream *stream, struct config *config)
-{
-	static const struct {
-		const char *name;
-		enum efp_disp_damp value;
-	} list[] = {
-		{ "tt",      EFP_DISP_DAMP_TT      },
-		{ "overlap", EFP_DISP_DAMP_OVERLAP },
-		{ "off",     EFP_DISP_DAMP_OFF     }
-	};
-
-	for (size_t i = 0; i < ARRAY_SIZE(list); i++)
-		if (strneq(list[i].name, stream->ptr, strlen(list[i].name))) {
-			stream->ptr += strlen(list[i].name);
-			config->efp_opts.disp_damp = list[i].value;
-			return 0;
-		}
-
-	return error("Unknown dispersion damping type specified.");
-}
-
-static int parse_elec_damp(struct stream *stream, struct config *config)
+static bool parse_elec_damp(char **str, void *out)
 {
 	static const struct {
 		const char *name;
@@ -227,231 +237,138 @@ static int parse_elec_damp(struct stream *stream, struct config *config)
 		{ "off",     EFP_ELEC_DAMP_OFF     }
 	};
 
-	for (size_t i = 0; i < ARRAY_SIZE(list); i++)
-		if (strneq(list[i].name, stream->ptr, strlen(list[i].name))) {
-			stream->ptr += strlen(list[i].name);
-			config->efp_opts.elec_damp = list[i].value;
-			return 0;
+	for (size_t i = 0; i < ARRAY_SIZE(list); i++) {
+		if (strneq(list[i].name, *str, strlen(list[i].name))) {
+			*str += strlen(list[i].name);
+			*(enum efp_elec_damp *)out = list[i].value;
+			return true;
 		}
-
-	return error("Unknown electrostatic damping type specified.");
-}
-
-static char *parse_path(struct stream *stream)
-{
-	char *ptr = stream->ptr;
-
-	if (*stream->ptr == '"') {
-		stream->ptr++;
-
-		while (*stream->ptr && *stream->ptr != '"')
-			stream->ptr++;
-
-		if (!*stream->ptr)
-			return NULL;
 	}
-	else {
-		while (*stream->ptr && !isspace(*stream->ptr))
-			stream->ptr++;
-	}
-
-	return c_strndup(ptr, stream->ptr - ptr);
+	return false;
 }
 
-static int parse_fraglib_path(struct stream *stream, struct config *config)
+static bool parse_disp_damp(char **str, void *out)
 {
-	free(config->fraglib_path);
-	config->fraglib_path = parse_path(stream);
-
-	if (!config->fraglib_path)
-		return error("End quote not found in fraglib_path.");
-
-	return 0;
-}
-
-static int parse_userlib_path(struct stream *stream, struct config *config)
-{
-	free(config->userlib_path);
-	config->userlib_path = parse_path(stream);
-
-	if (!config->userlib_path)
-		return error("End quote not found in userlib_path.");
-
-	return 0;
-}
-
-static int parse_field(struct stream *stream, struct config *config)
-{
-	typedef int (*parse_fn_t)(struct stream *, struct config *);
-
 	static const struct {
 		const char *name;
-		parse_fn_t parse_fn;
+		enum efp_disp_damp value;
 	} list[] = {
-		{ "run_type",     parse_run_type     },
-		{ "coord",        parse_coord        },
-		{ "units",        parse_units        },
-		{ "terms",        parse_terms        },
-		{ "elec_damp",    parse_elec_damp    },
-		{ "disp_damp",    parse_disp_damp    },
-		{ "fraglib_path", parse_fraglib_path },
-		{ "userlib_path", parse_userlib_path }
+		{ "tt",      EFP_DISP_DAMP_TT      },
+		{ "overlap", EFP_DISP_DAMP_OVERLAP },
+		{ "off",     EFP_DISP_DAMP_OFF     }
 	};
 
-	for (size_t i = 0; i < ARRAY_SIZE(list); i++)
-		if (strneq(list[i].name, stream->ptr, strlen(list[i].name))) {
-			stream->ptr += strlen(list[i].name);
-			skip_space(stream);
-			return list[i].parse_fn(stream, config);
+	for (size_t i = 0; i < ARRAY_SIZE(list); i++) {
+		if (strneq(list[i].name, *str, strlen(list[i].name))) {
+			*str += strlen(list[i].name);
+			*(enum efp_disp_damp *)out = list[i].value;
+			return true;
 		}
-
-	return error("Unknown parameter in input file.");
+	}
+	return false;
 }
 
-static int parse_frag(struct stream *stream,
-		      struct config *config,
-		      struct sys *sys)
+static const struct {
+	const char *name;
+	const char *default_value;
+	bool (*parse_fn)(char **, void *);
+	size_t member_offset;
+} config_list[] = {
+	{ "run_type",     "sp",
+		parse_string,    offsetof(struct config, run_type)     },
+	{ "coord",        "xyzabc",
+		parse_coord,     offsetof(struct config, coord_type)   },
+	{ "units",        "angs",
+		parse_units,     offsetof(struct config, units_factor) },
+	{ "terms",        "elec pol disp xr",
+		parse_terms,     offsetof(struct config, terms)        },
+	{ "elec_damp",    "screen",
+		parse_elec_damp, offsetof(struct config, elec_damp)    },
+	{ "disp_damp",    "tt",
+		parse_disp_damp, offsetof(struct config, disp_damp)    },
+	{ "max_steps",    "100",
+		parse_int,       offsetof(struct config, max_steps)    },
+	{ "print_step",   "1",
+		parse_int,       offsetof(struct config, print_step)   },
+	{ "temperature",  "300.0",
+		parse_double,    offsetof(struct config, temperature)  },
+	{ "time_step",    "1.0",
+		parse_double,    offsetof(struct config, time_step)    },
+	{ "opt_tol",      "1.0e-4",
+		parse_double,    offsetof(struct config, opt_tol)      },
+	{ "fraglib_path", ".",
+		parse_string,    offsetof(struct config, fraglib_path) },
+	{ "userlib_path", ".",
+		parse_string,    offsetof(struct config, userlib_path) }
+};
+
+static void parse_field(struct stream *stream, struct config *config)
 {
-	static const char msg[] = "Error reading fragment coordinates.";
+	for (size_t i = 0; i < ARRAY_SIZE(config_list); i++) {
+		const char *name = config_list[i].name;
 
-	sys->n_frag++;
-	sys->frag_name = realloc(sys->frag_name, sys->n_frag * sizeof(char *));
+		if (strneq(name, stream->ptr, strlen(name))) {
+			stream->ptr += strlen(name);
+			skip_space(stream);
+			size_t offset = config_list[i].member_offset;
+			if (!config_list[i].parse_fn(&stream->ptr, (char *)config + offset))
+				error("UNABLE TO READ OPTION %s", name);
+		}
+	}
+	error("UNKNOWN OPTION IN INPUT FILE");
+}
 
-	skip_space(stream);
+static void parse_frag(struct stream *stream, enum efp_coord_type coord_type,
+		       double units_factor, struct frag *frag)
+{
+	if (!parse_string(&stream->ptr, &frag->name))
+		error("UNABLE TO READ FRAGMENT NAME");
 
-	size_t len = 0;
-
-	while (stream->ptr[len] && !isspace(stream->ptr[len]))
-		len++;
-
-	sys->frag_name[sys->n_frag - 1] = c_strndup(stream->ptr, len);
 	next_line(stream);
+	int n_rows, n_cols;
 
-	switch (config->coord_type) {
-	case COORD_TYPE_XYZABC: {
-		size_t size = 6 * sys->n_frag * sizeof(double);
-		sys->frag_coord = realloc(sys->frag_coord, size);
-		double *ptr = sys->frag_coord + (sys->n_frag - 1) * 6;
+	switch (coord_type) {
+		case EFP_COORD_TYPE_XYZABC:
+			n_rows = 1;
+			n_cols = 6;
+			break;
+		case EFP_COORD_TYPE_POINTS:
+			n_rows = 3;
+			n_cols = 3;
+			break;
+		default:
+			lib_error(EFP_RESULT_INCORRECT_ENUM_VALUE);
+	}
 
-		for (int i = 0; i < 6; i++, ptr++) {
-			*ptr = read_double(stream);
+	for (int i = 0, idx = 0; i < n_rows; i++) {
+		for (int j = 0; j < n_cols; j++, idx++) {
+			double val;
 
-			if (*ptr == NAN)
-				return error(msg);
+			if (!parse_double(&stream->ptr, &val))
+				error("UNABLE TO PARSE FRAGMENT COORDINATES");
 
-			*ptr *= config->units_factor;
+			frag->coord[idx] = val * units_factor;
 		}
 		next_line(stream);
-		break;
 	}
-	case COORD_TYPE_POINTS: {
-		size_t size = 9 * sys->n_frag * sizeof(double);
-		sys->frag_coord = realloc(sys->frag_coord, size);
-		double *ptr = sys->frag_coord + (sys->n_frag - 1) * 9;
-
-		for (int i = 0; i < 3; i++) {
-			for (int j = 0; j < 3; j++, ptr++) {
-				*ptr = read_double(stream);
-
-				if (*ptr == NAN)
-					return error(msg);
-
-				*ptr *= config->units_factor;
-			}
-			next_line(stream);
-		}
-		break;
-	}
-	default:
-		assert(0);
-	}
-	return 0;
 }
 
-static int string_compare(const void *a, const void *b)
-{
-	const char *s1 = *(const char **)a;
-	const char *s2 = *(const char **)b;
-
-	return c_strcasecmp(s1, s2);
-}
-
-static char **make_potential_file_list(const char **frag_name,
-				       const char *fraglib_path,
-				       const char *userlib_path)
-{
-	/* This function constructs the list of library potential data files.
-	 * For each unique fragment if fragment name contains an _l suffix
-	 * append fraglib_path prefix and remove _l suffix. Otherwise append
-	 * userlib_path prefix. Add .efp extension in both cases. */
-
-	int n_frag = 0;
-
-	while (frag_name[n_frag])
-		n_frag++;
-
-	const char **unique = malloc(n_frag * sizeof(char *));
-
-	for (int i = 0; i < n_frag; i++)
-		unique[i] = frag_name[i];
-
-	qsort(unique, n_frag, sizeof(char *), string_compare);
-
-	int n_unique = 1;
-
-	for (int i = 1; i < n_frag; i++)
-		if (c_strcasecmp(unique[i - 1], unique[i])) {
-			unique[n_unique] = unique[i];
-			n_unique++;
-		}
-
-	char **list = malloc((n_unique + 1) * sizeof(char *));
-
-	for (int i = 0; i < n_unique; i++) {
-		const char *name = unique[i];
-		size_t len = strlen(name);
-		char *path;
-
-		if (len > 2 && name[len - 2] == '_' && name[len - 1] == 'l') {
-			path = malloc(strlen(fraglib_path) + len + 4);
-			strcat(strcpy(path, fraglib_path), "/");
-			strcat(strncat(path, name, len - 2), ".efp");
-		}
-		else {
-			path = malloc(strlen(userlib_path) + len + 6);
-			strcat(strcpy(path, userlib_path), "/");
-			strcat(strcat(path, name), ".efp");
-		}
-
-		list[i] = path;
-	}
-
-	list[n_unique] = NULL;
-	free(unique);
-	return list;
-}
-
-static void config_defaults(struct config *config,
-			    struct sys *sys)
+static void set_config_defaults(struct config *config)
 {
 	memset(config, 0, sizeof(struct config));
-	memset(sys, 0, sizeof(struct sys));
 
-	efp_opts_default(&config->efp_opts);
+	for (size_t i = 0; i < ARRAY_SIZE(config_list); i++) {
+		char *str = (char *)config_list[i].default_value;
+		size_t offset = config_list[i].member_offset;
 
-	config->efp_opts.terms = EFP_TERM_ELEC | EFP_TERM_POL |
-				 EFP_TERM_DISP | EFP_TERM_XR;
-
-	config->units_factor = 1.0 / BOHR_RADIUS;
-	config->fraglib_path = c_strdup(".");
-	config->userlib_path = c_strdup(".");
+		if (!config_list[i].parse_fn(&str, (char *)config + offset))
+			error("INCORRECT OPTION DEFAULT VALUE");
+	}
 }
 
-int parse_config(const char *path,
-		 struct config *config,
-		 struct sys *sys)
+void parse_config(const char *path, struct config *config)
 {
-	config_defaults(config, sys);
+	set_config_defaults(config);
 
 	struct stream stream = {
 		.buffer = NULL,
@@ -460,9 +377,7 @@ int parse_config(const char *path,
 	};
 
 	if (!stream.in)
-		return error("Unable to open input file.");
-
-	int res = 0;
+		error("UNABLE TO OPEN INPUT FILE");
 
 	next_line(&stream);
 
@@ -475,66 +390,45 @@ int parse_config(const char *path,
 		if (!*stream.ptr)
 			goto next;
 
-		if (strneq(stream.ptr, "fragment", 8)) {
-			stream.ptr += 8;
+		if (strneq(stream.ptr, "fragment", strlen("fragment"))) {
+			stream.ptr += strlen("fragment");
 
-			if ((res = parse_frag(&stream, config, sys)))
-				goto fail;
+			config->n_frags++;
+			config->frags = realloc(config->frags,
+				config->n_frags * sizeof(struct frag));
 
+			parse_frag(&stream, config->coord_type, config->units_factor,
+					config->frags + config->n_frags - 1);
 			continue;
 		}
 		else {
-			if ((res = parse_field(&stream, config)))
-				goto fail;
-
+			parse_field(&stream, config);
 			skip_space(&stream);
 
-			if (*stream.ptr) {
-				res = error(
-			"Only one option per line is allowed.");
-				goto fail;
-			}
+			if (*stream.ptr)
+				error("ONLY ONE OPTION PER LINE IS ALLOWED");
 		}
 next:
 		next_line(&stream);
 	}
 
-	if (sys->n_frag < 1) {
-		res = error("No fragments specified");
-		goto fail;
-	}
+	if (config->n_frags < 1)
+		error("AT LEAST ONE FRAGMENT MUST BE SPECIFIED");
 
-	sys->frag_name = realloc(sys->frag_name,
-					(sys->n_frag + 1) * sizeof(char *));
-	sys->frag_name[sys->n_frag] = NULL;
-
-	config->potential_file_list =
-		make_potential_file_list((const char **)sys->frag_name,
-				config->fraglib_path, config->userlib_path);
-
-	sys->gradient = malloc(6 * sys->n_frag * sizeof(double));
-fail:
 	fclose(stream.in);
 	free(stream.buffer);
-	return res;
 }
 
-void free_config(struct config *config, struct sys *sys)
+void free_config(struct config *config)
 {
-	for (int i = 0; config->potential_file_list[i]; i++)
-		free(config->potential_file_list[i]);
-
-	free(config->potential_file_list);
 	free(config->run_type);
 	free(config->fraglib_path);
 	free(config->userlib_path);
 
-	for (int i = 0; sys->frag_name[i]; i++)
-		free(sys->frag_name[i]);
+	for (int i = 0; i < config->n_frags; i++)
+		free(config->frags[i].name);
 
-	free(sys->frag_name);
-	free(sys->frag_coord);
-	free(sys->gradient);
+	free(config->frags);
 
-	/* don't do free(config) and free(sys) here */
+	/* don't do free(config) here */
 }

@@ -27,7 +27,9 @@
 #ifndef EFPMD_COMMON_H
 #define EFPMD_COMMON_H
 
+#include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <efp.h>
@@ -35,48 +37,44 @@
 #include "../common/phys_const.h"
 #include "../common/util.h"
 
-#define streq(a, b) (strcmp(a, b) == 0)
-#define strneq(a, b, n) (strncmp(a, b, n) == 0)
-
+#define NORETURN __attribute__((noreturn))
 #define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))
+
+#define streq(a, b) (u_strcasecmp(a, b) == 0)
+#define strneq(a, b, n) (u_strncasecmp(a, b, n) == 0)
 
 #define ANGSTROM_TO_BOHR(x) ((x) / BOHR_RADIUS)
 #define BOHR_TO_ANGSTROM(x) ((x) * BOHR_RADIUS)
 
-enum coord_type {
-	COORD_TYPE_POINTS = 0,
-	COORD_TYPE_XYZABC
+struct frag {
+	char *name;
+	double coord[9];
 };
 
 struct config {
 	char *run_type;
+	enum efp_coord_type coord_type;
+	double units_factor;
+	unsigned terms;
+	enum efp_elec_damp elec_damp;
+	enum efp_disp_damp disp_damp;
+	int max_steps;
+	int print_step;
+	double temperature;
+	double time_step;
+	double opt_tol;
 	char *fraglib_path;
 	char *userlib_path;
-	double units_factor;
-	enum coord_type coord_type;
-	struct efp_opts efp_opts;
-	char **potential_file_list;
+	int n_frags;
+	struct frag *frags;
 };
 
-struct sys {
-	int n_frag;
-	char **frag_name;
-	double *frag_coord;
-	double *gradient;
-};
+void NORETURN die(const char *, ...);
+void NORETURN error(const char *, ...);
+void NORETURN lib_error(enum efp_result);
 
-enum efp_result set_coord(struct efp *,
-			  const struct config *,
-			  struct sys *);
-
-enum efp_result print_geometry(struct efp *);
-
-enum efp_result print_energy(struct efp *);
-
-enum efp_result print_gradient(struct efp *);
-
-int error(const char *, ...);
-
-int lib_error(enum efp_result);
+void print_geometry(struct efp *);
+void print_energy(struct efp *);
+void print_gradient(struct efp *);
 
 #endif /* EFPMD_COMMON_H */

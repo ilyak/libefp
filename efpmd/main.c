@@ -24,15 +24,11 @@
  * SUCH DAMAGE.
  */
 
-#include <stdlib.h>
-
 #include "common.h"
 #include "parse.h"
 #include "sim.h"
 
-typedef int (*sim_fn_t)(struct efp *,
-			const struct config *,
-			struct sys *);
+typedef void (*sim_fn_t)(struct efp *, const struct config *);
 
 static sim_fn_t get_sim_fn(const char *run_type)
 {
@@ -56,53 +52,142 @@ static sim_fn_t get_sim_fn(const char *run_type)
 
 static void print_banner(void)
 {
-	printf("EFPMD - Simple EFP simulation program based on LIBEFP\n");
+	printf("EFPMD - A EFP simulation program based on LIBEFP\n");
 	printf("Copyright (c) 2012 Ilya Kaliman\n\n");
 	printf("%s\n\n", efp_banner());
 }
 
+static int string_compare(const void *a, const void *b)
+{
+	const char *s1 = *(const char **)a;
+	const char *s2 = *(const char **)b;
+
+	return u_strcasecmp(s1, s2);
+}
+
+static char **make_potential_file_list(const struct config *config)
+{
+	/* This function constructs the list of library potential data files.
+	 * For each unique fragment if fragment name contains an _l suffix
+	 * append fraglib_path prefix and remove _l suffix. Otherwise append
+	 * userlib_path prefix. Add .efp extension in both cases. */
+
+	const char *unique[config->n_frags];
+
+	for (int i = 0; i < config->n_frags; i++)
+		unique[i] = config->frags[i].name;
+
+	qsort(unique, config->n_frags, sizeof(char *), string_compare);
+
+	int n_unique = 1;
+
+	for (int i = 1; i < config->n_frags; i++) {
+		if (!streq(unique[i - 1], unique[i])) {
+			unique[n_unique] = unique[i];
+			n_unique++;
+		}
+	}
+
+	char **list = malloc((n_unique + 1) * sizeof(char *));
+
+	for (int i = 0; i < n_unique; i++) {
+		const char *name = unique[i];
+		size_t len = strlen(name);
+		char *path;
+
+		if (len > 2 && streq(name + len - 2, "_l")) {
+			path = malloc(strlen(config->fraglib_path) + len + 4);
+			strcat(strcpy(path, config->fraglib_path), "/");
+			strcat(strncat(path, name, len - 2), ".efp");
+		}
+		else {
+			path = malloc(strlen(config->userlib_path) + len + 6);
+			strcat(strcpy(path, config->userlib_path), "/");
+			strcat(strcat(path, name), ".efp");
+		}
+
+		list[i] = path;
+	}
+
+	list[n_unique] = NULL;
+	return list;
+}
+
+static void init_efp(struct efp **efp, const struct config *config)
+{
+	struct efp_opts opts = {
+		.terms = config->terms,
+		.elec_damp = config->elec_damp,
+		.disp_damp = config->disp_damp
+	};
+
+	char **files = make_potential_file_list(config);
+	char *names[config->n_frags + 1];
+
+	for (int i = 0; i < config->n_frags; i++)
+		names[i] = config->frags[i].name;
+
+	names[config->n_frags] = NULL;
+	enum efp_result res;
+
+	if ((res = efp_init(efp, &opts, NULL, (const char **)files, (const char **)names)))
+		lib_error(res);
+
+	for (int i = 0; i < config->n_frags; i++)
+		free(files[i]);
+
+	free(files);
+}
+
+static int get_coord_count(enum efp_coord_type coord_type)
+{
+	switch (coord_type) {
+		case EFP_COORD_TYPE_XYZABC: return 6;
+		case EFP_COORD_TYPE_POINTS: return 9;
+	};
+
+	lib_error(EFP_RESULT_INCORRECT_ENUM_VALUE);
+}
+
+static void set_coord(struct efp *efp, const struct config *config)
+{
+	int n_coord = get_coord_count(config->coord_type);
+	double *coord = malloc(n_coord * config->n_frags * sizeof(double));
+
+	for (int i = 0; i < config->n_frags; i++)
+		memcpy(coord + 6 * i, config->frags[i].coord, n_coord * sizeof(double));
+
+	enum efp_result res;
+
+	if ((res = efp_set_coordinates(efp, config->coord_type, coord)))
+		lib_error(res);
+
+	free(coord);
+}
+
 int main(int argc, char **argv)
 {
-	int status = EXIT_FAILURE;
-
-	if (argc < 2) {
-		error("Usage: efpmd <input>");
-		return status;
-	}
-
-	struct config config;
-	struct sys sys;
-
-	print_banner();
-
-	if (parse_config(argv[1], &config, &sys))
-		return status;
+	if (argc < 2)
+		die("usage: efpmd <input>");
 
 	struct efp *efp;
-	enum efp_result res;
-	sim_fn_t sim_fn;
+	struct config config;
 
-	if ((res = efp_init(&efp, &config.efp_opts, NULL,
-				(const char **)config.potential_file_list,
-				(const char **)sys.frag_name))) {
-		lib_error(res);
-		goto fail;
-	}
+	print_banner();
+	parse_config(argv[1], &config);
+	init_efp(&efp, &config);
+	set_coord(efp, &config);
 
-	sim_fn = get_sim_fn(config.run_type);
+	sim_fn_t sim_fn = get_sim_fn(config.run_type);
 
-	if (!sim_fn) {
-		error("Unknown run_type option specified.");
-		goto fail;
-	}
+	if (!sim_fn)
+		error("UNKNOWN RUN TYPE SPECIFIED");
 
-	if (sim_fn(efp, &config, &sys))
-		goto fail;
+	sim_fn(efp, &config);
 
-	printf("EFP SIMULATION COMPLETED SUCCESSFULLY\n");
-	status = EXIT_SUCCESS;
-fail:
 	efp_shutdown(efp);
-	free_config(&config, &sys);
-	return status;
+	free_config(&config);
+
+	puts("EFP SIMULATION COMPLETED SUCCESSFULLY");
+	return EXIT_SUCCESS;
 }

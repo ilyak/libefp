@@ -27,26 +27,15 @@
 #include "common.h"
 #include "sim.h"
 
-int sim_grad(struct efp *efp,
-	     const struct config *config,
-	     struct sys *sys)
+void sim_grad(struct efp *efp, const struct config *config)
 {
 	enum efp_result res;
 
-	if ((res = set_coord(efp, config, sys)))
-		return lib_error(res);
-
-	if ((res = print_geometry(efp)))
-		return lib_error(res);
+	print_geometry(efp);
 
 	if ((res = efp_compute(efp, 1)))
-		return lib_error(res);
+		lib_error(res);
 
-	if ((res = print_energy(efp)))
-		return lib_error(res);
-
-	if ((res = print_gradient(efp)))
-		return lib_error(res);
-
-	return 0;
+	print_energy(efp);
+	print_gradient(efp);
 }
