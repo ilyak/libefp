@@ -63,6 +63,8 @@ enum efp_result {
 	EFP_RESULT_GRADIENT_NOT_REQUESTED,
 	/** Certain EFP parameters are missing. */
 	EFP_RESULT_PARAMETERS_MISSING,
+	/** Incorrect enumeration value. */
+	EFP_RESULT_INCORRECT_ENUM_VALUE,
 	/** Index is out of range. */
 	EFP_RESULT_INDEX_OUT_OF_RANGE,
 	/** Wrong array length. */
@@ -114,6 +116,14 @@ enum efp_elec_damp {
 	EFP_ELEC_DAMP_SCREEN = 0,  /**< SCREEN-controlled damping (default). */
 	EFP_ELEC_DAMP_OVERLAP,     /**< Overlap-based damping. */
 	EFP_ELEC_DAMP_OFF          /**< No electrostatic damping. */
+};
+
+/** Describes the way fragment coordinates are specified. */
+enum efp_coord_type {
+	/** Coordinates of center of mass of a fragment and Euler angles. */
+	EFP_COORD_TYPE_XYZABC = 0,
+	/** Coordinates of three points belonging to a fragment. */
+	EFP_COORD_TYPE_POINTS
 };
 
 /** \struct efp
@@ -262,36 +272,33 @@ enum efp_result efp_set_qm_atoms(struct efp *efp,
  * Update positions and orientations of effective fragments.
  *
  * \param[in] efp The efp structure.
- * \param[in] xyzabc For each fragment specifies \a x \a y \a z components of
- *                   the center of mass position and three Euler rotation
- *                   angles representing orientation of a fragment.
+ * \param[in] coord_type Specifies the type of coordinates in the \a coord
+ *                       array (see #efp_coord_type).
+ * \param[in] coord If \a coord_type is \a EFP_COORD_TYPE_XYZABC then for each
+ *                  fragment this array should contain \a x \a y \a z
+ *                  components of the center of mass position and three Euler
+ *                  rotation angles representing orientation of a fragment. The
+ *                  size of the \a coord array must be at least [6 * \a n]
+ *                  elements, where \a n is the number of fragments.
+ *
+ *                  If \a coord_type is EFP_COORD_TYPE_POINTS then for each
+ *                  fragment coordinates of 3 points in space must be
+ *                  specified. For each fragment point 1 and first atom of
+ *                  fragment are made to coincide. The vector connecting points
+ *                  1 and 2 is aligned with the corresponding vector connecting
+ *                  fragment atoms. The plane defined by points 1, 2, and 3 is
+ *                  made to coincide with the corresponding fragment plane.
+ *                  The size of \a coord array must be at least [9 * \a n]
+ *                  elements, where \a n is the number of fragments. For each
+ *                  fragment \a x \a y \a z coordinates of 3 fragment points
+ *                  should be specified to setup the position and orientation
+ *                  of a fragment.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_set_coordinates(struct efp *efp, const double *xyzabc);
-
-/**
- * Update positions and orientations of effective fragments.
- *
- * This is a convenience function. It does the same as ::efp_set_coordinates.
- * However to specify position and orientation of each fragment it takes
- * coordinates of 3 points in space. For each fragment point 1 and first atom
- * of fragment are made to coincide. The vector connecting points 1 and 2 is
- * aligned with the corresponding vector connecting fragment atoms. The plane
- * defined by points 1, 2, and 3 is made to coincide with the corresponding
- * fragment plane.
- *
- * \param[in] efp The efp structure.
- * \param[in] pts Array of points used to determine fragment positions and
- *                orientations. The size of this array must be at least
- *                [9 * \a n] elements, where \a n is the number of fragments.
- *                For each fragment \a x \a y \a z coordinates of 3 fragment
- *                points should be specified to setup the position and
- *                orientation of a fragment.
- *
- * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
- */
-enum efp_result efp_set_coordinates_2(struct efp *efp, const double *pts);
+enum efp_result efp_set_coordinates(struct efp *efp,
+				    enum efp_coord_type coord_type,
+				    const double *coord);
 
 /**
  * Get center of mass positions and Euler angles of the effective fragments.

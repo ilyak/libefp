@@ -157,47 +157,6 @@ matrix_to_euler(const mat_t *rotmat, double *ea, double *eb, double *ec)
 }
 
 static void
-update_fragment(struct frag *frag)
-{
-	/* update atoms */
-	for (int i = 0; i < frag->n_atoms; i++)
-		move_pt(VEC(frag->x), &frag->rotmat, VEC(frag->lib->x),
-			VEC(frag->lib->atoms[i].x), VEC(frag->atoms[i].x));
-
-	efp_update_elec(frag);
-	efp_update_pol(frag);
-	efp_update_disp(frag);
-	efp_update_xr(frag);
-}
-
-EFP_EXPORT enum efp_result
-efp_set_coordinates(struct efp *efp, const double *xyzabc)
-{
-	if (!initialized(efp))
-		return EFP_RESULT_NOT_INITIALIZED;
-
-	if (!xyzabc)
-		return EFP_RESULT_ARGUMENT_NULL;
-
-	for (int i = 0; i < efp->n_frag; i++) {
-		struct frag *frag = efp->frags + i;
-
-		frag->x = *xyzabc++;
-		frag->y = *xyzabc++;
-		frag->z = *xyzabc++;
-
-		double a = *xyzabc++;
-		double b = *xyzabc++;
-		double c = *xyzabc++;
-
-		euler_to_matrix(a, b, c, &frag->rotmat);
-
-		update_fragment(frag);
-	}
-	return EFP_RESULT_SUCCESS;
-}
-
-static void
 points_to_matrix(const double *pts, mat_t *rotmat)
 {
 	double (*rm)[3] = (double (*)[3])rotmat;
@@ -249,18 +208,46 @@ points_to_matrix(const double *pts, mat_t *rotmat)
 	}
 }
 
-EFP_EXPORT enum efp_result
-efp_set_coordinates_2(struct efp *efp, const double *pts)
+static void
+update_fragment(struct frag *frag)
 {
-	if (!initialized(efp))
-		return EFP_RESULT_NOT_INITIALIZED;
+	/* update atoms */
+	for (int i = 0; i < frag->n_atoms; i++)
+		move_pt(VEC(frag->x), &frag->rotmat, VEC(frag->lib->x),
+			VEC(frag->lib->atoms[i].x), VEC(frag->atoms[i].x));
 
-	if (!pts)
-		return EFP_RESULT_ARGUMENT_NULL;
+	efp_update_elec(frag);
+	efp_update_pol(frag);
+	efp_update_disp(frag);
+	efp_update_xr(frag);
+}
 
+static enum efp_result
+set_coord_xyzabc(struct efp *efp, const double *coord)
+{
 	for (int i = 0; i < efp->n_frag; i++) {
 		struct frag *frag = efp->frags + i;
-		const double *pt = pts + 9 * i;
+
+		frag->x = *coord++;
+		frag->y = *coord++;
+		frag->z = *coord++;
+
+		double a = *coord++;
+		double b = *coord++;
+		double c = *coord++;
+
+		euler_to_matrix(a, b, c, &frag->rotmat);
+		update_fragment(frag);
+	}
+	return EFP_RESULT_SUCCESS;
+}
+
+static enum efp_result
+set_coord_points(struct efp *efp, const double *coord)
+{
+	for (int i = 0; i < efp->n_frag; i++) {
+		struct frag *frag = efp->frags + i;
+		const double *pt = coord + 9 * i;
 
 		points_to_matrix(pt, &frag->rotmat);
 
@@ -275,6 +262,26 @@ efp_set_coordinates_2(struct efp *efp, const double *pts)
 		update_fragment(frag);
 	}
 	return EFP_RESULT_SUCCESS;
+}
+
+EFP_EXPORT enum efp_result
+efp_set_coordinates(struct efp *efp, enum efp_coord_type coord_type,
+		    const double *coord)
+{
+	if (!initialized(efp))
+		return EFP_RESULT_NOT_INITIALIZED;
+
+	if (!coord)
+		return EFP_RESULT_ARGUMENT_NULL;
+
+	switch (coord_type) {
+		case EFP_COORD_TYPE_XYZABC:
+			return set_coord_xyzabc(efp, coord);
+		case EFP_COORD_TYPE_POINTS:
+			return set_coord_points(efp, coord);
+	}
+
+	return EFP_RESULT_INCORRECT_ENUM_VALUE;
 }
 
 EFP_EXPORT enum efp_result
@@ -539,7 +546,7 @@ copy_frag(struct frag *dest, const struct frag *src)
 	memcpy(dest, src, sizeof(struct frag));
 
 	if (src->name) {
-		dest->name = c_strdup(src->name);
+		dest->name = u_strdup(src->name);
 		if (!dest->name)
 			return EFP_RESULT_NO_MEMORY;
 	}
@@ -633,7 +640,7 @@ static struct frag *
 find_frag_in_library(struct efp *efp, const char *name)
 {
 	for (int i = 0; i < efp->n_lib; i++)
-		if (!c_strcasecmp(efp->lib[i].name, name))
+		if (!u_strcasecmp(efp->lib[i].name, name))
 			return efp->lib + i;
 
 	return NULL;
@@ -663,6 +670,16 @@ check_opts(const struct efp_opts *opts)
 	    ((terms & EFP_TERM_AI_XR) && !(terms & EFP_TERM_XR)) ||
 	    ((terms & EFP_TERM_AI_CHTR) && !(terms & EFP_TERM_CHTR)))
 		return EFP_RESULT_INCONSISTENT_TERMS;
+
+	if (opts->elec_damp != EFP_ELEC_DAMP_SCREEN &&
+	    opts->elec_damp != EFP_ELEC_DAMP_OVERLAP &&
+	    opts->elec_damp != EFP_ELEC_DAMP_OFF)
+		return EFP_RESULT_INCORRECT_ENUM_VALUE;
+
+	if (opts->disp_damp != EFP_DISP_DAMP_OVERLAP &&
+	    opts->disp_damp != EFP_DISP_DAMP_TT &&
+	    opts->disp_damp != EFP_DISP_DAMP_OFF)
+		return EFP_RESULT_INCORRECT_ENUM_VALUE;
 
 	return EFP_RESULT_SUCCESS;
 }
@@ -921,6 +938,8 @@ return "callback function failed";
 return "gradient computation was not requested";
 	case EFP_RESULT_PARAMETERS_MISSING:
 return "required EFP fragment parameters are missing";
+	case EFP_RESULT_INCORRECT_ENUM_VALUE:
+return "incorrect enumeration value";
 	case EFP_RESULT_INDEX_OUT_OF_RANGE:
 return "index is out of range";
 	case EFP_RESULT_INVALID_ARRAY_SIZE:

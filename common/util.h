@@ -1,9 +1,12 @@
-#ifndef LIBEFP_UTIL_H
-#define LIBEFP_UTIL_H
+#ifndef LIBEFP_COMMON_UTIL_H
+#define LIBEFP_COMMON_UTIL_H
 
-size_t c_strnlen(const char *, size_t);
-char *c_strdup(const char *);
-char *c_strndup(const char *, size_t);
-int c_strcasecmp(const char *, const char *);
+#include <stddef.h>
 
-#endif /* LIBEFP_UTIL_H */
+size_t u_strnlen(const char *, size_t);
+char *u_strdup(const char *);
+char *u_strndup(const char *, size_t);
+int u_strcasecmp(const char *, const char *);
+int u_strncasecmp(const char *, const char *, size_t);
+
+#endif /* LIBEFP_COMMON_UTIL_H */

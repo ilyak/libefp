@@ -5,7 +5,6 @@ global:
 	efp_init;
 	efp_set_qm_atoms;
 	efp_set_coordinates;
-	efp_set_coordinates_2;
 	efp_get_coordinates;
 	efp_scf_update;
 	efp_compute;

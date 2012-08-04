@@ -154,7 +154,7 @@ tok_label(struct stream *stream, char **val)
 		len++;
 
 	if (val)
-		*val = c_strndup(stream->ptr, len);
+		*val = u_strndup(stream->ptr, len);
 
 	stream->ptr += len;
 	return 1;

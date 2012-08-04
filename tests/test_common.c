@@ -70,13 +70,13 @@ test_numerical_gradient(struct efp *efp,
 		for (int j = 0; j < 6; j++) {
 			struct efp_energy e1;
 			xyzabc_new[6 * i + j] = xyzabc[6 * i + j] - grad_delta;
-			efp_set_coordinates(efp, xyzabc_new);
+			efp_set_coordinates(efp, EFP_COORD_TYPE_XYZABC, xyzabc_new);
 			efp_compute(efp, 0);
 			efp_get_energy(efp, &e1);
 
 			struct efp_energy e2;
 			xyzabc_new[6 * i + j] = xyzabc[6 * i + j] + grad_delta;
-			efp_set_coordinates(efp, xyzabc_new);
+			efp_set_coordinates(efp, EFP_COORD_TYPE_XYZABC, xyzabc_new);
 			efp_compute(efp, 0);
 			efp_get_energy(efp, &e2);
 
@@ -153,19 +153,21 @@ int run_test(const struct test_data *test_data)
 		goto fail;
 	}
 
+	const double *geometry;
+	enum efp_coord_type coord_type;
+
 	if (test_data->geometry_xyzabc) {
-		if ((res = efp_set_coordinates(efp,
-					test_data->geometry_xyzabc))) {
-			error("efp_update_fragments", res);
-			goto fail;
-		}
+		geometry = test_data->geometry_xyzabc;
+		coord_type = EFP_COORD_TYPE_XYZABC;
 	}
 	else {
-		if ((res = efp_set_coordinates_2(efp,
-					test_data->geometry_points))) {
-			error("efp_update_fragments_2", res);
-			goto fail;
-		}
+		geometry = test_data->geometry_points;
+		coord_type = EFP_COORD_TYPE_POINTS;
+	}
+
+	if ((res = efp_set_coordinates(efp, coord_type, geometry))) {
+		error("efp_update_fragments", res);
+		goto fail;
 	}
 
 	if ((res = print_atoms(efp))) {
