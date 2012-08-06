@@ -83,8 +83,8 @@ efpmd_efpmd_SOURCES = \
 	efpmd/main.c \
 	efpmd/nve.c \
 	efpmd/nvt.c \
-	efpmd/opt.c \
-	efpmd/opt.h \
+	efpmd/optimizer/opt.c \
+	efpmd/optimizer/opt.h \
 	efpmd/parse.c \
 	efpmd/parse.h \
 	efpmd/sim.h \
@@ -98,6 +98,7 @@ efpmd_cubegen_cubegen_SOURCES = \
 
 EXTRA_DIST += \
 	efpmd/README.md \
+	efpmd/optimizer/test.c \
 	efpmd/tests/h2o-ch3oh_cg.in \
 	efpmd/tests/h2o-nh3_grad.in \
 	efpmd/tests/h2o_sp.in

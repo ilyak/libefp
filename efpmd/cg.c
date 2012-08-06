@@ -25,14 +25,19 @@
  */
 
 #include "common.h"
-#include "opt.h"
 #include "sim.h"
+#include "./optimizer/opt.h"
 
-static double energy_func(int n, const double *x, double *dfx, void *data)
+static enum opt_result energy_fn(size_t n, const double *x, double *fx,
+		double *gx, void *data)
 {
+	int n_frag;
 	enum efp_result res;
 	struct efp *efp = (struct efp *)data;
 	struct efp_energy energy;
+
+	if ((res = efp_get_frag_count(efp, &n_frag)))
+		lib_error(res);
 
 	if ((res = efp_set_coordinates(efp, EFP_COORD_TYPE_XYZABC, x)))
 		lib_error(res);
@@ -43,10 +48,29 @@ static double energy_func(int n, const double *x, double *dfx, void *data)
 	if ((res = efp_get_energy(efp, &energy)))
 		lib_error(res);
 
-	if ((res = efp_get_gradient(efp, n, dfx)))
+	if ((res = efp_get_gradient(efp, n, gx)))
 		lib_error(res);
 
-	return energy.total;
+	for (int i = 0; i < n_frag; i++) {
+		double tx = gx[6 * i + 3];
+		double ty = gx[6 * i + 4];
+		double tz = gx[6 * i + 5];
+
+		double a = x[6 * i + 3];
+		double b = x[6 * i + 4];
+
+		double sina = sin(a);
+		double cosa = cos(a);
+		double sinb = sin(b);
+		double cosb = cos(b);
+
+		gx[6 * i + 3] = tz;
+		gx[6 * i + 4] = cosa * tx + sina * ty;
+		gx[6 * i + 5] = sinb * sina * tx - sinb * cosa * ty + cosb * tz;
+	}
+
+	*fx = energy.total;
+	return OPT_RESULT_SUCCESS;
 }
 
 static int check_conv(double rms_grad, double max_grad, double opt_tol)
@@ -73,17 +97,32 @@ void sim_cg(struct efp *efp, const struct config *config)
 	if ((res = efp_get_frag_count(efp, &n_frag)))
 		lib_error(res);
 
-	int n_grad = 6 * n_frag;
+	size_t n_grad = 6 * n_frag;
 	double coord[n_grad], grad[n_grad];
-	double e_old = 0.0;
+	double e_new, e_old;
+
+	struct opt_state *state = opt_create(n_grad);
+	if (!state)
+		error("UNABLE TO CREATE AN OPTIMIZER");
+
+	opt_set_fn(state, energy_fn);
+
+	if (!opt_init(state, coord))
+		error("UNABLE TO INITIALIZE AN OPTIMIZER");
+
+	e_old = e_new = opt_get_fx(state);
 
 	for (int step = 1; step <= config->max_steps; step++) {
-		double e_new = opt_cg_step(energy_func, n_grad, coord, grad, efp);
+		if (!opt_step(state))
+			error("UNABLE TO MAKE AN OPTIMIZATION STEP");
+
+		opt_get_gx(state, n_grad, grad);
+
 		double e_diff = e_new - e_old;
 		double rms_grad = 0.0;
 		double max_grad = 0.0;
 
-		for (int i = 0; i < n_grad; i++) {
+		for (size_t i = 0; i < n_grad; i++) {
 			rms_grad += grad[i] * grad[i];
 
 			if (fabs(grad[i]) > max_grad)

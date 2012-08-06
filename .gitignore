@@ -6,6 +6,7 @@
 .dirstamp
 .deps/
 .libs/
+a.out
 gmon.out
 
 /Makefile
