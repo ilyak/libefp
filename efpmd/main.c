@@ -133,7 +133,7 @@ static void init_efp(struct efp **efp, const struct config *config)
 	if ((res = efp_init(efp, &opts, NULL, (const char **)files, (const char **)names)))
 		lib_error(res);
 
-	for (int i = 0; i < config->n_frags; i++)
+	for (int i = 0; files[i]; i++)
 		free(files[i]);
 
 	free(files);
@@ -155,7 +155,8 @@ static void set_coord(struct efp *efp, const struct config *config)
 	double *coord = malloc(n_coord * config->n_frags * sizeof(double));
 
 	for (int i = 0; i < config->n_frags; i++)
-		memcpy(coord + 6 * i, config->frags[i].coord, n_coord * sizeof(double));
+		memcpy(coord + n_coord * i, config->frags[i].coord,
+						n_coord * sizeof(double));
 
 	enum efp_result res;
 

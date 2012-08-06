@@ -120,8 +120,12 @@ static bool parse_string(char **str, void *out)
 			ptr++, len++;
 	}
 
-	*str = ptr;
+	if (*(char **)out)
+		free(*(char **)out);
+
 	*(char **)out = u_strndup(start, len);
+	*str = ptr;
+
 	return true;
 }
 
@@ -306,13 +310,16 @@ static void parse_field(struct stream *stream, struct config *config)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(config_list); i++) {
 		const char *name = config_list[i].name;
+		size_t offset = config_list[i].member_offset;
 
 		if (strneq(name, stream->ptr, strlen(name))) {
 			stream->ptr += strlen(name);
 			skip_space(stream);
-			size_t offset = config_list[i].member_offset;
+
 			if (!config_list[i].parse_fn(&stream->ptr, (char *)config + offset))
 				error("UNABLE TO READ OPTION %s", name);
+
+			return;
 		}
 	}
 	error("UNKNOWN OPTION IN INPUT FILE");
@@ -321,11 +328,13 @@ static void parse_field(struct stream *stream, struct config *config)
 static void parse_frag(struct stream *stream, enum efp_coord_type coord_type,
 		       double units_factor, struct frag *frag)
 {
+	int n_rows, n_cols;
+	frag->name = NULL;
+
 	if (!parse_string(&stream->ptr, &frag->name))
 		error("UNABLE TO READ FRAGMENT NAME");
 
 	next_line(stream);
-	int n_rows, n_cols;
 
 	switch (coord_type) {
 		case EFP_COORD_TYPE_XYZABC:
