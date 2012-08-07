@@ -196,7 +196,7 @@ struct efp_atom {
 /**
  * Compute electric field form electrons in the specified points.
  *
- * \param[in] n_pt Number of points in \a xyz array.
+ * \param[in] n_pt Number of points in \p xyz array.
  * \param[in] xyz Coordinates of points where electric field should be computed.
  * \param[out] field Computed \a x \a y \a z components of electric field.
  * \param[in] user_data User data which was specified during initialization.
@@ -257,8 +257,8 @@ enum efp_result efp_init(struct efp **out,
  *
  * \param[in] efp The efp structure.
  * \param[in] n_atoms Number of atoms in \a ab \a initio region.
- * \param[in] znuc Array of \a n_atoms elements with atom nuclear charges.
- * \param[in] xyz Array of [3 * \a n_atoms] elements with \a x \a y \a z
+ * \param[in] znuc Array of \p n_atoms elements with atom nuclear charges.
+ * \param[in] xyz Array of [3 * \p n_atoms] elements with \a x \a y \a z
  *                coordinates of atom positions.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
@@ -274,25 +274,23 @@ enum efp_result efp_set_qm_atoms(struct efp *efp,
  * \param[in] efp The efp structure.
  * \param[in] coord_type Specifies the type of coordinates in the \a coord
  *                       array (see #efp_coord_type).
- * \param[in] coord If \a coord_type is \a EFP_COORD_TYPE_XYZABC then for each
- *                  fragment this array should contain \a x \a y \a z
- *                  components of the center of mass position and three Euler
- *                  rotation angles representing orientation of a fragment. The
- *                  size of the \a coord array must be at least [6 * \a n]
- *                  elements, where \a n is the number of fragments.
+ * \param[in] coord Array of fragment coordinates.
  *
- *                  If \a coord_type is EFP_COORD_TYPE_POINTS then for each
- *                  fragment coordinates of 3 points in space must be
- *                  specified. For each fragment point 1 and first atom of
- *                  fragment are made to coincide. The vector connecting points
- *                  1 and 2 is aligned with the corresponding vector connecting
- *                  fragment atoms. The plane defined by points 1, 2, and 3 is
- *                  made to coincide with the corresponding fragment plane.
- *                  The size of \a coord array must be at least [9 * \a n]
- *                  elements, where \a n is the number of fragments. For each
- *                  fragment \a x \a y \a z coordinates of 3 fragment points
- *                  should be specified to setup the position and orientation
- *                  of a fragment.
+ * If \p coord_type is \a EFP_COORD_TYPE_XYZABC then for each fragment the \p
+ * coord array should contain \a x \a y \a z components of the center of mass
+ * position and three Euler rotation angles representing orientation of a
+ * fragment. The size of the \a coord array must be at least [6 * \a n]
+ * elements, where \a n is the number of fragments.
+ *
+ * If \p coord_type is \a EFP_COORD_TYPE_POINTS then for each fragment the \p
+ * coord array should contain the coordinates of 3 points in space. For each
+ * fragment point 1 and first atom of fragment are made to coincide. The vector
+ * connecting points 1 and 2 is aligned with the corresponding vector
+ * connecting fragment atoms. The plane defined by points 1, 2, and 3 is made
+ * to coincide with the corresponding fragment plane. The size of the \a coord
+ * array must be at least [9 * \a n] elements, where \a n is the number of
+ * fragments. For each fragment \a x \a y \a z coordinates of 3 fragment points
+ * should be specified to setup the position and orientation of a fragment.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
@@ -364,26 +362,26 @@ enum efp_result efp_get_multipole_count(struct efp *efp, int *n_mult);
  * \param[out] z Array of four pointers to arrays where the charges, dipoles,
  *               quadrupoles, and octupoles will be stored.
  *
- *               The size of the first array (charges) must be at least
+ *               The size of the first array \p z[0] (charges) must be at least
  *               [\a n_mult] elements, where \a n_mult is the corresponding
  *               first element of the array returned by the
  *               ::efp_get_multipole_count function.
  *
- *               The size of the second array (dipoles) must be at least
- *               [3 * \a n_mult] elements, where \a n_mult is the corresponding
- *               second element of the array returned by the
+ *               The size of the second array \p z[1] (dipoles) must be at
+ *               least [3 * \a n_mult] elements, where \a n_mult is the
+ *               corresponding second element of the array returned by the
  *               ::efp_get_multipole_count function.
  *
- *               The size of the third array (quadrupoles) must be at least
- *               [6 * \a n_mult] elements, where \a n_mult is the corresponding
- *               third element of the array returned by the
+ *               The size of the third array \p z[2] (quadrupoles) must be at
+ *               least [6 * \a n_mult] elements, where \a n_mult is the
+ *               corresponding third element of the array returned by the
  *               ::efp_get_multipole_count function.
  *
  *               Quadrupoles are stored in the following order:
  *                   \a xx, \a yy, \a zz, \a xy, \a xz, \a yz
  *
- *               The size of the fourth array (octupoles) must be at least
- *               [10 * \a n_mult] elements, where \a n_mult is the
+ *               The size of the fourth array \p z[3] (octupoles) must be at
+ *               least [10 * \a n_mult] elements, where \a n_mult is the
  *               corresponding fourth element of the array returned by the
  *               ::efp_get_multipole_count function.
  *
@@ -452,7 +450,7 @@ enum efp_result efp_get_frag_count(struct efp *efp, int *n_frag);
  * \param[in] efp The efp structure.
  * \param[in] frag_idx Index of a fragment. Must be a value between zero and
  *                     the total number of fragments minus one.
- * \param[in] size Size of a \a frag_name buffer.
+ * \param[in] size Size of a \p frag_name buffer.
  * \param[out] frag_name A buffer where name of the fragment will be stored.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
@@ -482,7 +480,7 @@ enum efp_result efp_get_frag_atom_count(struct efp *efp,
  * \param[in] efp The efp structure.
  * \param[in] frag_idx Index of a fragment. Must be a value between zero and
  *                     the total number of fragments minus one.
- * \param[in] size Size of the \a atoms array. Must be greater than or equal to
+ * \param[in] size Size of the \p atoms array. Must be greater than or equal to
  *                 the size returned by the ::efp_get_frag_atom_count function.
  * \param[out] atoms Array where atom information will be stored.
  *
