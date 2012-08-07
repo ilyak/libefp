@@ -52,9 +52,9 @@ struct opt_state *opt_create(size_t n_dim)
 	struct opt_state *state = calloc(1, sizeof(struct opt_state));
 
 	if (state) {
-		state->ls_tol = 1.0e-7;
-		state->ls_fn_tol = 1.0e-7;
-		state->ls_step_size = 0.1;
+		state->ls_tol = 1.0e-8;
+		state->ls_fn_tol = 1.0e-8;
+		state->ls_step_size = 1.0;
 		state->ls_max_iter = 200;
 		state->n_dim = n_dim;
 		state->x_cur = malloc(state->n_dim * sizeof(double));
@@ -135,14 +135,6 @@ enum opt_result opt_init(struct opt_state *state, const double *x)
 	return OPT_RESULT_SUCCESS;
 }
 
-static void swap(size_t n, double *a, double *b)
-{
-	double t;
-
-	while (n--)
-		t = *a, *a++ = *b, *b++ = t;
-}
-
 static double dot(size_t n, const double *a, const double *b)
 {
 	double sum = 0.0;
@@ -178,15 +170,13 @@ static enum opt_result do_line_search(struct opt_state *state)
 	}
 
 	init_sl = sla;
-	c = a + state->ls_step_size;
+	c = state->ls_step_size;
 
 	for (size_t i = 0; i < state->n_dim; i++)
 		xc[i] = state->x_cur[i] + state->dir[i] * c;
 
 	if ((res = state->fn(state->n_dim, xc, &fc, gc, state->user_data)))
 		return res;
-
-	slc = dot(state->n_dim, gc, state->dir);
 
 	if (fc < fa) {
 		copy(state->n_dim, state->x_cur, xc);
@@ -195,10 +185,13 @@ static enum opt_result do_line_search(struct opt_state *state)
 		return OPT_RESULT_SUCCESS;
 	}
 
+	slc = dot(state->n_dim, gc, state->dir);
+
 	do {
 		double eta = 3.0 * (fa - fc) / (c - a) + sla + slc;
 		double phi = sqrt(eta * eta - sla * slc);
 
+		/* cubic interpolation */
 		b = a + (c - a) * (1.0 - (slc + phi - eta) / (slc - sla + 2.0 * phi));
 
 		if (b < state->ls_tol)
@@ -212,7 +205,7 @@ static enum opt_result do_line_search(struct opt_state *state)
 
 		slb = dot(state->n_dim, gb, state->dir);
 
-		if (fb <= state->fx_cur + init_sl * state->ls_fn_tol * b) {
+		if (fb < state->fx_cur + init_sl * state->ls_fn_tol * b) {
 			copy(state->n_dim, state->x_cur, xb);
 			copy(state->n_dim, state->gx_cur, gb);
 			state->fx_cur = fb;
@@ -223,22 +216,22 @@ static enum opt_result do_line_search(struct opt_state *state)
 			fa = fb;
 			a = b;
 			sla = slb;
-			swap(state->n_dim, xa, xb);
-			swap(state->n_dim, ga, gb);
+			copy(state->n_dim, xa, xb);
+			copy(state->n_dim, ga, gb);
 		}
 		else {
 			fc = fb;
 			c = b;
 			slc = slb;
-			swap(state->n_dim, xc, xb);
-			swap(state->n_dim, gc, gb);
+			copy(state->n_dim, xc, xb);
+			copy(state->n_dim, gc, gb);
 		}
 	} while ((fb > fa || fb > fc) && (++iter < state->ls_max_iter));
 
-	if (fb < state->fx_cur || iter >= state->ls_max_iter)
+	if (iter >= state->ls_max_iter)
 		return OPT_RESULT_ERROR;
 
-	if (fa <= fc) {
+	if (fa < fc) {
 		copy(state->n_dim, state->x_cur, xa);
 		copy(state->n_dim, state->gx_cur, ga);
 		state->fx_cur = fa;
@@ -257,7 +250,6 @@ enum opt_result opt_step(struct opt_state *state)
 	if (!state)
 		return OPT_RESULT_ERROR;
 
-	enum opt_result res;
 	double gx_delta[state->n_dim];
 
 	/* Polak-Ribiere conjugate gradient formula */
@@ -273,10 +265,7 @@ enum opt_result opt_step(struct opt_state *state)
 		state->gx_prev[i] = state->gx_cur[i];
 	}
 
-	if ((res = do_line_search(state)))
-		return res;
-
-	return OPT_RESULT_SUCCESS;
+	return do_line_search(state);
 }
 
 double opt_get_fx(struct opt_state *state)
