@@ -1,0 +1,10 @@
+# water dimer
+
+run_type cg
+max_steps 500
+fraglib_path ../fraglib
+
+fragment h2o_l
+   0.000   0.000   0.000   0.000   0.000   0.000
+fragment h2o_l
+   0.000   0.000   3.000   0.000   0.000   0.000

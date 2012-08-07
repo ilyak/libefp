@@ -1,0 +1,7 @@
+run_type cg
+fraglib_path ../fraglib
+
+fragment c6h6_l
+   0.000   0.000   0.000   0.000   0.000   0.000
+fragment c6h6_l
+   0.000   0.000   4.000   0.200   0.200   0.300

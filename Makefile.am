@@ -99,9 +99,13 @@ efpmd_cubegen_cubegen_SOURCES = \
 EXTRA_DIST += \
 	efpmd/README.md \
 	efpmd/optimizer/test.c \
-	efpmd/tests/h2o-ch3oh_cg.in \
+	efpmd/tests/c6h6-dimer_cg.in \
+	efpmd/tests/h2o-ch3oh_grad.in \
+	efpmd/tests/h2o-dimer_cg.in \
 	efpmd/tests/h2o-nh3_grad.in \
-	efpmd/tests/h2o_sp.in
+	efpmd/tests/h2o-tetramer_cg.in \
+	efpmd/tests/water-cube-125_sp.in \
+	efpmd/tests/water-cube-3375_sp.in
 
 TESTS = \
 	tests/elec_1a \
