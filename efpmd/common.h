@@ -62,6 +62,7 @@ struct config {
 	int print_step;
 	double temperature;
 	double time_step;
+	double ls_step_size;
 	double opt_tol;
 	char *fraglib_path;
 	char *userlib_path;
