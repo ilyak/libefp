@@ -20,9 +20,11 @@ LIBEFP_AGE = 0
 include_HEADERS = src/efp.h
 lib_LTLIBRARIES = src/libefp.la
 
+if BUILD_EFPMD
 bin_PROGRAMS = \
 	efpmd/efpmd \
 	efpmd/cubegen/cubegen
+endif
 
 src_libefp_la_SOURCES = \
 	common/util.c \

@@ -35,6 +35,11 @@ AC_ARG_ENABLE([developer-flags],
 	[enable_developer_flags=""])
 AC_SUBST([my_CFLAGS], [$enable_developer_flags])
 
+AC_ARG_ENABLE([efpmd],
+	AS_HELP_STRING([--disable-efpmd], [do not build efpmd program]),
+	[enable_efpmd=false], [enable_efpmd=true])
+AM_CONDITIONAL(BUILD_EFPMD, test x$enable_efpmd = xtrue)
+
 AC_CONFIG_HEADERS(config.h)
 AC_CONFIG_FILES([
 	Makefile
