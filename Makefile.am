@@ -54,7 +54,6 @@ EXTRA_DIST += \
 	Doxyfile \
 	LICENSE \
 	README.md \
-	src/libefp.sym \
 	fraglib/makefp.inp \
 	fraglib/acetone.efp \
 	fraglib/c2h5oh.efp \
@@ -70,9 +69,7 @@ EXTRA_DIST += \
 	fraglib/nh3.efp
 
 src_libefp_la_LDFLAGS = $(AM_LDFLAGS) \
-	-version-info $(LIBEFP_CURRENT):$(LIBEFP_REVISION):$(LIBEFP_AGE) \
-	-Wl,--version-script=$(top_srcdir)/src/libefp.sym
-src_libefp_la_DEPENDENCIES = ${top_srcdir}/src/libefp.sym
+	-version-info $(LIBEFP_CURRENT):$(LIBEFP_REVISION):$(LIBEFP_AGE)
 
 efpmd_efpmd_SOURCES = \
 	common/phys_const.h \
