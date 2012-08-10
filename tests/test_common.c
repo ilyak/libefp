@@ -109,7 +109,7 @@ static enum efp_result test_frag_numerical_grad(struct efp *efp,
 		return res;
 
 	double xyzabc[6 * n_frag];
-	if ((res = efp_get_coordinates(efp, 6 * n_frag, xyzabc)))
+	if ((res = efp_get_coordinates(efp, n_frag, xyzabc)))
 		return res;
 
 	*fail = 0;
@@ -300,7 +300,7 @@ int run_test(const struct test_data *test_data)
 		}
 
 		double frag_grad[6 * n_frag];
-		if ((res = efp_get_gradient(efp, 6 * n_frag, frag_grad))) {
+		if ((res = efp_get_gradient(efp, n_frag, frag_grad))) {
 			error("efp_get_gradient", res);
 			goto fail;
 		}

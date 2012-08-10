@@ -39,6 +39,9 @@ static enum opt_result energy_fn(size_t n, const double *x, double *fx,
 	if ((res = efp_get_frag_count(efp, &n_frag)))
 		lib_error(res);
 
+	if ((int)n != 6 * n_frag)
+		error("WRONG NUMBER OF DIMENSIONS");
+
 	if ((res = efp_set_coordinates(efp, EFP_COORD_TYPE_XYZABC, x)))
 		lib_error(res);
 
@@ -48,7 +51,7 @@ static enum opt_result energy_fn(size_t n, const double *x, double *fx,
 	if ((res = efp_get_energy(efp, &energy)))
 		lib_error(res);
 
-	if ((res = efp_get_gradient(efp, n, gx)))
+	if ((res = efp_get_gradient(efp, n_frag, gx)))
 		lib_error(res);
 
 	for (int i = 0; i < n_frag; i++) {
@@ -102,7 +105,7 @@ void sim_cg(struct efp *efp, const struct config *config)
 	double coord[n_coord], grad[n_coord];
 	double e_new, e_old;
 
-	if ((res = efp_get_coordinates(efp, n_coord, coord)))
+	if ((res = efp_get_coordinates(efp, n_frag, coord)))
 		lib_error(res);
 
 	struct opt_state *state = opt_create(n_coord);

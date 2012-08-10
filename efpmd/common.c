@@ -123,7 +123,7 @@ void print_gradient(struct efp *efp)
 	char frag_name[64];
 	double grad[6 * n_frag];
 
-	if ((res = efp_get_gradient(efp, 6 * n_frag, grad)))
+	if ((res = efp_get_gradient(efp, n_frag, grad)))
 		lib_error(res);
 
 	for (int i = 0; i < n_frag; i++) {

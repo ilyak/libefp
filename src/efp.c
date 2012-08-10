@@ -50,7 +50,7 @@ efp_get_energy(struct efp *efp, struct efp_energy *energy)
 }
 
 EFP_EXPORT enum efp_result
-efp_get_gradient(struct efp *efp, int size, double *grad)
+efp_get_gradient(struct efp *efp, int n_frags, double *grad)
 {
 	if (!initialized(efp))
 		return EFP_RESULT_NOT_INITIALIZED;
@@ -61,7 +61,7 @@ efp_get_gradient(struct efp *efp, int size, double *grad)
 	if (!efp->do_gradient)
 		return EFP_RESULT_GRADIENT_NOT_REQUESTED;
 
-	if (size < 6 * efp->n_frag)
+	if (n_frags != efp->n_frag)
 		return EFP_RESULT_INVALID_ARRAY_SIZE;
 
 	for (int i = 0; i < efp->n_frag; i++) {
@@ -321,7 +321,7 @@ efp_set_coordinates(struct efp *efp, enum efp_coord_type coord_type,
 }
 
 EFP_EXPORT enum efp_result
-efp_get_coordinates(struct efp *efp, int size, double *xyzabc)
+efp_get_coordinates(struct efp *efp, int n_frags, double *xyzabc)
 {
 	if (!initialized(efp))
 		return EFP_RESULT_NOT_INITIALIZED;
@@ -329,7 +329,7 @@ efp_get_coordinates(struct efp *efp, int size, double *xyzabc)
 	if (!xyzabc)
 		return EFP_RESULT_ARGUMENT_NULL;
 
-	if (size < 6 * efp->n_frag)
+	if (n_frags != efp->n_frag)
 		return EFP_RESULT_INVALID_ARRAY_SIZE;
 
 	for (int i = 0; i < efp->n_frag; i++) {
