@@ -2,6 +2,7 @@
 
 run_type cg
 max_steps 500
+ls_step_size 100.0
 fraglib_path ../fraglib
 
 fragment h2o_l
