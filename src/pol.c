@@ -430,7 +430,7 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 			vec_negate(&force);
 
 			vec_t *grad_j = efp->qm.grad + j;
-			add_force_torque_frag_point(fr_i, VEC(pt_i->x), xyz_j,
+			add_force_torque_frag_point(fr_i, VEC(pt_i->x),
 						    grad_j, &force, &add_i);
 		}
 	}

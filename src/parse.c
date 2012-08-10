@@ -661,7 +661,7 @@ parse_lmo_centroids(struct efp *efp, struct stream *stream)
 }
 
 static enum efp_result
-parse_canonvec(struct efp *efp, struct stream *stream)
+parse_canonvec(UNUSED struct efp *efp, struct stream *stream)
 {
 	int wf_size;
 
@@ -680,7 +680,7 @@ parse_canonvec(struct efp *efp, struct stream *stream)
 }
 
 static enum efp_result
-parse_canonfok(struct efp *efp, struct stream *stream)
+parse_canonfok(UNUSED struct efp *efp, struct stream *stream)
 {
 	next_line(stream);
 

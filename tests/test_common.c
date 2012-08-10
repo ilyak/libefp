@@ -26,62 +26,120 @@
 
 #include "test_common.h"
 
-static void
-message(const char *msg)
+#define NUM_GRAD_DELTA 0.0001
+
+static void message(const char *msg)
 {
 	fprintf(stderr, "%s\n", msg);
 }
 
-static void
-error(const char *title, enum efp_result res)
+static void error(const char *title, enum efp_result res)
 {
 	fprintf(stderr, "%s:\n", title);
 	fprintf(stderr, "    %s\n", efp_result_to_string(res));
 }
 
-static int
-eq(double a, double b)
+static int eq(double a, double b)
 {
 	static const double eps = 5.0e-6;
-
 	return fabs(a - b) < eps;
 }
 
-static int
-test_numerical_gradient(struct efp *efp,
-			const double *xyzabc,
-			const double *grad)
+static enum efp_result test_qm_numerical_grad(struct efp *efp,
+			const double *grad, int *fail)
 {
-	static const double grad_delta = 0.0001;
+	enum efp_result res;
+
+	int n_qm_atoms;
+	if ((res = efp_get_qm_atom_count(efp, &n_qm_atoms)))
+		return res;
+
+	double znuc[n_qm_atoms], xyz[3 * n_qm_atoms];
+	if ((res = efp_get_qm_atoms(efp, n_qm_atoms, znuc, xyz)))
+		return res;
+
+	*fail = 0;
+
+	for (int i = 0; i < n_qm_atoms; i++) {
+		double grad_num[3];
+
+		for (int j = 0; j < 3; j++) {
+			double coord = xyz[3 * i + j];
+
+			struct efp_energy e1;
+			xyz[3 * i + j] = coord - NUM_GRAD_DELTA;
+			if ((res = efp_set_qm_atoms(efp, n_qm_atoms, znuc, xyz)))
+				return res;
+			if ((res = efp_compute(efp, 0)))
+				return res;
+			if ((res = efp_get_energy(efp, &e1)))
+				return res;
+
+			struct efp_energy e2;
+			xyz[3 * i + j] = coord + NUM_GRAD_DELTA;
+			if ((res = efp_set_qm_atoms(efp, n_qm_atoms, znuc, xyz)))
+				return res;
+			if ((res = efp_compute(efp, 0)))
+				return res;
+			if ((res = efp_get_energy(efp, &e2)))
+				return res;
+
+			xyz[3 * i + j] = coord;
+			grad_num[j] = (e2.total - e1.total) / (2.0 * NUM_GRAD_DELTA);
+		}
+
+		for (int j = 0; j < 3; j++)
+			if (!eq(grad_num[j], grad[3 * i + j]))
+				*fail = 1;
+	}
+
+	if ((res = efp_set_qm_atoms(efp, n_qm_atoms, znuc, xyz)))
+		return res;
+
+	return EFP_RESULT_SUCCESS;
+}
+
+static enum efp_result test_frag_numerical_grad(struct efp *efp,
+			const double *grad, int *fail)
+{
+	enum efp_result res;
 
 	int n_frag;
-	efp_get_frag_count(efp, &n_frag);
+	if ((res = efp_get_frag_count(efp, &n_frag)))
+		return res;
 
-	int n_grad = 6 * n_frag;
+	double xyzabc[6 * n_frag];
+	if ((res = efp_get_coordinates(efp, 6 * n_frag, xyzabc)))
+		return res;
 
-	double xyzabc_new[n_grad];
-	memcpy(xyzabc_new, xyzabc, n_grad * sizeof(double));
-
-	int result = 0;
+	*fail = 0;
 
 	for (int i = 0; i < n_frag; i++) {
 		double grad_num[6], grad_euler[6];
 
 		for (int j = 0; j < 6; j++) {
+			double coord = xyzabc[6 * i + j];
+
 			struct efp_energy e1;
-			xyzabc_new[6 * i + j] = xyzabc[6 * i + j] - grad_delta;
-			efp_set_coordinates(efp, EFP_COORD_TYPE_XYZABC, xyzabc_new);
-			efp_compute(efp, 0);
-			efp_get_energy(efp, &e1);
+			xyzabc[6 * i + j] = coord - NUM_GRAD_DELTA;
+			if ((res = efp_set_coordinates(efp, EFP_COORD_TYPE_XYZABC, xyzabc)))
+				return res;
+			if ((res = efp_compute(efp, 0)))
+				return res;
+			if ((res = efp_get_energy(efp, &e1)))
+				return res;
 
 			struct efp_energy e2;
-			xyzabc_new[6 * i + j] = xyzabc[6 * i + j] + grad_delta;
-			efp_set_coordinates(efp, EFP_COORD_TYPE_XYZABC, xyzabc_new);
-			efp_compute(efp, 0);
-			efp_get_energy(efp, &e2);
+			xyzabc[6 * i + j] = coord + NUM_GRAD_DELTA;
+			if ((res = efp_set_coordinates(efp, EFP_COORD_TYPE_XYZABC, xyzabc)))
+				return res;
+			if ((res = efp_compute(efp, 0)))
+				return res;
+			if ((res = efp_get_energy(efp, &e2)))
+				return res;
 
-			xyzabc_new[6 * i + j] = xyzabc[6 * i + j];
-			grad_num[j] = (e2.total - e1.total) / (2 * grad_delta);
+			xyzabc[6 * i + j] = coord;
+			grad_num[j] = (e2.total - e1.total) / (2.0 * NUM_GRAD_DELTA);
 		}
 
 		/* convert torque to energy derivatives by Euler angles */
@@ -107,17 +165,39 @@ test_numerical_gradient(struct efp *efp,
 
 		for (int j = 0; j < 6; j++)
 			if (!eq(grad_num[j], grad_euler[j]))
-				result = 1;
+				*fail = 1;
 	}
-	return result;
+
+	if ((res = efp_set_coordinates(efp, EFP_COORD_TYPE_XYZABC, xyzabc)))
+		return res;
+
+	return EFP_RESULT_SUCCESS;
 }
 
-static enum efp_result
-print_atoms(struct efp *efp)
+static enum efp_result print_atoms(struct efp *efp)
 {
-	int n_frag;
 	enum efp_result res;
 
+	int n_qm_atoms;
+	if ((res = efp_get_qm_atom_count(efp, &n_qm_atoms)))
+		return res;
+
+	double qm_znuc[n_qm_atoms];
+	double qm_xyz[3 * n_qm_atoms];
+
+	if ((res = efp_get_qm_atoms(efp, n_qm_atoms, qm_znuc, qm_xyz)))
+		return res;
+
+	for (int i = 0; i < n_qm_atoms; i++) {
+		double x = qm_xyz[3 * i + 0];
+		double y = qm_xyz[3 * i + 1];
+		double z = qm_xyz[3 * i + 2];
+
+		printf("QQ %12.8lf %12.8lf %12.8lf\n",
+			ANGSTROM(x), ANGSTROM(y), ANGSTROM(z));
+	}
+
+	int n_frag;
 	if ((res = efp_get_frag_count(efp, &n_frag)))
 		return res;
 
@@ -170,6 +250,16 @@ int run_test(const struct test_data *test_data)
 		goto fail;
 	}
 
+	int do_qm = test_data->qm_znuc && test_data->qm_xyz;
+
+	if (do_qm) {
+		if ((res = efp_set_qm_atoms(efp, test_data->n_qm_atoms,
+				test_data->qm_znuc, test_data->qm_xyz))) {
+			error("efp_set_qm_atoms", res);
+			goto fail;
+		}
+	}
+
 	if ((res = print_atoms(efp))) {
 		error("print_atoms", res);
 		goto fail;
@@ -201,26 +291,49 @@ int run_test(const struct test_data *test_data)
 	}
 
 	if (test_data->test_gradient) {
-		int n_frag;
+		int failed;
 
+		int n_frag;
 		if ((res = efp_get_frag_count(efp, &n_frag))) {
 			error("efp_get_frag_count", res);
 			goto fail;
 		}
 
-		double grad[6 * n_frag];
-		double xyzabc[6 * n_frag];
-
-		if ((res = efp_get_gradient(efp, 6 * n_frag, grad))) {
+		double frag_grad[6 * n_frag];
+		if ((res = efp_get_gradient(efp, 6 * n_frag, frag_grad))) {
 			error("efp_get_gradient", res);
 			goto fail;
 		}
-		if ((res = efp_get_coordinates(efp, 6 * n_frag, xyzabc))) {
-			error("efp_get_coordinates", res);
+
+		if (do_qm) {
+			int n_qm_atoms;
+			if ((res = efp_get_qm_atom_count(efp, &n_qm_atoms))) {
+				error("efp_get_qm_atom_count", res);
+				goto fail;
+			}
+
+			double qm_grad[3 * n_qm_atoms];
+			if ((res = efp_get_qm_gradient(efp, n_qm_atoms, qm_grad))) {
+				error("efp_get_qm_gradient", res);
+				goto fail;
+			}
+
+			if ((res = test_qm_numerical_grad(efp, qm_grad, &failed))) {
+				error("test_qm_numerical_grad", res);
+				goto fail;
+			}
+			if (failed) {
+				message("wrong qm gradient");
+				status = EXIT_FAILURE;
+			}
+		}
+
+		if ((res = test_frag_numerical_grad(efp, frag_grad, &failed))) {
+			error("test_frag_numerical_grad", res);
 			goto fail;
 		}
-		if (test_numerical_gradient(efp, xyzabc, grad)) {
-			message("wrong gradient");
+		if (failed) {
+			message("wrong fragment gradient");
 			status = EXIT_FAILURE;
 		}
 	}

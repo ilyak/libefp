@@ -637,7 +637,7 @@ compute_ai_elec_frag(struct efp *efp, int frag_idx)
 			double znuc_j = efp->qm.znuc[j];
 			double r = vec_dist(VEC(at_i->x), xyz_j);
 
-			energy += at_i->znuc * znuc_j / r;
+			energy += charge_charge_energy(at_i->znuc, znuc_j, r);
 		}
 	}
 	for (int i = 0; i < fr_i->n_multipole_pts; i++) {
@@ -655,56 +655,56 @@ compute_ai_elec_frag(struct efp *efp, int frag_idx)
 static void
 compute_ai_elec_frag_grad(struct efp *efp, int frag_idx)
 {
-	struct frag *fr_i = efp->frags + frag_idx;
+	struct frag *fr_j = efp->frags + frag_idx;
 	vec_t force, add_i, add_j;
 
-	for (int j = 0; j < efp->qm.n_atoms; j++) {
-		double znuc_j = efp->qm.znuc[j];
-		const vec_t *xyz_j = efp->qm.xyz + j;
-		vec_t *grad_j = efp->qm.grad + j;
+	for (int i = 0; i < efp->qm.n_atoms; i++) {
+		double znuc_i = efp->qm.znuc[i];
+		const vec_t *xyz_i = efp->qm.xyz + i;
+		vec_t *grad_i = efp->qm.grad + i;
 
 		/* ab initio atom - fragment atoms */
-		for (int i = 0; i < fr_i->n_atoms; i++) {
-			struct efp_atom *at_i = fr_i->atoms + i;
-			vec_t dr = vec_sub(xyz_j, VEC(at_i->x));
+		for (int k = 0; k < fr_j->n_atoms; k++) {
+			struct efp_atom *at_j = fr_j->atoms + k;
+			vec_t dr = vec_sub(VEC(at_j->x), xyz_i);
 
-			efp_charge_charge_grad(at_i->znuc, znuc_j, &dr,
+			efp_charge_charge_grad(znuc_i, at_j->znuc, &dr,
 					       &force, &add_i, &add_j);
-			add_force_torque_frag_point(fr_i, VEC(at_i->x), xyz_j,
-						    grad_j, &force, &add_i);
+			add_force_torque_frag_point(fr_j, VEC(at_j->x), grad_i,
+						    &force, &add_j);
 		}
 
 		/* ab initio atom - fragment multipoles */
-		for (int i = 0; i < fr_i->n_multipole_pts; i++) {
-			struct multipole_pt *pt_i = fr_i->multipole_pts + i;
-			vec_t dr = vec_sub(xyz_j, VEC(pt_i->x));
+		for (int k = 0; k < fr_j->n_multipole_pts; k++) {
+			struct multipole_pt *pt_j = fr_j->multipole_pts + k;
+			vec_t dr = vec_sub(VEC(pt_j->x), xyz_i);
 
 			/* monopole */
-			efp_charge_charge_grad(pt_i->monopole, znuc_j, &dr,
+			efp_charge_charge_grad(znuc_i, pt_j->monopole, &dr,
 					       &force, &add_i, &add_j);
-			add_force_torque_frag_point(fr_i, VEC(pt_i->x), xyz_j,
-						    grad_j, &force, &add_i);
+			add_force_torque_frag_point(fr_j, VEC(pt_j->x),
+						    grad_i, &force, &add_j);
 
 			/* dipole */
-			efp_charge_dipole_grad(znuc_j, &pt_i->dipole, &dr,
-					       &force, &add_j, &add_i);
-			add_force_torque_frag_point(fr_i, VEC(pt_i->x), xyz_j,
-						    grad_j, &force, &add_i);
+			efp_charge_dipole_grad(znuc_i, &pt_j->dipole, &dr,
+					       &force, &add_i, &add_j);
+			add_force_torque_frag_point(fr_j, VEC(pt_j->x),
+						    grad_i, &force, &add_j);
 
 			/* quadrupole */
-			efp_charge_quadrupole_grad(znuc_j, pt_i->quadrupole, &dr,
-						   &force, &add_j, &add_i);
+			efp_charge_quadrupole_grad(znuc_i, pt_j->quadrupole, &dr,
+						   &force, &add_i, &add_j);
 
-			vec_negate(&add_i);
+			vec_negate(&add_j);
 
-			add_force_torque_frag_point(fr_i, VEC(pt_i->x), xyz_j,
-						    grad_j, &force, &add_i);
+			add_force_torque_frag_point(fr_j, VEC(pt_j->x),
+						    grad_i, &force, &add_j);
 
 			/* octupole */
-			efp_charge_octupole_grad(znuc_j, pt_i->octupole, &dr,
-						 &force, &add_j, &add_i);
-			add_force_torque_frag_point(fr_i, VEC(pt_i->x), xyz_j,
-						    grad_j, &force, &add_i);
+			efp_charge_octupole_grad(znuc_i, pt_j->octupole, &dr,
+						 &force, &add_i, &add_j);
+			add_force_torque_frag_point(fr_j, VEC(pt_j->x),
+						    grad_i, &force, &add_j);
 		}
 	}
 }

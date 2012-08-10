@@ -24,7 +24,6 @@ AC_PROG_SED
 AC_PROG_MKDIR_P
 
 developer_CFLAGS="-Wall -Wextra -pedantic \
--Wno-unused-parameter \
 -Wmissing-declarations -Wmissing-prototypes \
 -Wpointer-arith -Wsign-compare \
 -Wstrict-prototypes -Wshadow -Wformat-security"

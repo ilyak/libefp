@@ -76,7 +76,7 @@ efp_get_gradient(struct efp *efp, int size, double *grad)
 }
 
 EFP_EXPORT enum efp_result
-efp_get_qm_gradient(struct efp *efp, int size, double *grad)
+efp_get_qm_gradient(struct efp *efp, int n_atoms, double *grad)
 {
 	if (!initialized(efp))
 		return EFP_RESULT_NOT_INITIALIZED;
@@ -87,10 +87,23 @@ efp_get_qm_gradient(struct efp *efp, int size, double *grad)
 	if (!efp->do_gradient)
 		return EFP_RESULT_GRADIENT_NOT_REQUESTED;
 
-	if (size < 3 * efp->qm.n_atoms)
+	if (n_atoms != efp->qm.n_atoms)
 		return EFP_RESULT_INVALID_ARRAY_SIZE;
 
-	memcpy(grad, efp->qm.grad, 3 * efp->qm.n_atoms * sizeof(double));
+	memcpy(grad, efp->qm.grad, efp->qm.n_atoms * sizeof(vec_t));
+	return EFP_RESULT_SUCCESS;
+}
+
+EFP_EXPORT enum efp_result
+efp_get_qm_atom_count(struct efp *efp, int *n_atoms)
+{
+	if (!initialized(efp))
+		return EFP_RESULT_NOT_INITIALIZED;
+
+	if (!n_atoms)
+		return EFP_RESULT_ARGUMENT_NULL;
+
+	*n_atoms = efp->qm.n_atoms;
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -104,17 +117,40 @@ efp_set_qm_atoms(struct efp *efp, int n_atoms,
 	if (!znuc || !xyz)
 		return EFP_RESULT_ARGUMENT_NULL;
 
-	if (n_atoms != efp->qm.n_atoms) {
-		efp->qm.znuc =
-			realloc(efp->qm.znuc, n_atoms * sizeof(double));
-		efp->qm.xyz =
-			realloc(efp->qm.xyz, n_atoms * sizeof(vec_t));
-		efp->qm.grad =
-			realloc(efp->qm.grad, n_atoms * sizeof(vec_t));
-	}
+	efp->qm.n_atoms = n_atoms;
 
-	memcpy(efp->qm.znuc, znuc, n_atoms * sizeof(double));
-	memcpy(efp->qm.xyz, xyz, n_atoms * sizeof(vec_t));
+	efp->qm.znuc = realloc(efp->qm.znuc, efp->qm.n_atoms * sizeof(double));
+	if (!efp->qm.znuc)
+		return EFP_RESULT_NO_MEMORY;
+
+	efp->qm.xyz = realloc(efp->qm.xyz, efp->qm.n_atoms * sizeof(vec_t));
+	if (!efp->qm.xyz)
+		return EFP_RESULT_NO_MEMORY;
+
+	efp->qm.grad = realloc(efp->qm.grad, efp->qm.n_atoms * sizeof(vec_t));
+	if (!efp->qm.grad)
+		return EFP_RESULT_NO_MEMORY;
+
+	memcpy(efp->qm.znuc, znuc, efp->qm.n_atoms * sizeof(double));
+	memcpy(efp->qm.xyz, xyz, efp->qm.n_atoms * sizeof(vec_t));
+
+	return EFP_RESULT_SUCCESS;
+}
+
+EFP_EXPORT enum efp_result
+efp_get_qm_atoms(struct efp *efp, int n_atoms, double *znuc, double *xyz)
+{
+	if (!initialized(efp))
+		return EFP_RESULT_NOT_INITIALIZED;
+
+	if (!znuc || !xyz)
+		return EFP_RESULT_ARGUMENT_NULL;
+
+	if (n_atoms < efp->qm.n_atoms)
+		return EFP_RESULT_INVALID_ARRAY_SIZE;
+
+	memcpy(znuc, efp->qm.znuc, efp->qm.n_atoms * sizeof(double));
+	memcpy(xyz, efp->qm.xyz, efp->qm.n_atoms * sizeof(vec_t));
 
 	return EFP_RESULT_SUCCESS;
 }
@@ -352,7 +388,8 @@ efp_compute(struct efp *efp, int do_gradient)
 			vec_zero(&efp->frags[i].force);
 			vec_zero(&efp->frags[i].torque);
 		}
-		memset(efp->qm.grad, 0, 3 * efp->qm.n_atoms * sizeof(double));
+		if (efp->qm.grad)
+			memset(efp->qm.grad, 0, efp->qm.n_atoms * sizeof(vec_t));
 	}
 
 	enum efp_result res;

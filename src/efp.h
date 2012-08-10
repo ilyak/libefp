@@ -269,6 +269,19 @@ enum efp_result efp_set_qm_atoms(struct efp *efp,
 				 const double *xyz);
 
 /**
+ * XXX
+ */
+enum efp_result efp_get_qm_atom_count(struct efp *efp, int *n_atoms);
+
+/**
+ * XXX
+ */
+enum efp_result efp_get_qm_atoms(struct efp *efp,
+				 int n_atoms,
+				 double *znuc,
+				 double *xyz);
+
+/**
  * Update positions and orientations of effective fragments.
  *
  * \param[in] efp The efp structure.
@@ -424,15 +437,17 @@ enum efp_result efp_get_gradient(struct efp *efp, int size, double *grad);
  * \a ab \a initio wave function affected by EFP subsystem.
  *
  * \param[in] efp The efp structure.
- * \param[in] size Size of the grad array. Must be at least [3 * \a n]
- *                 elements, where \a n is the number of atoms in the
- *                 \a ab \a initio subsystem.
+ * \param[in] n_atoms Expected number of atoms in the \a ab \a initio
+ *                    subsystem.
  * \param[out] grad For each atom \a x \a y \a z components of energy
- *                  gradient are stored.
+ *                  gradient are stored. The size of this array must be
+ *                  at least [3 * \p n_atoms] elements.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_qm_gradient(struct efp *efp, int size, double *grad);
+enum efp_result efp_get_qm_gradient(struct efp *efp,
+				    int n_atoms,
+				    double *grad);
 
 /**
  * Get the number of fragments in this computation.

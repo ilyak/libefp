@@ -36,6 +36,9 @@
 
 #include "../common/phys_const.h"
 
+#define UNUSED __attribute__((unused))
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
+
 #define BOHR(x) ((x) / BOHR_RADIUS)
 #define ANGSTROM(x) ((x) * BOHR_RADIUS)
 
@@ -56,6 +59,15 @@ struct test_data {
 	 * with this field as a parameter. */
 	const double *geometry_points;
 
+	/** Number of atoms in quantum part. */
+	int n_qm_atoms;
+
+	/** Nuclear charges of quantum atoms. */
+	const double *qm_znuc;
+
+	/** Coordinates of quantum atoms. */
+	const double *qm_xyz;
+
 	/** Reference energy value. */
 	double ref_energy;
 
@@ -68,8 +80,6 @@ struct test_data {
 	/** Callbacks. */
 	struct efp_callbacks callbacks;
 };
-
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
 
 int run_test(const struct test_data *test_data);
 

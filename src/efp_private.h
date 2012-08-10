@@ -35,6 +35,8 @@
 #include "../common/util.h"
 
 #define EFP_EXPORT __attribute__((visibility("default")))
+#define UNUSED __attribute__((unused))
+
 #define ARRAY_SIZE(arr) (sizeof(arr)/sizeof(arr[0]))
 #define EFP_INIT_MAGIC 0xEF2012AD
 
@@ -220,21 +222,21 @@ add_force_torque_2(struct frag *fr_i, struct frag *fr_j,
 }
 
 static inline void
-add_force_torque_frag_point(struct frag *fr_i, const vec_t *pt_i,
-			    const vec_t *pt_j, vec_t *grad_j,
-			    const vec_t *force, const vec_t *add_i)
+add_force_torque_frag_point(struct frag *fr_j, const vec_t *pt_j,
+			    vec_t *grad_i, const vec_t *force,
+			    const vec_t *add_j)
 {
-	vec_t dr_i = vec_sub(VEC(pt_i->x), VEC(fr_i->x));
-	vec_t torque_i = vec_cross(&dr_i, force);
+	vec_t dr_j = vec_sub(VEC(pt_j->x), VEC(fr_j->x));
+	vec_t torque_j = vec_cross(&dr_j, force);
 
-	torque_i.x += add_i->x;
-	torque_i.y += add_i->y;
-	torque_i.z += add_i->z;
+	torque_j.x += add_j->x;
+	torque_j.y += add_j->y;
+	torque_j.z += add_j->z;
 
-	vec_atomic_add(&fr_i->force, force);
-	vec_atomic_add(&fr_i->torque, &torque_i);
+	vec_atomic_sub(&fr_j->force, force);
+	vec_atomic_sub(&fr_j->torque, &torque_j);
 
-	vec_atomic_sub(grad_j, force);
+	vec_atomic_add(grad_i, force);
 }
 
 #endif /* LIBEFP_EFP_PRIVATE_H */
