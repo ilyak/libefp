@@ -421,15 +421,15 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 		for (int j = 0; j < efp->qm.n_atoms; j++) {
 			double znuc_j = efp->qm.znuc[j];
 			const vec_t *xyz_j = efp->qm.xyz + j;
+			vec_t *grad_j = efp->qm.grad + j;
 
 			vec_t dr = vec_sub(xyz_j, VEC(pt_i->x));
 			vec_t force, add_i, add_j;
 
 			efp_charge_dipole_grad(znuc_j, &dipole_i, &dr,
 					       &force, &add_j, &add_i);
-			vec_negate(&force);
+			vec_negate(&add_i);
 
-			vec_t *grad_j = efp->qm.grad + j;
 			add_force_torque_frag_point(fr_i, VEC(pt_i->x),
 						    grad_j, &force, &add_i);
 		}
