@@ -1,8 +1,12 @@
-# efpmd
+# EFPMD
 
 ## Input file format
 
-##### Specify the type of the simulation
+Lines beginning with the '#' symbol are ignored during input parsing.
+
+### Generic parameters
+
+##### Type of the simulation
 
 `run_type [sp|grad|cg|nve|nvt]`
 
@@ -16,7 +20,9 @@
 
 `nvt` - molecular dynamics in canonical ensemble.
 
-##### Specify the format of fragment input
+Default value: sp
+
+##### Format of fragment input
 
 `coord [xyzabc|points]`
 
@@ -24,7 +30,11 @@
 
 `points` - Coordinates of three atoms for each fragment.
 
-##### Specify the units to use
+Default value: xyzabc
+
+See fragment input specification for more details.
+
+##### Geometry units
 
 `units [angs|bohr]`
 
@@ -32,7 +42,9 @@
 
 `bohr` - Units are Bohr.
 
-##### Specify which energy terms to include in EFP computation
+Default value: angs
+
+##### Energy terms for EFP computation
 
 `terms [elec [pol [disp [xr]]]]`
 
@@ -44,7 +56,9 @@
 
 `xr` - Include exchange repulsion energy.
 
-##### Specify electrostatic damping type
+Default value: elec pol disp xr
+
+##### Electrostatic damping type
 
 `elec_damp [screen|overlap|off]`
 
@@ -54,7 +68,9 @@
 
 `off` - No electrostatic damping.
 
-##### Specify dispersion damping type
+Default value: screen
+
+##### Dispersion damping type
 
 `disp_damp [tt|overlap|off]`
 
@@ -64,23 +80,75 @@
 
 `off` - No dispersion damping.
 
-##### Specify the path to the directory with fragment library
+Default value: tt
+
+##### Maximum number of steps to make
+
+`max_steps <number>`
+
+Default value: 100
+
+##### Number of steps between outputs
+
+`print_step <number>`
+
+Default value: 1
+
+##### The path to the directory with fragment library
 
 `fraglib_path <path>`
 
+Default value: "." (current directory)
+
 The `<path>` parameter should not contain spaces or be in double quotes.
 
-##### Specify the path to the directory with user-created fragments
+##### The path to the directory with user-created fragments
 
 `userlib_path <path>`
 
+Default value: "." (current directory)
+
 The `<path>` parameter should not contain spaces or be in double quotes.
 
-##### Fragment input
+### Geometry optimization related parameters
 
-One or more `fragment` groups. Each `fragment <name>` line is followed by
-either a line of six numbers if `coord` is `xyzabc` or three lines with three
-numbers on each line if `coord` is `points`. If `<name>` contains an `_l`
-suffix the fragment parameters will be searched in the `fraglib_path`
-directory. Otherwise the directory specified by the `userlib_path` option will
-be used.
+##### Line search step size
+
+`ls_step_size <number>`
+
+Default value: 20.0
+
+##### Optimization tolerance
+
+`opt_tol <number>`
+
+Default value: 1.0e-4
+
+Optimization will stop when maximum gradient component is less than `opt_tol`
+and RMS gradient is less than 1/3 of `opt_tol`.
+
+### Molecular dynamics related parameters
+
+##### Simulation temperature
+
+`temperature <number>`
+
+Units: Kelvin
+Default value: 300.0
+
+##### Molecular dynamics time step
+
+`time_step <number>`
+
+Units: femtoseconds
+Default value: 1.0
+
+### Fragment input
+
+One or more `fragment <name>` groups.
+
+Each `fragment <name>` line is followed by either a line of six numbers if
+`coord` is `xyzabc` or three lines with three numbers on each line if `coord`
+is `points`. If `<name>` contains an `_l` suffix the fragment parameters for
+this fragment will be searched in the `fraglib_path` directory. Otherwise the
+directory specified by the `userlib_path` option will be used.
