@@ -27,7 +27,7 @@
 #include "common.h"
 #include "sim.h"
 
-void sim_grad(struct efp *efp, const struct config *config)
+void sim_grad(struct efp *efp, UNUSED const struct config *config)
 {
 	enum efp_result res;
 

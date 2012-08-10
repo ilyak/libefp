@@ -38,6 +38,7 @@
 #include "../common/util.h"
 
 #define NORETURN __attribute__((noreturn))
+#define UNUSED __attribute__((unused))
 #define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))
 
 #define streq(a, b) (u_strcasecmp(a, b) == 0)

@@ -27,7 +27,7 @@
 #include "common.h"
 #include "sim.h"
 
-void sim_nve(struct efp *efp, const struct config *config)
+void sim_nve(UNUSED struct efp *efp, UNUSED const struct config *config)
 {
 	error("NVE IS NOT IMPLEMENTED");
 }
