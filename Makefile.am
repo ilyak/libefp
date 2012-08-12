@@ -96,7 +96,6 @@ efpmd_cubegen_cubegen_SOURCES = \
 
 EXTRA_DIST += \
 	efpmd/README.md \
-	efpmd/optimizer/test.c \
 	efpmd/tests/c6h6-dimer_cg.in \
 	efpmd/tests/h2o-ch3oh_grad.in \
 	efpmd/tests/h2o-dimer_cg.in \

@@ -8,7 +8,7 @@
 #define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))
 #define UNUSED __attribute__((unused))
 
-#define OPT_STEPS 50
+#define OPT_STEPS 30
 
 static enum opt_result fn_1(size_t n, const double *x, double *fx,
 		double *gx, UNUSED void *data)
@@ -88,6 +88,7 @@ static void do_test(const struct test *test)
 	enum opt_result res;
 	double x[test->n_dim], fx, gx[test->n_dim];
 
+	opt_set_ls_step_size(state, 0.1);
 	opt_set_fn(state, test->fn);
 
 	res = opt_init(state, test->x);
