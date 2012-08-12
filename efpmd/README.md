@@ -2,7 +2,7 @@
 
 ## Input file format
 
-Lines beginning with the '#' symbol are ignored during input parsing.
+Lines beginning with the `#` symbol are ignored during input parsing.
 
 ### Generic parameters
 
@@ -20,7 +20,7 @@ Lines beginning with the '#' symbol are ignored during input parsing.
 
 `nvt` - molecular dynamics in canonical ensemble.
 
-Default value: sp
+Default value: `sp`
 
 ##### Format of fragment input
 
@@ -30,7 +30,7 @@ Default value: sp
 
 `points` - Coordinates of three atoms for each fragment.
 
-Default value: xyzabc
+Default value: `xyzabc`
 
 See fragment input specification for more details.
 
@@ -42,7 +42,7 @@ See fragment input specification for more details.
 
 `bohr` - Units are Bohr.
 
-Default value: angs
+Default value: `angs`
 
 ##### Energy terms for EFP computation
 
@@ -56,7 +56,7 @@ Default value: angs
 
 `xr` - Include exchange repulsion energy.
 
-Default value: elec pol disp xr
+Default value: `elec pol disp xr`
 
 ##### Electrostatic damping type
 
@@ -68,7 +68,7 @@ Default value: elec pol disp xr
 
 `off` - No electrostatic damping.
 
-Default value: screen
+Default value: `screen`
 
 ##### Dispersion damping type
 
@@ -80,25 +80,25 @@ Default value: screen
 
 `off` - No dispersion damping.
 
-Default value: tt
+Default value: `tt`
 
 ##### Maximum number of steps to make
 
 `max_steps <number>`
 
-Default value: 100
+Default value: `100`
 
 ##### Number of steps between outputs
 
 `print_step <number>`
 
-Default value: 1
+Default value: `1`
 
 ##### The path to the directory with fragment library
 
 `fraglib_path <path>`
 
-Default value: "$(prefix)/share/libefp" (data install directory)
+Default value: `"$(prefix)/share/libefp"` (data install directory)
 
 The `<path>` parameter should not contain spaces or be in double quotes.
 
@@ -106,7 +106,7 @@ The `<path>` parameter should not contain spaces or be in double quotes.
 
 `userlib_path <path>`
 
-Default value: "." (current directory)
+Default value: `"."` (current directory)
 
 The `<path>` parameter should not contain spaces or be in double quotes.
 
@@ -116,16 +116,16 @@ The `<path>` parameter should not contain spaces or be in double quotes.
 
 `ls_step_size <number>`
 
-Default value: 20.0
+Default value: `20.0`
 
 ##### Optimization tolerance
 
 `opt_tol <number>`
 
-Default value: 1.0e-4
+Default value: `1.0e-4`
 
 Optimization will stop when maximum gradient component is less than `opt_tol`
-and RMS gradient is less than 1/3 of `opt_tol`.
+and RMS gradient is less than one third of `opt_tol`.
 
 ### Molecular dynamics related parameters
 
@@ -133,15 +133,15 @@ and RMS gradient is less than 1/3 of `opt_tol`.
 
 `temperature <number>`
 
-Units: Kelvin
-Default value: 300.0
+Units: `Kelvins`
+Default value: `300.0`
 
 ##### Molecular dynamics time step
 
 `time_step <number>`
 
-Units: femtoseconds
-Default value: 1.0
+Units: `Femtoseconds`
+Default value: `1.0`
 
 ### Fragment input
 
