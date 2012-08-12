@@ -98,7 +98,7 @@ Default value: 1
 
 `fraglib_path <path>`
 
-Default value: "." (current directory)
+Default value: "$(prefix)/share/libefp" (data install directory)
 
 The `<path>` parameter should not contain spaces or be in double quotes.
 

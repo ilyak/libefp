@@ -8,6 +8,7 @@ AM_CPPFLAGS = \
 	-include $(top_builddir)/config.h \
 	-DSYSCONFDIR=\""$(sysconfdir)"\" \
 	-DLIBEXECDIR=\""$(libexecdir)"\" \
+	-DDATADIR=\""$(datarootdir)/libefp"\" \
 	-I${top_srcdir}/src
 
 AM_CFLAGS = ${my_CFLAGS} ${OPENMP_CFLAGS} \
