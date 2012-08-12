@@ -20,6 +20,21 @@ LIBEFP_AGE = 0
 include_HEADERS = src/efp.h
 lib_LTLIBRARIES = src/libefp.la
 
+dist_pkgdata_DATA = \
+	fraglib/makefp.inp \
+	fraglib/acetone.efp \
+	fraglib/c2h5oh.efp \
+	fraglib/c6h6.efp \
+	fraglib/ccl4.efp \
+	fraglib/ch3oh.efp \
+	fraglib/ch4.efp \
+	fraglib/cl2.efp \
+	fraglib/dcm.efp \
+	fraglib/dmso.efp \
+	fraglib/h2.efp \
+	fraglib/h2o.efp \
+	fraglib/nh3.efp
+
 if BUILD_EFPMD
 bin_PROGRAMS = \
 	efpmd/efpmd \
@@ -50,23 +65,7 @@ src_libefp_la_SOURCES = \
 	src/terms.h \
 	src/xr.c
 
-EXTRA_DIST += \
-	Doxyfile \
-	LICENSE \
-	README.md \
-	fraglib/makefp.inp \
-	fraglib/acetone.efp \
-	fraglib/c2h5oh.efp \
-	fraglib/c6h6.efp \
-	fraglib/ccl4.efp \
-	fraglib/ch3oh.efp \
-	fraglib/ch4.efp \
-	fraglib/cl2.efp \
-	fraglib/dcm.efp \
-	fraglib/dmso.efp \
-	fraglib/h2.efp \
-	fraglib/h2o.efp \
-	fraglib/nh3.efp
+EXTRA_DIST += LICENSE README.md
 
 src_libefp_la_LDFLAGS = $(AM_LDFLAGS) \
 	-version-info $(LIBEFP_CURRENT):$(LIBEFP_REVISION):$(LIBEFP_AGE)
