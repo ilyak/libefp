@@ -134,6 +134,7 @@ and RMS gradient is less than one third of `opt_tol`.
 `temperature <number>`
 
 Units: `Kelvins`
+
 Default value: `300.0`
 
 ##### Molecular dynamics time step
@@ -141,6 +142,7 @@ Default value: `300.0`
 `time_step <number>`
 
 Units: `Femtoseconds`
+
 Default value: `1.0`
 
 ### Fragment input
