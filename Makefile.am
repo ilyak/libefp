@@ -131,7 +131,8 @@ TESTS = \
 	tests/total_4a \
 	tests/total_4b \
 	tests/total_4c \
-	tests/qm_5
+	tests/qm_5 \
+	tests/qm_6
 
 EXTRA_DIST += \
 	tests/geometry_1.h \
@@ -244,3 +245,7 @@ tests_total_4c_CPPFLAGS = $(TESTS_CPPFLAGS)
 tests_qm_5_SOURCES = tests/qm_5.c $(TESTS_COMMON_FILES)
 tests_qm_5_LDADD = $(TESTS_LDADD)
 tests_qm_5_CPPFLAGS = $(TESTS_CPPFLAGS)
+
+tests_qm_6_SOURCES = tests/qm_6.c $(TESTS_COMMON_FILES)
+tests_qm_6_LDADD = $(TESTS_LDADD)
+tests_qm_6_CPPFLAGS = $(TESTS_CPPFLAGS)
