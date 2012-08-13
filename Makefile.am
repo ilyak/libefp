@@ -40,9 +40,8 @@ dist_pkgdata_DATA = \
 	fraglib/nh3.efp
 
 if BUILD_EFPMD
-bin_PROGRAMS = \
-	efpmd/efpmd \
-	efpmd/cubegen/cubegen
+bin_PROGRAMS = efpmd/efpmd
+noinst_PROGRAMS = efpmd/cubegen/cubegen
 endif
 
 src_libefp_la_SOURCES = \
