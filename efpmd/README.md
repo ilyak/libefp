@@ -137,7 +137,7 @@ Units: `Kelvins`
 
 Default value: `300.0`
 
-##### Molecular dynamics time step
+##### Time step
 
 `time_step <number>`
 
