@@ -132,7 +132,7 @@ void print_gradient(struct efp *efp)
 
 		double *ptr = grad + 6 * i;
 
-printf("    GRADIENT ON FRAGMENT %d (%s):\n", i, frag_name);
+printf("    GRADIENT ON FRAGMENT %d (%s):\n", i + 1, frag_name);
 printf(" FORCE: %16.10lf %16.10lf %16.10lf\n", ptr[0], ptr[1], ptr[2]);
 printf("TORQUE: %16.10lf %16.10lf %16.10lf\n", ptr[3], ptr[4], ptr[5]);
 printf("\n");
