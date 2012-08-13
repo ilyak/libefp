@@ -50,13 +50,11 @@ struct test_data {
 	const char **fragname;
 
 	/**
-	 * If not null geometry will be set up using efp_set_coordinates
-	 * with this field as a parameter. */
+	 * If not NULL geometry will be set up using EFP_COORD_TYPE_XYZABC. */
 	const double *geometry_xyzabc;
 
 	/**
-	 * If not null geometry will be set up using efp_set_coordinates_2
-	 * with this field as a parameter. */
+	 * If not NULL geometry will be set up using EFP_COORD_TYPE_POINTS. */
 	const double *geometry_points;
 
 	/** Number of atoms in quantum part. */
