@@ -1,6 +1,6 @@
 AC_PREREQ([2.62])
 AC_INIT([libefp],
-	[0.1],
+	[0.9.0],
 	[ilya.kaliman@gmail.com],
 	[libefp],
 	[http://libefp.github.com/])
