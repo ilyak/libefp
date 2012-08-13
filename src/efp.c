@@ -936,11 +936,10 @@ EFP_EXPORT const char *
 efp_banner(void)
 {
 	static const char banner[] =
-		"libefp\n"
-		"The Effective Fragment Potential method implementation\n"
+		"LIBEFP ver. " LIBEFPVERSION "\n"
 		"Copyright (c) 2012 Ilya Kaliman\n"
 		"See LICENSE file for licensing terms\n"
-		"Project web page http://libefp.github.com/\n";
+		"Project web site: http://libefp.github.com/\n";
 
 	return banner;
 }

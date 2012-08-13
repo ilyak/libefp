@@ -4,19 +4,20 @@ ACLOCAL_AMFLAGS = -I m4 ${ACLOCAL_FLAGS}
 AM_MAKEFLAGS = --no-print-directory
 AM_LDFLAGS =
 
+LIBEFP_CURRENT = 0
+LIBEFP_REVISION = 9
+LIBEFP_AGE = 0
+
 AM_CPPFLAGS = \
 	-include $(top_builddir)/config.h \
 	-DSYSCONFDIR=\""$(sysconfdir)"\" \
 	-DLIBEXECDIR=\""$(libexecdir)"\" \
 	-DDATADIR=\""$(datarootdir)/libefp"\" \
+	-DLIBEFPVERSION=\""$(LIBEFP_CURRENT).$(LIBEFP_REVISION).$(LIBEFP_AGE)"\" \
 	-I${top_srcdir}/src
 
 AM_CFLAGS = ${my_CFLAGS} ${OPENMP_CFLAGS} \
 	-fvisibility=hidden
-
-LIBEFP_CURRENT = 0
-LIBEFP_REVISION = 0
-LIBEFP_AGE = 0
 
 include_HEADERS = src/efp.h
 lib_LTLIBRARIES = src/libefp.la
