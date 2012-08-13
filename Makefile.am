@@ -8,11 +8,13 @@ LIBEFP_CURRENT = 0
 LIBEFP_REVISION = 9
 LIBEFP_AGE = 0
 
+EFPMD_MAJOR = 0
+EFPMD_MINOR = 1
+
 AM_CPPFLAGS = \
 	-include $(top_builddir)/config.h \
 	-DSYSCONFDIR=\""$(sysconfdir)"\" \
 	-DLIBEXECDIR=\""$(libexecdir)"\" \
-	-DDATADIR=\""$(datarootdir)/libefp"\" \
 	-DLIBEFPVERSION=\""$(LIBEFP_CURRENT).$(LIBEFP_REVISION).$(LIBEFP_AGE)"\" \
 	-I${top_srcdir}/src
 
@@ -92,6 +94,9 @@ efpmd_efpmd_SOURCES = \
 
 efpmd_efpmd_LDADD = src/libefp.la
 efpmd_efpmd_CFLAGS = $(AM_CFLAGS)
+efpmd_efpmd_CPPFLAGS = $(AM_CPPFLAGS) \
+	-DDATADIR=\""$(datarootdir)/libefp"\" \
+	-DEFPMDVERSION=\""$(EFPMD_MAJOR).$(EFPMD_MINOR)"\"
 
 efpmd_cubegen_cubegen_SOURCES = \
 	efpmd/cubegen/cubegen.c

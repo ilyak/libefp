@@ -52,7 +52,7 @@ static sim_fn_t get_sim_fn(const char *run_type)
 
 static void print_banner(void)
 {
-	printf("EFPMD - A EFP simulation program based on LIBEFP\n");
+	printf("EFPMD ver. " EFPMDVERSION "\n");
 	printf("Copyright (c) 2012 Ilya Kaliman\n\n");
 	printf("%s\n\n", efp_banner());
 }
