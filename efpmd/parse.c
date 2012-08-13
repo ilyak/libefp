@@ -215,14 +215,13 @@ static bool parse_terms(char **str, void *out)
 			if (strneq(list[i].name, ptr, strlen(list[i].name))) {
 				ptr += strlen(list[i].name);
 				terms |= list[i].value;
-
-				while (*ptr && isspace(*ptr))
-					ptr++;
-			}
-			else {
-				return false;
+				goto next;
 			}
 		}
+		return false;
+next:
+		while (*ptr && isspace(*ptr))
+			ptr++;
 	}
 
 	*(unsigned *)out = terms;
