@@ -154,7 +154,7 @@ struct efp_energy {
 	double charge_penetration;
 	/**
 	 * All polarization energy goes here. Polarization is computed
-	 * self-consistently so we can't separate it into EFP/EFP and AI/EFP
+	 * self-consistently so it can't be separated into EFP/EFP and AI/EFP
 	 * parts. */
 	double polarization;
 	/**

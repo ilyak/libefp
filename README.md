@@ -1,4 +1,4 @@
-# libefp
+# LIBEFP
 
 ## Overview
 
@@ -45,13 +45,12 @@ Finally, install the library:
 
 ## How to Use
 
-To be able to use the library you should include efp.h file in your code:
+To be able to use the library you should include `efp.h` file in your code:
 
 	#include <efp.h>
 
-To get the idea of how to use the library see `tests/test_common.c` file. The
-description of the specific public functions and structures provided by the
-library is available at http://libefp.github.com/.
+The description of the public API functions and structures provided by the
+library is available at project's web site http://libefp.github.com/.
 
 To obtain an executable program link with provided shared (recommended) or
 static libraries:
@@ -75,7 +74,7 @@ from August 11, 2011 is the currently a recommended and tested version. A set
 of pre-generated library fragments are available in the `fraglib` directory. If
 you want to generate parameters for custom fragments you should create GAMESS
 makefp job input similar to the `fraglib/makefp.inp` file. Using this input
-file you can create EFP parameters for arbitrary fragment types.
+file as a template you can create EFP parameters for arbitrary fragment types.
 
 After you created `.efp` file using GAMESS you should rename the fragment by
 replacing `$FRAGNAME` with your name of choice (e.g. rename `$FRAGNAME` to
@@ -85,8 +84,8 @@ strings. For example if the number of elements in your 'FOCK MATRIX ELEMENTS'
 section is divisible by four then GAMESS will print an unneeded '>' sing at the
 end of last line. If parsing of your newly generated EFP potential fails with
 syntax error then you probably have these extra marks somewhere. Check if
-GAMESS placed extra line continuation mark in the last line of a string and
-remove it for the parsing of a potential file to work.
+there are some extra line continuation marks in the last line of sections and
+remove them for the parsing of a potential file to work.
 
 For a complete description of EFP data file format consult FRAGNAME section in
 GAMESS manual (see http://www.msg.ameslab.gov/gamess/).
