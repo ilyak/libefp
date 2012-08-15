@@ -1,5 +1,19 @@
 # EFPMD
 
+EFPMD is a molecular simulation program based on LIBEFP. It supports EFP-only
+single point energy and gradient computations, geometry optimization, and
+molecular dynamics simulations in microcanonical and canonical ensembles.
+
+Simulations can be accelerated by running in parallel mode on multi-core CPUs.
+To enable parallel computation set `OMP_NUM_THREADS` environmental variable to
+the desired number of parallel threads. For example on 4-core machine in bash
+shell do:
+
+	export OMP_NUM_THREADS=4
+
+before starting the program to enable parallel computation using 4 threads.
+This should give almost 4x speedup in all computations.
+
 ## Input file format
 
 Lines beginning with the `#` symbol are ignored during input parsing.
@@ -100,7 +114,8 @@ Default value: `1`
 
 Default value: `"$(prefix)/share/libefp"` (data install directory)
 
-The `<path>` parameter should not contain spaces or be in double quotes.
+The `<path>` parameter should not contain spaces or should be in double quotes
+otherwise.
 
 ##### The path to the directory with user-created fragments
 
@@ -108,7 +123,8 @@ The `<path>` parameter should not contain spaces or be in double quotes.
 
 Default value: `"."` (current directory)
 
-The `<path>` parameter should not contain spaces or be in double quotes.
+The `<path>` parameter should not contain spaces or should be in double quotes
+otherwise.
 
 ### Geometry optimization related parameters
 
