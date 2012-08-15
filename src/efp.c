@@ -825,9 +825,12 @@ efp_init(struct efp **out,
 
 	memcpy(&efp->opts, opts, sizeof(struct efp_opts));
 
+	if (efp->opts.terms & EFP_TERM_AI_POL)
+		if (!callbacks || !callbacks->get_electron_density_field)
+			return EFP_RESULT_CALLBACK_NOT_SET;
+
 	if (callbacks)
-		memcpy(&efp->callbacks, callbacks,
-				sizeof(struct efp_callbacks));
+		memcpy(&efp->callbacks, callbacks, sizeof(struct efp_callbacks));
 
 	if ((res = efp_read_potential(efp, potential_file_list)))
 		return res;
