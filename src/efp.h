@@ -310,7 +310,7 @@ enum efp_result efp_get_qm_atoms(struct efp *efp,
  * If \p coord_type is \a EFP_COORD_TYPE_XYZABC then for each fragment the \p
  * coord array should contain \a x \a y \a z components of the center of mass
  * position and three Euler rotation angles representing orientation of a
- * fragment. The size of the \a coord array must be at least [6 * \a n]
+ * fragment. The size of the \p coord array must be at least [6 * \a n]
  * elements, where \a n is the number of fragments.
  *
  * If \p coord_type is \a EFP_COORD_TYPE_POINTS then for each fragment the \p
@@ -318,10 +318,9 @@ enum efp_result efp_get_qm_atoms(struct efp *efp,
  * fragment point 1 and first atom of fragment are made to coincide. The vector
  * connecting points 1 and 2 is aligned with the corresponding vector
  * connecting fragment atoms. The plane defined by points 1, 2, and 3 is made
- * to coincide with the corresponding fragment plane. The size of the \a coord
+ * to coincide with the corresponding fragment plane. The size of the \p coord
  * array must be at least [9 * \a n] elements, where \a n is the number of
- * fragments. For each fragment \a x \a y \a z coordinates of 3 fragment points
- * should be specified to setup the position and orientation of a fragment.
+ * fragments.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
