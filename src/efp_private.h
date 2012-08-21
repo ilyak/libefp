@@ -29,10 +29,10 @@
 
 #include "efp.h"
 #include "int.h"
-#include "math_util.h"
 #include "terms.h"
 
-#include "../common/util.h"
+#include "../common/compat.h"
+#include "../common/math_util.h"
 
 #define EFP_EXPORT __attribute__((visibility("default")))
 #define UNUSED __attribute__((unused))

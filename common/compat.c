@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "util.h"
+#include "compat.h"
 
 size_t u_strnlen(const char *str, size_t n)
 {

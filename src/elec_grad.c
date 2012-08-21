@@ -24,7 +24,6 @@
  * SUCH DAMAGE.
  */
 
-#include "math_util.h"
 #include "elec.h"
 
 static double

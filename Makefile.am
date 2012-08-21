@@ -45,8 +45,9 @@ noinst_PROGRAMS = efpmd/cubegen/cubegen
 endif
 
 src_libefp_la_SOURCES = \
-	common/util.c \
-	common/util.h \
+	common/compat.c \
+	common/compat.h \
+	common/math_util.h \
 	src/ai_disp.c \
 	src/ai_xr.c \
 	src/cblas.h \
@@ -61,7 +62,6 @@ src_libefp_la_SOURCES = \
 	src/int.c \
 	src/int.h \
 	src/int_shift.h \
-	src/math_util.h \
 	src/parse.c \
 	src/parse.h \
 	src/pol.c \
@@ -74,9 +74,10 @@ src_libefp_la_LDFLAGS = $(AM_LDFLAGS) \
 	-version-info $(LIBEFP_CURRENT):$(LIBEFP_REVISION):$(LIBEFP_AGE)
 
 efpmd_efpmd_SOURCES = \
+	common/compat.c \
+	common/compat.h \
+	common/math_util.h \
 	common/phys_const.h \
-	common/util.c \
-	common/util.h \
 	efpmd/cg.c \
 	efpmd/common.c \
 	efpmd/common.h \
