@@ -332,7 +332,8 @@ static void parse_frag(struct stream *stream, enum efp_coord_type coord_type,
 		       double units_factor, struct frag *frag)
 {
 	int n_rows, n_cols;
-	frag->name = NULL;
+
+	memset(frag, 0, sizeof(struct frag));
 
 	if (!parse_string(&stream->ptr, &frag->name))
 		error("UNABLE TO READ FRAGMENT NAME");

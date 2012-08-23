@@ -83,6 +83,8 @@ efpmd_efpmd_SOURCES = \
 	efpmd/common.h \
 	efpmd/grad.c \
 	efpmd/main.c \
+	efpmd/md.c \
+	efpmd/md.h \
 	efpmd/nve.c \
 	efpmd/nvt.c \
 	efpmd/optimizer/opt.c \

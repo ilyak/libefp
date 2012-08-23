@@ -60,6 +60,11 @@ void NORETURN lib_error(enum efp_result res)
 	die("LIBEFP ERROR: %s", efp_result_to_string(res));
 }
 
+void NORETURN memory_error(void)
+{
+	error("NO MEMORY");
+}
+
 void print_geometry(struct efp *efp)
 {
 	int n_frag;

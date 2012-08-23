@@ -25,9 +25,21 @@
  */
 
 #include "common.h"
+#include "md.h"
 #include "sim.h"
 
-void sim_nvt(UNUSED struct efp *efp, UNUSED const struct config *config)
+void sim_nvt(struct efp *efp, const struct config *config)
 {
-	error("NVT IS NOT IMPLEMENTED");
+	struct md *md = md_create(efp, config);
+
+	for (int i = 1; i <= config->max_steps; i++) {
+		md_update_step_nvt(md);
+
+		if (i % config->print_step == 0) {
+			md_print_info(md);
+			md_print_geometry(md);
+		}
+	}
+
+	md_shutdown(md);
 }

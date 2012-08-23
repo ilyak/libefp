@@ -50,6 +50,7 @@
 struct frag {
 	char *name;
 	double coord[9];
+	double vel[6];
 };
 
 struct config {
@@ -74,6 +75,7 @@ struct config {
 void NORETURN die(const char *, ...);
 void NORETURN error(const char *, ...);
 void NORETURN lib_error(enum efp_result);
+void NORETURN memory_error(void);
 
 void print_geometry(struct efp *);
 void print_energy(struct efp *);

@@ -25,9 +25,21 @@
  */
 
 #include "common.h"
+#include "md.h"
 #include "sim.h"
 
-void sim_nve(UNUSED struct efp *efp, UNUSED const struct config *config)
+void sim_nve(struct efp *efp, const struct config *config)
 {
-	error("NVE IS NOT IMPLEMENTED");
+	struct md *md = md_create(efp, config);
+
+	for (int i = 1; i <= config->max_steps; i++) {
+		md_update_step_nve(md);
+
+		if (i % config->print_step == 0) {
+			md_print_info(md);
+			md_print_geometry(md);
+		}
+	}
+
+	md_shutdown(md);
 }
