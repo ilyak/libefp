@@ -46,9 +46,10 @@ typedef struct {
 } mat_t;
 
 static inline double
-vec_el(const vec_t *vec, int idx)
+vec_get(const vec_t *vec, int idx)
 {
-	return ((double *)vec)[idx];
+	const double *ptr = (const double *)vec;
+	return ptr[idx];
 }
 
 static inline void
@@ -156,6 +157,20 @@ mat_zero(mat_t *mat)
 	mat->zx = 0.0, mat->zy = 0.0, mat->zz = 0.0;
 }
 
+static inline double
+mat_get(const mat_t *mat, int a1, int a2)
+{
+	const double *ptr = (const double *)mat;
+	return ptr[3 * a1 + a2];
+}
+
+static inline void
+mat_set(mat_t *mat, int a1, int a2, double val)
+{
+	double *ptr = (double *)mat;
+	ptr[3 * a1 + a2] = val;
+}
+
 static inline void
 mat_vec(const mat_t *mat, const vec_t *vec, vec_t *out)
 {
@@ -170,6 +185,58 @@ mat_trans_vec(const mat_t *mat, const vec_t *vec, vec_t *out)
 	out->x = mat->xx * vec->x + mat->yx * vec->y + mat->zx * vec->z;
 	out->y = mat->xy * vec->x + mat->yy * vec->y + mat->zy * vec->z;
 	out->z = mat->xz * vec->x + mat->yz * vec->y + mat->zz * vec->z;
+}
+
+static inline void
+mat_mat(const mat_t *m1, const mat_t *m2, mat_t *out)
+{
+	out->xx = m1->xx * m2->xx + m1->xy * m2->yx + m1->xz * m2->zx;
+	out->xy = m1->xx * m2->xy + m1->xy * m2->yy + m1->xz * m2->zy;
+	out->xz = m1->xx * m2->xz + m1->xy * m2->yz + m1->xz * m2->zz;
+	out->yx = m1->yx * m2->xx + m1->yy * m2->yx + m1->yz * m2->zx;
+	out->yy = m1->yx * m2->xy + m1->yy * m2->yy + m1->yz * m2->zy;
+	out->yz = m1->yx * m2->xz + m1->yy * m2->yz + m1->yz * m2->zz;
+	out->zx = m1->zx * m2->xx + m1->zy * m2->yx + m1->zz * m2->zx;
+	out->zy = m1->zx * m2->xy + m1->zy * m2->yy + m1->zz * m2->zy;
+	out->zz = m1->zx * m2->xz + m1->zy * m2->yz + m1->zz * m2->zz;
+}
+
+static inline void
+euler_to_matrix(double a, double b, double c, mat_t *out)
+{
+	double sina = sin(a), cosa = cos(a);
+	double sinb = sin(b), cosb = cos(b);
+	double sinc = sin(c), cosc = cos(c);
+
+	out->xx =  cosa * cosc - sina * cosb * sinc;
+	out->xy = -cosa * sinc - sina * cosb * cosc;
+	out->xz =  sinb * sina;
+	out->yx =  sina * cosc + cosa * cosb * sinc;
+	out->yy = -sina * sinc + cosa * cosb * cosc;
+	out->yz = -sinb * cosa;
+	out->zx =  sinb * sinc;
+	out->zy =  sinb * cosc;
+	out->zz =  cosb;
+}
+
+static inline void
+matrix_to_euler(const mat_t *rotmat, double *ea, double *eb, double *ec)
+{
+	double a, b, c, sinb;
+
+	b = acos(rotmat->zz);
+	sinb = sqrt(1.0 - rotmat->zz * rotmat->zz);
+
+	if (fabs(sinb) < 1.0e-6) {
+		a = atan2(-rotmat->xy, rotmat->xx);
+		c = 0.0;
+	}
+	else {
+		a = atan2(rotmat->xz, -rotmat->yz);
+		c = atan2(rotmat->zx, rotmat->zy);
+	}
+
+	*ea = a, *eb = b, *ec = c;
 }
 
 static inline void

@@ -123,7 +123,7 @@ dipole_quadrupole_energy(const vec_t *d1, const double *quad2, const vec_t *dr,
 	for (int a = 0; a < 3; a++)
 		for (int b = 0; b < 3; b++) {
 			int idx = quad_idx(a, b);
-			d1q2dr += quad2[idx] * vec_el(d1, a) * vec_el(dr, b);
+			d1q2dr += quad2[idx] * vec_get(d1, a) * vec_get(dr, b);
 		}
 
 	return 5.0 / r7 * q2dr * d1dr - 2.0 / r5 * d1q2dr;
@@ -151,8 +151,8 @@ quadrupole_quadrupole_energy(const double *quad1, const double *quad2,
 		for (int b = 0; b < 3; b++) {
 			int idx = quad_idx(a, b);
 
-			t1 += quad1[idx] * vec_el(dr, b);
-			t2 += quad2[idx] * vec_el(dr, b);
+			t1 += quad1[idx] * vec_get(dr, b);
+			t2 += quad2[idx] * vec_get(dr, b);
 
 			q1q2 += quad1[idx] * quad2[idx];
 		}

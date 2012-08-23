@@ -156,43 +156,6 @@ efp_get_qm_atoms(struct efp *efp, int n_atoms, double *znuc, double *xyz)
 }
 
 static void
-euler_to_matrix(double a, double b, double c, mat_t *out)
-{
-	double sina = sin(a), cosa = cos(a);
-	double sinb = sin(b), cosb = cos(b);
-	double sinc = sin(c), cosc = cos(c);
-	out->xx =  cosa * cosc - sina * cosb * sinc;
-	out->xy = -cosa * sinc - sina * cosb * cosc;
-	out->xz =  sinb * sina;
-	out->yx =  sina * cosc + cosa * cosb * sinc;
-	out->yy = -sina * sinc + cosa * cosb * cosc;
-	out->yz = -sinb * cosa;
-	out->zx =  sinb * sinc;
-	out->zy =  sinb * cosc;
-	out->zz =  cosb;
-}
-
-static void
-matrix_to_euler(const mat_t *rotmat, double *ea, double *eb, double *ec)
-{
-	double a, b, c, sinb;
-
-	b = acos(rotmat->zz);
-	sinb = sqrt(1.0 - rotmat->zz * rotmat->zz);
-
-	if (fabs(sinb) < 1.0e-6) {
-		a = atan2(-rotmat->xy, rotmat->xx);
-		c = 0.0;
-	}
-	else {
-		a = atan2(rotmat->xz, -rotmat->yz);
-		c = atan2(rotmat->zx, rotmat->zy);
-	}
-
-	*ea = a, *eb = b, *ec = c;
-}
-
-static void
 points_to_matrix(const double *pts, mat_t *rotmat)
 {
 	double (*rm)[3] = (double (*)[3])rotmat;
