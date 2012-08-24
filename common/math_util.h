@@ -201,6 +201,36 @@ mat_mat(const mat_t *m1, const mat_t *m2, mat_t *out)
 	out->zz = m1->zx * m2->xz + m1->zy * m2->yz + m1->zz * m2->zz;
 }
 
+static inline double
+mat_det(const mat_t *mat)
+{
+	return mat->xx * mat->yy * mat->zz +
+	       mat->xy * mat->zx * mat->yz +
+	       mat->yx * mat->xz * mat->zy -
+	       mat->xz * mat->yy * mat->zx -
+	       mat->zy * mat->yz * mat->xx -
+	       mat->yx * mat->xy * mat->zz;
+}
+
+static inline void
+mat_negate(mat_t *mat)
+{
+	double *ptr = (double *)mat;
+
+	for (int i = 0; i < 9; i++, ptr++)
+		*ptr = -(*ptr);
+}
+
+static inline mat_t
+mat_transpose(const mat_t *mat)
+{
+	mat_t rv = { mat->xx, mat->yx, mat->zx,
+		     mat->xy, mat->yy, mat->zy,
+		     mat->xz, mat->yz, mat->zz };
+
+	return rv;
+}
+
 static inline void
 euler_to_matrix(double a, double b, double c, mat_t *out)
 {

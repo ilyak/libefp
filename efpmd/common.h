@@ -39,6 +39,8 @@
 
 #define NORETURN __attribute__((noreturn))
 #define UNUSED __attribute__((unused))
+
+#define EPSILON 1.0e-6
 #define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))
 
 #define streq(a, b) (u_strcasecmp(a, b) == 0)

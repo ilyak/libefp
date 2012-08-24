@@ -90,14 +90,18 @@ static void next_line(struct stream *stream)
 
 static void skip_space(struct stream *stream)
 {
-	while (*stream->ptr && isspace(*stream->ptr))
-		stream->ptr++;
+	if (stream->ptr)
+		while (*stream->ptr && isspace(*stream->ptr))
+			stream->ptr++;
 }
 
 static bool parse_string(char **str, void *out)
 {
 	size_t len = 0;
 	char *ptr = *str, *start;
+
+	if (!ptr)
+		return false;
 
 	while (*ptr && isspace(*ptr))
 		ptr++;
@@ -331,8 +335,6 @@ static void parse_field(struct stream *stream, struct config *config)
 static void parse_frag(struct stream *stream, enum efp_coord_type coord_type,
 		       double units_factor, struct frag *frag)
 {
-	int n_rows, n_cols;
-
 	memset(frag, 0, sizeof(struct frag));
 
 	if (!parse_string(&stream->ptr, &frag->name))
@@ -340,28 +342,44 @@ static void parse_frag(struct stream *stream, enum efp_coord_type coord_type,
 
 	next_line(stream);
 
-	switch (coord_type) {
-		case EFP_COORD_TYPE_XYZABC:
-			n_rows = 1;
-			n_cols = 6;
-			break;
-		case EFP_COORD_TYPE_POINTS:
-			n_rows = 3;
-			n_cols = 3;
-			break;
-		default:
-			lib_error(EFP_RESULT_INCORRECT_ENUM_VALUE);
-	}
-
-	for (int i = 0, idx = 0; i < n_rows; i++) {
-		for (int j = 0; j < n_cols; j++, idx++) {
-			double val;
-
-			if (!parse_double(&stream->ptr, &val))
+	if (coord_type == EFP_COORD_TYPE_XYZABC) {
+		for (int i = 0; i < 6; i++)
+			if (!parse_double(&stream->ptr, frag->coord + i))
 				error("UNABLE TO PARSE FRAGMENT COORDINATES");
 
-			frag->coord[idx] = val * units_factor;
+		for (int i = 0; i < 3; i++)
+			frag->coord[i] *= units_factor;
+
+		next_line(stream);
+	}
+	else if (coord_type == EFP_COORD_TYPE_POINTS) {
+		for (int i = 0, idx = 0; i < 3; i++) {
+			for (int j = 0; j < 3; j++, idx++)
+				if (!parse_double(&stream->ptr, frag->coord + idx))
+					error("UNABLE TO PARSE FRAGMENT COORDINATES");
+
+			next_line(stream);
 		}
+
+		for (int i = 0; i < 9; i++)
+			frag->coord[i] *= units_factor;
+	}
+	else {
+		assert(0);
+	}
+
+	if (!stream->ptr)
+		return;
+
+	skip_space(stream);
+
+	if (strneq(stream->ptr, "velocity", strlen("velocity"))) {
+		next_line(stream);
+
+		for (int i = 0; i < 6; i++)
+			if (!parse_double(&stream->ptr, frag->vel + i))
+				error("UNABLE TO PARSE FRAGMENT VELOCITIES");
+
 		next_line(stream);
 	}
 }

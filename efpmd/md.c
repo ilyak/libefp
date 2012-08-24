@@ -1,3 +1,5 @@
+#include <assert.h>
+
 #include "../common/math_util.h"
 
 #include "common.h"
@@ -19,6 +21,7 @@ struct body {
 struct md {
 	int n_bodies;
 	struct body *bodies;
+	int n_freedom;
 	double potential_energy;
 	double invariant;
 	struct efp *efp;
@@ -71,26 +74,26 @@ static vec_t get_system_com_velocity(const struct md *md)
 
 static vec_t get_system_angular_velocity(const struct md *md)
 {
+	vec_t cp = get_system_com(md);
+	vec_t cv = get_system_com_velocity(md);
+
 	vec_t av = { 0.0, 0.0, 0.0 };
 
 	for (int i = 0; i < md->n_bodies; i++) {
+		struct body *body = md->bodies + i;
+
+		vec_t dr = vec_sub(&body->pos, &cp);
+		vec_t dv = vec_sub(&body->vel, &cv);
+
+		av.x += dr.y * dv.z - dr.z * dv.y;
+		av.y += dr.z * dv.x - dr.x * dv.z;
+		av.z += dr.x * dv.y - dr.y * dv.x;
 	}
 
 	return av;
 }
 
-static void remove_com_drift(struct md *md)
-{
-	vec_t cv = get_system_com_velocity(md);
-
-	for (int i = 0; i < md->n_bodies; i++) {
-		md->bodies[i].vel.x -= cv.x;
-		md->bodies[i].vel.y -= cv.y;
-		md->bodies[i].vel.z -= cv.z;
-	}
-}
-
-static void remove_angular_drift(struct md *md)
+static void remove_system_drift(struct md *md)
 {
 	vec_t cp = get_system_com(md);
 	vec_t cv = get_system_com_velocity(md);
@@ -111,92 +114,76 @@ static void remove_angular_drift(struct md *md)
 	}
 }
 
-struct md *md_create(struct efp *efp, const struct config *config)
+static double get_atoms_mass(int n_atoms, const struct efp_atom *atoms)
 {
-	struct md *md = calloc(1, sizeof(struct md));
+	double mass = 0.0;
 
-	if (!md)
-		memory_error();
+	for (int i = 0; i < n_atoms; i++)
+		mass += atoms[i].mass;
 
-	md->efp = efp;
-	md->config = config;
+	return mass;
+}
 
-	enum efp_result res;
+static vec_t get_atoms_com(int n_atoms, const struct efp_atom *atoms)
+{
+	double mass = 0.0;
+	vec_t com = { 0.0, 0.0, 0.0 };
 
-	if ((res = efp_get_frag_count(efp, &md->n_bodies)))
-		lib_error(res);
+	for (int i = 0; i < n_atoms; i++) {
+		const struct efp_atom *atom = atoms + i;
 
-	md->bodies = calloc(md->n_bodies, sizeof(struct body));
+		com.x += atom->mass * atom->x;
+		com.y += atom->mass * atom->y;
+		com.z += atom->mass * atom->z;
 
-	if (!md->bodies)
-		memory_error();
-
-	double coord[6 * md->n_bodies];
-
-	if ((res = efp_get_coordinates(efp, md->n_bodies, coord)))
-		lib_error(res);
-
-	for (int i = 0; i < md->n_bodies; i++) {
-		struct body *body = md->bodies + i;
-
-		body->pos.x = coord[6 * i + 0];
-		body->pos.y = coord[6 * i + 1];
-		body->pos.z = coord[6 * i + 2];
-
-		double a = coord[6 * i + 3];
-		double b = coord[6 * i + 4];
-		double c = coord[6 * i + 5];
-
-		euler_to_matrix(a, b, c, &body->rotmat);
-
-		body->vel.x = md->config->frags[i].vel[0];
-		body->vel.y = md->config->frags[i].vel[1];
-		body->vel.z = md->config->frags[i].vel[2];
-
-		body->angvel.x = md->config->frags[i].vel[3];
-		body->angvel.y = md->config->frags[i].vel[4];
-		body->angvel.z = md->config->frags[i].vel[5];
-
-		int n_atoms;
-		if ((res = efp_get_frag_atom_count(efp, i, &n_atoms)))
-			lib_error(res);
-
-		struct efp_atom atoms[n_atoms];
-		if ((res = efp_get_frag_atoms(efp, i, n_atoms, atoms)))
-			lib_error(res);
-
-		mat_t inertia;
-		mat_zero(&inertia);
-
-		for (int j = 0; j < n_atoms; j++) {
-			double mass = AMU_TO_AU * atoms[j].mass;
-			vec_t dr = vec_sub(VEC(atoms[j].x), &body->pos);
-
-			inertia.xx += mass * (dr.y * dr.y + dr.z * dr.z);
-			inertia.yy += mass * (dr.x * dr.x + dr.z * dr.z);
-			inertia.zz += mass * (dr.x * dr.x + dr.y * dr.y);
-			inertia.xy -= mass * dr.x * dr.y;
-			inertia.xz -= mass * dr.x * dr.z;
-			inertia.yz -= mass * dr.y * dr.z;
-
-			body->mass += mass;
-		}
-
-		/* assume that fragment axes are principal axes of inertia */
-		if (fabs(inertia.xy) > 1.0e-5 ||
-		    fabs(inertia.xz) > 1.0e-5 ||
-		    fabs(inertia.yz) > 1.0e-5)
-			error("FRAGMENT AXES ARE NOT PRINCIPAL AXES OF INERTIA");
-
-		body->inertia.x = inertia.xx;
-		body->inertia.y = inertia.yy;
-		body->inertia.z = inertia.zz;
+		mass += atom->mass;
 	}
 
-	remove_com_drift(md);
-	remove_angular_drift(md);
+	com.x /= mass;
+	com.y /= mass;
+	com.z /= mass;
 
-	return md;
+	return com;
+}
+
+static mat_t get_atoms_inertia_tensor(int n_atoms, const struct efp_atom *atoms)
+{
+	mat_t inertia = { 0.0, 0.0, 0.0,
+			  0.0, 0.0, 0.0,
+			  0.0, 0.0, 0.0 };
+
+	vec_t com = get_atoms_com(n_atoms, atoms);
+
+	for (int i = 0; i < n_atoms; i++) {
+		const struct efp_atom *atom = atoms + i;
+
+		vec_t dr = { atom->x - com.x,
+			     atom->y - com.y,
+			     atom->z - com.z };
+
+		inertia.xx += atom->mass * (dr.y * dr.y + dr.z * dr.z);
+		inertia.yy += atom->mass * (dr.x * dr.x + dr.z * dr.z);
+		inertia.zz += atom->mass * (dr.x * dr.x + dr.y * dr.y);
+		inertia.xy -= atom->mass * dr.x * dr.y;
+		inertia.xz -= atom->mass * dr.x * dr.z;
+		inertia.yz -= atom->mass * dr.y * dr.z;
+	}
+
+	inertia.yx = inertia.xy;
+	inertia.zx = inertia.xz;
+	inertia.zy = inertia.yz;
+
+	return inertia;
+}
+
+/* XXX */
+#include <mkl_lapacke.h>
+
+static void mat_eigen(const mat_t *mat, mat_t *evec, vec_t *eval)
+{
+	*evec = *mat;
+
+	LAPACKE_dsyev(LAPACK_ROW_MAJOR, 'V', 'U', 3, (double *)evec, 3, (double *)eval);
 }
 
 static void compute_forces(struct md *md)
@@ -246,6 +233,80 @@ static void compute_forces(struct md *md)
 		body->torque.y = -grad[6 * i + 4];
 		body->torque.z = -grad[6 * i + 5];
 	}
+}
+
+struct md *md_create(struct efp *efp, const struct config *config)
+{
+	struct md *md = calloc(1, sizeof(struct md));
+
+	if (!md)
+		memory_error();
+
+	md->efp = efp;
+	md->config = config;
+
+	enum efp_result res;
+
+	if ((res = efp_get_frag_count(efp, &md->n_bodies)))
+		lib_error(res);
+
+	md->bodies = calloc(md->n_bodies, sizeof(struct body));
+
+	if (!md->bodies)
+		memory_error();
+
+	for (int i = 0; i < md->n_bodies; i++) {
+		struct body *body = md->bodies + i;
+
+		body->vel.x = md->config->frags[i].vel[0];
+		body->vel.y = md->config->frags[i].vel[1];
+		body->vel.z = md->config->frags[i].vel[2];
+
+		body->angvel.x = md->config->frags[i].vel[3];
+		body->angvel.y = md->config->frags[i].vel[4];
+		body->angvel.z = md->config->frags[i].vel[5];
+
+		int n_atoms;
+		if ((res = efp_get_frag_atom_count(efp, i, &n_atoms)))
+			lib_error(res);
+
+		struct efp_atom atoms[n_atoms];
+		if ((res = efp_get_frag_atoms(efp, i, n_atoms, atoms)))
+			lib_error(res);
+
+		body->pos = get_atoms_com(n_atoms, atoms);
+		body->mass = get_atoms_mass(n_atoms, atoms);
+
+		mat_t inertia = get_atoms_inertia_tensor(n_atoms, atoms);
+		mat_eigen(&inertia, &body->rotmat, &body->inertia);
+
+		double det = mat_det(&body->rotmat);
+		if (det < 0.0)
+			mat_negate(&body->rotmat);
+
+		body->inertia.x *= AMU_TO_AU;
+		body->inertia.y *= AMU_TO_AU;
+		body->inertia.z *= AMU_TO_AU;
+
+		if (fabs(body->inertia.x) < EPSILON)
+			md->n_freedom += 5;
+		else
+			md->n_freedom += 6;
+	}
+
+	remove_system_drift(md);
+
+	vec_t cv = get_system_com_velocity(md);
+	vec_t av = get_system_angular_velocity(md);
+
+	double cv2 = vec_len(&cv);
+	double av2 = vec_len(&av);
+
+	assert(cv2 < EPSILON && av2 < EPSILON);
+
+	compute_forces(md);
+
+	return md;
 }
 
 static void rotate_step(int a1, int a2, double angle, vec_t *angvel, mat_t *rotmat)
@@ -316,7 +377,7 @@ static double get_kinetic_energy(const struct md *md)
 static double get_temperature(const struct md *md)
 {
 	double ke = get_kinetic_energy(md);
-	return 2.0 * ke / BOLTZMANN / (6 * md->n_bodies);
+	return 2.0 * ke / BOLTZMANN / md->n_freedom;
 }
 
 void md_update_step_nve(struct md *md)
@@ -364,10 +425,10 @@ void md_update_step_nvt(UNUSED struct md *md)
 
 void md_print_info(struct md *md)
 {
-	printf("POTENTIAL ENERGY: %16.10lf\n", md->potential_energy);
-	printf("       INVARIANT: %16.10lf\n", md->invariant);
-	printf("     TEMPERATURE: %16.10lf\n", get_temperature(md));
-	printf("\n");
+	printf("    POTENTIAL ENERGY: %20.10lf\n", md->potential_energy);
+	printf("           INVARIANT: %20.10lf\n", md->invariant);
+	printf("  SYSTEM TEMPERATURE: %20.10lf\n", get_temperature(md));
+	printf("\n\n");
 }
 
 static void print_fragment(const char *name, const struct body *body)
@@ -390,7 +451,7 @@ void md_print_geometry(struct md *md)
 	enum efp_result res;
 
 	print_geometry(md->efp);
-	printf("RESTART DATA\n\n");
+	printf("    RESTART DATA\n\n");
 
 	for (int i = 0; i < md->n_bodies; i++) {
 		struct body *body = md->bodies + i;
