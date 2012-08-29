@@ -22,17 +22,15 @@ Lines beginning with the `#` symbol are ignored during input parsing.
 
 ##### Type of the simulation
 
-`run_type [sp|grad|cg|nve|nvt]`
+`run_type [sp|grad|opt|md]`
 
 `sp` - single point calculation.
 
 `grad` - gradient calculation.
 
-`cg` - geometry optimization using conjugate gradient method.
+`opt` - geometry optimization.
 
-`nve` - molecular dynamics in microcanonical ensemble.
-
-`nvt` - molecular dynamics in canonical ensemble.
+`md` - molecular dynamics simulation.
 
 Default value: `sp`
 
@@ -144,6 +142,16 @@ Optimization will stop when maximum gradient component is less than `opt_tol`
 and RMS gradient is less than one third of `opt_tol`.
 
 ### Molecular dynamics related parameters
+
+##### Ensemble
+
+`ensemble [nve|nvt]`
+
+`nve` - Microcanonical ensemble.
+
+`nvt` - Canonical ensemble.
+
+Default value: `nve`
 
 ##### Simulation temperature
 

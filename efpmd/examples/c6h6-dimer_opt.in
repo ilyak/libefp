@@ -1,4 +1,4 @@
-run_type cg
+run_type opt
 fraglib_path ../fraglib
 
 fragment c6h6_l

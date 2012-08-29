@@ -78,19 +78,16 @@ efpmd_efpmd_SOURCES = \
 	common/compat.h \
 	common/math_util.h \
 	common/phys_const.h \
-	efpmd/cg.c \
 	efpmd/common.c \
 	efpmd/common.h \
+	efpmd/config.h \
 	efpmd/grad.c \
 	efpmd/main.c \
 	efpmd/md.c \
-	efpmd/md.h \
-	efpmd/nve.c \
-	efpmd/nvt.c \
+	efpmd/opt.c \
 	efpmd/optimizer/opt.c \
 	efpmd/optimizer/opt.h \
 	efpmd/parse.c \
-	efpmd/parse.h \
 	efpmd/sim.h \
 	efpmd/sp.c
 

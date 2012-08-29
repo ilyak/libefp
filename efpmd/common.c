@@ -24,7 +24,6 @@
  * SUCH DAMAGE.
  */
 
-#include <assert.h>
 #include <stdarg.h>
 #include <stdlib.h>
 
@@ -60,11 +59,6 @@ void NORETURN lib_error(enum efp_result res)
 	die("LIBEFP ERROR: %s", efp_result_to_string(res));
 }
 
-void NORETURN memory_error(void)
-{
-	error("NO MEMORY");
-}
-
 void print_geometry(struct efp *efp)
 {
 	int n_frag;
@@ -73,7 +67,7 @@ void print_geometry(struct efp *efp)
 	if ((res = efp_get_frag_count(efp, &n_frag)))
 		lib_error(res);
 
-	printf("SYSTEM GEOMETRY (ANGSTROM):\n\n");
+	printf("    GEOMETRY (ANGSTROMS)\n\n");
 
 	for (int i = 0; i < n_frag; i++) {
 		int n_atoms;
@@ -86,7 +80,7 @@ void print_geometry(struct efp *efp)
 
 		for (int a = 0; a < n_atoms; a++) {
 			struct efp_atom *atom = atoms + a;
-			printf("%s %12.8lf %12.8lf %12.8lf\n", atom->label,
+			printf("%s %12.6lf %12.6lf %12.6lf\n", atom->label,
 					BOHR_TO_ANGSTROM(atom->x),
 					BOHR_TO_ANGSTROM(atom->y),
 					BOHR_TO_ANGSTROM(atom->z));
@@ -94,7 +88,6 @@ void print_geometry(struct efp *efp)
 	}
 
 	printf("\n\n");
-	fflush(stdout);
 }
 
 void print_energy(struct efp *efp)
@@ -105,16 +98,14 @@ void print_energy(struct efp *efp)
 	if ((res = efp_get_energy(efp, &energy)))
 		lib_error(res);
 
-printf("         ELECTROSTATIC ENERGY = %16.10lf\n", energy.electrostatic);
-printf("          POLARIZATION ENERGY = %16.10lf\n", energy.polarization);
-printf("            DISPERSION ENERGY = %16.10lf\n", energy.dispersion);
-printf("    EXCHANGE REPULSION ENERGY = %16.10lf\n", energy.exchange_repulsion);
-printf("    CHARGE PENETRATION ENERGY = %16.10lf\n", energy.charge_penetration);
-printf("------------------------------------------------\n");
-printf("                 TOTAL ENERGY = %16.10lf\n", energy.total);
+printf("         ELECTROSTATIC ENERGY %16.10lf\n", energy.electrostatic);
+printf("          POLARIZATION ENERGY %16.10lf\n", energy.polarization);
+printf("            DISPERSION ENERGY %16.10lf\n", energy.dispersion);
+printf("    EXCHANGE REPULSION ENERGY %16.10lf\n", energy.exchange_repulsion);
+printf("    CHARGE PENETRATION ENERGY %16.10lf\n", energy.charge_penetration);
+printf("\n");
+printf("                 TOTAL ENERGY %16.10lf\n", energy.total);
 printf("\n\n");
-
-	fflush(stdout);
 }
 
 void print_gradient(struct efp *efp)
@@ -125,24 +116,46 @@ void print_gradient(struct efp *efp)
 	if ((res = efp_get_frag_count(efp, &n_frag)))
 		lib_error(res);
 
-	char frag_name[64];
+	char name[64];
 	double grad[6 * n_frag];
 
 	if ((res = efp_get_gradient(efp, n_frag, grad)))
 		lib_error(res);
 
 	for (int i = 0; i < n_frag; i++) {
-		if ((res = efp_get_frag_name(efp, i, 64, frag_name)))
+		if ((res = efp_get_frag_name(efp, i, sizeof(name), name)))
 			lib_error(res);
 
-		double *ptr = grad + 6 * i;
+		printf("    GRADIENT ON FRAGMENT %d (%s)\n", i + 1, name);
+		printf("\nFORCE  ");
 
-printf("    GRADIENT ON FRAGMENT %d (%s):\n", i + 1, frag_name);
-printf(" FORCE: %16.10lf %16.10lf %16.10lf\n", ptr[0], ptr[1], ptr[2]);
-printf("TORQUE: %16.10lf %16.10lf %16.10lf\n", ptr[3], ptr[4], ptr[5]);
-printf("\n");
+		for (int j = 0; j < 3; j++)
+			printf(" %14.6e", grad[6 * i + j]);
+
+		printf("\nTORQUE ");
+
+		for (int j = 3; j < 6; j++)
+			printf(" %14.6e", grad[6 * i + j]);
+
+		printf("\n\n");
 	}
 
 	printf("\n");
-	fflush(stdout);
+}
+
+void print_fragment(const char *name, const double *xyzabc, const double *vel)
+{
+	printf("fragment %s\n", name);
+
+	for (int i = 0; i < 6; i++)
+		printf(" %14.6e", xyzabc[i]);
+
+	if (vel) {
+		printf("\nvelocity\n");
+
+		for (int i = 0; i < 6; i++)
+			printf(" %14.6e", vel[i]);
+	}
+
+	printf("\n\n");
 }

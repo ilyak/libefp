@@ -1,6 +1,6 @@
 # water dimer
 
-run_type cg
+run_type opt
 max_steps 500
 ls_step_size 100.0
 fraglib_path ../fraglib

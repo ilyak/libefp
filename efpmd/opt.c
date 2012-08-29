@@ -26,10 +26,11 @@
 
 #include "common.h"
 #include "sim.h"
+
 #include "./optimizer/opt.h"
 
 static enum opt_result energy_fn(size_t n, const double *x, double *fx,
-		double *gx, void *data)
+			double *gx, void *data)
 {
 	int n_frag;
 	enum efp_result res;
@@ -39,8 +40,7 @@ static enum opt_result energy_fn(size_t n, const double *x, double *fx,
 	if ((res = efp_get_frag_count(efp, &n_frag)))
 		lib_error(res);
 
-	if ((int)n != 6 * n_frag)
-		error("WRONG NUMBER OF DIMENSIONS");
+	assert(n == (size_t)(6 * n_frag));
 
 	if ((res = efp_set_coordinates(efp, EFP_COORD_TYPE_XYZABC, x)))
 		lib_error(res);
@@ -81,19 +81,66 @@ static int check_conv(double rms_grad, double max_grad, double opt_tol)
 	return fabs(max_grad) < opt_tol && fabs(rms_grad) < opt_tol / 3.0;
 }
 
-static void print_status(struct efp *efp, double e_diff,
-		double rms_grad, double max_grad)
+static void print_restart(struct efp *efp)
 {
-	print_geometry(efp);
-	print_energy(efp);
+	int n_frag;
+	enum efp_result res;
 
-	printf("                ENERGY CHANGE = %16.10lf\n", e_diff);
-	printf("                 RMS GRADIENT = %16.10lf\n", rms_grad);
-	printf("             MAXIMUM GRADIENT = %16.10lf\n", max_grad);
-	printf("\n\n");
+	if ((res = efp_get_frag_count(efp, &n_frag)))
+		lib_error(res);
+
+	char name[64];
+	double coord[6 * n_frag];
+
+	if ((res = efp_get_coordinates(efp, n_frag, coord)))
+		lib_error(res);
+
+	printf("    RESTART DATA (ATOMIC UNITS)\n\n");
+
+	for (int i = 0; i < n_frag; i++) {
+		if ((res = efp_get_frag_name(efp, i, sizeof(name), name)))
+			lib_error(res);
+
+		print_fragment(name, coord + 6 * i, NULL);
+	}
+
+	printf("\n");
 }
 
-void sim_cg(struct efp *efp, const struct config *config)
+static void get_grad_info(size_t n_coord, const double *grad, double *rms_grad,
+				double *max_grad)
+{
+	double rms_g = 0.0, max_g = 0.0;
+
+	for (size_t i = 0; i < n_coord; i++) {
+		rms_g += grad[i] * grad[i];
+
+		if (fabs(grad[i]) > max_g)
+			max_g = grad[i];
+	}
+
+	rms_g = sqrt(rms_g / n_coord);
+
+	*rms_grad = rms_g;
+	*max_grad = max_g;
+}
+
+static void print_status(struct efp *efp, double e_diff, double rms_grad,
+				double max_grad)
+{
+	print_geometry(efp);
+	print_restart(efp);
+	print_energy(efp);
+
+	printf("                ENERGY CHANGE %16.10lf\n", e_diff);
+	printf("                 RMS GRADIENT %16.10lf\n", rms_grad);
+	printf("             MAXIMUM GRADIENT %16.10lf\n", max_grad);
+	printf("\n\n");
+
+	fflush(stdout);
+}
+
+void sim_opt(struct efp *efp, const struct config *config)
 {
 	int n_frag;
 	enum efp_result res;
@@ -102,8 +149,8 @@ void sim_cg(struct efp *efp, const struct config *config)
 		lib_error(res);
 
 	size_t n_coord = 6 * n_frag;
+	double rms_grad, max_grad;
 	double coord[n_coord], grad[n_coord];
-	double e_new, e_old;
 
 	if ((res = efp_get_coordinates(efp, n_frag, coord)))
 		lib_error(res);
@@ -119,41 +166,31 @@ void sim_cg(struct efp *efp, const struct config *config)
 	if (opt_init(state, coord))
 		error("UNABLE TO INITIALIZE AN OPTIMIZER");
 
-	e_old = e_new = opt_get_fx(state);
+	double e_old = opt_get_fx(state);
+	opt_get_gx(state, n_coord, grad);
+	get_grad_info(n_coord, grad, &rms_grad, &max_grad);
+
+	printf("    INITIAL STATE\n\n");
+	print_status(efp, 0.0, rms_grad, max_grad);
 
 	for (int step = 1; step <= config->max_steps; step++) {
 		if (opt_step(state))
 			error("UNABLE TO MAKE AN OPTIMIZATION STEP");
 
+		double e_new = opt_get_fx(state);
 		opt_get_gx(state, n_coord, grad);
-		e_new = opt_get_fx(state);
-
-		if (e_new == NAN)
-			error("ENERGY IS NAN");
-
-		double e_diff = e_new - e_old;
-		double rms_grad = 0.0;
-		double max_grad = 0.0;
-
-		for (size_t i = 0; i < n_coord; i++) {
-			rms_grad += grad[i] * grad[i];
-
-			if (fabs(grad[i]) > max_grad)
-				max_grad = grad[i];
-		}
-
-		rms_grad = sqrt(rms_grad / n_coord);
+		get_grad_info(n_coord, grad, &rms_grad, &max_grad);
 
 		if (check_conv(rms_grad, max_grad, config->opt_tol)) {
-			printf("FINAL ENERGY AND GEOMETRY\n\n");
-			print_status(efp, e_diff, rms_grad, max_grad);
+			printf("    FINAL STATE\n\n");
+			print_status(efp, e_new - e_old, rms_grad, max_grad);
 			printf("OPTIMIZATION CONVERGED\n");
 			break;
 		}
 
 		if (step % config->print_step == 0) {
-			printf("ENERGY AND GEOMETRY AFTER %d STEPS\n\n", step);
-			print_status(efp, e_diff, rms_grad, max_grad);
+			printf("    STATE AFTER %d STEPS\n\n", step);
+			print_status(efp, e_new - e_old, rms_grad, max_grad);
 		}
 
 		e_old = e_new;

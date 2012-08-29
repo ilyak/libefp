@@ -24,13 +24,11 @@
  * SUCH DAMAGE.
  */
 
-#include <assert.h>
 #include <ctype.h>
 #include <stddef.h>
 #include <stdbool.h>
 
 #include "common.h"
-#include "parse.h"
 
 struct stream {
 	char *buffer;
@@ -275,6 +273,26 @@ static bool parse_disp_damp(char **str, void *out)
 	return false;
 }
 
+static bool parse_ensemble(char **str, void *out)
+{
+	static const struct {
+		const char *name;
+		enum ensemble_type value;
+	} list[] = {
+		{ "nve", ENSEMBLE_TYPE_NVE },
+		{ "nvt", ENSEMBLE_TYPE_NVT }
+	};
+
+	for (size_t i = 0; i < ARRAY_SIZE(list); i++) {
+		if (strneq(list[i].name, *str, strlen(list[i].name))) {
+			*str += strlen(list[i].name);
+			*(enum ensemble_type *)out = list[i].value;
+			return true;
+		}
+	}
+	return false;
+}
+
 static bool int_gt_zero(void *val)
 {
 	return *(int *)val > 0;
@@ -292,20 +310,21 @@ static const struct {
 	bool (*check_fn)(void *);
 	size_t member_offset;
 } config_list[] = {
-	{ "run_type",     "sp",               parse_string,    NULL,           offsetof(struct config, run_type)     },
-	{ "coord",        "xyzabc",           parse_coord,     NULL,           offsetof(struct config, coord_type)   },
-	{ "units",        "angs",             parse_units,     NULL,           offsetof(struct config, units_factor) },
-	{ "terms",        "elec pol disp xr", parse_terms,     NULL,           offsetof(struct config, terms)        },
-	{ "elec_damp",    "screen",           parse_elec_damp, NULL,           offsetof(struct config, elec_damp)    },
-	{ "disp_damp",    "tt",               parse_disp_damp, NULL,           offsetof(struct config, disp_damp)    },
-	{ "max_steps",    "100",              parse_int,       int_gt_zero,    offsetof(struct config, max_steps)    },
-	{ "print_step",   "1",                parse_int,       int_gt_zero,    offsetof(struct config, print_step)   },
-	{ "temperature",  "300.0",            parse_double,    double_gt_zero, offsetof(struct config, temperature)  },
-	{ "time_step",    "1.0",              parse_double,    double_gt_zero, offsetof(struct config, time_step)    },
-	{ "ls_step_size", "20.0",             parse_double,    double_gt_zero, offsetof(struct config, ls_step_size) },
-	{ "opt_tol",      "1.0e-4",           parse_double,    double_gt_zero, offsetof(struct config, opt_tol)      },
-	{ "fraglib_path", DATADIR,            parse_string,    NULL,           offsetof(struct config, fraglib_path) },
-	{ "userlib_path", ".",                parse_string,    NULL,           offsetof(struct config, userlib_path) }
+	{ "run_type",     "sp",               parse_string,    NULL,           offsetof(struct config, run_type)      },
+	{ "coord",        "xyzabc",           parse_coord,     NULL,           offsetof(struct config, coord_type)    },
+	{ "units",        "angs",             parse_units,     NULL,           offsetof(struct config, units_factor)  },
+	{ "terms",        "elec pol disp xr", parse_terms,     NULL,           offsetof(struct config, terms)         },
+	{ "elec_damp",    "screen",           parse_elec_damp, NULL,           offsetof(struct config, elec_damp)     },
+	{ "disp_damp",    "tt",               parse_disp_damp, NULL,           offsetof(struct config, disp_damp)     },
+	{ "max_steps",    "100",              parse_int,       int_gt_zero,    offsetof(struct config, max_steps)     },
+	{ "print_step",   "1",                parse_int,       int_gt_zero,    offsetof(struct config, print_step)    },
+	{ "temperature",  "300.0",            parse_double,    double_gt_zero, offsetof(struct config, temperature)   },
+	{ "time_step",    "1.0",              parse_double,    double_gt_zero, offsetof(struct config, time_step)     },
+	{ "ensemble",     "nve",              parse_ensemble,  NULL,           offsetof(struct config, ensemble_type) },
+	{ "ls_step_size", "20.0",             parse_double,    double_gt_zero, offsetof(struct config, ls_step_size)  },
+	{ "opt_tol",      "1.0e-4",           parse_double,    double_gt_zero, offsetof(struct config, opt_tol)       },
+	{ "fraglib_path", DATADIR,            parse_string,    NULL,           offsetof(struct config, fraglib_path)  },
+	{ "userlib_path", ".",                parse_string,    NULL,           offsetof(struct config, userlib_path)  }
 };
 
 static void parse_field(struct stream *stream, struct config *config)

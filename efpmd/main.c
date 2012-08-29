@@ -25,7 +25,6 @@
  */
 
 #include "common.h"
-#include "parse.h"
 #include "sim.h"
 
 typedef void (*sim_fn_t)(struct efp *, const struct config *);
@@ -38,9 +37,8 @@ static sim_fn_t get_sim_fn(const char *run_type)
 	} sim_list[] = {
 		{ "sp",   sim_sp   },
 		{ "grad", sim_grad },
-		{ "cg",   sim_cg   },
-		{ "nve",  sim_nve  },
-		{ "nvt",  sim_nvt  }
+		{ "opt",  sim_opt  },
+		{ "md",   sim_md   }
 	};
 
 	for (size_t i = 0; i < ARRAY_SIZE(sim_list); i++)
@@ -145,8 +143,7 @@ static int get_coord_count(enum efp_coord_type coord_type)
 		case EFP_COORD_TYPE_XYZABC: return 6;
 		case EFP_COORD_TYPE_POINTS: return 9;
 	};
-
-	lib_error(EFP_RESULT_INCORRECT_ENUM_VALUE);
+	assert(0);
 }
 
 static void set_coord(struct efp *efp, const struct config *config)
@@ -188,6 +185,6 @@ int main(int argc, char **argv)
 	efp_shutdown(efp);
 	free_config(&config);
 
-	puts("EFP SIMULATION COMPLETED SUCCESSFULLY");
+	puts("SIMULATION COMPLETED SUCCESSFULLY");
 	return EXIT_SUCCESS;
 }

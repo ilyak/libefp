@@ -249,9 +249,7 @@ set_coord_points(struct efp *efp, const double *coord)
 		const double *pt = coord + 9 * i;
 
 		points_to_matrix(pt, &frag->rotmat);
-
-		vec_t p1;
-		mat_vec(&frag->rotmat, VEC(frag->lib->atoms[0].x), &p1);
+		vec_t p1 = mat_vec(&frag->rotmat, VEC(frag->lib->atoms[0].x));
 
 		/* center of mass */
 		frag->x = pt[0] - p1.x;

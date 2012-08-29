@@ -846,15 +846,19 @@ efp_update_xr(struct frag *frag)
 			case 'L':
 				func++;
 				/* fall through */
-			case 'P':
-				mat_vec(rotmat, (const vec_t *)(in + func),
-						(vec_t *)(out + func));
+			case 'P': {
+				vec_t r = mat_vec(rotmat, (const vec_t *)(in + func));
+
+				out[func + 0] = r.x;
+				out[func + 1] = r.y;
+				out[func + 2] = r.z;
 
 				for (int a = 0; a < 3; a++)
 					coef_deriv_p(a, out + func, deriv[a] + func);
 
 				func += 3;
 				break;
+			}
 			case 'D':
 				rotate_func_d(rotmat, in + func, out + func);
 

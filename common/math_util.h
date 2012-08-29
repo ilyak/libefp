@@ -171,34 +171,37 @@ mat_set(mat_t *mat, int a1, int a2, double val)
 	ptr[3 * a1 + a2] = val;
 }
 
-static inline void
-mat_vec(const mat_t *mat, const vec_t *vec, vec_t *out)
+static inline vec_t
+mat_vec(const mat_t *mat, const vec_t *vec)
 {
-	out->x = mat->xx * vec->x + mat->xy * vec->y + mat->xz * vec->z;
-	out->y = mat->yx * vec->x + mat->yy * vec->y + mat->yz * vec->z;
-	out->z = mat->zx * vec->x + mat->zy * vec->y + mat->zz * vec->z;
+	vec_t out = { mat->xx * vec->x + mat->xy * vec->y + mat->xz * vec->z,
+		      mat->yx * vec->x + mat->yy * vec->y + mat->yz * vec->z,
+		      mat->zx * vec->x + mat->zy * vec->y + mat->zz * vec->z };
+	return out;
 }
 
-static inline void
-mat_trans_vec(const mat_t *mat, const vec_t *vec, vec_t *out)
+static inline vec_t
+mat_trans_vec(const mat_t *mat, const vec_t *vec)
 {
-	out->x = mat->xx * vec->x + mat->yx * vec->y + mat->zx * vec->z;
-	out->y = mat->xy * vec->x + mat->yy * vec->y + mat->zy * vec->z;
-	out->z = mat->xz * vec->x + mat->yz * vec->y + mat->zz * vec->z;
+	vec_t out = { mat->xx * vec->x + mat->yx * vec->y + mat->zx * vec->z,
+		      mat->xy * vec->x + mat->yy * vec->y + mat->zy * vec->z,
+		      mat->xz * vec->x + mat->yz * vec->y + mat->zz * vec->z };
+	return out;
 }
 
-static inline void
-mat_mat(const mat_t *m1, const mat_t *m2, mat_t *out)
+static inline mat_t
+mat_mat(const mat_t *m1, const mat_t *m2)
 {
-	out->xx = m1->xx * m2->xx + m1->xy * m2->yx + m1->xz * m2->zx;
-	out->xy = m1->xx * m2->xy + m1->xy * m2->yy + m1->xz * m2->zy;
-	out->xz = m1->xx * m2->xz + m1->xy * m2->yz + m1->xz * m2->zz;
-	out->yx = m1->yx * m2->xx + m1->yy * m2->yx + m1->yz * m2->zx;
-	out->yy = m1->yx * m2->xy + m1->yy * m2->yy + m1->yz * m2->zy;
-	out->yz = m1->yx * m2->xz + m1->yy * m2->yz + m1->yz * m2->zz;
-	out->zx = m1->zx * m2->xx + m1->zy * m2->yx + m1->zz * m2->zx;
-	out->zy = m1->zx * m2->xy + m1->zy * m2->yy + m1->zz * m2->zy;
-	out->zz = m1->zx * m2->xz + m1->zy * m2->yz + m1->zz * m2->zz;
+	mat_t out = { m1->xx * m2->xx + m1->xy * m2->yx + m1->xz * m2->zx,
+		      m1->xx * m2->xy + m1->xy * m2->yy + m1->xz * m2->zy,
+		      m1->xx * m2->xz + m1->xy * m2->yz + m1->xz * m2->zz,
+		      m1->yx * m2->xx + m1->yy * m2->yx + m1->yz * m2->zx,
+		      m1->yx * m2->xy + m1->yy * m2->yy + m1->yz * m2->zy,
+		      m1->yx * m2->xz + m1->yy * m2->yz + m1->yz * m2->zz,
+		      m1->zx * m2->xx + m1->zy * m2->yx + m1->zz * m2->zx,
+		      m1->zx * m2->xy + m1->zy * m2->yy + m1->zz * m2->zy,
+		      m1->zx * m2->xz + m1->zy * m2->yz + m1->zz * m2->zz };
+	return out;
 }
 
 static inline double
@@ -212,23 +215,31 @@ mat_det(const mat_t *mat)
 	       mat->yx * mat->xy * mat->zz;
 }
 
-static inline void
-mat_negate(mat_t *mat)
-{
-	double *ptr = (double *)mat;
-
-	for (int i = 0; i < 9; i++, ptr++)
-		*ptr = -(*ptr);
-}
-
 static inline mat_t
 mat_transpose(const mat_t *mat)
 {
-	mat_t rv = { mat->xx, mat->yx, mat->zx,
-		     mat->xy, mat->yy, mat->zy,
-		     mat->xz, mat->yz, mat->zz };
+	mat_t out = { mat->xx, mat->yx, mat->zx,
+		      mat->xy, mat->yy, mat->zy,
+		      mat->xz, mat->yz, mat->zz };
+	return out;
+}
 
-	return rv;
+static inline mat_t
+mat_inv(const mat_t *mat)
+{
+	double det = 1.0 / mat_det(mat);
+
+	mat_t out = { det * (mat->yy * mat->zz - mat->yz * mat->zy),
+		      det * (mat->zy * mat->xz - mat->zz * mat->xy),
+		      det * (mat->xy * mat->yz - mat->xz * mat->yy),
+		      det * (mat->yz * mat->zx - mat->yx * mat->zz),
+		      det * (mat->zz * mat->xx - mat->zx * mat->xz),
+		      det * (mat->xz * mat->yx - mat->xx * mat->yz),
+		      det * (mat->yx * mat->zy - mat->yy * mat->zx),
+		      det * (mat->zx * mat->xy - mat->zy * mat->xx),
+		      det * (mat->xx * mat->yy - mat->xy * mat->yx) };
+
+	return out;
 }
 
 static inline void
@@ -275,7 +286,7 @@ move_pt(const vec_t *com, const mat_t *rotmat,
 	vec_t *out)
 {
 	vec_t pos = vec_sub(pos_init, com_init);
-	mat_vec(rotmat, &pos, out);
+	*out = mat_vec(rotmat, &pos);
 	out->x += com->x, out->y += com->y, out->z += com->z;
 }
 

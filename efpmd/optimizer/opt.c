@@ -188,19 +188,18 @@ static enum opt_result do_line_search(struct opt_state *state)
 	slc = dot(state->n_dim, gc, state->dir);
 
 	do {
+		if (fabs(c - a) < state->ls_tol)
+			return OPT_RESULT_ERROR;
+
 		double eta = 3.0 * (fa - fc) / (c - a) + sla + slc;
 		double phi = sqrt(eta * eta - sla * slc);
 
-		/* cubic interpolation */
 		b = a + (c - a) * (1.0 - (slc + phi - eta) / (slc - sla + 2.0 * phi));
-
-		if (b < state->ls_tol)
-			break;
 
 		for (size_t i = 0; i < state->n_dim; i++)
 			xb[i] = state->x_cur[i] + state->dir[i] * b;
 
-		if ((state->fn(state->n_dim, xb, &fb, gb, state->user_data)))
+		if ((res = state->fn(state->n_dim, xb, &fb, gb, state->user_data)))
 			return res;
 
 		slb = dot(state->n_dim, gb, state->dir);

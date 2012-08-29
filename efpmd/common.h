@@ -27,20 +27,21 @@
 #ifndef EFPMD_COMMON_H
 #define EFPMD_COMMON_H
 
+#include <assert.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <efp.h>
-
 #include "../common/compat.h"
 #include "../common/phys_const.h"
+
+#include "config.h"
 
 #define NORETURN __attribute__((noreturn))
 #define UNUSED __attribute__((unused))
 
-#define EPSILON 1.0e-6
+#define EPSILON 1.0e-8
 #define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))
 
 #define streq(a, b) (u_strcasecmp(a, b) == 0)
@@ -49,38 +50,13 @@
 #define ANGSTROM_TO_BOHR(x) ((x) / BOHR_RADIUS)
 #define BOHR_TO_ANGSTROM(x) ((x) * BOHR_RADIUS)
 
-struct frag {
-	char *name;
-	double coord[9];
-	double vel[6];
-};
-
-struct config {
-	char *run_type;
-	enum efp_coord_type coord_type;
-	double units_factor;
-	unsigned terms;
-	enum efp_elec_damp elec_damp;
-	enum efp_disp_damp disp_damp;
-	int max_steps;
-	int print_step;
-	double temperature;
-	double time_step;
-	double ls_step_size;
-	double opt_tol;
-	char *fraglib_path;
-	char *userlib_path;
-	int n_frags;
-	struct frag *frags;
-};
-
 void NORETURN die(const char *, ...);
 void NORETURN error(const char *, ...);
 void NORETURN lib_error(enum efp_result);
-void NORETURN memory_error(void);
 
 void print_geometry(struct efp *);
 void print_energy(struct efp *);
 void print_gradient(struct efp *);
+void print_fragment(const char *, const double *, const double *);
 
 #endif /* EFPMD_COMMON_H */

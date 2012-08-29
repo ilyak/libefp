@@ -575,7 +575,7 @@ efp_update_elec(struct frag *frag)
 			VEC(pt_in->x), VEC(pt_out->x));
 
 		/* rotate dipole */
-		mat_vec(rotmat, &pt_in->dipole, &pt_out->dipole);
+		pt_out->dipole = mat_vec(rotmat, &pt_in->dipole);
 
 		/* rotate quadrupole */
 		rotate_quadrupole(rotmat, pt_in->quadrupole,

@@ -257,9 +257,8 @@ pol_scf_iter(struct efp *efp)
 			field_conj.y += pt->elec_field.y;
 			field_conj.z += pt->elec_field.z;
 
-			mat_vec(&pt->tensor, &field, &pt->induced_dipole_new);
-			mat_trans_vec(&pt->tensor, &field_conj,
-					&pt->induced_dipole_conj_new);
+			pt->induced_dipole_new = mat_vec(&pt->tensor, &field);
+			pt->induced_dipole_conj_new = mat_trans_vec(&pt->tensor, &field_conj);
 		}
 	}
 
