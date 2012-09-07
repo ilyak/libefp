@@ -1,5 +1,5 @@
 /**
- * \mainpage LIBEFP - The Effective Fragment Potential method implementation
+ * \mainpage The Effective Fragment Potential method implementation
  *
  * \section intro Introduction
  *
@@ -48,7 +48,7 @@
  * <a href="http://github.com/libefp/libefp/tree/master/efpmd"><i>EFPMD</i></a>
  * program on a machine with two Intel Xeon X5667 CPUs.
  *
- * \image html speedup-8-core.png
+ * \image html speedup.png
  *
  * \copyright Copyright (c) 2012 Ilya Kaliman.
  * Distributed under the terms of BSD 2-clause license. See
