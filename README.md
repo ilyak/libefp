@@ -15,13 +15,20 @@ EFP method (both EFP1 and EFP2 variants) and more references can be found in
 the manual for the GAMESS quantum chemistry package (see GAMESS website at
 http://www.msg.ameslab.gov/gamess/).
 
-The libefp library is written and maintained by Ilya Kaliman. Send questions
-and comments to ilya.kaliman@gmail.com.
-
 
 ## How to Install
 
-To compile libefp from source issue the following commands:
+If you are using a distributed tarball you should skip the first step.
+
+To compile the source code obtained directly form the source repository you
+must have GNU autotools installed. You also need to generate configure script
+by running:
+
+	./autogen.sh
+
+After that proceed with compilation as usual.
+
+To configure libefp issue the following command:
 
 	./configure LIBS=CBLAS_LIBS --prefix=INSTALL_PATH
 
