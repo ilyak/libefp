@@ -25,7 +25,6 @@
  */
 
 #include <stdarg.h>
-#include <stdlib.h>
 
 #include "common.h"
 
@@ -57,6 +56,36 @@ void NORETURN error(const char *format, ...)
 void NORETURN lib_error(enum efp_result res)
 {
 	die("LIBEFP ERROR: %s", efp_result_to_string(res));
+}
+
+void *xmalloc(size_t size)
+{
+	void *mem = malloc(size);
+
+	if (!mem)
+		error("NO MEMORY");
+
+	return mem;
+}
+
+void *xcalloc(size_t n, size_t size)
+{
+	void *mem = calloc(n, size);
+
+	if (!mem)
+		error("NO MEMORY");
+
+	return mem;
+}
+
+void *xrealloc(void *ptr, size_t size)
+{
+	void *mem = realloc(ptr, size);
+
+	if (!mem)
+		error("NO MEMORY");
+
+	return mem;
 }
 
 void print_geometry(struct efp *efp)
@@ -158,4 +187,31 @@ void print_fragment(const char *name, const double *xyzabc, const double *vel)
 	}
 
 	printf("\n\n");
+}
+
+void print_matrix(int rows, int cols, const double *mat)
+{
+	static const int CPS = 4;
+
+	for (int j = 0; j < cols; j += CPS) {
+		int left = cols - j > CPS ? CPS : cols - j;
+
+		printf("    ");
+
+		for (int jj = 0; jj < left; jj++)
+			printf("%16d", j + jj + 1);
+
+		printf("\n\n");
+
+		for (int i = 0; i < rows; i++) {
+			printf("%8d  ", i + 1);
+
+			for (int jj = 0; jj < left; jj++)
+				printf("%16.8E", mat[i * cols + j + jj]);
+
+			printf("\n");
+		}
+
+		printf("\n\n");
+	}
 }

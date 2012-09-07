@@ -25,27 +25,34 @@
  */
 
 #include "common.h"
-#include "sim.h"
 
-typedef void (*sim_fn_t)(struct efp *, const struct config *);
+void sim_sp(struct efp *, const struct config *);
+void sim_grad(struct efp *, const struct config *);
+void sim_hess(struct efp *, const struct config *);
+void sim_opt(struct efp *, const struct config *);
+void sim_md(struct efp *, const struct config *);
 
-static sim_fn_t get_sim_fn(const char *run_type)
+static void run_sim(struct efp *efp, const struct config *config)
 {
 	static const struct {
 		const char *run_type;
-		sim_fn_t sim_fn;
+		void (*sim_fn)(struct efp *, const struct config *);
 	} sim_list[] = {
 		{ "sp",   sim_sp   },
 		{ "grad", sim_grad },
+		{ "hess", sim_hess },
 		{ "opt",  sim_opt  },
 		{ "md",   sim_md   }
 	};
 
-	for (size_t i = 0; i < ARRAY_SIZE(sim_list); i++)
-		if (streq(run_type, sim_list[i].run_type))
-			return sim_list[i].sim_fn;
+	for (size_t i = 0; i < ARRAY_SIZE(sim_list); i++) {
+		if (streq(config->run_type, sim_list[i].run_type)) {
+			sim_list[i].sim_fn(efp, config);
+			return;
+		}
+	}
 
-	return NULL;
+	error("UNKNOWN RUN TYPE SPECIFIED");
 }
 
 static void print_banner(void)
@@ -86,7 +93,7 @@ static char **make_potential_file_list(const struct config *config)
 		}
 	}
 
-	char **list = malloc((n_unique + 1) * sizeof(char *));
+	char **list = xmalloc((n_unique + 1) * sizeof(char *));
 
 	for (int i = 0; i < n_unique; i++) {
 		const char *name = unique[i];
@@ -94,12 +101,12 @@ static char **make_potential_file_list(const struct config *config)
 		char *path;
 
 		if (len > 2 && streq(name + len - 2, "_l")) {
-			path = malloc(strlen(config->fraglib_path) + len + 4);
+			path = xmalloc(strlen(config->fraglib_path) + len + 4);
 			strcat(strcpy(path, config->fraglib_path), "/");
 			strcat(strncat(path, name, len - 2), ".efp");
 		}
 		else {
-			path = malloc(strlen(config->userlib_path) + len + 6);
+			path = xmalloc(strlen(config->userlib_path) + len + 6);
 			strcat(strcpy(path, config->userlib_path), "/");
 			strcat(strcat(path, name), ".efp");
 		}
@@ -149,7 +156,7 @@ static int get_coord_count(enum efp_coord_type coord_type)
 static void set_coord(struct efp *efp, const struct config *config)
 {
 	int n_coord = get_coord_count(config->coord_type);
-	double *coord = malloc(n_coord * config->n_frags * sizeof(double));
+	double *coord = xmalloc(n_coord * config->n_frags * sizeof(double));
 
 	for (int i = 0; i < config->n_frags; i++)
 		memcpy(coord + n_coord * i, config->frags[i].coord, n_coord * sizeof(double));
@@ -174,14 +181,7 @@ int main(int argc, char **argv)
 	parse_config(argv[1], &config);
 	init_efp(&efp, &config);
 	set_coord(efp, &config);
-
-	sim_fn_t sim_fn = get_sim_fn(config.run_type);
-
-	if (!sim_fn)
-		error("UNKNOWN RUN TYPE SPECIFIED");
-
-	sim_fn(efp, &config);
-
+	run_sim(efp, &config);
 	efp_shutdown(efp);
 	free_config(&config);
 

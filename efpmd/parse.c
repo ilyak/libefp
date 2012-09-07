@@ -40,10 +40,7 @@ static char *read_line(FILE *in)
 {
 	int size = 128;
 	int i = 0;
-	char *buffer = malloc(size);
-
-	if (!buffer)
-		return NULL;
+	char *buffer = xmalloc(size);
 
 	for(;;) {
 		int ch = getc(in);
@@ -57,7 +54,7 @@ static char *read_line(FILE *in)
 			/* fall through */
 		case '\n':
 			if (i == size)
-				buffer = realloc(buffer, size + 1);
+				buffer = xrealloc(buffer, size + 1);
 			buffer[i] = '\0';
 			return buffer;
 		default:
@@ -65,7 +62,7 @@ static char *read_line(FILE *in)
 
 			if (i == size) {
 				size *= 2;
-				buffer = realloc(buffer, size);
+				buffer = xrealloc(buffer, size);
 			}
 		}
 	}
@@ -156,6 +153,25 @@ static bool parse_double(char **str, void *out)
 	*(double *)out = val;
 	return true;
 }
+
+/*
+static bool parse_bool(char **str, void *out)
+{
+	if (strneq(*str, "true", strlen("true"))) {
+		*str += strlen("true");
+		*(bool *)out = true;
+		return true;
+	}
+
+	if (strneq(*str, "false", strlen("false"))) {
+		*str += strlen("false");
+		*(bool *)out = false;
+		return true;
+	}
+
+	return false;
+}
+*/
 
 static bool parse_coord(char **str, void *out)
 {
@@ -316,13 +332,13 @@ static const struct {
 	{ "terms",        "elec pol disp xr", parse_terms,     NULL,           offsetof(struct config, terms)         },
 	{ "elec_damp",    "screen",           parse_elec_damp, NULL,           offsetof(struct config, elec_damp)     },
 	{ "disp_damp",    "tt",               parse_disp_damp, NULL,           offsetof(struct config, disp_damp)     },
+	{ "hess_delta",   "0.001",            parse_double,    double_gt_zero, offsetof(struct config, hess_delta)    },
 	{ "max_steps",    "100",              parse_int,       int_gt_zero,    offsetof(struct config, max_steps)     },
 	{ "print_step",   "1",                parse_int,       int_gt_zero,    offsetof(struct config, print_step)    },
 	{ "temperature",  "300.0",            parse_double,    double_gt_zero, offsetof(struct config, temperature)   },
 	{ "time_step",    "1.0",              parse_double,    double_gt_zero, offsetof(struct config, time_step)     },
 	{ "ensemble",     "nve",              parse_ensemble,  NULL,           offsetof(struct config, ensemble_type) },
-	{ "ls_step_size", "20.0",             parse_double,    double_gt_zero, offsetof(struct config, ls_step_size)  },
-	{ "opt_tol",      "1.0e-4",           parse_double,    double_gt_zero, offsetof(struct config, opt_tol)       },
+	{ "opt_tol",      "1.0e-5",           parse_double,    double_gt_zero, offsetof(struct config, opt_tol)       },
 	{ "fraglib_path", DATADIR,            parse_string,    NULL,           offsetof(struct config, fraglib_path)  },
 	{ "userlib_path", ".",                parse_string,    NULL,           offsetof(struct config, userlib_path)  }
 };
@@ -338,12 +354,12 @@ static void parse_field(struct stream *stream, struct config *config)
 			skip_space(stream);
 
 			if (!config_list[i].parse_fn(&stream->ptr, (char *)config + offset))
-				error("UNABLE TO READ OPTION %s", name);
+				error("INCORRECT VALUE FOR OPTION %s", name);
 
 			bool (*check_fn)(void *) = config_list[i].check_fn;
 
 			if (check_fn && !check_fn((char *)config + offset))
-				error("OPTION %s HAS OUT OF RANGE VALUE", name);
+				error("OPTION %s VALUE IS OUT OF RANGE", name);
 
 			return;
 		}
@@ -364,7 +380,7 @@ static void parse_frag(struct stream *stream, enum efp_coord_type coord_type,
 	if (coord_type == EFP_COORD_TYPE_XYZABC) {
 		for (int i = 0; i < 6; i++)
 			if (!parse_double(&stream->ptr, frag->coord + i))
-				error("UNABLE TO PARSE FRAGMENT COORDINATES");
+				error("INCORRECT FRAGMENT COORDINATES FORMAT");
 
 		for (int i = 0; i < 3; i++)
 			frag->coord[i] *= units_factor;
@@ -375,7 +391,7 @@ static void parse_frag(struct stream *stream, enum efp_coord_type coord_type,
 		for (int i = 0, idx = 0; i < 3; i++) {
 			for (int j = 0; j < 3; j++, idx++)
 				if (!parse_double(&stream->ptr, frag->coord + idx))
-					error("UNABLE TO PARSE FRAGMENT COORDINATES");
+					error("INCORRECT FRAGMENT COORDINATES FORMAT");
 
 			next_line(stream);
 		}
@@ -397,7 +413,7 @@ static void parse_frag(struct stream *stream, enum efp_coord_type coord_type,
 
 		for (int i = 0; i < 6; i++)
 			if (!parse_double(&stream->ptr, frag->vel + i))
-				error("UNABLE TO PARSE FRAGMENT VELOCITIES");
+				error("INCORRECT FRAGMENT VELOCITIES FORMAT");
 
 		next_line(stream);
 	}
@@ -444,7 +460,7 @@ void parse_config(const char *path, struct config *config)
 			stream.ptr += strlen("fragment");
 
 			config->n_frags++;
-			config->frags = realloc(config->frags,
+			config->frags = xrealloc(config->frags,
 				config->n_frags * sizeof(struct frag));
 
 			parse_frag(&stream, config->coord_type, config->units_factor,

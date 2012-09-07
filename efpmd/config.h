@@ -21,12 +21,12 @@ struct config {
 	unsigned terms;
 	enum efp_elec_damp elec_damp;
 	enum efp_disp_damp disp_damp;
+	double hess_delta;
 	int max_steps;
 	int print_step;
 	double temperature;
 	double time_step;
 	enum ensemble_type ensemble_type;
-	double ls_step_size;
 	double opt_tol;
 	char *fraglib_path;
 	char *userlib_path;

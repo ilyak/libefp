@@ -24,44 +24,54 @@
  * SUCH DAMAGE.
  */
 
-#ifndef EFPMD_COMMON_H
-#define EFPMD_COMMON_H
+#include "common.h"
 
-#include <assert.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+void sim_hess(struct efp *, const struct config *);
 
-#include "../common/compat.h"
-#include "../common/phys_const.h"
+void sim_hess(struct efp *efp, const struct config *config)
+{
+	enum efp_result res;
+	int n_coord = 6 * config->n_frags;
 
-#include "config.h"
+	double *xyzabc = xmalloc(n_coord * sizeof(double));
+	double *grad = xmalloc(n_coord * sizeof(double));
+	double *grad_0 = xmalloc(n_coord * sizeof(double));
+	double *hess = xmalloc(n_coord * n_coord * sizeof(double));
 
-#define NORETURN __attribute__((noreturn))
-#define UNUSED __attribute__((unused))
+	if ((res = efp_compute(efp, 1)))
+		lib_error(res);
 
-#define EPSILON 1.0e-8
-#define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))
+	if ((res = efp_get_coordinates(efp, config->n_frags, xyzabc)))
+		lib_error(res);
 
-#define streq(a, b) (u_strcasecmp(a, b) == 0)
-#define strneq(a, b, n) (u_strncasecmp(a, b, n) == 0)
+	if ((res = efp_get_gradient(efp, config->n_frags, grad_0)))
+		lib_error(res);
 
-#define ANGSTROM_TO_BOHR(x) ((x) / BOHR_RADIUS)
-#define BOHR_TO_ANGSTROM(x) ((x) * BOHR_RADIUS)
+	print_energy(efp);
+	print_gradient(efp);
+	fflush(stdout);
 
-void NORETURN die(const char *, ...);
-void NORETURN error(const char *, ...);
-void NORETURN lib_error(enum efp_result);
+	for (int i = 0; i < n_coord; i++) {
+		double save = xyzabc[i];
+		xyzabc[i] = save + config->hess_delta;
 
-void *xmalloc(size_t);
-void *xcalloc(size_t, size_t);
-void *xrealloc(void *, size_t);
+		if ((res = efp_set_coordinates(efp, EFP_COORD_TYPE_XYZABC, xyzabc)))
+			lib_error(res);
 
-void print_geometry(struct efp *);
-void print_energy(struct efp *);
-void print_gradient(struct efp *);
-void print_fragment(const char *, const double *, const double *);
-void print_matrix(int, int, const double *);
+		if ((res = efp_compute(efp, 1)))
+			lib_error(res);
 
-#endif /* EFPMD_COMMON_H */
+		if ((res = efp_get_gradient(efp, config->n_frags, grad)))
+			lib_error(res);
+
+		xyzabc[i] = save;
+	}
+
+	printf("    HESSIAN MATRIX\n\n");
+	print_matrix(n_coord, n_coord, hess);
+
+	free(xyzabc);
+	free(grad);
+	free(grad_0);
+	free(hess);
+}
