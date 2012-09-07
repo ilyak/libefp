@@ -284,15 +284,12 @@ pol_scf_iter(struct efp *efp)
 	return conv / n_pt;
 }
 
-double
-efp_compute_pol_energy(struct efp *efp)
+enum efp_result
+efp_compute_pol_energy(struct efp *efp, double *energy_out)
 {
-	static const double scf_conv_epsilon = 1.0e-16;
-
 	compute_elec_field(efp);
 
 	/* set initial approximation - all induced dipoles are zero */
-
 	#pragma omp parallel for schedule(dynamic, 4)
 	for (int i = 0; i < efp->n_frag; i++) {
 		struct frag *frag = efp->frags + i;
@@ -303,8 +300,13 @@ efp_compute_pol_energy(struct efp *efp)
 		}
 	}
 
+	int iter = 0;
+
 	/* compute induced dipoles self consistently */
-	while (pol_scf_iter(efp) > scf_conv_epsilon);
+	while (pol_scf_iter(efp) > POL_SCF_TOL && iter++ < POL_SCF_MAX_ITER);
+
+	if (iter >= POL_SCF_MAX_ITER)
+		return EFP_RESULT_POL_NOT_CONVERGED;
 
 	double energy = 0.0;
 
@@ -317,7 +319,9 @@ efp_compute_pol_energy(struct efp *efp)
 						 &pt->elec_field);
 		}
 	}
-	return energy;
+
+	*energy_out = energy;
+	return EFP_RESULT_SUCCESS;
 }
 
 static void
@@ -450,7 +454,10 @@ efp_compute_pol(struct efp *efp)
 	if (!(efp->opts.terms & EFP_TERM_POL))
 		return EFP_RESULT_SUCCESS;
 
-	efp->energy.polarization = efp_compute_pol_energy(efp);
+	enum efp_result res;
+
+	if ((res = efp_compute_pol_energy(efp, &efp->energy.polarization)))
+		return res;
 
 	if (efp->do_gradient)
 		compute_grad(efp);

@@ -1,21 +1,17 @@
+VERSION_MAJOR = 0
+VERSION_MINOR = 9
+
 EXTRA_DIST =
 CLEANFILES =
 ACLOCAL_AMFLAGS = -I m4 ${ACLOCAL_FLAGS}
 AM_MAKEFLAGS = --no-print-directory
 AM_LDFLAGS =
 
-LIBEFP_CURRENT = 0
-LIBEFP_REVISION = 9
-LIBEFP_AGE = 0
-
-EFPMD_MAJOR = 0
-EFPMD_MINOR = 1
-
 AM_CPPFLAGS = \
 	-include $(top_builddir)/config.h \
 	-DSYSCONFDIR=\""$(sysconfdir)"\" \
 	-DLIBEXECDIR=\""$(libexecdir)"\" \
-	-DLIBEFPVERSION=\""$(LIBEFP_CURRENT).$(LIBEFP_REVISION).$(LIBEFP_AGE)"\" \
+	-DLIBEFPVERSION=\""$(VERSION_MAJOR).$(VERSION_MINOR)"\" \
 	-I${top_srcdir}/src
 
 AM_CFLAGS = ${my_CFLAGS} ${OPENMP_CFLAGS} \
@@ -38,11 +34,6 @@ dist_pkgdata_DATA = \
 	fraglib/h2.efp \
 	fraglib/h2o.efp \
 	fraglib/nh3.efp
-
-if BUILD_EFPMD
-bin_PROGRAMS = efpmd/efpmd
-noinst_PROGRAMS = efpmd/cubegen/cubegen
-endif
 
 src_libefp_la_SOURCES = \
 	common/compat.c \
@@ -68,10 +59,15 @@ src_libefp_la_SOURCES = \
 	src/terms.h \
 	src/xr.c
 
-EXTRA_DIST += LICENSE README.md
+EXTRA_DIST += AUTHORS LICENSE README.md
 
 src_libefp_la_LDFLAGS = $(AM_LDFLAGS) \
-	-version-info $(LIBEFP_CURRENT):$(LIBEFP_REVISION):$(LIBEFP_AGE)
+	-version-info $(VERSION_MAJOR):$(VERSION_MINOR)
+
+if BUILD_EFPMD
+bin_PROGRAMS = efpmd/efpmd
+noinst_PROGRAMS = efpmd/cubegen/cubegen
+endif
 
 efpmd_efpmd_SOURCES = \
 	common/compat.c \
@@ -82,33 +78,39 @@ efpmd_efpmd_SOURCES = \
 	efpmd/common.h \
 	efpmd/config.h \
 	efpmd/grad.c \
+	efpmd/hess.c \
 	efpmd/main.c \
 	efpmd/md.c \
 	efpmd/opt.c \
-	efpmd/optimizer/opt.c \
-	efpmd/optimizer/opt.h \
 	efpmd/parse.c \
-	efpmd/sim.h \
-	efpmd/sp.c
+	efpmd/sp.c \
+	efpmd/optimizer/blas.f \
+	efpmd/optimizer/lbfgsb.f \
+	efpmd/optimizer/linpack.f \
+	efpmd/optimizer/timer.f \
+	efpmd/optimizer/optimizer.c \
+	efpmd/optimizer/optimizer.h
 
 efpmd_efpmd_LDADD = src/libefp.la
 efpmd_efpmd_CFLAGS = $(AM_CFLAGS)
 efpmd_efpmd_CPPFLAGS = $(AM_CPPFLAGS) \
 	-DDATADIR=\""$(datarootdir)/libefp"\" \
-	-DEFPMDVERSION=\""$(EFPMD_MAJOR).$(EFPMD_MINOR)"\"
+	-DEFPMDVERSION=\""$(VERSION_MAJOR).$(VERSION_MINOR)"\"
 
 efpmd_cubegen_cubegen_SOURCES = \
 	efpmd/cubegen/cubegen.c
 
 EXTRA_DIST += \
 	efpmd/README.md \
-	efpmd/tests/c6h6-dimer_cg.in \
-	efpmd/tests/h2o-ch3oh_grad.in \
-	efpmd/tests/h2o-dimer_cg.in \
-	efpmd/tests/h2o-nh3_grad.in \
-	efpmd/tests/h2o-tetramer_cg.in \
-	efpmd/tests/water-cube-125_sp.in \
-	efpmd/tests/water-cube-3375_sp.in
+	efpmd/optimizer/License.txt \
+	efpmd/examples/c6h6-dimer_opt.in \
+	efpmd/examples/h2o-ch3oh_grad.in \
+	efpmd/examples/h2o-dimer_opt.in \
+	efpmd/examples/h2o-nh3_grad.in \
+	efpmd/examples/h2o-tetramer_opt.in \
+	efpmd/examples/water-cube-125_grad.in \
+	efpmd/examples/water-cube-125_sp.in \
+	efpmd/examples/water-cube-3375_sp.in
 
 TESTS = \
 	tests/elec_1a \

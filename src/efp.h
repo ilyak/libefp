@@ -61,6 +61,8 @@ enum efp_result {
 	EFP_RESULT_CALLBACK_FAILED,
 	/** Gradient computation was not requested. */
 	EFP_RESULT_GRADIENT_NOT_REQUESTED,
+	/** Polarization SCF did not converge. */
+	EFP_RESULT_POL_NOT_CONVERGED,
 	/** Certain EFP parameters are missing. */
 	EFP_RESULT_PARAMETERS_MISSING,
 	/** Incorrect enumeration value. */

@@ -318,8 +318,7 @@ efp_scf_update(struct efp *efp, double *energy)
 	if (!energy)
 		return EFP_RESULT_ARGUMENT_NULL;
 
-	*energy = efp_compute_pol_energy(efp);
-	return EFP_RESULT_SUCCESS;
+	return efp_compute_pol_energy(efp, energy);
 }
 
 EFP_EXPORT enum efp_result
@@ -804,12 +803,12 @@ efp_init(struct efp **out,
 		return EFP_RESULT_NO_MEMORY;
 
 	for (int i = 0; i < efp->n_frag; i++) {
-		struct frag *frag = find_frag_in_library(efp,
-							 frag_name_list[i]);
-		if (!frag)
+		struct frag *lib = find_frag_in_library(efp, frag_name_list[i]);
+
+		if (!lib)
 			return EFP_RESULT_UNKNOWN_FRAGMENT;
 
-		if ((res = copy_frag(efp->frags + i, frag)))
+		if ((res = copy_frag(efp->frags + i, lib)))
 			return res;
 	}
 
@@ -921,13 +920,13 @@ return "operation is not implemented";
 	case EFP_RESULT_ARGUMENT_NULL:
 return "unexpected NULL argument to function";
 	case EFP_RESULT_NOT_INITIALIZED:
-return "efp was not properly initialized";
+return "EFP was not properly initialized";
 	case EFP_RESULT_FILE_NOT_FOUND:
-return "file not found";
+return "EFP potential data file not found";
 	case EFP_RESULT_SYNTAX_ERROR:
 return "syntax error in potential data";
 	case EFP_RESULT_UNKNOWN_FRAGMENT:
-return "unknown fragment type";
+return "unknown EFP fragment type";
 	case EFP_RESULT_DUPLICATE_PARAMETERS:
 return "fragment parameters contain fragments with the same name";
 	case EFP_RESULT_CALLBACK_NOT_SET:
@@ -936,6 +935,8 @@ return "required callback function is not set";
 return "callback function failed";
 	case EFP_RESULT_GRADIENT_NOT_REQUESTED:
 return "gradient computation was not requested";
+	case EFP_RESULT_POL_NOT_CONVERGED:
+return "polarization SCF did not converge";
 	case EFP_RESULT_PARAMETERS_MISSING:
 return "required EFP fragment parameters are missing";
 	case EFP_RESULT_INCORRECT_ENUM_VALUE:
@@ -947,7 +948,7 @@ return "invalid array size";
 	case EFP_RESULT_UNSUPPORTED_SCREEN:
 return "unsupported SCREEN group found in EFP data";
 	case EFP_RESULT_INCONSISTENT_TERMS:
-return "inconsistent energy terms selected";
+return "inconsistent EFP energy terms selected";
 	}
 return "unknown result";
 }

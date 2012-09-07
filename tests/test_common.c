@@ -26,7 +26,7 @@
 
 #include "test_common.h"
 
-#define NUM_GRAD_DELTA 0.0001
+#define NUM_GRAD_DELTA 0.001
 
 static void message(const char *msg)
 {

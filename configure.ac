@@ -1,6 +1,6 @@
 AC_PREREQ([2.62])
 AC_INIT([libefp],
-	[0.9.0],
+	[0.9],
 	[ilya.kaliman@gmail.com],
 	[libefp],
 	[http://libefp.github.com/])
@@ -10,6 +10,7 @@ AM_INIT_AUTOMAKE([
 	foreign 1.11 -Wall silent-rules subdir-objects color-tests
 ])
 AC_PROG_CC_STDC
+AC_PROG_F77
 AC_OPENMP
 AC_USE_SYSTEM_EXTENSIONS
 AC_SYS_LARGEFILE
@@ -18,7 +19,6 @@ m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 AM_PROG_CC_C_O
 AM_SILENT_RULES([yes])
 LT_INIT([pic-only])
-AC_PREFIX_DEFAULT([/usr])
 
 AC_PROG_SED
 AC_PROG_MKDIR_P
