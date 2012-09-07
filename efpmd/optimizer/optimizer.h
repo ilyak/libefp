@@ -24,10 +24,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef OPTIMIZER_OPT_H
-#define OPTIMIZER_OPT_H
-
-#include <stddef.h>
+#ifndef EFPMD_OPTIMIZER_H
+#define EFPMD_OPTIMIZER_H
 
 enum opt_result {
 	OPT_RESULT_SUCCESS = 0,
@@ -36,20 +34,16 @@ enum opt_result {
 
 struct opt_state;
 
-typedef enum opt_result (*opt_fn)(size_t, const double *, double *, double *, void *);
+typedef double (*opt_func_t)(int, const double *, double *, void *);
 
-struct opt_state *opt_create(size_t);
-void opt_set_fn(struct opt_state *, opt_fn);
+struct opt_state *opt_create(int);
+enum opt_result opt_init(struct opt_state *, int, const double *);
+void opt_set_func(struct opt_state *, opt_func_t);
 void opt_set_user_data(struct opt_state *, void *);
-void opt_set_ls_max_iter(struct opt_state *, size_t);
-void opt_set_ls_tol(struct opt_state *, double);
-void opt_set_ls_step_size(struct opt_state *, double);
-void opt_set_ls_fn_tol(struct opt_state *, double);
-enum opt_result opt_init(struct opt_state *, const double *);
 enum opt_result opt_step(struct opt_state *);
 double opt_get_fx(struct opt_state *);
-enum opt_result opt_get_x(struct opt_state *, size_t, double *);
-enum opt_result opt_get_gx(struct opt_state *, size_t, double *);
+void opt_get_x(struct opt_state *, int, double *);
+void opt_get_gx(struct opt_state *, int, double *);
 void opt_shutdown(struct opt_state *);
 
-#endif /* OPTIMIZER_OPT_H */
+#endif /* EFPMD_OPTIMIZER_H */

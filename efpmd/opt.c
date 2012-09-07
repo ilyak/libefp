@@ -25,28 +25,30 @@
  */
 
 #include "common.h"
-#include "sim.h"
 
-#include "./optimizer/opt.h"
+#include "./optimizer/optimizer.h"
 
-static enum opt_result energy_fn(size_t n, const double *x, double *fx,
-			double *gx, void *data)
+void sim_opt(struct efp *, const struct config *);
+
+static double compute_efp(int n, const double *x, double *gx, void *data)
 {
+	struct efp *efp = (struct efp *)data;
+
 	int n_frag;
 	enum efp_result res;
-	struct efp *efp = (struct efp *)data;
-	struct efp_energy energy;
 
 	if ((res = efp_get_frag_count(efp, &n_frag)))
 		lib_error(res);
 
-	assert(n == (size_t)(6 * n_frag));
+	assert(n == 6 * n_frag);
 
 	if ((res = efp_set_coordinates(efp, EFP_COORD_TYPE_XYZABC, x)))
 		lib_error(res);
 
 	if ((res = efp_compute(efp, 1)))
 		lib_error(res);
+
+	struct efp_energy energy;
 
 	if ((res = efp_get_energy(efp, &energy)))
 		lib_error(res);
@@ -72,13 +74,7 @@ static enum opt_result energy_fn(size_t n, const double *x, double *fx,
 		gx[6 * i + 5] = sinb * sina * tx - sinb * cosa * ty + cosb * tz;
 	}
 
-	*fx = energy.total;
-	return OPT_RESULT_SUCCESS;
-}
-
-static int check_conv(double rms_grad, double max_grad, double opt_tol)
-{
-	return fabs(max_grad) < opt_tol && fabs(rms_grad) < opt_tol / 3.0;
+	return energy.total;
 }
 
 static void print_restart(struct efp *efp)
@@ -107,22 +103,27 @@ static void print_restart(struct efp *efp)
 	printf("\n");
 }
 
-static void get_grad_info(size_t n_coord, const double *grad, double *rms_grad,
-				double *max_grad)
+static int check_conv(double rms_grad, double max_grad, double opt_tol)
 {
-	double rms_g = 0.0, max_g = 0.0;
+	return fabs(max_grad) < opt_tol && fabs(rms_grad) < opt_tol / 3.0;
+}
 
-	for (size_t i = 0; i < n_coord; i++) {
-		rms_g += grad[i] * grad[i];
+static void get_grad_info(int n_coord, const double *grad, double *rms_grad_out,
+				double *max_grad_out)
+{
+	double rms_grad = 0.0, max_grad = 0.0;
 
-		if (fabs(grad[i]) > max_g)
-			max_g = grad[i];
+	for (int i = 0; i < n_coord; i++) {
+		rms_grad += grad[i] * grad[i];
+
+		if (fabs(grad[i]) > max_grad)
+			max_grad = grad[i];
 	}
 
-	rms_g = sqrt(rms_g / n_coord);
+	rms_grad = sqrt(rms_grad / n_coord);
 
-	*rms_grad = rms_g;
-	*max_grad = max_g;
+	*rms_grad_out = rms_grad;
+	*max_grad_out = max_grad;
 }
 
 static void print_status(struct efp *efp, double e_diff, double rms_grad,
@@ -148,22 +149,21 @@ void sim_opt(struct efp *efp, const struct config *config)
 	if ((res = efp_get_frag_count(efp, &n_frag)))
 		lib_error(res);
 
-	size_t n_coord = 6 * n_frag;
+	int n_coord = 6 * n_frag;
 	double rms_grad, max_grad;
 	double coord[n_coord], grad[n_coord];
-
-	if ((res = efp_get_coordinates(efp, n_frag, coord)))
-		lib_error(res);
 
 	struct opt_state *state = opt_create(n_coord);
 	if (!state)
 		error("UNABLE TO CREATE AN OPTIMIZER");
 
-	opt_set_fn(state, energy_fn);
-	opt_set_ls_step_size(state, config->ls_step_size);
+	opt_set_func(state, compute_efp);
 	opt_set_user_data(state, efp);
 
-	if (opt_init(state, coord))
+	if ((res = efp_get_coordinates(efp, n_frag, coord)))
+		lib_error(res);
+
+	if (opt_init(state, n_coord, coord))
 		error("UNABLE TO INITIALIZE AN OPTIMIZER");
 
 	double e_old = opt_get_fx(state);
@@ -188,10 +188,8 @@ void sim_opt(struct efp *efp, const struct config *config)
 			break;
 		}
 
-		if (step % config->print_step == 0) {
-			printf("    STATE AFTER %d STEPS\n\n", step);
-			print_status(efp, e_new - e_old, rms_grad, max_grad);
-		}
+		printf("    STATE AFTER %d STEPS\n\n", step);
+		print_status(efp, e_new - e_old, rms_grad, max_grad);
 
 		e_old = e_new;
 	}
