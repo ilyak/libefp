@@ -1,8 +1,9 @@
 # EFPMD
 
 EFPMD is a molecular simulation program based on LIBEFP. It supports EFP-only
-single point energy and gradient computations, geometry optimization, and
-molecular dynamics simulations in microcanonical and canonical ensembles.
+single point energy and gradient calculations, semi-numerical Hessian, geometry
+optimization, and molecular dynamics simulations in microcanonical and
+canonical ensembles.
 
 Simulations can be accelerated by running in parallel mode on multi-core CPUs.
 To enable parallel computation set `OMP_NUM_THREADS` environmental variable to
@@ -22,11 +23,13 @@ Lines beginning with the `#` symbol are ignored during input parsing.
 
 ##### Type of the simulation
 
-`run_type [sp|grad|opt|md]`
+`run_type [sp|grad|hess|opt|md]`
 
 `sp` - single point calculation.
 
 `grad` - gradient calculation.
+
+`hess` - numerical Hessian calculation.
 
 `opt` - geometry optimization.
 
@@ -100,12 +103,6 @@ Default value: `tt`
 
 Default value: `100`
 
-##### Number of steps between outputs
-
-`print_step <number>`
-
-Default value: `1`
-
 ##### The path to the directory with fragment library
 
 `fraglib_path <path>`
@@ -126,17 +123,11 @@ otherwise.
 
 ### Geometry optimization related parameters
 
-##### Line search step size
-
-`ls_step_size <number>`
-
-Default value: `20.0`
-
 ##### Optimization tolerance
 
 `opt_tol <number>`
 
-Default value: `1.0e-4`
+Default value: `1.0e-5`
 
 Optimization will stop when maximum gradient component is less than `opt_tol`
 and RMS gradient is less than one third of `opt_tol`.
@@ -168,6 +159,12 @@ Default value: `300.0`
 Units: `Femtoseconds`
 
 Default value: `1.0`
+
+##### Print step
+
+`print_step <number>`
+
+Default value: `1`
 
 ### Fragment input
 

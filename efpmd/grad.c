@@ -25,7 +25,8 @@
  */
 
 #include "common.h"
-#include "sim.h"
+
+void sim_grad(struct efp *, const struct config *);
 
 void sim_grad(struct efp *efp, UNUSED const struct config *config)
 {

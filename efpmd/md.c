@@ -1,7 +1,32 @@
+/*-
+ * Copyright (c) 2012 Ilya Kaliman
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL AUTHOR OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ */
+
 #include "../common/math_util.h"
 
 #include "common.h"
-#include "sim.h"
 
 struct body {
 	mat_t rotmat;
@@ -26,6 +51,8 @@ struct md {
 	struct efp *efp;
 	const struct config *config;
 };
+
+void sim_md(struct efp *, const struct config *);
 
 static double get_kinetic_energy(const struct md *md)
 {
@@ -311,39 +338,41 @@ static void rotate_step(int a1, int a2, double angle, vec_t *angmom, mat_t *rotm
 	mat_set(&rot, a2, a1, -sina);
 
 	*angmom = mat_vec(&rot, angmom);
-	*rotmat = mat_mat(&rot, rotmat);
+
+	/* transpose */
+	mat_set(&rot, a1, a2, -sina);
+	mat_set(&rot, a2, a1,  sina);
+
+	*rotmat = mat_mat(rotmat, &rot);
 }
 
 static void rotate_body(struct body *body, double dt)
 {
 	double angle;
-	mat_t rotmat = mat_transpose(&body->rotmat);
 
 	/* rotate about x axis */
 	if (body->inertia.x > EPSILON) { /* non-linear body */
 		angle = 0.5 * dt * body->angmom.x / body->inertia.x;
-		rotate_step(1, 2, angle, &body->angmom, &rotmat);
+		rotate_step(1, 2, angle, &body->angmom, &body->rotmat);
 	}
 
 	/* rotate about y axis */
 	angle = 0.5 * dt * body->angmom.y / body->inertia.y;
-	rotate_step(2, 0, angle, &body->angmom, &rotmat);
+	rotate_step(2, 0, angle, &body->angmom, &body->rotmat);
 
 	/* rotate about z axis */
 	angle = dt * body->angmom.z / body->inertia.z;
-	rotate_step(0, 1, angle, &body->angmom, &rotmat);
+	rotate_step(0, 1, angle, &body->angmom, &body->rotmat);
 
 	/* rotate about y axis */
 	angle = 0.5 * dt * body->angmom.y / body->inertia.y;
-	rotate_step(2, 0, angle, &body->angmom, &rotmat);
+	rotate_step(2, 0, angle, &body->angmom, &body->rotmat);
 
 	/* rotate about x axis */
 	if (body->inertia.x > EPSILON) { /* non-linear body */
 		angle = 0.5 * dt * body->angmom.x / body->inertia.x;
-		rotate_step(1, 2, angle, &body->angmom, &rotmat);
+		rotate_step(1, 2, angle, &body->angmom, &body->rotmat);
 	}
-
-	body->rotmat = mat_transpose(&rotmat);
 }
 
 static void update_step_nve(struct md *md)
@@ -431,10 +460,7 @@ static void print_restart(const struct md *md)
 
 static struct md *md_create(struct efp *efp, const struct config *config)
 {
-	struct md *md = calloc(1, sizeof(struct md));
-
-	if (!md)
-		error("NO MEMORY");
+	struct md *md = xcalloc(1, sizeof(struct md));
 
 	md->efp = efp;
 	md->config = config;
@@ -457,10 +483,7 @@ static struct md *md_create(struct efp *efp, const struct config *config)
 	if ((res = efp_get_frag_count(efp, &md->n_bodies)))
 		lib_error(res);
 
-	md->bodies = calloc(md->n_bodies, sizeof(struct body));
-
-	if (!md->bodies)
-		error("NO MEMORY");
+	md->bodies = xcalloc(md->n_bodies, sizeof(struct body));
 
 	double coord[6 * md->n_bodies];
 
