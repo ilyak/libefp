@@ -263,7 +263,7 @@ static void compute_forces(struct md *md)
 
 	md->potential_energy = energy.total;
 
-	if ((res = efp_get_gradient(md->efp, md->n_bodies, grad)))
+	if ((res = efp_get_gradient(md->efp, EFP_GRAD_TYPE_TORQUE, md->n_bodies, grad)))
 		lib_error(res);
 
 	for (int i = 0; i < md->n_bodies; i++) {
@@ -277,8 +277,7 @@ static void compute_forces(struct md *md)
 		body->torque.y = -grad[6 * i + 4];
 		body->torque.z = -grad[6 * i + 5];
 
-		mat_t rotmat = mat_transpose(&body->rotmat);
-		body->torque = mat_vec(&rotmat, &body->torque);
+		body->torque = mat_trans_vec(&body->rotmat, &body->torque);
 	}
 }
 
@@ -297,8 +296,7 @@ static void set_body_mass_and_inertia(struct body *body, int n_atoms,
 			     atom->y - body->pos.y,
 			     atom->z - body->pos.z };
 
-		mat_t rotmat = mat_transpose(&body->rotmat);
-		dr = mat_vec(&rotmat, &dr);
+		dr = mat_trans_vec(&body->rotmat, &dr);
 
 		inertia.xx += atom->mass * (dr.y * dr.y + dr.z * dr.z);
 		inertia.yy += atom->mass * (dr.x * dr.x + dr.z * dr.z);

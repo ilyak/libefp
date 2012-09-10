@@ -53,26 +53,8 @@ static double compute_efp(int n, const double *x, double *gx, void *data)
 	if ((res = efp_get_energy(efp, &energy)))
 		lib_error(res);
 
-	if ((res = efp_get_gradient(efp, n_frag, gx)))
+	if ((res = efp_get_gradient(efp, EFP_GRAD_TYPE_DERIVATIVE, n_frag, gx)))
 		lib_error(res);
-
-	for (int i = 0; i < n_frag; i++) {
-		double tx = gx[6 * i + 3];
-		double ty = gx[6 * i + 4];
-		double tz = gx[6 * i + 5];
-
-		double a = x[6 * i + 3];
-		double b = x[6 * i + 4];
-
-		double sina = sin(a);
-		double cosa = cos(a);
-		double sinb = sin(b);
-		double cosb = cos(b);
-
-		gx[6 * i + 3] = tz;
-		gx[6 * i + 4] = cosa * tx + sina * ty;
-		gx[6 * i + 5] = sinb * sina * tx - sinb * cosa * ty + cosb * tz;
-	}
 
 	return energy.total;
 }

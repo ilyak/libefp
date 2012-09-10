@@ -424,10 +424,13 @@ static void set_config_defaults(struct config *config)
 	memset(config, 0, sizeof(struct config));
 
 	for (size_t i = 0; i < ARRAY_SIZE(config_list); i++) {
-		char *str = (char *)config_list[i].default_value;
+		char buffer[128];
+		strncpy(buffer, config_list[i].default_value, sizeof(buffer));
+
+		char *ptr = buffer;
 		size_t offset = config_list[i].member_offset;
 
-		if (!config_list[i].parse_fn(&str, (char *)config + offset))
+		if (!config_list[i].parse_fn(&ptr, (char *)config + offset))
 			error("INCORRECT OPTION DEFAULT VALUE");
 	}
 }

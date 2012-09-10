@@ -127,14 +127,15 @@ void print_energy(struct efp *efp)
 	if ((res = efp_get_energy(efp, &energy)))
 		lib_error(res);
 
-printf("         ELECTROSTATIC ENERGY %16.10lf\n", energy.electrostatic);
-printf("          POLARIZATION ENERGY %16.10lf\n", energy.polarization);
-printf("            DISPERSION ENERGY %16.10lf\n", energy.dispersion);
-printf("    EXCHANGE REPULSION ENERGY %16.10lf\n", energy.exchange_repulsion);
-printf("    CHARGE PENETRATION ENERGY %16.10lf\n", energy.charge_penetration);
-printf("\n");
-printf("                 TOTAL ENERGY %16.10lf\n", energy.total);
-printf("\n\n");
+	printf("    ENERGY COMPONENTS (ATOMIC UNITS)\n\n");
+	printf("         ELECTROSTATIC ENERGY %16.10lf\n", energy.electrostatic);
+	printf("          POLARIZATION ENERGY %16.10lf\n", energy.polarization);
+	printf("            DISPERSION ENERGY %16.10lf\n", energy.dispersion);
+	printf("    EXCHANGE REPULSION ENERGY %16.10lf\n", energy.exchange_repulsion);
+	printf("    CHARGE PENETRATION ENERGY %16.10lf\n", energy.charge_penetration);
+	printf("\n");
+	printf("                 TOTAL ENERGY %16.10lf\n", energy.total);
+	printf("\n\n");
 }
 
 void print_gradient(struct efp *efp)
@@ -148,7 +149,7 @@ void print_gradient(struct efp *efp)
 	char name[64];
 	double grad[6 * n_frag];
 
-	if ((res = efp_get_gradient(efp, n_frag, grad)))
+	if ((res = efp_get_gradient(efp, EFP_GRAD_TYPE_TORQUE, n_frag, grad)))
 		lib_error(res);
 
 	for (int i = 0; i < n_frag; i++) {
@@ -159,12 +160,12 @@ void print_gradient(struct efp *efp)
 		printf("\nFORCE  ");
 
 		for (int j = 0; j < 3; j++)
-			printf(" %14.6e", grad[6 * i + j]);
+			printf(" %16.8E", grad[6 * i + j]);
 
 		printf("\nTORQUE ");
 
 		for (int j = 3; j < 6; j++)
-			printf(" %14.6e", grad[6 * i + j]);
+			printf(" %16.8E", grad[6 * i + j]);
 
 		printf("\n\n");
 	}

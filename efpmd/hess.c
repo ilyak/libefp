@@ -31,7 +31,8 @@ void sim_hess(struct efp *, const struct config *);
 void sim_hess(struct efp *efp, const struct config *config)
 {
 	enum efp_result res;
-	int n_coord = 6 * config->n_frags;
+	int n_frags = config->n_frags;
+	int n_coord = 6 * n_frags;
 
 	double *xyzabc = xmalloc(n_coord * sizeof(double));
 	double *grad = xmalloc(n_coord * sizeof(double));
@@ -41,17 +42,20 @@ void sim_hess(struct efp *efp, const struct config *config)
 	if ((res = efp_compute(efp, 1)))
 		lib_error(res);
 
-	if ((res = efp_get_coordinates(efp, config->n_frags, xyzabc)))
+	if ((res = efp_get_coordinates(efp, n_frags, xyzabc)))
 		lib_error(res);
 
-	if ((res = efp_get_gradient(efp, config->n_frags, grad_0)))
+	if ((res = efp_get_gradient(efp, EFP_GRAD_TYPE_DERIVATIVE, n_frags, grad_0)))
 		lib_error(res);
 
+	print_geometry(efp);
 	print_energy(efp);
 	print_gradient(efp);
 	fflush(stdout);
 
 	for (int i = 0; i < n_coord; i++) {
+		printf("COMPUTING DISPLACEMENT %5d OF %d\n", i + 1, n_coord);
+
 		double save = xyzabc[i];
 		xyzabc[i] = save + config->hess_delta;
 
@@ -61,13 +65,16 @@ void sim_hess(struct efp *efp, const struct config *config)
 		if ((res = efp_compute(efp, 1)))
 			lib_error(res);
 
-		if ((res = efp_get_gradient(efp, config->n_frags, grad)))
+		if ((res = efp_get_gradient(efp, EFP_GRAD_TYPE_DERIVATIVE, n_frags, grad)))
 			lib_error(res);
+
+		for (int j = 0; j < n_coord; j++)
+			hess[i * n_coord + j] = (grad[j] - grad_0[j]) / config->hess_delta;
 
 		xyzabc[i] = save;
 	}
 
-	printf("    HESSIAN MATRIX\n\n");
+	printf("\n\n    HESSIAN MATRIX\n\n");
 	print_matrix(n_coord, n_coord, hess);
 
 	free(xyzabc);

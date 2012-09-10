@@ -36,17 +36,19 @@ static void run_sim(struct efp *efp, const struct config *config)
 {
 	static const struct {
 		const char *run_type;
+		const char *description;
 		void (*sim_fn)(struct efp *, const struct config *);
 	} sim_list[] = {
-		{ "sp",   sim_sp   },
-		{ "grad", sim_grad },
-		{ "hess", sim_hess },
-		{ "opt",  sim_opt  },
-		{ "md",   sim_md   }
+		{ "sp",   "SINGLE POINT ENERGY JOB", sim_sp   },
+		{ "grad", "ENERGY GRADIENT JOB",     sim_grad },
+		{ "hess", "HESSIAN JOB",             sim_hess },
+		{ "opt",  "ENERGY MINIMIZATION JOB", sim_opt  },
+		{ "md",   "MOLECULAR DYNAMICS JOB",  sim_md   }
 	};
 
 	for (size_t i = 0; i < ARRAY_SIZE(sim_list); i++) {
 		if (streq(config->run_type, sim_list[i].run_type)) {
+			printf("%s\n\n\n", sim_list[i].description);
 			sim_list[i].sim_fn(efp, config);
 			return;
 		}
@@ -59,18 +61,37 @@ static void print_banner(void)
 {
 	printf("EFPMD ver. " EFPMDVERSION "\n");
 	printf("Copyright (c) 2012 Ilya Kaliman\n\n");
-	printf("%s\n\n", efp_banner());
+	printf("%s\n", efp_banner());
 }
 
 static int string_compare(const void *a, const void *b)
 {
-	const char *s1 = *(const char **)a;
-	const char *s2 = *(const char **)b;
+	const char *s1 = *(const char *const *)a;
+	const char *s2 = *(const char *const *)b;
 
 	return u_strcasecmp(s1, s2);
 }
 
-static char **make_potential_file_list(const struct config *config)
+static char *make_name_list(const struct config *config)
+{
+	size_t len = 0;
+
+	for (int i = 0; i < config->n_frags; i++)
+		len += strlen(config->frags[i].name) + 1;
+
+	char *names = xmalloc(len), *ptr = names;
+
+	for (int i = 0; i < config->n_frags; i++) {
+		strcpy(ptr, config->frags[i].name);
+		ptr += strlen(config->frags[i].name);
+		*ptr++ = '\n';
+	}
+
+	*(--ptr) = '\0';
+	return names;
+}
+
+static char *make_potential_file_list(const struct config *config)
 {
 	/* This function constructs the list of library potential data files.
 	 * For each unique fragment if fragment name contains an _l suffix
@@ -93,55 +114,60 @@ static char **make_potential_file_list(const struct config *config)
 		}
 	}
 
-	char **list = xmalloc((n_unique + 1) * sizeof(char *));
+	size_t len = 0;
 
 	for (int i = 0; i < n_unique; i++) {
 		const char *name = unique[i];
-		size_t len = strlen(name);
-		char *path;
+		size_t n = strlen(name);
 
-		if (len > 2 && streq(name + len - 2, "_l")) {
-			path = xmalloc(strlen(config->fraglib_path) + len + 4);
-			strcat(strcpy(path, config->fraglib_path), "/");
-			strcat(strncat(path, name, len - 2), ".efp");
-		}
-		else {
-			path = xmalloc(strlen(config->userlib_path) + len + 6);
-			strcat(strcpy(path, config->userlib_path), "/");
-			strcat(strcat(path, name), ".efp");
-		}
-
-		list[i] = path;
+		if (n > 2 && streq(name + n - 2, "_l"))
+			len += strlen(config->fraglib_path) + n + 4;
+		else
+			len += strlen(config->userlib_path) + n + 6;
 	}
 
-	list[n_unique] = NULL;
-	return list;
+	char *files = xmalloc(len), *ptr = files;
+
+	for (int i = 0; i < n_unique; i++) {
+		const char *name = unique[i];
+		size_t n = strlen(name);
+
+		if (n > 2 && streq(name + n - 2, "_l")) {
+			strcat(strcpy(ptr, config->fraglib_path), "/");
+			strcat(strncat(ptr, name, n - 2), ".efp");
+			ptr += strlen(config->fraglib_path) + n + 3;
+			*ptr++ = '\n';
+		}
+		else {
+			strcat(strcpy(ptr, config->userlib_path), "/");
+			strcat(strcat(ptr, name), ".efp");
+			ptr += strlen(config->userlib_path) + n + 5;
+			*ptr++ = '\n';
+		}
+	}
+
+	*(--ptr) = '\0';
+	return files;
 }
 
 static void init_efp(struct efp **efp, const struct config *config)
 {
+	enum efp_result res;
+
 	struct efp_opts opts = {
 		.terms = config->terms,
 		.elec_damp = config->elec_damp,
 		.disp_damp = config->disp_damp
 	};
 
-	char **files = make_potential_file_list(config);
-	char *names[config->n_frags + 1];
+	char *files = make_potential_file_list(config);
+	char *names = make_name_list(config);
 
-	for (int i = 0; i < config->n_frags; i++)
-		names[i] = config->frags[i].name;
-
-	names[config->n_frags] = NULL;
-	enum efp_result res;
-
-	if ((res = efp_init(efp, &opts, NULL, (const char **)files, (const char **)names)))
+	if ((res = efp_init(efp, &opts, NULL, files, names)))
 		lib_error(res);
 
-	for (int i = 0; files[i]; i++)
-		free(files[i]);
-
 	free(files);
+	free(names);
 }
 
 static int get_coord_count(enum efp_coord_type coord_type)
@@ -181,10 +207,12 @@ int main(int argc, char **argv)
 	parse_config(argv[1], &config);
 	init_efp(&efp, &config);
 	set_coord(efp, &config);
+
 	run_sim(efp, &config);
+	printf("SIMULATION COMPLETED SUCCESSFULLY\n");
+
 	efp_shutdown(efp);
 	free_config(&config);
 
-	puts("SIMULATION COMPLETED SUCCESSFULLY");
 	return EXIT_SUCCESS;
 }
