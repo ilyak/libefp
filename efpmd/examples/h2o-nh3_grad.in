@@ -1,7 +1,7 @@
 run_type grad
 coord xyzabc
 units bohr
-terms elec pol disp
+terms elec pol disp xr
 disp_damp tt
 fraglib_path ../fraglib
 
