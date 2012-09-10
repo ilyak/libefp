@@ -9,16 +9,16 @@
  * <i>LIBEFP</i> is designed to allow developers an easy way to add EFP support to
  * their favourite quantum chemistry software package.
  *
- * \section efpmd EFPMD package
+ * \section efpmd Efpmd package
  *
  * <a href="http://github.com/libefp/libefp/tree/master/efpmd"><i>EFPMD</i></a>
- * is a molecular simulation package based on <i>LIBEFP</i>. It allows you to run
+ * is a molecular simulation package based on <i>LIBEFP</i>. It allows running
  * EFP-only molecular simulations such as geometry optimization and
- * molecular dynamics. See
+ * molecular dynamics. <i>EFPMD</i> is a part of <i>LIBEFP</i> distribution. See
  * <a href="http://github.com/libefp/libefp/tree/master/efpmd/README.md"><i>README</i></a>
  * file for more information on how to use the package.
  *
- * \section uses Who uses LIBEFP
+ * \section users Libefp users
  *
  * <i>LIBEFP</i> is currently being used in
  * <a href="http://www.psicode.org/"><i>PSI</i></a>
@@ -38,7 +38,7 @@
  * Latest development version of code can be found in git
  * <a href="http://github.com/libefp/libefp"><i>repository</i></a>.
  *
- * \section parallel Parallel performance
+ * \section perf Performance
  *
  * The EFP code is parallelized using
  * <a href="http://www.openmp.org/"><i>OpenMP</i></a> to utilize the full power
