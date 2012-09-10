@@ -54,9 +54,12 @@ AC_MSG_RESULT([
         libdir:             ${libdir}
         includedir:         ${includedir}
 
-        compiler:           ${CC}
-        cflags:             ${CFLAGS}
-        ldflags:            ${LDFLAGS}
+        C compiler:         ${CC}
+        CFLAGS:             ${CFLAGS}
 
-        developer cflags:   ${my_CFLAGS}
+        Fortran compiler:   ${F77}
+        FFLAGS:             ${FFLAGS}
+
+        LDFLAGS:            ${LDFLAGS}
+        additional CFLAGS:  ${my_CFLAGS}
 ])
