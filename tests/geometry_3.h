@@ -24,25 +24,21 @@
  * SUCH DAMAGE.
  */
 
-static const char *potential_files[] = {
-	ABS_TOP_SRCDIR "/fraglib/h2o.efp",
-	ABS_TOP_SRCDIR "/fraglib/nh3.efp",
-	ABS_TOP_SRCDIR "/fraglib/ch3oh.efp",
-	NULL
-};
+static const char files[] =
+	ABS_TOP_SRCDIR "/fraglib/h2o.efp\n"
+	ABS_TOP_SRCDIR "/fraglib/nh3.efp\n"
+	ABS_TOP_SRCDIR "/fraglib/ch3oh.efp";
 
-static const char *fragname[] = {
-	"H2O_L",
-	"NH3_L",
-	"NH3_L",
-	"NH3_L",
-	"CH3OH_L",
-	"H2O_L",
-	"H2O_L",
-	"CH3OH_L",
-	"H2O_L",
-	 NULL
-};
+static const char names[] =
+	"H2O_L\n"
+	"NH3_L\n"
+	"NH3_L\n"
+	"NH3_L\n"
+	"CH3OH_L\n"
+	"H2O_L\n"
+	"H2O_L\n"
+	"CH3OH_L\n"
+	"H2O_L";
 
 static const double geometry[] = {
 	BOHR(-3.394), BOHR(-1.900), BOHR(-3.700), /* H2O */

@@ -115,7 +115,7 @@ static enum efp_result test_frag_numerical_grad(struct efp *efp,
 	*fail = 0;
 
 	for (int i = 0; i < n_frag; i++) {
-		double grad_num[6], grad_euler[6];
+		double grad_num[6];
 
 		for (int j = 0; j < 6; j++) {
 			double coord = xyzabc[6 * i + j];
@@ -142,29 +142,8 @@ static enum efp_result test_frag_numerical_grad(struct efp *efp,
 			grad_num[j] = (e2.total - e1.total) / (2.0 * NUM_GRAD_DELTA);
 		}
 
-		/* convert torque to energy derivatives by Euler angles */
-
-		double tx = grad[6 * i + 3];
-		double ty = grad[6 * i + 4];
-		double tz = grad[6 * i + 5];
-
-		double a = xyzabc[6 * i + 3];
-		double b = xyzabc[6 * i + 4];
-
-		double sina = sin(a);
-		double cosa = cos(a);
-		double sinb = sin(b);
-		double cosb = cos(b);
-
-		grad_euler[0] = grad[6 * i + 0];
-		grad_euler[1] = grad[6 * i + 1];
-		grad_euler[2] = grad[6 * i + 2];
-		grad_euler[3] = tz;
-		grad_euler[4] = cosa * tx + sina * ty;
-		grad_euler[5] = sinb * sina * tx - sinb * cosa * ty + cosb * tz;
-
 		for (int j = 0; j < 6; j++)
-			if (!eq(grad_num[j], grad_euler[j]))
+			if (!eq(grad_num[j], grad[6 * i + j]))
 				*fail = 1;
 	}
 
@@ -228,7 +207,7 @@ int run_test(const struct test_data *test_data)
 	int status = EXIT_SUCCESS;
 
 	if ((res = efp_init(&efp, &test_data->opts, &test_data->callbacks,
-			test_data->potential_files, test_data->fragname))) {
+				test_data->files, test_data->names))) {
 		error("efp_init", res);
 		goto fail;
 	}
@@ -240,9 +219,13 @@ int run_test(const struct test_data *test_data)
 		geometry = test_data->geometry_xyzabc;
 		coord_type = EFP_COORD_TYPE_XYZABC;
 	}
-	else {
+	else if (test_data->geometry_points) {
 		geometry = test_data->geometry_points;
 		coord_type = EFP_COORD_TYPE_POINTS;
+	}
+	else {
+		message("geometry is not set");
+		goto fail;
 	}
 
 	if ((res = efp_set_coordinates(efp, coord_type, geometry))) {
@@ -300,7 +283,8 @@ int run_test(const struct test_data *test_data)
 		}
 
 		double frag_grad[6 * n_frag];
-		if ((res = efp_get_gradient(efp, n_frag, frag_grad))) {
+		if ((res = efp_get_gradient(efp, EFP_GRAD_TYPE_DERIVATIVE,
+						n_frag, frag_grad))) {
 			error("efp_get_gradient", res);
 			goto fail;
 		}

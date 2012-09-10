@@ -28,8 +28,8 @@
 #include "geometry_3.h"
 
 static const struct test_data test_data = {
-	.potential_files = potential_files,
-	.fragname = fragname,
+	.files = files,
+	.names = names,
 	.geometry_points = geometry,
 		/* elec + pol + disp + xr from GAMESS */
 	.ref_energy = -0.0091760727 + -0.0034649076 +

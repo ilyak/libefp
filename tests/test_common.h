@@ -43,11 +43,11 @@
 #define ANGSTROM(x) ((x) * BOHR_RADIUS)
 
 struct test_data {
-	/** Array of paths to EFP data files, NULL-terminated. */
-	const char **potential_files;
+	/** Paths to EFP data files. */
+	const char *files;
 
-	/** Array of fragment names, NULL-terminated. */
-	const char **fragname;
+	/** Fragment names. */
+	const char *names;
 
 	/**
 	 * If not NULL geometry will be set up using EFP_COORD_TYPE_XYZABC. */

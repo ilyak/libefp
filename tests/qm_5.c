@@ -26,19 +26,15 @@
 
 #include "test_common.h"
 
-static const char *potential_files[] = {
-	ABS_TOP_SRCDIR "/fraglib/h2o.efp",
-	ABS_TOP_SRCDIR "/fraglib/c6h6.efp",
-	ABS_TOP_SRCDIR "/fraglib/nh3.efp",
-	NULL
-};
+static const char files[] =
+	ABS_TOP_SRCDIR "/fraglib/h2o.efp\n"
+	ABS_TOP_SRCDIR "/fraglib/c6h6.efp\n"
+	ABS_TOP_SRCDIR "/fraglib/nh3.efp";
 
-static const char *fragname[] = {
-	"H2O_L",
-	"C6H6_L",
-	"NH3_L",
-	 NULL
-};
+static const char names[] =
+	"H2O_L\n"
+	"C6H6_L\n"
+	"NH3_L";
 
 static const double frag_xyzabc[] = {
 	BOHR(-1.6), BOHR( 4.7), BOHR( 1.4), -1.3,  0.0,  7.0,
@@ -67,8 +63,8 @@ static enum efp_result get_electron_density_field(int n_pt,
 }
 
 static const struct test_data test_data = {
-	.potential_files = potential_files,
-	.fragname = fragname,
+	.files = files,
+	.names = names,
 	.geometry_xyzabc = frag_xyzabc,
 	.n_qm_atoms = ARRAY_SIZE(qm_znuc),
 	.qm_znuc = qm_znuc,

@@ -24,37 +24,33 @@
  * SUCH DAMAGE.
  */
 
-static const char *potential_files[] = {
-	ABS_TOP_SRCDIR "/fraglib/acetone.efp",
-	ABS_TOP_SRCDIR "/fraglib/c2h5oh.efp",
-	ABS_TOP_SRCDIR "/fraglib/c6h6.efp",
-	ABS_TOP_SRCDIR "/fraglib/ccl4.efp",
-	ABS_TOP_SRCDIR "/fraglib/ch3oh.efp",
-	ABS_TOP_SRCDIR "/fraglib/ch4.efp",
-	ABS_TOP_SRCDIR "/fraglib/cl2.efp",
-	ABS_TOP_SRCDIR "/fraglib/dcm.efp",
-	ABS_TOP_SRCDIR "/fraglib/dmso.efp",
-	ABS_TOP_SRCDIR "/fraglib/h2.efp",
-	ABS_TOP_SRCDIR "/fraglib/h2o.efp",
-	ABS_TOP_SRCDIR "/fraglib/nh3.efp",
-	NULL
-};
+static const char files[] =
+	ABS_TOP_SRCDIR "/fraglib/acetone.efp\n"
+	ABS_TOP_SRCDIR "/fraglib/c2h5oh.efp\n"
+	ABS_TOP_SRCDIR "/fraglib/c6h6.efp\n"
+	ABS_TOP_SRCDIR "/fraglib/ccl4.efp\n"
+	ABS_TOP_SRCDIR "/fraglib/ch3oh.efp\n"
+	ABS_TOP_SRCDIR "/fraglib/ch4.efp\n"
+	ABS_TOP_SRCDIR "/fraglib/cl2.efp\n"
+	ABS_TOP_SRCDIR "/fraglib/dcm.efp\n"
+	ABS_TOP_SRCDIR "/fraglib/dmso.efp\n"
+	ABS_TOP_SRCDIR "/fraglib/h2.efp\n"
+	ABS_TOP_SRCDIR "/fraglib/h2o.efp\n"
+	ABS_TOP_SRCDIR "/fraglib/nh3.efp";
 
-static const char *fragname[] = {
-	"ACETONE_L",
-	"C2H5OH_L",
-	"C6H6_L",
-	"CCL4_L",
-	"CH3OH_L",
-	"CH4_L",
-	"CL2_L",
-	"DCM_L",
-	"DMSO_L",
-	"H2_L",
-	"H2O_L",
-	"NH3_L",
-	 NULL
-};
+static const char names[] =
+	"ACETONE_L\n"
+	"C2H5OH_L\n"
+	"C6H6_L\n"
+	"CCL4_L\n"
+	"CH3OH_L\n"
+	"CH4_L\n"
+	"CL2_L\n"
+	"DCM_L\n"
+	"DMSO_L\n"
+	"H2_L\n"
+	"H2O_L\n"
+	"NH3_L";
 
 static const double xyzabc[] = { /* some random geometry */
 	BOHR( 0.0), BOHR( 0.0), BOHR(0.0), 0.0, 0.2, 0.3,

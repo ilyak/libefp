@@ -24,17 +24,13 @@
  * SUCH DAMAGE.
  */
 
-static const char *potential_files[] = {
-	ABS_TOP_SRCDIR "/fraglib/h2o.efp",
-	ABS_TOP_SRCDIR "/fraglib/nh3.efp",
-	NULL
-};
+static const char files[] =
+	ABS_TOP_SRCDIR "/fraglib/h2o.efp\n"
+	ABS_TOP_SRCDIR "/fraglib/nh3.efp";
 
-static const char *fragname[] = {
-	"H2O_L",
-	"NH3_L",
-	 NULL
-};
+static const char names[] =
+	"H2O_L\n"
+	"NH3_L";
 
 static const double xyzabc[] = { /* some random geometry */
 	BOHR(0.0), BOHR(0.0), BOHR(0.0), 1.0, 2.0, 3.0,

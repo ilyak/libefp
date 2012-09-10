@@ -26,24 +26,20 @@
 
 #include "test_common.h"
 
-static const char *potential_files[] = {
-	ABS_TOP_SRCDIR "/fraglib/ch3oh.efp",
-	ABS_TOP_SRCDIR "/fraglib/dmso.efp",
-	ABS_TOP_SRCDIR "/fraglib/dcm.efp",
-	ABS_TOP_SRCDIR "/fraglib/acetone.efp",
-	NULL
-};
+static const char files[] =
+	ABS_TOP_SRCDIR "/fraglib/ch3oh.efp\n"
+	ABS_TOP_SRCDIR "/fraglib/dmso.efp\n"
+	ABS_TOP_SRCDIR "/fraglib/dcm.efp\n"
+	ABS_TOP_SRCDIR "/fraglib/acetone.efp";
 
-static const char *fragname[] = {
-	"CH3OH_L",
-	"DMSO_L",
-	"DMSO_L",
-	"ACETONE_L",
-	"DCM_L",
-	"ACETONE_L",
-	"ACETONE_L",
-	 NULL
-};
+static const char names[] =
+	"CH3OH_L\n"
+	"DMSO_L\n"
+	"DMSO_L\n"
+	"ACETONE_L\n"
+	"DCM_L\n"
+	"ACETONE_L\n"
+	"ACETONE_L";
 
 static const double frag_xyzabc[] = {
 	BOHR( 0.0), BOHR(-1.0), BOHR( 0.0),  0.0,  1.0,  2.0,
@@ -77,8 +73,8 @@ static enum efp_result get_electron_density_field(int n_pt,
 }
 
 static const struct test_data test_data = {
-	.potential_files = potential_files,
-	.fragname = fragname,
+	.files = files,
+	.names = names,
 	.geometry_xyzabc = frag_xyzabc,
 	.n_qm_atoms = ARRAY_SIZE(qm_znuc),
 	.qm_znuc = qm_znuc,
