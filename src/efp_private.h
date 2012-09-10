@@ -185,8 +185,8 @@ add_force_torque(struct frag *fr_i, struct frag *fr_j,
 		 const vec_t *pt_i, const vec_t *pt_j,
 		 const vec_t *force)
 {
-	vec_t dr_i = vec_sub(VEC(pt_i->x), VEC(fr_i->x));
-	vec_t dr_j = vec_sub(VEC(pt_j->x), VEC(fr_j->x));
+	vec_t dr_i = vec_sub(CVEC(pt_i->x), VEC(fr_i->x));
+	vec_t dr_j = vec_sub(CVEC(pt_j->x), VEC(fr_j->x));
 
 	vec_t torque_i = vec_cross(&dr_i, force);
 	vec_t torque_j = vec_cross(&dr_j, force);
@@ -203,8 +203,8 @@ add_force_torque_2(struct frag *fr_i, struct frag *fr_j,
 		   const vec_t *pt_i, const vec_t *pt_j,
 		   const vec_t *force, const vec_t *add_i, const vec_t *add_j)
 {
-	vec_t dr_i = vec_sub(VEC(pt_i->x), VEC(fr_i->x));
-	vec_t dr_j = vec_sub(VEC(pt_j->x), VEC(fr_j->x));
+	vec_t dr_i = vec_sub(CVEC(pt_i->x), VEC(fr_i->x));
+	vec_t dr_j = vec_sub(CVEC(pt_j->x), VEC(fr_j->x));
 
 	vec_t torque_i = vec_cross(&dr_i, force);
 	vec_t torque_j = vec_cross(&dr_j, force);
@@ -229,7 +229,7 @@ add_force_torque_frag_point(struct frag *fr_j, const vec_t *pt_j,
 			    vec_t *grad_i, const vec_t *force,
 			    const vec_t *add_j)
 {
-	vec_t dr_j = vec_sub(VEC(pt_j->x), VEC(fr_j->x));
+	vec_t dr_j = vec_sub(CVEC(pt_j->x), VEC(fr_j->x));
 	vec_t torque_j = vec_cross(&dr_j, force);
 
 	torque_j.x += add_j->x;

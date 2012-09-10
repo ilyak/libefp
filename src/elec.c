@@ -571,8 +571,8 @@ efp_update_elec(struct frag *frag)
 					frag->multipole_pts + i;
 
 		/* move point position */
-		move_pt(VEC(frag->x), rotmat, VEC(frag->lib->x),
-			VEC(pt_in->x), VEC(pt_out->x));
+		move_pt(CVEC(frag->x), rotmat, CVEC(frag->lib->x),
+			CVEC(pt_in->x), VEC(pt_out->x));
 
 		/* rotate dipole */
 		pt_out->dipole = mat_vec(rotmat, &pt_in->dipole);

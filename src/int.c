@@ -311,7 +311,7 @@ void efp_st_int(int n_shells_i, const struct shell *shells_i,
 
 			init_ft(count_i, sh_j->type, ft);
 
-			double rr = vec_dist_2(VEC(sh_i->x), VEC(sh_j->x));
+			double rr = vec_dist_2(CVEC(sh_i->x), CVEC(sh_j->x));
 
 			const int *shift_x = shift_table_x[type_i * 5 + type_j];
 			const int *shift_y = shift_table_y[type_i * 5 + type_j];
@@ -374,18 +374,18 @@ void efp_st_int(int n_shells_i, const struct shell *shells_i,
 						for (int j = 0; j < sl_j; j++) {
 							vec_t iout;
 
-							make_int(i, j, taa, &a, VEC(sh_i->x), VEC(sh_j->x), &iout);
+							make_int(i, j, taa, &a, CVEC(sh_i->x), CVEC(sh_j->x), &iout);
 							xin[idx + j] = iout.x * taa;
 							yin[idx + j] = iout.y * taa;
 							zin[idx + j] = iout.z * taa;
 
-							make_int(i, j + 2, taa, &a, VEC(sh_i->x), VEC(sh_j->x), &iout);
+							make_int(i, j + 2, taa, &a, CVEC(sh_i->x), CVEC(sh_j->x), &iout);
 							xin[idx + j + 30] = iout.x * t1;
 							yin[idx + j + 30] = iout.y * t1;
 							zin[idx + j + 30] = iout.z * t1;
 
 							if (j >= 2) {
-								make_int(i, j - 2, taa, &a, VEC(sh_i->x), VEC(sh_j->x), &iout);
+								make_int(i, j - 2, taa, &a, CVEC(sh_i->x), CVEC(sh_j->x), &iout);
 								double t3 = j * (j - 1) * t2;
 								xin[idx + j + 60] = iout.x * t3;
 								yin[idx + j + 60] = iout.y * t3;
@@ -470,7 +470,7 @@ void efp_st_int_deriv(int n_shells_i, const struct shell *shells_i,
 			int sl_j = get_shell_sl(type_j);
 			int count_j = end_j - start_j;
 
-			double rr = vec_dist_2(VEC(sh_i->x), VEC(sh_j->x));
+			double rr = vec_dist_2(CVEC(sh_i->x), CVEC(sh_j->x));
 
 			const double *coef_i = sh_i->coef;
 
@@ -526,7 +526,7 @@ void efp_st_int_deriv(int n_shells_i, const struct shell *shells_i,
 					for (int i = 0; i < sl_i + 1; i++) {
 						for (int j = 0; j < sl_j + 2; j++) {
 							vec_t iout;
-							make_int(i, j, taa, &a, VEC(sh_i->x), VEC(sh_j->x), &iout);
+							make_int(i, j, taa, &a, CVEC(sh_i->x), CVEC(sh_j->x), &iout);
 							xs[i][j] = iout.x * taa;
 							ys[i][j] = iout.y * taa;
 							zs[i][j] = iout.z * taa;

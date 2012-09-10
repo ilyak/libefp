@@ -66,7 +66,7 @@ disp_tt(struct frag *fr_i, struct frag *fr_j, int pt_i_idx,
 	const struct dynamic_polarizable_pt *pt_j =
 				fr_j->dynamic_polarizable_pts + pt_j_idx;
 
-	double r = vec_dist(VEC(pt_i->x), VEC(pt_j->x));
+	double r = vec_dist(CVEC(pt_i->x), CVEC(pt_j->x));
 	double r2 = r * r;
 	double r6 = r2 * r2 * r2;
 
@@ -83,7 +83,7 @@ disp_tt(struct frag *fr_i, struct frag *fr_j, int pt_i_idx,
 			g * (pt_j->z - pt_i->z)
 		};
 
-		add_force_torque(fr_i, fr_j, VEC(pt_i->x), VEC(pt_j->x), &force);
+		add_force_torque(fr_i, fr_j, CVEC(pt_i->x), CVEC(pt_j->x), &force);
 	}
 	return energy;
 }
@@ -97,7 +97,7 @@ disp_overlap(struct frag *fr_i, struct frag *fr_j, int pt_i_idx,
 	const struct dynamic_polarizable_pt *pt_j =
 				fr_j->dynamic_polarizable_pts + pt_j_idx;
 
-	vec_t dr = vec_sub(VEC(pt_j->x), VEC(pt_i->x));
+	vec_t dr = vec_sub(CVEC(pt_j->x), CVEC(pt_i->x));
 
 	double r = vec_len(&dr);
 	double r2 = r * r;
@@ -121,8 +121,8 @@ disp_overlap(struct frag *fr_i, struct frag *fr_j, int pt_i_idx,
 		double t1 = -8.0 * sum / r6 / r2 * damp;
 		double t2 = -16.0 / 3.0 * sum / r6 * ln_s * ln_s * s_ij;
 
-		vec_t dr_i = vec_sub(VEC(pt_i->x), VEC(fr_i->x));
-		vec_t dr_j = vec_sub(VEC(pt_j->x), VEC(fr_j->x));
+		vec_t dr_i = vec_sub(CVEC(pt_i->x), VEC(fr_i->x));
+		vec_t dr_j = vec_sub(CVEC(pt_j->x), VEC(fr_j->x));
 		vec_t dr_com = vec_sub(VEC(fr_j->x), VEC(fr_i->x));
 
 		force.x = t1 * dr.x - t2 * ds_ij.x;
@@ -161,7 +161,7 @@ disp_off(struct frag *fr_i, struct frag *fr_j, int pt_i_idx,
 	const struct dynamic_polarizable_pt *pt_j =
 				fr_j->dynamic_polarizable_pts + pt_j_idx;
 
-	double r2 = vec_dist_2(VEC(pt_i->x), VEC(pt_j->x));
+	double r2 = vec_dist_2(CVEC(pt_i->x), CVEC(pt_j->x));
 	double r6 = r2 * r2 * r2;
 
 	double energy = -4.0 / 3.0 * sum / r6;
@@ -176,7 +176,7 @@ disp_off(struct frag *fr_i, struct frag *fr_j, int pt_i_idx,
 			g * (pt_j->z - pt_i->z)
 		};
 
-		add_force_torque(fr_i, fr_j, VEC(pt_i->x), VEC(pt_j->x), &force);
+		add_force_torque(fr_i, fr_j, CVEC(pt_i->x), CVEC(pt_j->x), &force);
 	}
 	return energy;
 }
@@ -258,7 +258,7 @@ efp_update_disp(struct frag *frag)
 		struct dynamic_polarizable_pt *pt_out =
 					frag->dynamic_polarizable_pts + i;
 
-		move_pt(VEC(frag->x), rotmat, VEC(frag->lib->x),
-			VEC(pt_in->x), VEC(pt_out->x));
+		move_pt(CVEC(frag->x), rotmat, CVEC(frag->lib->x),
+			CVEC(pt_in->x), VEC(pt_out->x));
 	}
 }

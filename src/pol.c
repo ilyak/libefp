@@ -31,7 +31,7 @@ static void
 add_multipole_field(struct polarizable_pt *pt,
 		    const struct multipole_pt *mult_pt)
 {
-	vec_t dr = vec_sub(VEC(pt->x), VEC(mult_pt->x));
+	vec_t dr = vec_sub(CVEC(pt->x), CVEC(mult_pt->x));
 
 	double t1, t2;
 
@@ -471,8 +471,8 @@ efp_update_pol(struct frag *frag)
 	const mat_t *rotmat = &frag->rotmat;
 
 	for (int i = 0; i < frag->n_polarizable_pts; i++) {
-		move_pt(VEC(frag->x), rotmat, VEC(frag->lib->x),
-			VEC(frag->lib->polarizable_pts[i].x),
+		move_pt(CVEC(frag->x), rotmat, CVEC(frag->lib->x),
+			CVEC(frag->lib->polarizable_pts[i].x),
 			VEC(frag->polarizable_pts[i].x));
 
 		const mat_t *in = &frag->lib->polarizable_pts[i].tensor;

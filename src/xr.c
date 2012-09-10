@@ -819,13 +819,13 @@ efp_update_xr(struct frag *frag)
 
 	/* update LMO centroids */
 	for (int i = 0; i < frag->n_lmo; i++)
-		move_pt(VEC(frag->x), rotmat, VEC(frag->lib->x),
+		move_pt(CVEC(frag->x), rotmat, CVEC(frag->lib->x),
 			frag->lib->lmo_centroids + i, frag->lmo_centroids + i);
 
 	/* update shells */
 	for (int i = 0; i < frag->n_xr_shells; i++)
-		move_pt(VEC(frag->x), rotmat, VEC(frag->lib->x),
-			VEC(frag->lib->xr_shells[i].x),
+		move_pt(CVEC(frag->x), rotmat, CVEC(frag->lib->x),
+			CVEC(frag->lib->xr_shells[i].x),
 			VEC(frag->xr_shells[i].x));
 
 	/* rotate wavefunction */

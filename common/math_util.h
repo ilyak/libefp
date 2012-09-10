@@ -31,7 +31,9 @@
 #include <string.h>
 
 #define PI 3.14159265358979323846
+
 #define VEC(x) ((vec_t *)(&(x)))
+#define CVEC(x) ((const vec_t *)(&(x)))
 
 typedef struct {
 	double x, y, z;
@@ -127,6 +129,16 @@ static inline double
 vec_len(const vec_t *a)
 {
 	return sqrt(vec_len_2(a));
+}
+
+static inline void
+vec_normalize(vec_t *vec)
+{
+	double len = vec_len(vec);
+
+	vec->x /= len;
+	vec->y /= len;
+	vec->z /= len;
 }
 
 static inline double
