@@ -128,6 +128,14 @@ enum efp_coord_type {
 	EFP_COORD_TYPE_POINTS
 };
 
+/** Specifies output format of the gradient. */
+enum efp_grad_type {
+	/** Store torque. */
+	EFP_GRAD_TYPE_TORQUE = 0,
+	/** Store derivatives of energy by Euler angles. */
+	EFP_GRAD_TYPE_DERIVATIVE
+};
+
 /** \struct efp
  * Main EFP opaque structure.
  */
@@ -245,18 +253,21 @@ void efp_opts_default(struct efp_opts *opts);
  * \param[out] out Initialized efp structure.
  * \param[in] opts User defined options controlling the computation.
  * \param[in] callbacks User supplied callback functions (see efp_callbacks).
- * \param[in] potential_file_list NULL-terminated array with paths to the files
- *                                with EFP parameters.
- * \param[in] frag_name_list NULL-terminated array with names of the fragments
- *                           comprising the molecular system.
+ * \param[in] potential_file_list Zero-terminated string with paths to the EFP
+ *                                parameter files separated by the new-line
+ *                                character '\n'. The last line must not include
+ *                                the new-line character.
+ * \param[in] frag_name_list Zero-terminated string with names of the fragments
+ *                           separated by the new-line character '\n'. The last
+ *                           line must not include the new-line character.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
 enum efp_result efp_init(struct efp **out,
 			 const struct efp_opts *opts,
 			 const struct efp_callbacks *callbacks,
-			 const char **potential_file_list,
-			 const char **frag_name_list);
+			 const char *potential_file_list,
+			 const char *frag_name_list);
 
 /**
  * Update information about \a ab \a initio subsystem.
@@ -440,6 +451,7 @@ enum efp_result efp_get_energy(struct efp *efp, struct efp_energy *energy);
  * Get computed EFP energy gradient.
  *
  * \param[in] efp The efp structure.
+ * \param[in] grad_type Format of the returned gradient.
  * \param[in] n_frags Expected number of fragments.
  * \param[out] grad For each fragment \a x \a y \a z components of negative
  *                  force and torque will be written to this array. The size
@@ -447,7 +459,10 @@ enum efp_result efp_get_energy(struct efp *efp, struct efp_energy *energy);
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_gradient(struct efp *efp, int n_frags, double *grad);
+enum efp_result efp_get_gradient(struct efp *efp,
+				 enum efp_grad_type grad_type,
+				 int n_frags,
+				 double *grad);
 
 /**
  * Get the gradient on atoms in \a ab \a initio subsystem due to EFP

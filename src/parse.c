@@ -844,20 +844,32 @@ set_frag_com(struct frag *frag)
 }
 
 enum efp_result
-efp_read_potential(struct efp *efp, const char **files)
+efp_read_potential(struct efp *efp, const char *files)
 {
-	for (int i = 0; files[i]; i++) {
+	for (const char *ptr = files; ptr; ptr = strchr(ptr, '\n')) {
+		if (*ptr == '\n')
+			ptr++;
+
+		size_t len = 0;
+		while (ptr[len] && ptr[len] != '\n')
+			len++;
+
+		char path[len + 1];
+		strncpy(path, ptr, len);
+		path[len] = '\0';
+
 		struct stream stream = {
 			.buffer = NULL,
 			.ptr = NULL,
-			.in = fopen(files[i], "r")
+			.in = fopen(path, "r")
 		};
-		enum efp_result res;
 
 		if (!stream.in)
 			return EFP_RESULT_FILE_NOT_FOUND;
 
 		next_line(&stream);
+
+		enum efp_result res;
 
 		if ((res = parse_file(efp, &stream))) {
 			if (stream.buffer)

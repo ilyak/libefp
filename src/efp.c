@@ -45,12 +45,13 @@ efp_get_energy(struct efp *efp, struct efp_energy *energy)
 	if (!energy)
 		return EFP_RESULT_ARGUMENT_NULL;
 
-	memcpy(energy, &efp->energy, sizeof(struct efp_energy));
+	*energy = efp->energy;
 	return EFP_RESULT_SUCCESS;
 }
 
 EFP_EXPORT enum efp_result
-efp_get_gradient(struct efp *efp, int n_frags, double *grad)
+efp_get_gradient(struct efp *efp, enum efp_grad_type grad_type,
+		 int n_frags, double *grad)
 {
 	if (!initialized(efp))
 		return EFP_RESULT_NOT_INITIALIZED;
@@ -64,15 +65,40 @@ efp_get_gradient(struct efp *efp, int n_frags, double *grad)
 	if (n_frags != efp->n_frag)
 		return EFP_RESULT_INVALID_ARRAY_SIZE;
 
-	for (int i = 0; i < efp->n_frag; i++) {
-		*grad++ = efp->frags[i].force.x;
-		*grad++ = efp->frags[i].force.y;
-		*grad++ = efp->frags[i].force.z;
-		*grad++ = efp->frags[i].torque.x;
-		*grad++ = efp->frags[i].torque.y;
-		*grad++ = efp->frags[i].torque.z;
+	if (grad_type == EFP_GRAD_TYPE_TORQUE) {
+		for (int i = 0; i < efp->n_frag; i++, grad += 6) {
+			memcpy(grad, &efp->frags[i].force, sizeof(vec_t));
+			memcpy(grad + 3, &efp->frags[i].torque, sizeof(vec_t));
+		}
+		return EFP_RESULT_SUCCESS;
 	}
-	return EFP_RESULT_SUCCESS;
+
+	if (grad_type == EFP_GRAD_TYPE_DERIVATIVE) {
+		for (int i = 0; i < efp->n_frag; i++, grad += 6) {
+			const struct frag *frag = efp->frags + i;
+
+			double tx = frag->torque.x;
+			double ty = frag->torque.y;
+			double tz = frag->torque.z;
+
+			double a, b, c;
+			matrix_to_euler(&frag->rotmat, &a, &b, &c);
+
+			double sina = sin(a);
+			double cosa = cos(a);
+			double sinb = sin(b);
+			double cosb = cos(b);
+
+			memcpy(grad, &efp->frags[i].force, sizeof(vec_t));
+
+			grad[3] = tz;
+			grad[4] = cosa * tx + sina * ty;
+			grad[5] = sinb * sina * tx - sinb * cosa * ty + cosb * tz;
+		}
+		return EFP_RESULT_SUCCESS;
+	}
+
+	return EFP_RESULT_INCORRECT_ENUM_VALUE;
 }
 
 EFP_EXPORT enum efp_result
@@ -158,53 +184,30 @@ efp_get_qm_atoms(struct efp *efp, int n_atoms, double *znuc, double *xyz)
 static void
 points_to_matrix(const double *pts, mat_t *rotmat)
 {
-	double (*rm)[3] = (double (*)[3])rotmat;
+	vec_t p1 = { pts[0], pts[1], pts[2] };
+	vec_t p2 = { pts[3], pts[4], pts[5] };
+	vec_t p3 = { pts[6], pts[7], pts[8] };
 
-	const double *p1 = pts + 0;
-	const double *p2 = pts + 3;
-	const double *p3 = pts + 6;
+	vec_t r12 = vec_sub(&p2, &p1);
+	vec_t r13 = vec_sub(&p3, &p1);
 
-	double t1norm = 0.0;
-	double t2norm = 0.0;
+	vec_normalize(&r12);
+	vec_normalize(&r13);
 
-	for (int i = 0; i < 3; i++) {
-		rm[i][0] = p2[i] - p1[i];
-		t1norm += rm[i][0] * rm[i][0];
-		rm[i][1] = p3[i] - p1[i];
-		t2norm += rm[i][1] * rm[i][1];
-	}
+	double dot = vec_dot(&r12, &r13);
 
-	t1norm = 1.0 / sqrt(t1norm);
-	t2norm = 1.0 / sqrt(t2norm);
+	r13.x -= dot * r12.x;
+	r13.y -= dot * r12.y;
+	r13.z -= dot * r12.z;
 
-	for (int i = 0; i < 3; i++) {
-		rm[i][0] *= t1norm;
-		rm[i][1] *= t2norm;
-	}
+	vec_t cross = vec_cross(&r12, &r13);
 
-	double dot = rm[0][0] * rm[0][1] +
-		     rm[1][0] * rm[1][1] +
-		     rm[2][0] * rm[2][1];
+	vec_normalize(&r13);
+	vec_normalize(&cross);
 
-	rm[0][1] -= dot * rm[0][0];
-	rm[1][1] -= dot * rm[1][0];
-	rm[2][1] -= dot * rm[2][0];
-
-	rm[0][2] = rm[1][0] * rm[2][1] - rm[2][0] * rm[1][1];
-	rm[1][2] = rm[2][0] * rm[0][1] - rm[0][0] * rm[2][1];
-	rm[2][2] = rm[0][0] * rm[1][1] - rm[1][0] * rm[0][1];
-
-	for (int j = 0; j < 3; j++) {
-		double vecsq = 0.0;
-
-		for (int i = 0; i < 3; i++)
-			vecsq += rm[i][j] * rm[i][j];
-
-		vecsq = sqrt(vecsq);
-
-		for (int i = 0; i < 3; i++)
-			rm[i][j] /= vecsq;
-	}
+	rotmat->xx = r12.x, rotmat->xy = r13.x, rotmat->xz = cross.x;
+	rotmat->yx = r12.y, rotmat->yy = r13.y, rotmat->yz = cross.y;
+	rotmat->zx = r12.z, rotmat->zy = r13.z, rotmat->zz = cross.z;
 }
 
 static void
@@ -212,8 +215,8 @@ update_fragment(struct frag *frag)
 {
 	/* update atoms */
 	for (int i = 0; i < frag->n_atoms; i++)
-		move_pt(VEC(frag->x), &frag->rotmat, VEC(frag->lib->x),
-			VEC(frag->lib->atoms[i].x), VEC(frag->atoms[i].x));
+		move_pt(CVEC(frag->x), &frag->rotmat, CVEC(frag->lib->x),
+			CVEC(frag->lib->atoms[i].x), VEC(frag->atoms[i].x));
 
 	efp_update_elec(frag);
 	efp_update_pol(frag);
@@ -633,7 +636,7 @@ copy_frag(struct frag *dest, const struct frag *src)
 	return EFP_RESULT_SUCCESS;
 }
 
-static struct frag *
+static const struct frag *
 find_frag_in_library(struct efp *efp, const char *name)
 {
 	for (int i = 0; i < efp->n_lib; i++)
@@ -767,8 +770,8 @@ EFP_EXPORT enum efp_result
 efp_init(struct efp **out,
 	 const struct efp_opts *opts,
 	 const struct efp_callbacks *callbacks,
-	 const char **potential_file_list,
-	 const char **frag_name_list)
+	 const char *potential_file_list,
+	 const char *frag_name_list)
 {
 	if (!out || !opts || !potential_file_list || !frag_name_list)
 		return EFP_RESULT_ARGUMENT_NULL;
@@ -795,20 +798,32 @@ efp_init(struct efp **out,
 	if ((res = efp_read_potential(efp, potential_file_list)))
 		return res;
 
-	while (frag_name_list[efp->n_frag])
+	for (const char *ptr = frag_name_list; ptr; ptr = strchr(ptr, '\n')) {
+		if (*ptr == '\n')
+			ptr++;
+
 		efp->n_frag++;
 
-	efp->frags = calloc(efp->n_frag, sizeof(struct frag));
-	if (!efp->frags)
-		return EFP_RESULT_NO_MEMORY;
+		efp->frags = realloc(efp->frags, efp->n_frag * sizeof(struct frag));
+		if (!efp->frags)
+			return EFP_RESULT_NO_MEMORY;
 
-	for (int i = 0; i < efp->n_frag; i++) {
-		struct frag *lib = find_frag_in_library(efp, frag_name_list[i]);
+		struct frag *frag = efp->frags + efp->n_frag - 1;
+		memset(frag, 0, sizeof(struct frag));
 
+		size_t len = 0;
+		while (ptr[len] && ptr[len] != '\n')
+			len++;
+
+		char name[len + 1];
+		strncpy(name, ptr, len);
+		name[len] = '\0';
+
+		const struct frag *lib = find_frag_in_library(efp, name);
 		if (!lib)
 			return EFP_RESULT_UNKNOWN_FRAGMENT;
 
-		if ((res = copy_frag(efp->frags + i, lib)))
+		if ((res = copy_frag(frag, lib)))
 			return res;
 	}
 
