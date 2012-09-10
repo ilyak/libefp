@@ -11,6 +11,8 @@
 .deps/
 .libs/
 
+test.log
+
 /Makefile
 /Makefile.in
 /aclocal.m4
@@ -23,34 +25,7 @@
 /stamp-h1
 /tags
 
-/src/libefp.so
-/src/libefp.so.0
-/efpmd/cubegen/cubegen
 /efpmd/efpmd
+/efpmd/cubegen/cubegen
 
-/tests/elec_1a
-/tests/elec_1b
-/tests/pol_1
-/tests/disp_1a
-/tests/disp_1b
-/tests/xr_1
-/tests/total_1a
-/tests/elec_2a
-/tests/elec_2b
-/tests/pol_2
-/tests/disp_2a
-/tests/disp_2b
-/tests/xr_2
-/tests/total_2a
-/tests/elec_3a
-/tests/elec_3b
-/tests/pol_3
-/tests/disp_3a
-/tests/disp_3b
-/tests/xr_3
-/tests/total_3a
-/tests/total_4a
-/tests/total_4b
-/tests/total_4c
-/tests/qm_5
-/tests/qm_6
+/tests/test

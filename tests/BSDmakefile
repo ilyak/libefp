@@ -1,0 +1,49 @@
+PROG=		test
+WARNS=		6
+NO_MAN=		yes
+
+CFLAGS+=	-fopenmp \
+		-I${.CURDIR}/../src \
+		-DABS_TOP_SRCDIR="\"${.CURDIR}/..\""
+
+LDADD+=		-L${.CURDIR}/../src \
+		-L${.CURDIR}/../common \
+		-lefp \
+		-lcompat \
+		-lcblas_pic \
+		-latlas_pic \
+		-lm \
+		-lcheck
+
+SRCS=		test.c \
+		disp_1a.c \
+		disp_1b.c \
+		disp_2a.c \
+		disp_2b.c \
+		disp_3a.c \
+		disp_3b.c \
+		elec_1a.c \
+		elec_1b.c \
+		elec_2a.c \
+		elec_2b.c \
+		elec_3a.c \
+		elec_3b.c \
+		pol_1.c \
+		pol_2.c \
+		pol_3.c \
+		qm_5.c \
+		qm_6.c \
+		total_1a.c \
+		total_2a.c \
+		total_3a.c \
+		total_4a.c \
+		total_4b.c \
+		total_4c.c \
+		xr_1.c \
+		xr_2.c \
+		xr_3.c
+
+run: ${PROG}
+	./${PROG}
+
+.include <bsd.prog.mk>

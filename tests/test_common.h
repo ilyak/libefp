@@ -27,14 +27,13 @@
 #ifndef LIBEFP_TEST_COMMON_H
 #define LIBEFP_TEST_COMMON_H
 
-#include <math.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
+#include <check.h>
 #include <efp.h>
 
 #include "../common/phys_const.h"
+
+#include "test_list.h"
 
 #define UNUSED __attribute__((unused))
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
@@ -79,12 +78,21 @@ struct test_data {
 	struct efp_callbacks callbacks;
 };
 
-int run_test(const struct test_data *test_data);
+void run_test(const struct test_data *);
 
-#define DEFINE_TEST(test_data)                                               \
-int main(void)                                                               \
+#define DEFINE_TEST(name)                                                    \
+START_TEST(test)                                                             \
 {                                                                            \
-	return run_test(&(test_data));                                       \
+	printf("Running test %s\n", #name);                                  \
+	run_test(&test_data);                                                \
+}                                                                            \
+END_TEST                                                                     \
+TCase *tcase_ ## name(void)                                                  \
+{                                                                            \
+	TCase *tc = tcase_create(#name);                                     \
+	tcase_add_test(tc, test);                                            \
+	tcase_set_timeout(tc, 100);                                          \
+	return tc;                                                           \
 }
 
 #endif /* LIBEFP_TEST_COMMON_H */
