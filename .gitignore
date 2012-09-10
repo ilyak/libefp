@@ -1,13 +1,15 @@
 *~
+*.So
+*.a
 *.o
 *.la
 *.lo
+*.po
 .*.swp
 .dirstamp
+.depend
 .deps/
 .libs/
-a.out
-gmon.out
 
 /Makefile
 /Makefile.in
@@ -21,6 +23,8 @@ gmon.out
 /stamp-h1
 /tags
 
+/src/libefp.so
+/src/libefp.so.0
 /efpmd/cubegen/cubegen
 /efpmd/efpmd
 
