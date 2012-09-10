@@ -255,11 +255,11 @@ void efp_opts_default(struct efp_opts *opts);
  * \param[in] callbacks User supplied callback functions (see efp_callbacks).
  * \param[in] potential_file_list Zero-terminated string with paths to the EFP
  *                                parameter files separated by the new-line
- *                                character '\n'. The last line must not include
- *                                the new-line character.
+ *                                character. The last line must not include the
+ *                                new-line character.
  * \param[in] frag_name_list Zero-terminated string with names of the fragments
- *                           separated by the new-line character '\n'. The last
- *                           line must not include the new-line character.
+ *                           separated by the new-line character. The last line
+ *                           must not include the new-line character.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
