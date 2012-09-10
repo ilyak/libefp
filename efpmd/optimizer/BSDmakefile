@@ -1,0 +1,14 @@
+LIB=		optimizer
+INTERNALLIB=	yes
+WARNS=		6
+NO_MAN=		yes
+
+DEBUG_FLAGS=	-O0 -g
+
+SRCS=		optimizer.c \
+		blas.f \
+		lbfgsb.f \
+		linpack.f \
+		timer.f
+
+.include <bsd.lib.mk>

@@ -1,0 +1,25 @@
+LIB=		efp
+INCS=		efp.h
+WARNS=		6
+NO_MAN=		yes
+
+DEBUG_FLAGS=	-O0 -g
+
+CFLAGS+=	-fopenmp \
+		-DLIBEFPVERSION="\"0.0\""
+
+LDADD+=		-lssp_nonshared
+
+SRCS=		ai_disp.c \
+		ai_xr.c \
+		chtr.c \
+		disp.c \
+		efp.c \
+		elec.c \
+		elec_grad.c \
+		int.c \
+		parse.c \
+		pol.c \
+		xr.c
+
+.include <bsd.lib.mk>

@@ -1,0 +1,7 @@
+LIB=		compat
+INTERNALLIB=	yes
+WARNS=		6
+NO_MAN=		yes
+SRCS=		compat.c
+
+.include <bsd.lib.mk>
