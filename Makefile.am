@@ -9,9 +9,7 @@ AM_LDFLAGS =
 
 AM_CPPFLAGS = \
 	-include $(top_builddir)/config.h \
-	-DSYSCONFDIR=\""$(sysconfdir)"\" \
-	-DLIBEXECDIR=\""$(libexecdir)"\" \
-	-DLIBEFPVERSION=\""$(VERSION_MAJOR).$(VERSION_MINOR)"\" \
+	-DLIBEFP_VERSION=\""$(VERSION_MAJOR).$(VERSION_MINOR)"\" \
 	-I${top_srcdir}/src
 
 AM_CFLAGS = ${my_CFLAGS} ${OPENMP_CFLAGS} \
@@ -65,25 +63,26 @@ src_libefp_la_LDFLAGS = $(AM_LDFLAGS) \
 	-version-info $(VERSION_MAJOR):$(VERSION_MINOR)
 
 if BUILD_EFPMD
-bin_PROGRAMS = efpmd/efpmd
-noinst_PROGRAMS = efpmd/cubegen/cubegen
+bin_PROGRAMS = \
+	efpmd/src/efpmd \
+	efpmd/cubegen/cubegen
 endif
 
-efpmd_efpmd_SOURCES = \
+efpmd_src_efpmd_SOURCES = \
 	common/compat.c \
 	common/compat.h \
 	common/math_util.h \
 	common/phys_const.h \
-	efpmd/common.c \
-	efpmd/common.h \
-	efpmd/config.h \
-	efpmd/grad.c \
-	efpmd/hess.c \
-	efpmd/main.c \
-	efpmd/md.c \
-	efpmd/opt.c \
-	efpmd/parse.c \
-	efpmd/sp.c \
+	efpmd/src/cfg.h \
+	efpmd/src/common.c \
+	efpmd/src/common.h \
+	efpmd/src/grad.c \
+	efpmd/src/hess.c \
+	efpmd/src/main.c \
+	efpmd/src/md.c \
+	efpmd/src/opt.c \
+	efpmd/src/parse.c \
+	efpmd/src/sp.c \
 	efpmd/optimizer/blas.f \
 	efpmd/optimizer/lbfgsb.f \
 	efpmd/optimizer/linpack.f \
@@ -91,11 +90,12 @@ efpmd_efpmd_SOURCES = \
 	efpmd/optimizer/optimizer.c \
 	efpmd/optimizer/optimizer.h
 
-efpmd_efpmd_LDADD = src/libefp.la
-efpmd_efpmd_CFLAGS = $(AM_CFLAGS)
-efpmd_efpmd_CPPFLAGS = $(AM_CPPFLAGS) \
-	-DDATADIR=\""$(datarootdir)/libefp"\" \
-	-DEFPMDVERSION=\""$(VERSION_MAJOR).$(VERSION_MINOR)"\"
+efpmd_src_efpmd_LDADD = src/libefp.la
+efpmd_src_efpmd_CFLAGS = $(AM_CFLAGS)
+efpmd_src_efpmd_CPPFLAGS = $(AM_CPPFLAGS) \
+	-I${top_srcdir}/efpmd/optimizer \
+	-DEFP_DATA_DIR=\""$(datarootdir)/libefp"\" \
+	-DEFPMD_VERSION=\""$(VERSION_MAJOR).$(VERSION_MINOR)"\"
 
 efpmd_cubegen_cubegen_SOURCES = \
 	efpmd/cubegen/cubegen.c

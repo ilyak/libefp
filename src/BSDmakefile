@@ -1,3 +1,6 @@
+LIBEFP_MAJOR=	0
+LIBEFP_MINOR=	9
+
 LIB=		efp
 INCS=		efp.h
 WARNS=		6
@@ -6,9 +9,7 @@ NO_MAN=		yes
 DEBUG_FLAGS=	-O0 -g
 
 CFLAGS+=	-fopenmp \
-		-DLIBEFPVERSION="\"0.0\""
-
-LDADD+=		-lssp_nonshared
+		-DLIBEFP_VERSION="\"${LIBEFP_MAJOR}.${LIBEFP_MINOR}\""
 
 SRCS=		ai_disp.c \
 		ai_xr.c \

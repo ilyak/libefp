@@ -914,7 +914,7 @@ EFP_EXPORT const char *
 efp_banner(void)
 {
 	static const char banner[] =
-		"LIBEFP ver. " LIBEFPVERSION "\n"
+		"LIBEFP ver. " LIBEFP_VERSION "\n"
 		"Copyright (c) 2012 Ilya Kaliman\n"
 		"See LICENSE file for licensing terms\n"
 		"Project web site: http://libefp.github.com/\n";

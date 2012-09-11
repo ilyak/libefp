@@ -24,9 +24,9 @@
  * SUCH DAMAGE.
  */
 
-#include "common.h"
+#include <optimizer.h>
 
-#include "./optimizer/optimizer.h"
+#include "common.h"
 
 void sim_opt(struct efp *, const struct config *);
 

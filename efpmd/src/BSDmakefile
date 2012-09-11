@@ -1,0 +1,37 @@
+EFPMD_MAJOR=	0
+EFPMD_MINOR=	9
+
+PROG=		efpmd
+WARNS=		6
+NO_MAN=		yes
+NO_SHARED=	yes
+
+DEBUG_FLAGS=	-O0 -g
+
+CFLAGS+=	-fopenmp \
+		-I${.CURDIR}/../../src \
+		-I${.CURDIR}/../optimizer \
+		-DEFP_DATA_DIR="\"${.CURDIR}/../../fraglib\"" \
+		-DEFPMD_VERSION="\"${EFPMD_MAJOR}.${EFPMD_MINOR}\""
+
+LDADD+=		-L${.OBJDIR}/../../src \
+		-L${.OBJDIR}/../optimizer \
+		-L${.OBJDIR}/../../common \
+		-lefp \
+		-loptimizer \
+		-lcompat \
+		-lcblas_pic \
+		-latlas_pic \
+		-lm \
+		-lgfortran
+
+SRCS=		common.c \
+		grad.c \
+		hess.c \
+		main.c \
+		md.c \
+		opt.c \
+		parse.c \
+		sp.c
+
+.include <bsd.prog.mk>

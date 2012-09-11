@@ -11,8 +11,6 @@
 .deps/
 .libs/
 
-test.log
-
 /Makefile
 /Makefile.in
 /aclocal.m4
@@ -25,7 +23,7 @@ test.log
 /stamp-h1
 /tags
 
-/efpmd/efpmd
+/efpmd/src/efpmd
 /efpmd/cubegen/cubegen
 
 /tests/test

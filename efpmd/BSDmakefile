@@ -1,33 +1,4 @@
-PROG=		efpmd
-WARNS=		6
-NO_MAN=		yes
-NO_SHARED=	yes
+SUBDIR=		optimizer \
+		src
 
-DEBUG_FLAGS=	-O0 -g
-
-CFLAGS+=	-I${.CURDIR}/../src \
-		-fopenmp \
-		-DDATADIR="\"/usr/local/share/libefp\"" \
-		-DEFPMDVERSION="\"0.0\""
-
-LDADD+=		-L${.OBJDIR}/../src \
-		-L${.OBJDIR}/optimizer \
-		-L${.OBJDIR}/../common \
-		-lefp \
-		-loptimizer \
-		-lcompat \
-		-lcblas_pic \
-		-latlas_pic \
-		-lm \
-		-lgfortran
-
-SRCS=		common.c \
-		grad.c \
-		hess.c \
-		main.c \
-		md.c \
-		opt.c \
-		parse.c \
-		sp.c
-
-.include <bsd.prog.mk>
+.include <bsd.subdir.mk>

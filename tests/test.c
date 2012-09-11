@@ -256,7 +256,6 @@ int main(void)
 
 	SRunner *sr = srunner_create(s);
 
-	srunner_set_log(sr, "test.log");
 	srunner_run_all(sr, CK_NORMAL);
 
 	int n_failed = srunner_ntests_failed(sr);

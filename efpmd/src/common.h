@@ -36,7 +36,7 @@
 #include "../common/compat.h"
 #include "../common/phys_const.h"
 
-#include "config.h"
+#include "cfg.h"
 
 #define NORETURN __attribute__((noreturn))
 #define UNUSED __attribute__((unused))
