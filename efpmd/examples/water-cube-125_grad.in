@@ -6,7 +6,6 @@ units angs
 terms elec pol disp xr
 elec_damp screen
 disp_damp tt
-fraglib_path ../fraglib
 
 fragment h2o_l
     0.000    0.000    0.000    1.372    0.641    3.292

@@ -1,7 +1,6 @@
 # water dimer
 
 run_type opt
-fraglib_path ../fraglib
 
 fragment h2o_l
    0.000   0.000   0.000   0.000   0.000   0.000

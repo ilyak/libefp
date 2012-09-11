@@ -3,7 +3,6 @@ coord xyzabc
 units bohr
 terms elec pol disp xr
 disp_damp tt
-fraglib_path ../fraglib
 
 fragment h2o_l
    0.000   0.000   0.000   0.000   0.000   0.000
