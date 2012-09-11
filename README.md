@@ -20,19 +20,19 @@ the `efpmd` directory for more information.
 
 ## Installation
 
-To build LIBEFP from source you will need the following:
+To build LIBEFP from source you need the following:
 
 - C compiler (with C99 standard and OpenMP support)
 
 - GNU make
 
-If you are going to compile EFPMD you will also need:
+If you are going to compile EFPMD you will need:
 
 - BLAS library (CBLAS)
 
 - Fortran 77 compiler
 
-If you are going to run the test suite you will also need:
+If you are going to run the test suite you will need:
 
 - BLAS library (CBLAS)
 
@@ -40,11 +40,11 @@ If you are going to run the test suite you will also need:
 
 If you are using a checkout from source code repository you will need:
 
-- GNU autoconf (version >= 2.62)
+- GNU autoconf (version 2.62 or newer)
 
-- GNU automake (version >= 1.11)
+- GNU automake (version 1.11 or newer)
 
-- GNU libtool (version >= 2.4.2)
+- GNU libtool (version 2.4.2 or newer)
 
 
 To configure libefp issue the following command:
