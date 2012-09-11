@@ -3,13 +3,14 @@ WARNS=		6
 NO_MAN=		yes
 
 CFLAGS+=	-fopenmp \
+		-I${.CURDIR}/../common \
 		-I${.CURDIR}/../src \
 		-DABS_TOP_SRCDIR="\"${.CURDIR}/..\""
 
-LDADD+=		-L${.CURDIR}/../src \
-		-L${.CURDIR}/../common \
+LDADD+=		-L${.OBJDIR}/../common \
+		-L${.OBJDIR}/../src \
 		-lefp \
-		-lcompat \
+		-lcommon \
 		-lcblas_pic \
 		-latlas_pic \
 		-lm \

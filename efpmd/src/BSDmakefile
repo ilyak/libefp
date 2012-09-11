@@ -9,17 +9,18 @@ NO_SHARED=	yes
 DEBUG_FLAGS=	-O0 -g
 
 CFLAGS+=	-fopenmp \
+		-I${.CURDIR}/../../common \
 		-I${.CURDIR}/../../src \
 		-I${.CURDIR}/../optimizer \
 		-DEFP_DATA_DIR="\"${.CURDIR}/../../fraglib\"" \
 		-DEFPMD_VERSION="\"${EFPMD_MAJOR}.${EFPMD_MINOR}\""
 
-LDADD+=		-L${.OBJDIR}/../../src \
+LDADD+=		-L${.OBJDIR}/../../common \
+		-L${.OBJDIR}/../../src \
 		-L${.OBJDIR}/../optimizer \
-		-L${.OBJDIR}/../../common \
 		-lefp \
+		-lcommon \
 		-loptimizer \
-		-lcompat \
 		-lcblas_pic \
 		-latlas_pic \
 		-lm \

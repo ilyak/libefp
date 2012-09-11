@@ -27,12 +27,12 @@
 #ifndef LIBEFP_EFP_PRIVATE_H
 #define LIBEFP_EFP_PRIVATE_H
 
+#include <compat.h>
+#include <math_util.h>
+
 #include "efp.h"
 #include "int.h"
 #include "terms.h"
-
-#include "../common/compat.h"
-#include "../common/math_util.h"
 
 #define EFP_EXPORT __attribute__((visibility("default")))
 #define UNUSED __attribute__((unused))

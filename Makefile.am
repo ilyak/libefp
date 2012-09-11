@@ -10,7 +10,8 @@ AM_LDFLAGS =
 AM_CPPFLAGS = \
 	-include $(top_builddir)/config.h \
 	-DLIBEFP_VERSION=\""$(VERSION_MAJOR).$(VERSION_MINOR)"\" \
-	-I${top_srcdir}/src
+	-I${top_srcdir}/src \
+	-I${top_srcdir}/common
 
 AM_CFLAGS = ${my_CFLAGS} ${OPENMP_CFLAGS} \
 	-fvisibility=hidden

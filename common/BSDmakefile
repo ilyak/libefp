@@ -1,4 +1,4 @@
-LIB=		compat
+LIB=		common
 INTERNALLIB=	yes
 WARNS=		6
 NO_MAN=		yes

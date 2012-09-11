@@ -9,6 +9,7 @@ NO_MAN=		yes
 DEBUG_FLAGS=	-O0 -g
 
 CFLAGS+=	-fopenmp \
+		-I${.CURDIR}/../common \
 		-DLIBEFP_VERSION="\"${LIBEFP_MAJOR}.${LIBEFP_MINOR}\""
 
 SRCS=		ai_disp.c \

@@ -27,11 +27,11 @@
 #ifndef LIBEFP_TEST_COMMON_H
 #define LIBEFP_TEST_COMMON_H
 
-#include <stdio.h>
 #include <check.h>
-#include <efp.h>
+#include <stdio.h>
 
-#include "../common/phys_const.h"
+#include <efp.h>
+#include <phys_const.h>
 
 #include "test_list.h"
 

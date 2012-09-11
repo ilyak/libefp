@@ -33,8 +33,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../common/compat.h"
-#include "../common/phys_const.h"
+#include <compat.h>
+#include <phys_const.h>
 
 #include "cfg.h"
 

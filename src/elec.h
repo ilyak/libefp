@@ -27,7 +27,7 @@
 #ifndef LIBEFP_ELEC_H
 #define LIBEFP_ELEC_H
 
-#include "../common/math_util.h"
+#include <math_util.h>
 
 static inline int
 quad_idx(int a, int b)
