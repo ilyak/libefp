@@ -65,6 +65,8 @@ enum efp_result {
 	EFP_RESULT_POL_NOT_CONVERGED,
 	/** Certain EFP parameters are missing. */
 	EFP_RESULT_PARAMETERS_MISSING,
+	/** Euler angle beta is out of range [0,pi]. */
+	EFP_RESULT_BAD_EULER_B,
 	/** Incorrect enumeration value. */
 	EFP_RESULT_INCORRECT_ENUM_VALUE,
 	/** Index is out of range. */
@@ -120,6 +122,12 @@ enum efp_elec_damp {
 	EFP_ELEC_DAMP_OFF          /**< No electrostatic damping. */
 };
 
+/** Fragment-fragment polarization damping type. */
+enum efp_pol_damp {
+	EFP_POL_DAMP_TT = 0,       /**< Tang-Toennies like damping (default). */
+	EFP_POL_DAMP_OFF           /**< No polarization damping. */
+};
+
 /** Describes the way fragment coordinates are specified. */
 enum efp_coord_type {
 	/** Coordinates of center of mass of a fragment and Euler angles. */
@@ -151,6 +159,9 @@ struct efp_opts {
 
 	/** Electrostatic damping type (see #efp_elec_damp). */
 	enum efp_elec_damp elec_damp;
+
+	/** Polarization damping type (see #efp_pol_damp). */
+	enum efp_pol_damp pol_damp;
 };
 
 /** EFP energy terms. */

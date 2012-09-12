@@ -27,6 +27,17 @@
 #include "efp_private.h"
 #include "elec.h"
 
+static double
+get_pol_damp_tt(double r)
+{
+	/* induced dipole - induced dipole damping parameter */
+	static const double a = 0.6;
+
+	double ar = a * r;
+
+	return 1.0 - exp(-ar * ar) * (1.0 + ar * ar);
+}
+
 static void
 add_multipole_field(struct polarizable_pt *pt,
 		    const struct multipole_pt *mult_pt)
@@ -208,27 +219,31 @@ get_induced_dipole_field(struct efp *efp, int frag_idx,
 
 			vec_t dr = vec_sub(VEC(pt->x), VEC(pt_j->x));
 
-			double ir = 1.0 / vec_len(&dr);
-			double ir3 = ir * ir * ir;
-			double ir5 = ir3 * ir * ir;
+			double r = vec_len(&dr);
+			double r3 = r * r * r;
+			double r5 = r3 * r * r;
 
 			double t1 = vec_dot(&pt_j->induced_dipole, &dr);
-
-			field->x -= pt_j->induced_dipole.x * ir3 -
-						3.0 * t1 * dr.x * ir5;
-			field->y -= pt_j->induced_dipole.y * ir3 -
-						3.0 * t1 * dr.y * ir5;
-			field->z -= pt_j->induced_dipole.z * ir3 -
-						3.0 * t1 * dr.z * ir5;
-
 			double t2 = vec_dot(&pt_j->induced_dipole_conj, &dr);
 
-			field_conj->x -= pt_j->induced_dipole_conj.x * ir3 -
-						3.0 * t2 * dr.x * ir5;
-			field_conj->y -= pt_j->induced_dipole_conj.y * ir3 -
-						3.0 * t2 * dr.y * ir5;
-			field_conj->z -= pt_j->induced_dipole_conj.z * ir3 -
-						3.0 * t2 * dr.z * ir5;
+			double p1 = 1.0;
+
+			if (efp->opts.pol_damp == EFP_POL_DAMP_TT)
+				p1 = get_pol_damp_tt(r);
+
+			field->x -= p1 * (pt_j->induced_dipole.x / r3 -
+							3.0 * t1 * dr.x / r5);
+			field->y -= p1 * (pt_j->induced_dipole.y / r3 -
+							3.0 * t1 * dr.y / r5);
+			field->z -= p1 * (pt_j->induced_dipole.z / r3 -
+							3.0 * t1 * dr.z / r5);
+
+			field_conj->x -= p1 * (pt_j->induced_dipole_conj.x / r3 -
+							3.0 * t2 * dr.x / r5);
+			field_conj->y -= p1 * (pt_j->induced_dipole_conj.y / r3 -
+							3.0 * t2 * dr.y / r5);
+			field_conj->z -= p1 * (pt_j->induced_dipole_conj.z / r3 -
+							3.0 * t2 * dr.z / r5);
 		}
 	}
 }
@@ -245,14 +260,12 @@ pol_scf_iter(struct efp *efp)
 
 			/* electric field from other induced dipoles */
 			vec_t field, field_conj;
-			get_induced_dipole_field(efp, i, pt, &field,
-					&field_conj);
+			get_induced_dipole_field(efp, i, pt, &field, &field_conj);
 
 			/* add field that doesn't change during scf */
 			field.x += pt->elec_field.x;
 			field.y += pt->elec_field.y;
 			field.z += pt->elec_field.z;
-
 			field_conj.x += pt->elec_field.x;
 			field_conj.y += pt->elec_field.y;
 			field_conj.z += pt->elec_field.z;

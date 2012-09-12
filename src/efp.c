@@ -238,9 +238,13 @@ set_coord_xyzabc(struct efp *efp, const double *coord)
 		double b = *coord++;
 		double c = *coord++;
 
+		if (b < 0.0 || b > PI)
+			return EFP_RESULT_BAD_EULER_B;
+
 		euler_to_matrix(a, b, c, &frag->rotmat);
 		update_fragment(frag);
 	}
+
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -681,6 +685,10 @@ check_opts(const struct efp_opts *opts)
 	    opts->disp_damp != EFP_DISP_DAMP_OFF)
 		return EFP_RESULT_INCORRECT_ENUM_VALUE;
 
+	if (opts->pol_damp != EFP_POL_DAMP_TT &&
+	    opts->pol_damp != EFP_POL_DAMP_OFF)
+		return EFP_RESULT_INCORRECT_ENUM_VALUE;
+
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -954,6 +962,8 @@ return "gradient computation was not requested";
 return "polarization SCF did not converge";
 	case EFP_RESULT_PARAMETERS_MISSING:
 return "required EFP fragment parameters are missing";
+	case EFP_RESULT_BAD_EULER_B:
+return "Euler angle beta must be in range [0,pi]";
 	case EFP_RESULT_INCORRECT_ENUM_VALUE:
 return "incorrect enumeration value";
 	case EFP_RESULT_INDEX_OUT_OF_RANGE:
