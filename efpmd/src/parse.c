@@ -154,63 +154,118 @@ static bool parse_double(char **str, void *out)
 	return true;
 }
 
-/*
-static bool parse_bool(char **str, void *out)
+static bool parse_enum(char **str, void *out, const char *names, const void *values,
+				size_t data_size)
 {
-	if (strneq(*str, "true", strlen("true"))) {
-		*str += strlen("true");
-		*(bool *)out = true;
-		return true;
-	}
+	const char *values_ptr = (const char *)values;
 
-	if (strneq(*str, "false", strlen("false"))) {
-		*str += strlen("false");
-		*(bool *)out = false;
-		return true;
+	for (const char *ptr = names; ptr; ptr = strchr(ptr, '\n')) {
+		if (*ptr == '\n')
+			ptr++;
+
+		size_t len = 0;
+
+		while (ptr[len] && ptr[len] != '\n')
+			len++;
+
+		if (strneq(*str, ptr, len)) {
+			memcpy(out, values_ptr, data_size);
+			*str += len;
+			return true;
+		}
+
+		values_ptr += data_size;
 	}
 
 	return false;
 }
-*/
 
 static bool parse_coord(char **str, void *out)
 {
-	static const struct {
-		const char *name;
-		enum efp_coord_type value;
-	} list[] = {
-		{ "points", EFP_COORD_TYPE_POINTS },
-		{ "xyzabc", EFP_COORD_TYPE_XYZABC }
+	static const char names[] =
+		"points\n"
+		"xyzabc";
+
+	static const enum efp_coord_type values[] = {
+		EFP_COORD_TYPE_POINTS,
+		EFP_COORD_TYPE_XYZABC
 	};
 
-	for (size_t i = 0; i < ARRAY_SIZE(list); i++) {
-		if (strneq(list[i].name, *str, strlen(list[i].name))) {
-			*str += strlen(list[i].name);
-			*(enum efp_coord_type *)out = list[i].value;
-			return true;
-		}
-	}
-	return false;
+	return parse_enum(str, out, names, values, sizeof(values[0]));
 }
 
 static bool parse_units(char **str, void *out)
 {
-	static const struct {
-		const char *name;
-		double value;
-	} list[] = {
-		{ "bohr", 1.0 },
-		{ "angs", 1.0 / BOHR_RADIUS }
+	static const char names[] =
+		"bohr\n"
+		"angs";
+
+	static const double values[] = {
+		1.0,
+		1.0 / BOHR_RADIUS
 	};
 
-	for (size_t i = 0; i < ARRAY_SIZE(list); i++) {
-		if (strneq(list[i].name, *str, strlen(list[i].name))) {
-			*str += strlen(list[i].name);
-			*(double *)out = list[i].value;
-			return true;
-		}
-	}
-	return false;
+	return parse_enum(str, out, names, values, sizeof(values[0]));
+}
+
+static bool parse_elec_damp(char **str, void *out)
+{
+	static const char names[] =
+		"screen\n"
+		"overlap\n"
+		"off";
+
+	static const enum efp_elec_damp values[] = {
+		EFP_ELEC_DAMP_SCREEN,
+		EFP_ELEC_DAMP_OVERLAP,
+		EFP_ELEC_DAMP_OFF
+	};
+
+	return parse_enum(str, out, names, values, sizeof(values[0]));
+}
+
+static bool parse_disp_damp(char **str, void *out)
+{
+	static const char names[] =
+		"tt\n"
+		"overlap\n"
+		"off";
+
+	static const enum efp_disp_damp values[] = {
+		EFP_DISP_DAMP_TT,
+		EFP_DISP_DAMP_OVERLAP,
+		EFP_DISP_DAMP_OFF
+	};
+
+	return parse_enum(str, out, names, values, sizeof(values[0]));
+}
+
+static bool parse_pol_damp(char **str, void *out)
+{
+	static const char names[] =
+		"tt\n"
+		"off";
+
+	static const enum efp_pol_damp values[] = {
+		EFP_POL_DAMP_TT,
+		EFP_POL_DAMP_OFF
+	};
+
+	return parse_enum(str, out, names, values, sizeof(values[0]));
+}
+
+static bool parse_ensemble(char **str, void *out)
+{
+	static const char names[] =
+		"nve\n"
+		"nvt";
+
+	static const enum ensemble_type values[] = {
+		ENSEMBLE_TYPE_NVE,
+		ENSEMBLE_TYPE_NVT
+	};
+
+	return parse_enum(str, out, names, values, sizeof(values[0]));
 }
 
 static bool parse_terms(char **str, void *out)
@@ -247,68 +302,6 @@ next:
 	return terms != 0;
 }
 
-static bool parse_elec_damp(char **str, void *out)
-{
-	static const struct {
-		const char *name;
-		enum efp_elec_damp value;
-	} list[] = {
-		{ "screen",  EFP_ELEC_DAMP_SCREEN  },
-		{ "overlap", EFP_ELEC_DAMP_OVERLAP },
-		{ "off",     EFP_ELEC_DAMP_OFF     }
-	};
-
-	for (size_t i = 0; i < ARRAY_SIZE(list); i++) {
-		if (strneq(list[i].name, *str, strlen(list[i].name))) {
-			*str += strlen(list[i].name);
-			*(enum efp_elec_damp *)out = list[i].value;
-			return true;
-		}
-	}
-	return false;
-}
-
-static bool parse_disp_damp(char **str, void *out)
-{
-	static const struct {
-		const char *name;
-		enum efp_disp_damp value;
-	} list[] = {
-		{ "tt",      EFP_DISP_DAMP_TT      },
-		{ "overlap", EFP_DISP_DAMP_OVERLAP },
-		{ "off",     EFP_DISP_DAMP_OFF     }
-	};
-
-	for (size_t i = 0; i < ARRAY_SIZE(list); i++) {
-		if (strneq(list[i].name, *str, strlen(list[i].name))) {
-			*str += strlen(list[i].name);
-			*(enum efp_disp_damp *)out = list[i].value;
-			return true;
-		}
-	}
-	return false;
-}
-
-static bool parse_ensemble(char **str, void *out)
-{
-	static const struct {
-		const char *name;
-		enum ensemble_type value;
-	} list[] = {
-		{ "nve", ENSEMBLE_TYPE_NVE },
-		{ "nvt", ENSEMBLE_TYPE_NVT }
-	};
-
-	for (size_t i = 0; i < ARRAY_SIZE(list); i++) {
-		if (strneq(list[i].name, *str, strlen(list[i].name))) {
-			*str += strlen(list[i].name);
-			*(enum ensemble_type *)out = list[i].value;
-			return true;
-		}
-	}
-	return false;
-}
-
 static bool int_gt_zero(void *val)
 {
 	return *(int *)val > 0;
@@ -332,6 +325,7 @@ static const struct {
 	{ "terms",        "elec pol disp xr", parse_terms,     NULL,           offsetof(struct config, terms)         },
 	{ "elec_damp",    "screen",           parse_elec_damp, NULL,           offsetof(struct config, elec_damp)     },
 	{ "disp_damp",    "tt",               parse_disp_damp, NULL,           offsetof(struct config, disp_damp)     },
+	{ "pol_damp",     "tt",               parse_pol_damp,  NULL,           offsetof(struct config, pol_damp)      },
 	{ "hess_delta",   "0.001",            parse_double,    double_gt_zero, offsetof(struct config, hess_delta)    },
 	{ "max_steps",    "100",              parse_int,       int_gt_zero,    offsetof(struct config, max_steps)     },
 	{ "print_step",   "1",                parse_int,       int_gt_zero,    offsetof(struct config, print_step)    },
@@ -424,14 +418,13 @@ static void set_config_defaults(struct config *config)
 	memset(config, 0, sizeof(struct config));
 
 	for (size_t i = 0; i < ARRAY_SIZE(config_list); i++) {
-		char buffer[128];
-		strncpy(buffer, config_list[i].default_value, sizeof(buffer));
-
-		char *ptr = buffer;
 		size_t offset = config_list[i].member_offset;
 
-		if (!config_list[i].parse_fn(&ptr, (char *)config + offset))
-			error("INCORRECT OPTION DEFAULT VALUE");
+		char buffer[128], *ptr = buffer;
+		strncpy(buffer, config_list[i].default_value, sizeof(buffer));
+
+		bool res = config_list[i].parse_fn(&ptr, (char *)config + offset);
+		assert(res);
 	}
 }
 

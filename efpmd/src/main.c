@@ -157,7 +157,8 @@ static void init_efp(struct efp **efp, const struct config *config)
 	struct efp_opts opts = {
 		.terms = config->terms,
 		.elec_damp = config->elec_damp,
-		.disp_damp = config->disp_damp
+		.disp_damp = config->disp_damp,
+		.pol_damp = config->pol_damp
 	};
 
 	char *files = make_potential_file_list(config);

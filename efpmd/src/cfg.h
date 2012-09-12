@@ -1,5 +1,5 @@
-#ifndef EFPMD_CONFIG_H
-#define EFPMD_CONFIG_H
+#ifndef EFPMD_CFG_H
+#define EFPMD_CFG_H
 
 #include <efp.h>
 
@@ -21,6 +21,7 @@ struct config {
 	unsigned terms;
 	enum efp_elec_damp elec_damp;
 	enum efp_disp_damp disp_damp;
+	enum efp_pol_damp pol_damp;
 	double hess_delta;
 	int max_steps;
 	int print_step;
@@ -37,4 +38,4 @@ struct config {
 void parse_config(const char *, struct config *);
 void free_config(struct config *);
 
-#endif /* EFPMD_CONFIG_H */
+#endif /* EFPMD_CFG_H */
