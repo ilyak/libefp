@@ -156,6 +156,17 @@ void opt_set_user_data(struct opt_state *state, void *data)
 	state->data = data;
 }
 
+void opt_set_bound(struct opt_state *state, int n, const int *nbd,
+		const double *l, const double *u)
+{
+	assert(state);
+	assert(state->n == n);
+
+	memcpy(state->nbd, nbd, n * sizeof(int));
+	memcpy(state->l, l, n * sizeof(double));
+	memcpy(state->u, u, n * sizeof(double));
+}
+
 enum opt_result opt_step(struct opt_state *state)
 {
 	assert(state);

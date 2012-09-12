@@ -40,6 +40,7 @@ struct opt_state *opt_create(int);
 enum opt_result opt_init(struct opt_state *, int, const double *);
 void opt_set_func(struct opt_state *, opt_func_t);
 void opt_set_user_data(struct opt_state *, void *);
+void opt_set_bound(struct opt_state *, int, const int *, const double *, const double *);
 enum opt_result opt_step(struct opt_state *);
 double opt_get_fx(struct opt_state *);
 void opt_get_x(struct opt_state *, int, double *);

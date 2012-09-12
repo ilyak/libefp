@@ -4,6 +4,7 @@ WARNS=		6
 NO_MAN=		yes
 
 DEBUG_FLAGS=	-O0 -g
+FFLAGS+=	${DEBUG_FLAGS}
 
 SRCS=		optimizer.c \
 		blas.f \
