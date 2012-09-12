@@ -1,0 +1,63 @@
+/**
+\mainpage The Effective Fragment Potential method implementation
+
+\par Introduction
+
+<i>LIBEFP</i> is a full implementation of the Effective Fragment Potential (EFP)
+method (see <a href="http://dx.doi.org/10.1021/cr200093j"><i>Gordon et al.,
+Chem. Rev., 2012</i></a>).
+<i>LIBEFP</i> is designed to allow developers an easy way to add EFP support to
+their favourite quantum chemistry software package.
+
+\par EFPMD molecular simulation package
+
+<a href="http://github.com/libefp/libefp/tree/master/efpmd"><i>EFPMD</i></a>
+is a molecular simulation package based on <i>LIBEFP</i>. It allows running
+EFP-only molecular simulations such as geometry optimization and
+molecular dynamics. <i>EFPMD</i> is a part of <i>LIBEFP</i> distribution. See
+<a href="http://github.com/libefp/libefp/tree/master/efpmd/README.md"><i>README</i></a>
+file for more information on how to use the package.
+
+\par Library users
+
+<i>LIBEFP</i> is currently being used in
+<a href="http://www.psicode.org/"><i>PSI</i></a>
+(development version) and
+<a href="http://github.com/libefp/libefp/tree/master/efpmd"><i>EFPMD</i></a>
+packages.
+
+\par Documentation
+
+Documentation for public API is available <a href="efp_8h.html"><i>here</i></a>.
+For additional information see
+<a href="http://github.com/libefp/libefp/blob/master/README.md"><i>README</i></a>
+file.
+
+\par How to get the source code
+
+Latest development version of code can be found in git
+<a href="http://github.com/libefp/libefp"><i>repository</i></a>.
+
+To get the source code use:
+
+\verbatim
+git clone git://github.com/libefp/libefp.git
+\endverbatim
+
+\par Parallel performance
+
+The EFP code is parallelized using
+<a href="http://www.openmp.org/"><i>OpenMP</i></a> to utilize the full power
+of multi-core CPUs. Below is the plot of achieved parallel speedup in a
+single point energy computation test with a system containing 3375 EFP water
+molecules. The test was performed using
+<a href="http://github.com/libefp/libefp/tree/master/efpmd"><i>EFPMD</i></a>
+program on a machine with two Intel Xeon X5667 CPUs.
+
+\image html speedup.png
+
+\copyright Copyright (c) 2012 Ilya Kaliman.
+Distributed under the terms of BSD 2-clause license. See
+<a href="http://github.com/libefp/libefp/blob/master/LICENSE"><i>LICENSE</i></a>
+file for details.
+*/
