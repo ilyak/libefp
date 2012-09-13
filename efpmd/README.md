@@ -25,9 +25,9 @@ Lines beginning with the `#` symbol are ignored during input parsing.
 
 `run_type [sp|grad|hess|opt|md]`
 
-`sp` - single point calculation.
+`sp` - single point energy calculation.
 
-`grad` - gradient calculation.
+`grad` - energy gradient calculation.
 
 `hess` - numerical Hessian calculation.
 
@@ -94,6 +94,16 @@ Default value: `screen`
 `overlap` - Overlap-based dispersion damping.
 
 `off` - No dispersion damping.
+
+Default value: `tt`
+
+##### Polarization damping type
+
+`pol_damp [tt|off]`
+
+`tt` - Tang and Toennies like damping formula.
+
+`off` - No polarization damping.
 
 Default value: `tt`
 
