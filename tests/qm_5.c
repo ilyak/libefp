@@ -37,9 +37,9 @@ static const char names[] =
 	"NH3_L";
 
 static const double frag_xyzabc[] = {
-	BOHR(-1.6), BOHR( 4.7), BOHR( 1.4), -1.3,  0.0,  7.0,
+	BOHR(-1.6), BOHR( 4.7), BOHR( 1.4), -1.3,  0.1,  7.0,
 	BOHR( 0.4), BOHR(-0.9), BOHR(-0.7),  2.3,  1.6, -2.3,
-	BOHR(-3.5), BOHR(-2.0), BOHR(-0.7),  0.0, -2.7,  2.7
+	BOHR(-3.5), BOHR(-2.0), BOHR(-0.7),  0.0,  2.2,  2.7
 };
 
 static const double qm_znuc[] = {
@@ -69,7 +69,7 @@ static const struct test_data test_data = {
 	.n_qm_atoms = ARRAY_SIZE(qm_znuc),
 	.qm_znuc = qm_znuc,
 	.qm_xyz = qm_xyz,
-	.ref_energy = -0.1051286156,
+	.ref_energy = -0.0810700395,
 	.test_gradient = 1,
 	.callbacks = {
 		.get_electron_density_field = get_electron_density_field,

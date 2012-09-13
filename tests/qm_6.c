@@ -42,13 +42,13 @@ static const char names[] =
 	"ACETONE_L";
 
 static const double frag_xyzabc[] = {
-	BOHR( 0.0), BOHR(-1.0), BOHR( 0.0),  0.0,  1.0,  2.0,
-	BOHR(-5.0), BOHR(12.0), BOHR(-0.0),  3.0,  4.0,  5.0,
-	BOHR(-0.0), BOHR(-3.0), BOHR( 5.0),  6.0,  7.0,  8.0,
-	BOHR(-5.0), BOHR(-4.0), BOHR(-5.0),  9.0,  0.0,  1.0,
-	BOHR(-9.0), BOHR(-5.0), BOHR( 1.0),  2.0,  3.0,  4.0,
-	BOHR( 7.0), BOHR(-2.0), BOHR(11.0),  5.0,  6.0,  7.0,
-	BOHR(-9.0), BOHR(-7.0), BOHR(-9.0),  8.0,  9.0,  0.0
+	BOHR( 0.0), BOHR(-1.0), BOHR( 0.0),  0.0,  1.1,  2.0,
+	BOHR(-5.0), BOHR(12.0), BOHR(-0.0),  3.0,  0.2,  5.0,
+	BOHR(-0.0), BOHR(-3.0), BOHR( 5.0),  6.0,  2.3,  8.0,
+	BOHR(-5.0), BOHR(-4.0), BOHR(-5.0),  9.0,  0.4,  1.0,
+	BOHR(-9.0), BOHR(-5.0), BOHR( 1.0),  2.0,  1.5,  4.0,
+	BOHR( 7.0), BOHR(-2.0), BOHR(11.0),  5.0,  0.6,  7.0,
+	BOHR(-9.0), BOHR(-7.0), BOHR(-9.0),  8.0,  2.7,  0.0
 };
 
 static const double qm_znuc[] = {
@@ -79,7 +79,7 @@ static const struct test_data test_data = {
 	.n_qm_atoms = ARRAY_SIZE(qm_znuc),
 	.qm_znuc = qm_znuc,
 	.qm_xyz = qm_xyz,
-	.ref_energy = -0.2477137460,
+	.ref_energy = -0.2314297420,
 	.test_gradient = 1,
 	.callbacks = {
 		.get_electron_density_field = get_electron_density_field,

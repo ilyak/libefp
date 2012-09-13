@@ -31,8 +31,7 @@ static const struct test_data test_data = {
 	.files = files,
 	.names = names,
 	.geometry_xyzabc = xyzabc,
-		/* elec from GAMESS */
-	.ref_energy = 0.0013721463,
+	.ref_energy = 0.0008447057,
 	.test_gradient = 1,
 	.opts = {
 		.terms = EFP_TERM_ELEC

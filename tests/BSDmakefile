@@ -2,6 +2,8 @@ PROG=		test
 WARNS=		6
 NO_MAN=		yes
 
+DEBUG_FLAGS=	-O0 -g
+
 CFLAGS+=	-fopenmp \
 		-I${.CURDIR}/../common \
 		-I${.CURDIR}/../src \
