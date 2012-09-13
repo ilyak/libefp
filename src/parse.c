@@ -30,7 +30,6 @@
 #include <string.h>
 
 #include "efp_private.h"
-#include "parse.h"
 
 #define streq(a, b) (strcmp((a), (b)) == 0)
 
@@ -39,6 +38,8 @@ struct stream {
 	char *ptr;
 	FILE *in;
 };
+
+enum efp_result efp_read_potential(struct efp *, const char *);
 
 static inline struct frag *
 get_last_frag(struct efp *efp)

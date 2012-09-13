@@ -53,7 +53,6 @@ src_libefp_la_SOURCES = \
 	src/int.h \
 	src/int_shift.h \
 	src/parse.c \
-	src/parse.h \
 	src/pol.c \
 	src/terms.h \
 	src/xr.c
