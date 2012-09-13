@@ -1,19 +1,21 @@
-EFPMD_MAJOR=	0
-EFPMD_MINOR=	9
+LIBEFP_MAJOR?=	0
+LIBEFP_MINOR?=	0
 
 PROG=		efpmd
 WARNS=		6
 NO_MAN=		yes
-NO_SHARED=	yes
 
-DEBUG_FLAGS=	-O0 -g
+DEBUG_FLAGS?=	-O0 -g
+OMP_CFLAGS?=	-fopenmp
+CBLAS_LIBS?=	-lcblas -latlas
+FORTRAN_LIBS?=	-lgfortran
 
-CFLAGS+=	-fopenmp \
+CFLAGS+=	${OMP_CFLAGS} \
 		-I${.CURDIR}/../../common \
 		-I${.CURDIR}/../../src \
 		-I${.CURDIR}/../optimizer \
 		-DEFP_DATA_DIR="\"${.CURDIR}/../../fraglib\"" \
-		-DEFPMD_VERSION="\"${EFPMD_MAJOR}.${EFPMD_MINOR}\""
+		-DEFPMD_VERSION="\"${LIBEFP_MAJOR}.${LIBEFP_MINOR}\""
 
 LDADD+=		-L${.OBJDIR}/../../common \
 		-L${.OBJDIR}/../../src \
@@ -21,10 +23,9 @@ LDADD+=		-L${.OBJDIR}/../../common \
 		-lefp \
 		-lcommon \
 		-loptimizer \
-		-lcblas_pic \
-		-latlas_pic \
+		${CBLAS_LIBS} \
 		-lm \
-		-lgfortran
+		${FORTRAN_LIBS}
 
 SRCS=		common.c \
 		grad.c \

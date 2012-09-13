@@ -2,9 +2,11 @@ PROG=		test
 WARNS=		6
 NO_MAN=		yes
 
-DEBUG_FLAGS=	-O0 -g
+DEBUG_FLAGS?=	-O0 -g
+OMP_CFLAGS?=	-fopenmp
+CBLAS_LIBS?=	-lcblas -latlas
 
-CFLAGS+=	-fopenmp \
+CFLAGS+=	${OMP_CFLAGS} \
 		-I${.CURDIR}/../common \
 		-I${.CURDIR}/../src \
 		-DABS_TOP_SRCDIR="\"${.CURDIR}/..\""
@@ -13,8 +15,7 @@ LDADD+=		-L${.OBJDIR}/../common \
 		-L${.OBJDIR}/../src \
 		-lefp \
 		-lcommon \
-		-lcblas_pic \
-		-latlas_pic \
+		${CBLAS_LIBS} \
 		-lm \
 		-lcheck
 

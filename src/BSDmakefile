@@ -1,16 +1,20 @@
-LIBEFP_MAJOR=	0
-LIBEFP_MINOR=	9
+LIBEFP_MAJOR?=	0
+LIBEFP_MINOR?=	0
 
 LIB=		efp
 INCS=		efp.h
 WARNS=		6
 NO_MAN=		yes
 
-DEBUG_FLAGS=	-O0 -g
+DEBUG_FLAGS?=	-O0 -g
+OMP_CFLAGS?=	-fopenmp
 
-CFLAGS+=	-fopenmp \
+CFLAGS+=	${OMP_CFLAGS} \
 		-I${.CURDIR}/../common \
 		-DLIBEFP_VERSION="\"${LIBEFP_MAJOR}.${LIBEFP_MINOR}\""
+
+LDADD+=		-L${.OBJDIR}/../common \
+		-lcommon
 
 SRCS=		ai_disp.c \
 		ai_xr.c \
