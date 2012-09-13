@@ -16,6 +16,16 @@ AM_CPPFLAGS = \
 AM_CFLAGS = ${my_CFLAGS} ${OPENMP_CFLAGS} \
 	-fvisibility=hidden
 
+EXTRA_DIST += \
+	BSDmakefile \
+	common/BSDmakefile \
+	src/BSDmakefile \
+	tests/BSDmakefile \
+	efpmd/BSDmakefile \
+	efpmd/cubegen/BSDmakefile \
+	efpmd/optimizer/BSDmakefile \
+	efpmd/src/BSDmakefile
+
 include_HEADERS = src/efp.h
 lib_LTLIBRARIES = src/libefp.la
 
