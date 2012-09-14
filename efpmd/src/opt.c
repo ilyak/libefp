@@ -92,7 +92,7 @@ static void print_restart(struct efp *efp)
 
 static int check_conv(double rms_grad, double max_grad, double opt_tol)
 {
-	return fabs(max_grad) < opt_tol && fabs(rms_grad) < opt_tol / 3.0;
+	return max_grad < opt_tol && rms_grad < opt_tol / 3.0;
 }
 
 static void get_grad_info(int n_coord, const double *grad, double *rms_grad_out,
@@ -104,7 +104,7 @@ static void get_grad_info(int n_coord, const double *grad, double *rms_grad_out,
 		rms_grad += grad[i] * grad[i];
 
 		if (fabs(grad[i]) > max_grad)
-			max_grad = grad[i];
+			max_grad = fabs(grad[i]);
 	}
 
 	rms_grad = sqrt(rms_grad / n_coord);
