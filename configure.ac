@@ -23,6 +23,10 @@ LT_INIT([pic-only])
 AC_PROG_SED
 AC_PROG_MKDIR_P
 
+AC_CHECK_LIB([check], [suite_create],
+	[have_libcheck=yes], [have_libcheck=no])
+AM_CONDITIONAL(HAVE_LIBCHECK, test x$have_libcheck = xyes)
+
 developer_CFLAGS="-Wall -Wextra -pedantic \
 -Wmissing-declarations -Wmissing-prototypes \
 -Wpointer-arith -Wsign-compare \
@@ -62,4 +66,6 @@ AC_MSG_RESULT([
 
         LDFLAGS:            ${LDFLAGS}
         additional CFLAGS:  ${my_CFLAGS}
+
+	test framework:     $have_libcheck
 ])

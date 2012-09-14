@@ -126,8 +126,10 @@ EXTRA_DIST += \
 	efpmd/examples/water-cube-125_sp.in \
 	efpmd/examples/water-cube-3375_sp.in
 
+if HAVE_LIBCHECK
 TESTS = tests/test
 check_PROGRAMS = $(TESTS)
+endif
 
 tests_test_LDADD = src/libefp.la -lcheck
 tests_test_CPPFLAGS = $(AM_CPPFLAGS) -DABS_TOP_SRCDIR=\"$(abs_top_srcdir)\"
