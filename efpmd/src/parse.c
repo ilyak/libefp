@@ -332,7 +332,7 @@ static const struct {
 	{ "temperature",  "300.0",            parse_double,    double_gt_zero, offsetof(struct config, temperature)   },
 	{ "time_step",    "1.0",              parse_double,    double_gt_zero, offsetof(struct config, time_step)     },
 	{ "ensemble",     "nve",              parse_ensemble,  NULL,           offsetof(struct config, ensemble_type) },
-	{ "opt_tol",      "1.0e-5",           parse_double,    double_gt_zero, offsetof(struct config, opt_tol)       },
+	{ "opt_tol",      "1.0e-4",           parse_double,    double_gt_zero, offsetof(struct config, opt_tol)       },
 	{ "fraglib_path", EFP_DATA_DIR,       parse_string,    NULL,           offsetof(struct config, fraglib_path)  },
 	{ "userlib_path", ".",                parse_string,    NULL,           offsetof(struct config, userlib_path)  }
 };
