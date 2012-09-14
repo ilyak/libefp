@@ -25,6 +25,7 @@
  */
 
 #include <optimizer.h>
+#include <util.h>
 
 #include "common.h"
 
@@ -55,8 +56,10 @@ static double compute_efp(int n, const double *x, double *gx, void *data)
 	if ((res = efp_get_energy(efp, &energy)))
 		lib_error(res);
 
-	if ((res = efp_get_gradient(efp, EFP_GRAD_TYPE_DERIVATIVE, n_frag, gx)))
+	if ((res = efp_get_gradient(efp, n_frag, gx)))
 		lib_error(res);
+
+	torque_to_deriv(n_frag, x, gx);
 
 	return energy.total;
 }
@@ -141,21 +144,6 @@ void sim_opt(struct efp *efp, const struct config *config)
 	if (!state)
 		error("UNABLE TO CREATE AN OPTIMIZER");
 
-	int nbd[n_coord];
-	double l_bound[n_coord], u_bound[n_coord];
-
-	memset(nbd, 0, n_coord * sizeof(int));
-	memset(l_bound, 0, n_coord * sizeof(double));
-	memset(u_bound, 0, n_coord * sizeof(double));
-
-	/* Euler angle beta must be in range [0,pi] */
-	for (int i = 0; i < n_frag; i++) {
-		nbd[6 * i + 4] = 2;
-		l_bound[6 * i + 4] = 0.0;
-		u_bound[6 * i + 4] = PI;
-	}
-
-	opt_set_bound(state, n_coord, nbd, l_bound, u_bound);
 	opt_set_func(state, compute_efp);
 	opt_set_user_data(state, efp);
 

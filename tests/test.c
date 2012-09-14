@@ -24,22 +24,18 @@
  * SUCH DAMAGE.
  */
 
-#include <math.h>
 #include <stdlib.h>
+
+#include <util.h>
 
 #include "test_common.h"
 
-#define EPSILON 5.0e-6
+#define FAIL_TOL 5.0e-6
 #define NUM_GRAD_DELTA 0.001
 
 static void lib_error(const char *title, enum efp_result res)
 {
 	fail("%s:\n    %s\n", title, efp_result_to_string(res));
-}
-
-static int eq(double a, double b)
-{
-	return fabs(a - b) < EPSILON;
 }
 
 static void test_qm_numerical_grad(struct efp *efp, const double *grad)
@@ -85,24 +81,20 @@ static void test_qm_numerical_grad(struct efp *efp, const double *grad)
 		}
 
 		for (int j = 0; j < 3; j++)
-			fail_unless(eq(grad_num[j], grad[3 * i + j]));
+			fail_unless(fabs(grad_num[j] - grad[3 * i + j]) < FAIL_TOL);
 	}
 
 	if ((res = efp_set_qm_atoms(efp, n_qm_atoms, znuc, xyz)))
 		lib_error("efp_set_qm_atoms", res);
 }
 
-static void test_frag_numerical_grad(struct efp *efp, const double *grad)
+static void test_frag_numerical_grad(struct efp *efp, double *xyzabc, const double *grad)
 {
 	enum efp_result res;
 
 	int n_frag;
 	if ((res = efp_get_frag_count(efp, &n_frag)))
 		lib_error("efp_get_frag_count", res);
-
-	double xyzabc[6 * n_frag];
-	if ((res = efp_get_coordinates(efp, n_frag, xyzabc)))
-		lib_error("efp_get_coordinates", res);
 
 	for (int i = 0; i < n_frag; i++) {
 		double grad_num[6];
@@ -135,7 +127,7 @@ static void test_frag_numerical_grad(struct efp *efp, const double *grad)
 		}
 
 		for (int j = 0; j < 6; j++)
-			fail_unless(eq(grad_num[j], grad[6 * i + j]));
+			fail_unless(fabs(grad_num[j] - grad[6 * i + j]) < FAIL_TOL);
 	}
 
 	if ((res = efp_set_coordinates(efp, EFP_COORD_TYPE_XYZABC, xyzabc)))
@@ -188,7 +180,7 @@ void run_test(const struct test_data *test_data)
 	if ((res = efp_get_energy(efp, &energy)))
 		lib_error("efp_get_energy", res);
 
-	fail_unless(eq(energy.total, test_data->ref_energy));
+	fail_unless(fabs(energy.total - test_data->ref_energy) < FAIL_TOL);
 
 	if (test_data->test_gradient) {
 		int n_frag;
@@ -196,9 +188,14 @@ void run_test(const struct test_data *test_data)
 			lib_error("efp_get_frag_count", res);
 
 		double frag_grad[6 * n_frag];
-		if ((res = efp_get_gradient(efp, EFP_GRAD_TYPE_DERIVATIVE,
-						n_frag, frag_grad)))
+		if ((res = efp_get_gradient(efp, n_frag, frag_grad)))
 			lib_error("efp_get_gradient", res);
+
+		double xyzabc[6 * n_frag];
+		if ((res = efp_get_coordinates(efp, n_frag, xyzabc)))
+			lib_error("efp_get_coordinates", res);
+
+		torque_to_deriv(n_frag, xyzabc, frag_grad);
 
 		if (do_qm) {
 			int n_qm_atoms;
@@ -212,7 +209,7 @@ void run_test(const struct test_data *test_data)
 			test_qm_numerical_grad(efp, qm_grad);
 		}
 
-		test_frag_numerical_grad(efp, frag_grad);
+		test_frag_numerical_grad(efp, xyzabc, frag_grad);
 	}
 
 	efp_shutdown(efp);

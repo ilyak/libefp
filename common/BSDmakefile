@@ -2,6 +2,12 @@ LIB=		common
 INTERNALLIB=	yes
 WARNS=		6
 NO_MAN=		yes
-SRCS=		compat.c
+
+DEBUG_FLAGS?=	-O0 -g
+OMP_CFLAGS?=	-fopenmp
+
+CFLAGS+=	${OMP_CFLAGS}
+
+SRCS=		compat.c util.c
 
 .include <bsd.lib.mk>

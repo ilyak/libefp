@@ -50,8 +50,7 @@ typedef struct {
 static inline double
 vec_get(const vec_t *vec, int idx)
 {
-	const double *ptr = (const double *)vec;
-	return ptr[idx];
+	return ((const double *)vec)[idx];
 }
 
 static inline void
@@ -172,15 +171,13 @@ mat_zero(mat_t *mat)
 static inline double
 mat_get(const mat_t *mat, int a1, int a2)
 {
-	const double *ptr = (const double *)mat;
-	return ptr[3 * a1 + a2];
+	return ((const double *)mat)[3 * a1 + a2];
 }
 
 static inline void
 mat_set(mat_t *mat, int a1, int a2, double val)
 {
-	double *ptr = (double *)mat;
-	ptr[3 * a1 + a2] = val;
+	((double *)mat)[3 * a1 + a2] = val;
 }
 
 static inline vec_t
@@ -252,87 +249,6 @@ mat_inv(const mat_t *mat)
 		      det * (mat->xx * mat->yy - mat->xy * mat->yx) };
 
 	return out;
-}
-
-static inline void
-euler_to_matrix(double a, double b, double c, mat_t *out)
-{
-	double sina = sin(a), cosa = cos(a);
-	double sinb = sin(b), cosb = cos(b);
-	double sinc = sin(c), cosc = cos(c);
-
-	out->xx =  cosa * cosc - sina * cosb * sinc;
-	out->xy = -cosa * sinc - sina * cosb * cosc;
-	out->xz =  sinb * sina;
-	out->yx =  sina * cosc + cosa * cosb * sinc;
-	out->yy = -sina * sinc + cosa * cosb * cosc;
-	out->yz = -sinb * cosa;
-	out->zx =  sinb * sinc;
-	out->zy =  sinb * cosc;
-	out->zz =  cosb;
-}
-
-static inline void
-matrix_to_euler(const mat_t *rotmat, double *ea, double *eb, double *ec)
-{
-	double a, b, c, sinb;
-
-	b = acos(rotmat->zz);
-	sinb = sqrt(1.0 - rotmat->zz * rotmat->zz);
-
-	if (fabs(sinb) < 1.0e-6) {
-		a = atan2(-rotmat->xy, rotmat->xx);
-		c = 0.0;
-	}
-	else {
-		a = atan2(rotmat->xz, -rotmat->yz);
-		c = atan2(rotmat->zx, rotmat->zy);
-	}
-
-	*ea = a, *eb = b, *ec = c;
-}
-
-static inline void
-move_pt(const vec_t *com, const mat_t *rotmat,
-	const vec_t *com_init, const vec_t *pos_init,
-	vec_t *out)
-{
-	vec_t pos = vec_sub(pos_init, com_init);
-	*out = mat_vec(rotmat, &pos);
-	out->x += com->x, out->y += com->y, out->z += com->z;
-}
-
-static inline void
-rotate_t2(const mat_t *rotmat, const double *in, double *out)
-{
-	const double *rm = (const double *)rotmat;
-	memset(out, 0, 9 * sizeof(double));
-
-	for (int a1 = 0; a1 < 3; a1++)
-	for (int b1 = 0; b1 < 3; b1++)
-		for (int a2 = 0; a2 < 3; a2++)
-		for (int b2 = 0; b2 < 3; b2++)
-			out[a2 * 3 + b2] += in[a1 * 3 + b1] *
-					rm[a2 * 3 + a1] *
-					rm[b2 * 3 + b1];
-}
-
-static inline void
-rotate_t3(const mat_t *rotmat, const double *in, double *out)
-{
-	const double *rm = (const double *)rotmat;
-	memset(out, 0, 27 * sizeof(double));
-
-	for (int a1 = 0; a1 < 3; a1++)
-	for (int b1 = 0; b1 < 3; b1++)
-	for (int c1 = 0; c1 < 3; c1++)
-		for (int a2 = 0; a2 < 3; a2++)
-		for (int b2 = 0; b2 < 3; b2++)
-		for (int c2 = 0; c2 < 3; c2++)
-			out[a2 * 9 + b2 * 3 + c2] += in[a1 * 9 + b1 * 3 + c1] *
-					rm[a2 * 3 + a1] *
-					rm[b2 * 3 + b1] *
-					rm[c2 * 3 + c1];
 }
 
 #endif /* LIBEFP_MATH_UTIL_H */

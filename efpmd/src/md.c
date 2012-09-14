@@ -24,7 +24,7 @@
  * SUCH DAMAGE.
  */
 
-#include <math_util.h>
+#include <util.h>
 
 #include "common.h"
 
@@ -230,29 +230,29 @@ static void remove_system_drift(struct md *md)
 	assert(vec_len(&cv2) < EPSILON && vec_len(&am2) < EPSILON);
 }
 
+static void make_coord_array(const struct md *md, double *coord)
+{
+	for (int i = 0; i < md->n_bodies; i++, coord += 12) {
+		struct body *body = md->bodies + i;
+
+		coord[0] = body->pos.x;
+		coord[1] = body->pos.y;
+		coord[2] = body->pos.z;
+
+		memcpy(coord + 3, &body->rotmat, sizeof(mat_t));
+	}
+}
+
 static void compute_forces(struct md *md)
 {
 	enum efp_result res;
 	struct efp_energy energy;
-	double coord[6 * md->n_bodies];
+	double coord[12 * md->n_bodies];
 	double grad[6 * md->n_bodies];
 
-	for (int i = 0; i < md->n_bodies; i++) {
-		struct body *body = md->bodies + i;
+	make_coord_array(md, coord);
 
-		double a, b, c;
-		matrix_to_euler(&body->rotmat, &a, &b, &c);
-
-		coord[6 * i + 0] = body->pos.x;
-		coord[6 * i + 1] = body->pos.y;
-		coord[6 * i + 2] = body->pos.z;
-
-		coord[6 * i + 3] = a;
-		coord[6 * i + 4] = b;
-		coord[6 * i + 5] = c;
-	}
-
-	if ((res = efp_set_coordinates(md->efp, EFP_COORD_TYPE_XYZABC, coord)))
+	if ((res = efp_set_coordinates(md->efp, EFP_COORD_TYPE_ROTMAT, coord)))
 		lib_error(res);
 
 	if ((res = efp_compute(md->efp, 1)))
@@ -263,7 +263,7 @@ static void compute_forces(struct md *md)
 
 	md->potential_energy = energy.total;
 
-	if ((res = efp_get_gradient(md->efp, EFP_GRAD_TYPE_TORQUE, md->n_bodies, grad)))
+	if ((res = efp_get_gradient(md->efp, md->n_bodies, grad)))
 		lib_error(res);
 
 	for (int i = 0; i < md->n_bodies; i++) {

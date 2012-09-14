@@ -27,7 +27,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "cblas.h"
+#include <cblas.h>
+#include <util.h>
+
 #include "efp_private.h"
 
 static const double integral_threshold = 1.0e-7;

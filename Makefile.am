@@ -45,12 +45,14 @@ dist_pkgdata_DATA = \
 	fraglib/nh3.efp
 
 src_libefp_la_SOURCES = \
+	common/cblas.h \
 	common/compat.c \
 	common/compat.h \
 	common/math_util.h \
+	common/util.c \
+	common/util.h \
 	src/ai_disp.c \
 	src/ai_xr.c \
-	src/cblas.h \
 	src/chtr.c \
 	src/disp.c \
 	src/disp.h \
@@ -83,6 +85,8 @@ efpmd_src_efpmd_SOURCES = \
 	common/compat.h \
 	common/math_util.h \
 	common/phys_const.h \
+	common/util.c \
+	common/util.h \
 	efpmd/src/cfg.h \
 	efpmd/src/common.c \
 	efpmd/src/common.h \

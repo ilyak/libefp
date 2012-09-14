@@ -174,8 +174,9 @@ static void init_efp(struct efp **efp, const struct config *config)
 static int get_coord_count(enum efp_coord_type coord_type)
 {
 	switch (coord_type) {
-		case EFP_COORD_TYPE_XYZABC: return 6;
-		case EFP_COORD_TYPE_POINTS: return 9;
+		case EFP_COORD_TYPE_XYZABC: return  6;
+		case EFP_COORD_TYPE_POINTS: return  9;
+		case EFP_COORD_TYPE_ROTMAT: return 12;
 	};
 	assert(0);
 }

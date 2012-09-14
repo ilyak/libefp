@@ -65,10 +65,10 @@ enum efp_result {
 	EFP_RESULT_POL_NOT_CONVERGED,
 	/** Certain EFP parameters are missing. */
 	EFP_RESULT_PARAMETERS_MISSING,
-	/** Euler angle beta is out of range [0,pi]. */
-	EFP_RESULT_BAD_EULER_B,
 	/** Incorrect enumeration value. */
 	EFP_RESULT_INCORRECT_ENUM_VALUE,
+	/** Invalid rotation matrix specified. */
+	EFP_RESULT_INVALID_ROTATION_MATRIX,
 	/** Index is out of range. */
 	EFP_RESULT_INDEX_OUT_OF_RANGE,
 	/** Wrong array length. */
@@ -133,15 +133,9 @@ enum efp_coord_type {
 	/** Coordinates of center of mass of a fragment and Euler angles. */
 	EFP_COORD_TYPE_XYZABC = 0,
 	/** Coordinates of three points belonging to a fragment. */
-	EFP_COORD_TYPE_POINTS
-};
-
-/** Specifies output format of the gradient. */
-enum efp_grad_type {
-	/** Store torque. */
-	EFP_GRAD_TYPE_TORQUE = 0,
-	/** Store derivatives of energy by Euler angles. */
-	EFP_GRAD_TYPE_DERIVATIVE
+	EFP_COORD_TYPE_POINTS,
+	/** Coordinates of the center of mass of a fragment and rotation matrix. */
+	EFP_COORD_TYPE_ROTMAT
 };
 
 /** \struct efp
@@ -346,6 +340,12 @@ enum efp_result efp_get_qm_atoms(struct efp *efp,
  * array must be at least [9 * \a n] elements, where \a n is the number of
  * fragments.
  *
+ * If \p coord_type is \a EFP_COORD_TYPE_ROTMAT then for each fragment the \p
+ * coord array should contain \a x \a y \a z components of the center of mass
+ * position and nine elements of the rotation matrix representing orientation
+ * of a fragment. The size of the \p coord array must be at least [12 * \a n]
+ * elements, where \a n is the number of fragments.
+ *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
 enum efp_result efp_set_coordinates(struct efp *efp,
@@ -462,7 +462,6 @@ enum efp_result efp_get_energy(struct efp *efp, struct efp_energy *energy);
  * Get computed EFP energy gradient.
  *
  * \param[in] efp The efp structure.
- * \param[in] grad_type Format of the returned gradient.
  * \param[in] n_frags Expected number of fragments.
  * \param[out] grad For each fragment \a x \a y \a z components of negative
  *                  force and torque will be written to this array. The size
@@ -471,7 +470,6 @@ enum efp_result efp_get_energy(struct efp *efp, struct efp_energy *energy);
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
 enum efp_result efp_get_gradient(struct efp *efp,
-				 enum efp_grad_type grad_type,
 				 int n_frags,
 				 double *grad);
 

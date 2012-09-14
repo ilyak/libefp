@@ -26,6 +26,8 @@
 
 #include <stdlib.h>
 
+#include <util.h>
+
 #include "efp_private.h"
 #include "elec.h"
 
@@ -51,8 +53,7 @@ efp_get_energy(struct efp *efp, struct efp_energy *energy)
 }
 
 EFP_EXPORT enum efp_result
-efp_get_gradient(struct efp *efp, enum efp_grad_type grad_type,
-		 int n_frags, double *grad)
+efp_get_gradient(struct efp *efp, int n_frags, double *grad)
 {
 	if (!initialized(efp))
 		return EFP_RESULT_NOT_INITIALIZED;
@@ -66,40 +67,12 @@ efp_get_gradient(struct efp *efp, enum efp_grad_type grad_type,
 	if (n_frags != efp->n_frag)
 		return EFP_RESULT_INVALID_ARRAY_SIZE;
 
-	if (grad_type == EFP_GRAD_TYPE_TORQUE) {
-		for (int i = 0; i < efp->n_frag; i++, grad += 6) {
-			memcpy(grad, &efp->frags[i].force, sizeof(vec_t));
-			memcpy(grad + 3, &efp->frags[i].torque, sizeof(vec_t));
-		}
-		return EFP_RESULT_SUCCESS;
+	for (int i = 0; i < efp->n_frag; i++, grad += 6) {
+		memcpy(grad, &efp->frags[i].force, sizeof(vec_t));
+		memcpy(grad + 3, &efp->frags[i].torque, sizeof(vec_t));
 	}
 
-	if (grad_type == EFP_GRAD_TYPE_DERIVATIVE) {
-		for (int i = 0; i < efp->n_frag; i++, grad += 6) {
-			const struct frag *frag = efp->frags + i;
-
-			double tx = frag->torque.x;
-			double ty = frag->torque.y;
-			double tz = frag->torque.z;
-
-			double a, b, c;
-			matrix_to_euler(&frag->rotmat, &a, &b, &c);
-
-			double sina = sin(a);
-			double cosa = cos(a);
-			double sinb = sin(b);
-			double cosb = cos(b);
-
-			memcpy(grad, &efp->frags[i].force, sizeof(vec_t));
-
-			grad[3] = tz;
-			grad[4] = cosa * tx + sina * ty;
-			grad[5] = sinb * sina * tx - sinb * cosa * ty + cosb * tz;
-		}
-		return EFP_RESULT_SUCCESS;
-	}
-
-	return EFP_RESULT_INCORRECT_ENUM_VALUE;
+	return EFP_RESULT_SUCCESS;
 }
 
 EFP_EXPORT enum efp_result
@@ -183,35 +156,6 @@ efp_get_qm_atoms(struct efp *efp, int n_atoms, double *znuc, double *xyz)
 }
 
 static void
-points_to_matrix(const double *pts, mat_t *rotmat)
-{
-	vec_t p1 = { pts[0], pts[1], pts[2] };
-	vec_t p2 = { pts[3], pts[4], pts[5] };
-	vec_t p3 = { pts[6], pts[7], pts[8] };
-
-	vec_t r12 = vec_sub(&p2, &p1);
-	vec_t r13 = vec_sub(&p3, &p1);
-
-	vec_normalize(&r12);
-	vec_normalize(&r13);
-
-	double dot = vec_dot(&r12, &r13);
-
-	r13.x -= dot * r12.x;
-	r13.y -= dot * r12.y;
-	r13.z -= dot * r12.z;
-
-	vec_t cross = vec_cross(&r12, &r13);
-
-	vec_normalize(&r13);
-	vec_normalize(&cross);
-
-	rotmat->xx = r12.x, rotmat->xy = r13.x, rotmat->xz = cross.x;
-	rotmat->yx = r12.y, rotmat->yy = r13.y, rotmat->yz = cross.y;
-	rotmat->zx = r12.z, rotmat->zy = r13.z, rotmat->zz = cross.z;
-}
-
-static void
 update_fragment(struct frag *frag)
 {
 	/* update atoms */
@@ -228,21 +172,15 @@ update_fragment(struct frag *frag)
 static enum efp_result
 set_coord_xyzabc(struct efp *efp, const double *coord)
 {
-	for (int i = 0; i < efp->n_frag; i++) {
+	for (int i = 0; i < efp->n_frag; i++, coord += 6) {
 		struct frag *frag = efp->frags + i;
 
-		frag->x = *coord++;
-		frag->y = *coord++;
-		frag->z = *coord++;
+		frag->x = coord[0];
+		frag->y = coord[1];
+		frag->z = coord[2];
 
-		double a = *coord++;
-		double b = *coord++;
-		double c = *coord++;
+		euler_to_matrix(coord[3], coord[4], coord[5], &frag->rotmat);
 
-		if (b < 0.0 || b > PI)
-			return EFP_RESULT_BAD_EULER_B;
-
-		euler_to_matrix(a, b, c, &frag->rotmat);
 		update_fragment(frag);
 	}
 
@@ -252,20 +190,41 @@ set_coord_xyzabc(struct efp *efp, const double *coord)
 static enum efp_result
 set_coord_points(struct efp *efp, const double *coord)
 {
-	for (int i = 0; i < efp->n_frag; i++) {
+	for (int i = 0; i < efp->n_frag; i++, coord += 9) {
 		struct frag *frag = efp->frags + i;
-		const double *pt = coord + 9 * i;
 
-		points_to_matrix(pt, &frag->rotmat);
+		points_to_matrix(coord, &frag->rotmat);
 		vec_t p1 = mat_vec(&frag->rotmat, VEC(frag->lib->atoms[0].x));
 
 		/* center of mass */
-		frag->x = pt[0] - p1.x;
-		frag->y = pt[1] - p1.y;
-		frag->z = pt[2] - p1.z;
+		frag->x = coord[0] - p1.x;
+		frag->y = coord[1] - p1.y;
+		frag->z = coord[2] - p1.z;
 
 		update_fragment(frag);
 	}
+
+	return EFP_RESULT_SUCCESS;
+}
+
+static enum efp_result
+set_coord_rotmat(struct efp *efp, const double *coord)
+{
+	for (int i = 0; i < efp->n_frag; i++, coord += 12) {
+		struct frag *frag = efp->frags + i;
+
+		if (!check_rotation_matrix((const mat_t *)(coord + 3)))
+			return EFP_RESULT_INVALID_ROTATION_MATRIX;
+
+		frag->x = coord[0];
+		frag->y = coord[1];
+		frag->z = coord[2];
+
+		memcpy(&frag->rotmat, coord + 3, sizeof(mat_t));
+
+		update_fragment(frag);
+	}
+
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -284,6 +243,8 @@ efp_set_coordinates(struct efp *efp, enum efp_coord_type coord_type,
 			return set_coord_xyzabc(efp, coord);
 		case EFP_COORD_TYPE_POINTS:
 			return set_coord_points(efp, coord);
+		case EFP_COORD_TYPE_ROTMAT:
+			return set_coord_rotmat(efp, coord);
 	}
 
 	return EFP_RESULT_INCORRECT_ENUM_VALUE;
@@ -963,10 +924,10 @@ return "gradient computation was not requested";
 return "polarization SCF did not converge";
 	case EFP_RESULT_PARAMETERS_MISSING:
 return "required EFP fragment parameters are missing";
-	case EFP_RESULT_BAD_EULER_B:
-return "Euler angle beta must be in range [0,pi]";
 	case EFP_RESULT_INCORRECT_ENUM_VALUE:
 return "incorrect enumeration value";
+	case EFP_RESULT_INVALID_ROTATION_MATRIX:
+return "invalid rotation matrix specified";
 	case EFP_RESULT_INDEX_OUT_OF_RANGE:
 return "index is out of range";
 	case EFP_RESULT_INVALID_ARRAY_SIZE:

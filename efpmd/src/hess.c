@@ -24,6 +24,8 @@
  * SUCH DAMAGE.
  */
 
+#include <util.h>
+
 #include "common.h"
 
 void sim_hess(struct efp *, const struct config *);
@@ -45,8 +47,10 @@ void sim_hess(struct efp *efp, const struct config *config)
 	if ((res = efp_get_coordinates(efp, n_frags, xyzabc)))
 		lib_error(res);
 
-	if ((res = efp_get_gradient(efp, EFP_GRAD_TYPE_DERIVATIVE, n_frags, grad_0)))
+	if ((res = efp_get_gradient(efp, n_frags, grad_0)))
 		lib_error(res);
+
+	torque_to_deriv(n_frags, xyzabc, grad_0);
 
 	print_geometry(efp);
 	print_energy(efp);
@@ -65,8 +69,10 @@ void sim_hess(struct efp *efp, const struct config *config)
 		if ((res = efp_compute(efp, 1)))
 			lib_error(res);
 
-		if ((res = efp_get_gradient(efp, EFP_GRAD_TYPE_DERIVATIVE, n_frags, grad)))
+		if ((res = efp_get_gradient(efp, n_frags, grad)))
 			lib_error(res);
+
+		torque_to_deriv(n_frags, xyzabc, grad);
 
 		for (int j = 0; j < n_coord; j++)
 			hess[i * n_coord + j] = (grad[j] - grad_0[j]) / config->hess_delta;
