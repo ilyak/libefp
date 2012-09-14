@@ -55,10 +55,10 @@ void sim_hess(struct efp *efp, const struct config *config)
 	print_geometry(efp);
 	print_energy(efp);
 	print_gradient(efp);
-	fflush(stdout);
 
 	for (int i = 0; i < n_coord; i++) {
 		printf("COMPUTING DISPLACEMENT %5d OF %d\n", i + 1, n_coord);
+		fflush(stdout);
 
 		double save = xyzabc[i];
 		xyzabc[i] = save + config->hess_delta;
