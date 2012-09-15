@@ -3,7 +3,7 @@ AC_INIT([libefp],
 	[0.9],
 	[ilya.kaliman@gmail.com],
 	[libefp],
-	[http://libefp.github.com/])
+	[http://www.libefp.org/])
 AC_CONFIG_SRCDIR([src/efp.c])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([

@@ -35,10 +35,10 @@ file.
 
 \par How to get the source code
 
-Latest development version of code can be found in git
-<a href="http://github.com/libefp/libefp"><i>repository</i></a>.
+Latest development version of code can be viewed online
+<a href="http://github.com/libefp/libefp"><i>here</i></a>.
 
-To get the source code use:
+To get the latest source tree use:
 
 \verbatim
 git clone git://github.com/libefp/libefp.git

@@ -85,7 +85,7 @@ After that proceed with compilation as usual.
 ## How to use the library
 
 The description of the public API functions and structures provided by the
-library is available at project's web site at http://libefp.github.com/.
+library is available at project's web site at http://www.libefp.org/.
 
 To obtain an executable program link with provided shared (recommended) or
 static libraries:

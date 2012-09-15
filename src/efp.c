@@ -887,7 +887,7 @@ efp_banner(void)
 		"LIBEFP ver. " LIBEFP_VERSION "\n"
 		"Copyright (c) 2012 Ilya Kaliman\n"
 		"See LICENSE file for licensing terms\n"
-		"Project web site: http://libefp.github.com/\n";
+		"Project web site: http://www.libefp.org/\n";
 
 	return banner;
 }
