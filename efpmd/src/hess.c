@@ -32,6 +32,8 @@ void sim_hess(struct efp *, const struct config *);
 
 void sim_hess(struct efp *efp, const struct config *config)
 {
+	printf("HESSIAN JOB\n\n\n");
+
 	enum efp_result res;
 	int n_frags = config->n_frags;
 	int n_coord = 6 * n_frags;
@@ -87,4 +89,6 @@ void sim_hess(struct efp *efp, const struct config *config)
 	free(grad);
 	free(grad_0);
 	free(hess);
+
+	printf("HESSIAN JOB COMPLETED SUCCESSFULLY\n");
 }

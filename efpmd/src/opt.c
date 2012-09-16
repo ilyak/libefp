@@ -130,6 +130,8 @@ static void print_status(struct efp *efp, double e_diff, double rms_grad,
 
 void sim_opt(struct efp *efp, const struct config *config)
 {
+	printf("ENERGY MINIMIZATION JOB\n\n\n");
+
 	int n_frag;
 	enum efp_result res;
 
@@ -182,4 +184,6 @@ void sim_opt(struct efp *efp, const struct config *config)
 	}
 
 	opt_shutdown(state);
+
+	printf("ENERGY MINIMIZATION JOB COMPLETED SUCCESSFULLY\n");
 }

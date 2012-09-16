@@ -34,27 +34,14 @@ void sim_md(struct efp *, const struct config *);
 
 static void run_sim(struct efp *efp, const struct config *config)
 {
-	static const struct {
-		const char *run_type;
-		const char *description;
-		void (*sim_fn)(struct efp *, const struct config *);
-	} sim_list[] = {
-		{ "sp",   "SINGLE POINT ENERGY JOB", sim_sp   },
-		{ "grad", "ENERGY GRADIENT JOB",     sim_grad },
-		{ "hess", "HESSIAN JOB",             sim_hess },
-		{ "opt",  "ENERGY MINIMIZATION JOB", sim_opt  },
-		{ "md",   "MOLECULAR DYNAMICS JOB",  sim_md   }
-	};
-
-	for (size_t i = 0; i < ARRAY_SIZE(sim_list); i++) {
-		if (streq(config->run_type, sim_list[i].run_type)) {
-			printf("%s\n\n\n", sim_list[i].description);
-			sim_list[i].sim_fn(efp, config);
-			return;
-		}
+	switch (config->run_type) {
+		case RUN_TYPE_SP:   sim_sp(efp, config);   return;
+		case RUN_TYPE_GRAD: sim_grad(efp, config); return;
+		case RUN_TYPE_HESS: sim_hess(efp, config); return;
+		case RUN_TYPE_OPT:  sim_opt(efp, config);  return;
+		case RUN_TYPE_MD:   sim_md(efp, config);   return;
 	}
-
-	error("UNKNOWN RUN TYPE SPECIFIED");
+	assert(0);
 }
 
 static void print_banner(void)
@@ -177,7 +164,7 @@ static int get_coord_count(enum efp_coord_type coord_type)
 		case EFP_COORD_TYPE_XYZABC: return  6;
 		case EFP_COORD_TYPE_POINTS: return  9;
 		case EFP_COORD_TYPE_ROTMAT: return 12;
-	};
+	}
 	assert(0);
 }
 
@@ -209,10 +196,7 @@ int main(int argc, char **argv)
 	parse_config(argv[1], &config);
 	init_efp(&efp, &config);
 	set_coord(efp, &config);
-
 	run_sim(efp, &config);
-	printf("SIMULATION COMPLETED SUCCESSFULLY\n");
-
 	efp_shutdown(efp);
 	free_config(&config);
 

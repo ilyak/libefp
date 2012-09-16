@@ -30,6 +30,8 @@ void sim_sp(struct efp *, const struct config *);
 
 void sim_sp(struct efp *efp, UNUSED const struct config *config)
 {
+	printf("SINGLE POINT ENERGY JOB\n\n\n");
+
 	enum efp_result res;
 
 	print_geometry(efp);
@@ -38,4 +40,6 @@ void sim_sp(struct efp *efp, UNUSED const struct config *config)
 		lib_error(res);
 
 	print_energy(efp);
+
+	printf("SINGLE POINT ENERGY JOB COMPLETED SUCCESSFULLY\n");
 }

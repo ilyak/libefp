@@ -180,6 +180,26 @@ static bool parse_enum(char **str, void *out, const char *names, const void *val
 	return false;
 }
 
+static bool parse_run_type(char **str, void *out)
+{
+	static const char names[] =
+		"sp\n"
+		"grad\n"
+		"hess\n"
+		"opt\n"
+		"md";
+
+	static const enum run_type values[] = {
+		RUN_TYPE_SP,
+		RUN_TYPE_GRAD,
+		RUN_TYPE_HESS,
+		RUN_TYPE_OPT,
+		RUN_TYPE_MD
+	};
+
+	return parse_enum(str, out, names, values, sizeof(values[0]));
+}
+
 static bool parse_coord(char **str, void *out)
 {
 	static const char names[] =
@@ -319,7 +339,7 @@ static const struct {
 	bool (*check_fn)(void *);
 	size_t member_offset;
 } config_list[] = {
-	{ "run_type",     "sp",               parse_string,    NULL,           offsetof(struct config, run_type)      },
+	{ "run_type",     "sp",               parse_run_type,  NULL,           offsetof(struct config, run_type)      },
 	{ "coord",        "xyzabc",           parse_coord,     NULL,           offsetof(struct config, coord_type)    },
 	{ "units",        "angs",             parse_units,     NULL,           offsetof(struct config, units_factor)  },
 	{ "terms",        "elec pol disp xr", parse_terms,     NULL,           offsetof(struct config, terms)         },
@@ -483,7 +503,6 @@ next:
 
 void free_config(struct config *config)
 {
-	free(config->run_type);
 	free(config->fraglib_path);
 	free(config->userlib_path);
 

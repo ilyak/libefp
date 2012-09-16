@@ -3,8 +3,16 @@
 
 #include <efp.h>
 
+enum run_type {
+	RUN_TYPE_SP,
+	RUN_TYPE_GRAD,
+	RUN_TYPE_HESS,
+	RUN_TYPE_OPT,
+	RUN_TYPE_MD
+};
+
 enum ensemble_type {
-	ENSEMBLE_TYPE_NVE = 0,
+	ENSEMBLE_TYPE_NVE,
 	ENSEMBLE_TYPE_NVT
 };
 
@@ -15,7 +23,7 @@ struct frag {
 };
 
 struct config {
-	char *run_type;
+	enum run_type run_type;
 	enum efp_coord_type coord_type;
 	double units_factor;
 	unsigned terms;

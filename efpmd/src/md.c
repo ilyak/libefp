@@ -542,6 +542,8 @@ static void md_shutdown(struct md *md)
 
 void sim_md(struct efp *efp, const struct config *config)
 {
+	printf("MOLECULAR DYNAMICS JOB\n\n\n");
+
 	struct md *md = md_create(efp, config);
 
 	remove_system_drift(md);
@@ -560,4 +562,6 @@ void sim_md(struct efp *efp, const struct config *config)
 	}
 
 	md_shutdown(md);
+
+	printf("MOLECULAR DYNAMICS JOB COMPLETED SUCCESSFULLY\n");
 }
