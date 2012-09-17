@@ -22,7 +22,6 @@ EXTRA_DIST += \
 	src/BSDmakefile \
 	tests/BSDmakefile \
 	efpmd/BSDmakefile \
-	efpmd/cubegen/BSDmakefile \
 	efpmd/optimizer/BSDmakefile \
 	efpmd/src/BSDmakefile
 
@@ -75,9 +74,7 @@ src_libefp_la_LDFLAGS = $(AM_LDFLAGS) \
 	-version-info $(VERSION_MAJOR):$(VERSION_MINOR)
 
 if BUILD_EFPMD
-bin_PROGRAMS = \
-	efpmd/src/efpmd \
-	efpmd/cubegen/cubegen
+bin_PROGRAMS = efpmd/src/efpmd
 endif
 
 efpmd_src_efpmd_SOURCES = \
@@ -111,12 +108,11 @@ efpmd_src_efpmd_CPPFLAGS = $(AM_CPPFLAGS) \
 	-DEFP_DATA_DIR=\""$(datarootdir)/libefp"\" \
 	-DEFPMD_VERSION=\""$(VERSION_MAJOR).$(VERSION_MINOR)"\"
 
-efpmd_cubegen_cubegen_SOURCES = \
-	efpmd/cubegen/cubegen.c
-
 EXTRA_DIST += \
 	efpmd/README.md \
 	efpmd/optimizer/License.txt \
+	efpmd/scripts/cubegen.pl \
+	efpmd/scripts/trajectory.pl \
 	efpmd/examples/c6h6-dimer_opt.in \
 	efpmd/examples/h2o-ch3oh_hess.in \
 	efpmd/examples/h2o-dimer_opt.in \
