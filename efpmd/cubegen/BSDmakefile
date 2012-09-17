@@ -1,6 +1,0 @@
-PROG=		cubegen
-WARNS=		6
-NO_MAN=		yes
-SRCS=		cubegen.c
-
-.include <bsd.prog.mk>
