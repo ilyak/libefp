@@ -288,15 +288,17 @@ pol_scf_iter(struct efp *efp)
 		for (int j = 0; j < frag->n_polarizable_pts; j++) {
 			struct polarizable_pt *pt = frag->polarizable_pts + j;
 
-			conv += vec_dist_2(&pt->induced_dipole_new,
-					   &pt->induced_dipole);
+			conv += vec_dist(&pt->induced_dipole_new,
+					 &pt->induced_dipole);
+			conv += vec_dist(&pt->induced_dipole_conj_new,
+					 &pt->induced_dipole_conj);
 
 			pt->induced_dipole = pt->induced_dipole_new;
 			pt->induced_dipole_conj = pt->induced_dipole_conj_new;
 		}
 	}
 
-	return conv / n_pt;
+	return conv / n_pt / 2;
 }
 
 enum efp_result
