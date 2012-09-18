@@ -29,6 +29,9 @@
 #include "efp_private.h"
 #include "elec.h"
 
+#define POL_SCF_TOL 1.0e-10
+#define POL_SCF_MAX_ITER 80
+
 static double
 get_pol_damp_tt(double r)
 {

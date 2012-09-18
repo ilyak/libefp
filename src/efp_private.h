@@ -40,9 +40,6 @@
 #define ARRAY_SIZE(arr) (sizeof(arr)/sizeof(arr[0]))
 #define EFP_INIT_MAGIC 0xEF2012AD
 
-#define POL_SCF_TOL 1.0e-10
-#define POL_SCF_MAX_ITER 80
-
 struct frag {
 	/* fragment name */
 	char *name;
