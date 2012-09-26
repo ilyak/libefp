@@ -843,6 +843,63 @@ efp_get_frag_name(struct efp *efp, int frag_idx, int size, char *frag_name)
 }
 
 EFP_EXPORT enum efp_result
+efp_get_frag_mass(struct efp *efp, int frag_idx, double *mass_out)
+{
+	if (!initialized(efp))
+		return EFP_RESULT_NOT_INITIALIZED;
+
+	if (!mass_out)
+		return EFP_RESULT_ARGUMENT_NULL;
+
+	if (frag_idx < 0 || frag_idx >= efp->n_frag)
+		return EFP_RESULT_INDEX_OUT_OF_RANGE;
+
+	const struct frag *frag = efp->frags + frag_idx;
+	double mass = 0.0;
+
+	for (int i = 0; i < frag->n_atoms; i++)
+		mass += frag->atoms[i].mass;
+
+	*mass_out = mass;
+	return EFP_RESULT_SUCCESS;
+}
+
+EFP_EXPORT enum efp_result
+efp_get_frag_inertia(struct efp *efp, int frag_idx, double *inertia_out)
+{
+	if (!initialized(efp))
+		return EFP_RESULT_NOT_INITIALIZED;
+
+	if (!inertia_out)
+		return EFP_RESULT_ARGUMENT_NULL;
+
+	if (frag_idx < 0 || frag_idx >= efp->n_frag)
+		return EFP_RESULT_INDEX_OUT_OF_RANGE;
+
+	const struct frag *frag = efp->frags[frag_idx].lib;
+	vec_t inertia = { 0.0, 0.0, 0.0 };
+
+	for (int i = 0; i < frag->n_atoms; i++) {
+		const struct efp_atom *atom = frag->atoms + i;
+
+		/* center of mass is in origin */
+		/* axes are principal axes of inertia */
+
+		vec_t dr = { atom->x, atom->y, atom->z };
+
+		inertia.x += atom->mass * (dr.y * dr.y + dr.z * dr.z);
+		inertia.y += atom->mass * (dr.x * dr.x + dr.z * dr.z);
+		inertia.z += atom->mass * (dr.x * dr.x + dr.y * dr.y);
+	}
+
+	inertia_out[0] = inertia.x;
+	inertia_out[1] = inertia.y;
+	inertia_out[2] = inertia.z;
+
+	return EFP_RESULT_SUCCESS;
+}
+
+EFP_EXPORT enum efp_result
 efp_get_frag_atom_count(struct efp *efp, int frag_idx, int *n_atoms)
 {
 	if (!initialized(efp))

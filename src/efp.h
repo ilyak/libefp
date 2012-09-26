@@ -520,6 +520,35 @@ enum efp_result efp_get_frag_name(struct efp *efp,
 				  char *frag_name);
 
 /**
+ * Get total mass of a fragment.
+ *
+ * \param[in] efp The efp structure.
+ * \param[in] frag_idx Index of a fragment. Must be a value between zero and
+ *                     the total number of fragments minus one.
+ * \param[out] mass_out Output mass value.
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_get_frag_mass(struct efp *efp,
+				  int frag_idx,
+				  double *mass_out);
+
+/**
+ * Get fragment principal moments of inertia.
+ *
+ * \param[in] efp The efp structure.
+ * \param[in] frag_idx Index of a fragment. Must be a value between zero and
+ *                     the total number of fragments minus one.
+ * \param[out] inertia_out Array of 3 elements where principal moments of
+ *                         inertia of a fragment will be stored.
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_get_frag_inertia(struct efp *efp,
+				     int frag_idx,
+				     double *inertia_out);
+
+/**
  * Get the number of atoms in the specified fragment.
  *
  * \param[in] efp The efp structure.
