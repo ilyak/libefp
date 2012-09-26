@@ -43,7 +43,7 @@ struct config {
 	struct frag *frags;
 };
 
-void parse_config(const char *, struct config *);
+struct config *parse_config(const char *);
 void free_config(struct config *);
 
 #endif /* EFPMD_CFG_H */

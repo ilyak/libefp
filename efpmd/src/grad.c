@@ -32,13 +32,8 @@ void sim_grad(struct efp *efp, UNUSED const struct config *config)
 {
 	printf("ENERGY GRADIENT JOB\n\n\n");
 
-	enum efp_result res;
-
 	print_geometry(efp);
-
-	if ((res = efp_compute(efp, 1)))
-		lib_error(res);
-
+	check_fail(efp_compute(efp, 1));
 	print_energy(efp);
 	print_gradient(efp);
 

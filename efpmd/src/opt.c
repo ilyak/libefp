@@ -29,60 +29,42 @@
 
 #include "common.h"
 
-#define PI 3.14159265358979323846
-
 void sim_opt(struct efp *, const struct config *);
 
 static double compute_efp(int n, const double *x, double *gx, void *data)
 {
 	struct efp *efp = (struct efp *)data;
 
-	int n_frag;
-	enum efp_result res;
+	int n_frags;
+	check_fail(efp_get_frag_count(efp, &n_frags));
 
-	if ((res = efp_get_frag_count(efp, &n_frag)))
-		lib_error(res);
+	assert(n == 6 * n_frags);
 
-	assert(n == 6 * n_frag);
-
-	if ((res = efp_set_coordinates(efp, EFP_COORD_TYPE_XYZABC, x)))
-		lib_error(res);
-
-	if ((res = efp_compute(efp, 1)))
-		lib_error(res);
+	check_fail(efp_set_coordinates(efp, EFP_COORD_TYPE_XYZABC, x));
+	check_fail(efp_compute(efp, 1));
 
 	struct efp_energy energy;
+	check_fail(efp_get_energy(efp, &energy));
 
-	if ((res = efp_get_energy(efp, &energy)))
-		lib_error(res);
-
-	if ((res = efp_get_gradient(efp, n_frag, gx)))
-		lib_error(res);
-
-	torque_to_deriv(n_frag, x, gx);
+	check_fail(efp_get_gradient(efp, n_frags, gx));
+	torque_to_deriv(n_frags, x, gx);
 
 	return energy.total;
 }
 
 static void print_restart(struct efp *efp)
 {
-	int n_frag;
-	enum efp_result res;
+	int n_frags;
+	check_fail(efp_get_frag_count(efp, &n_frags));
 
-	if ((res = efp_get_frag_count(efp, &n_frag)))
-		lib_error(res);
-
-	char name[64];
-	double coord[6 * n_frag];
-
-	if ((res = efp_get_coordinates(efp, n_frag, coord)))
-		lib_error(res);
+	double coord[6 * n_frags];
+	check_fail(efp_get_coordinates(efp, n_frags, coord));
 
 	printf("    RESTART DATA (ATOMIC UNITS)\n\n");
 
-	for (int i = 0; i < n_frag; i++) {
-		if ((res = efp_get_frag_name(efp, i, sizeof(name), name)))
-			lib_error(res);
+	for (int i = 0; i < n_frags; i++) {
+		char name[64];
+		check_fail(efp_get_frag_name(efp, i, sizeof(name), name));
 
 		print_fragment(name, coord + 6 * i, NULL);
 	}
@@ -132,15 +114,8 @@ void sim_opt(struct efp *efp, const struct config *config)
 {
 	printf("ENERGY MINIMIZATION JOB\n\n\n");
 
-	int n_frag;
-	enum efp_result res;
-
-	if ((res = efp_get_frag_count(efp, &n_frag)))
-		lib_error(res);
-
-	int n_coord = 6 * n_frag;
+	int n_coord = 6 * config->n_frags;
 	double rms_grad, max_grad;
-	double coord[n_coord], grad[n_coord];
 
 	struct opt_state *state = opt_create(n_coord);
 	if (!state)
@@ -149,8 +124,8 @@ void sim_opt(struct efp *efp, const struct config *config)
 	opt_set_func(state, compute_efp);
 	opt_set_user_data(state, efp);
 
-	if ((res = efp_get_coordinates(efp, n_frag, coord)))
-		lib_error(res);
+	double coord[n_coord], grad[n_coord];
+	check_fail(efp_get_coordinates(efp, config->n_frags, coord));
 
 	if (opt_init(state, n_coord, coord))
 		error("UNABLE TO INITIALIZE AN OPTIMIZER");

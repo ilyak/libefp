@@ -5,13 +5,15 @@ PROG=		efpmd
 WARNS=		6
 NO_MAN=		yes
 
-DEBUG_FLAGS?=	-O0 -g
-OMP_CFLAGS?=	-fopenmp
-CBLAS_LIBS?=	-lcblas -latlas
-FORTRAN_LIBS?=	-lgfortran
+USER_CFLAGS?=	-fopenmp
+CFLAGS+=	${USER_CFLAGS}
 
-CFLAGS+=	${OMP_CFLAGS} \
-		-I${.CURDIR}/../../common \
+USER_LIBS?=	-lalapack -lcblas -lf77blas -latlas -lgfortran -lm
+LDADD+=		${USER_LIBS}
+
+DEBUG_FLAGS?=	-O0 -g
+
+CFLAGS+=	-I${.CURDIR}/../../common \
 		-I${.CURDIR}/../../src \
 		-I${.CURDIR}/../optimizer \
 		-DEFP_DATA_DIR="\"${.CURDIR}/../../fraglib\"" \
@@ -20,12 +22,9 @@ CFLAGS+=	${OMP_CFLAGS} \
 LDADD+=		-L${.OBJDIR}/../../common \
 		-L${.OBJDIR}/../../src \
 		-L${.OBJDIR}/../optimizer \
-		-lefp \
 		-lcommon \
-		-loptimizer \
-		${CBLAS_LIBS} \
-		-lm \
-		${FORTRAN_LIBS}
+		-lefp \
+		-loptimizer
 
 SRCS=		common.c \
 		grad.c \

@@ -78,13 +78,16 @@ static char *make_name_list(const struct config *config)
 	return names;
 }
 
+/**
+ * This function constructs the list of library potential data files from
+ * the list of fragment names.
+ *
+ * For each unique fragment: if fragment name contains an _l suffix append
+ * fraglib_path prefix and remove _l suffix. Otherwise append userlib_path
+ * prefix. Add ".efp" extension in both cases.
+ */
 static char *make_potential_file_list(const struct config *config)
 {
-	/* This function constructs the list of library potential data files.
-	 * For each unique fragment if fragment name contains an _l suffix
-	 * append fraglib_path prefix and remove _l suffix. Otherwise append
-	 * userlib_path prefix. Add .efp extension in both cases. */
-
 	const char *unique[config->n_frags];
 
 	for (int i = 0; i < config->n_frags; i++)
@@ -137,10 +140,8 @@ static char *make_potential_file_list(const struct config *config)
 	return files;
 }
 
-static void init_efp(struct efp **efp, const struct config *config)
+static struct efp *init_efp(const struct config *config)
 {
-	enum efp_result res;
-
 	struct efp_opts opts = {
 		.terms = config->terms,
 		.elec_damp = config->elec_damp,
@@ -151,11 +152,13 @@ static void init_efp(struct efp **efp, const struct config *config)
 	char *files = make_potential_file_list(config);
 	char *names = make_name_list(config);
 
-	if ((res = efp_init(efp, &opts, NULL, files, names)))
-		lib_error(res);
+	struct efp *efp;
+	check_fail(efp_init(&efp, &opts, NULL, files, names));
 
 	free(files);
 	free(names);
+
+	return efp;
 }
 
 static int get_coord_count(enum efp_coord_type coord_type)
@@ -171,17 +174,12 @@ static int get_coord_count(enum efp_coord_type coord_type)
 static void set_coord(struct efp *efp, const struct config *config)
 {
 	int n_coord = get_coord_count(config->coord_type);
-	double *coord = xmalloc(n_coord * config->n_frags * sizeof(double));
+	double coord[n_coord * config->n_frags];
 
 	for (int i = 0; i < config->n_frags; i++)
 		memcpy(coord + n_coord * i, config->frags[i].coord, n_coord * sizeof(double));
 
-	enum efp_result res;
-
-	if ((res = efp_set_coordinates(efp, config->coord_type, coord)))
-		lib_error(res);
-
-	free(coord);
+	check_fail(efp_set_coordinates(efp, config->coord_type, coord));
 }
 
 int main(int argc, char **argv)
@@ -189,16 +187,16 @@ int main(int argc, char **argv)
 	if (argc < 2)
 		die("usage: efpmd <input>");
 
-	struct efp *efp;
-	struct config config;
-
 	print_banner();
-	parse_config(argv[1], &config);
-	init_efp(&efp, &config);
-	set_coord(efp, &config);
-	run_sim(efp, &config);
+
+	struct config *config = parse_config(argv[1]);
+	struct efp *efp = init_efp(config);
+
+	set_coord(efp, config);
+	run_sim(efp, config);
+
 	efp_shutdown(efp);
-	free_config(&config);
+	free_config(config);
 
 	return EXIT_SUCCESS;
 }

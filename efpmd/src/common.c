@@ -53,9 +53,10 @@ void NORETURN error(const char *format, ...)
 	die("ERROR: %s", buf);
 }
 
-void NORETURN lib_error(enum efp_result res)
+void check_fail(enum efp_result res)
 {
-	die("LIBEFP ERROR: %s", efp_result_to_string(res));
+	if (res)
+		die("LIBEFP ERROR: %s", efp_result_to_string(res));
 }
 
 void *xmalloc(size_t size)
@@ -90,29 +91,23 @@ void *xrealloc(void *ptr, size_t size)
 
 void print_geometry(struct efp *efp)
 {
-	int n_frag;
-	enum efp_result res;
-
-	if ((res = efp_get_frag_count(efp, &n_frag)))
-		lib_error(res);
+	int n_frags;
+	check_fail(efp_get_frag_count(efp, &n_frags));
 
 	printf("    GEOMETRY (ANGSTROMS)\n\n");
 
-	for (int i = 0; i < n_frag; i++) {
+	for (int i = 0; i < n_frags; i++) {
 		int n_atoms;
-		if ((res = efp_get_frag_atom_count(efp, i, &n_atoms)))
-			lib_error(res);
+		check_fail(efp_get_frag_atom_count(efp, i, &n_atoms));
 
 		struct efp_atom atoms[n_atoms];
-		if ((res = efp_get_frag_atoms(efp, i, n_atoms, atoms)))
-			lib_error(res);
+		check_fail(efp_get_frag_atoms(efp, i, n_atoms, atoms));
 
 		for (int a = 0; a < n_atoms; a++) {
-			struct efp_atom *atom = atoms + a;
-			printf("%s %12.6lf %12.6lf %12.6lf\n", atom->label,
-					BOHR_TO_ANGSTROM(atom->x),
-					BOHR_TO_ANGSTROM(atom->y),
-					BOHR_TO_ANGSTROM(atom->z));
+			printf("%s %12.6lf %12.6lf %12.6lf\n", atoms[a].label,
+					BOHR_TO_ANGSTROM(atoms[a].x),
+					BOHR_TO_ANGSTROM(atoms[a].y),
+					BOHR_TO_ANGSTROM(atoms[a].z));
 		}
 	}
 
@@ -121,11 +116,8 @@ void print_geometry(struct efp *efp)
 
 void print_energy(struct efp *efp)
 {
-	enum efp_result res;
 	struct efp_energy energy;
-
-	if ((res = efp_get_energy(efp, &energy)))
-		lib_error(res);
+	check_fail(efp_get_energy(efp, &energy));
 
 	printf("    ENERGY COMPONENTS (ATOMIC UNITS)\n\n");
 	printf("         ELECTROSTATIC ENERGY %16.10lf\n", energy.electrostatic);
@@ -140,21 +132,15 @@ void print_energy(struct efp *efp)
 
 void print_gradient(struct efp *efp)
 {
-	int n_frag;
-	enum efp_result res;
+	int n_frags;
+	check_fail(efp_get_frag_count(efp, &n_frags));
 
-	if ((res = efp_get_frag_count(efp, &n_frag)))
-		lib_error(res);
+	double grad[6 * n_frags];
+	check_fail(efp_get_gradient(efp, n_frags, grad));
 
-	char name[64];
-	double grad[6 * n_frag];
-
-	if ((res = efp_get_gradient(efp, n_frag, grad)))
-		lib_error(res);
-
-	for (int i = 0; i < n_frag; i++) {
-		if ((res = efp_get_frag_name(efp, i, sizeof(name), name)))
-			lib_error(res);
+	for (int i = 0; i < n_frags; i++) {
+		char name[64];
+		check_fail(efp_get_frag_name(efp, i, sizeof(name), name));
 
 		printf("    GRADIENT ON FRAGMENT %d (%s)\n", i + 1, name);
 		printf("\nFORCE  ");
@@ -188,6 +174,24 @@ void print_fragment(const char *name, const double *xyzabc, const double *vel)
 	}
 
 	printf("\n\n");
+}
+
+void print_vector(int len, const double *vec)
+{
+	static const int CPS = 4;
+
+	for (int i = 0; i < len; i += CPS) {
+		int left = len - i > CPS ? CPS : len - i;
+
+		printf("%8d  ", i + 1);
+
+		for (int ii = 0; ii < left; ii++)
+			printf("%16.8E", vec[i + ii]);
+
+		printf("\n");
+	}
+
+	printf("\n");
 }
 
 void print_matrix(int rows, int cols, const double *mat)

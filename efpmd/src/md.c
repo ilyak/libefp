@@ -38,6 +38,7 @@ struct body {
 	vec_t force;
 	vec_t torque;
 	vec_t inertia;
+	vec_t inertia_inv;
 	double mass;
 };
 
@@ -65,11 +66,9 @@ static double get_kinetic_energy(const struct md *md)
 		ke += body->mass * body->vel.y * body->vel.y;
 		ke += body->mass * body->vel.z * body->vel.z;
 
-		if (body->inertia.x > EPSILON) /* non-linear body */
-			ke += body->angmom.x * body->angmom.x / body->inertia.x;
-
-		ke += body->angmom.y * body->angmom.y / body->inertia.y;
-		ke += body->angmom.z * body->angmom.z / body->inertia.z;
+		ke += body->angmom.x * body->angmom.x * body->inertia_inv.x;
+		ke += body->angmom.y * body->angmom.y * body->inertia_inv.y;
+		ke += body->angmom.z * body->angmom.z * body->inertia_inv.z;
 	}
 
 	return 0.5 * ke;
@@ -245,26 +244,18 @@ static void make_coord_array(const struct md *md, double *coord)
 
 static void compute_forces(struct md *md)
 {
-	enum efp_result res;
 	struct efp_energy energy;
 	double coord[12 * md->n_bodies];
 	double grad[6 * md->n_bodies];
 
 	make_coord_array(md, coord);
 
-	if ((res = efp_set_coordinates(md->efp, EFP_COORD_TYPE_ROTMAT, coord)))
-		lib_error(res);
-
-	if ((res = efp_compute(md->efp, 1)))
-		lib_error(res);
-
-	if ((res = efp_get_energy(md->efp, &energy)))
-		lib_error(res);
+	check_fail(efp_set_coordinates(md->efp, EFP_COORD_TYPE_ROTMAT, coord));
+	check_fail(efp_compute(md->efp, 1));
+	check_fail(efp_get_energy(md->efp, &energy));
+	check_fail(efp_get_gradient(md->efp, md->n_bodies, grad));
 
 	md->potential_energy = energy.total;
-
-	if ((res = efp_get_gradient(md->efp, md->n_bodies, grad)))
-		lib_error(res);
 
 	for (int i = 0; i < md->n_bodies; i++) {
 		struct body *body = md->bodies + i;
@@ -281,44 +272,22 @@ static void compute_forces(struct md *md)
 	}
 }
 
-static void set_body_mass_and_inertia(struct body *body, int n_atoms,
-		const struct efp_atom *atoms)
+static void set_body_mass_and_inertia(struct efp *efp, int idx, struct body *body)
 {
-	mat_t inertia = { 0.0, 0.0, 0.0,
-			  0.0, 0.0, 0.0,
-			  0.0, 0.0, 0.0 };
-	body->mass = 0.0;
+	double mass, inertia[3];
 
-	for (int i = 0; i < n_atoms; i++) {
-		const struct efp_atom *atom = atoms + i;
+	check_fail(efp_get_frag_mass(efp, idx, &mass));
+	check_fail(efp_get_frag_inertia(efp, idx, inertia));
 
-		vec_t dr = { atom->x - body->pos.x,
-			     atom->y - body->pos.y,
-			     atom->z - body->pos.z };
+	body->mass = AMU_TO_AU * mass;
 
-		dr = mat_trans_vec(&body->rotmat, &dr);
+	body->inertia.x = AMU_TO_AU * inertia[0];
+	body->inertia.y = AMU_TO_AU * inertia[1];
+	body->inertia.z = AMU_TO_AU * inertia[2];
 
-		inertia.xx += atom->mass * (dr.y * dr.y + dr.z * dr.z);
-		inertia.yy += atom->mass * (dr.x * dr.x + dr.z * dr.z);
-		inertia.zz += atom->mass * (dr.x * dr.x + dr.y * dr.y);
-		inertia.xy -= atom->mass * dr.x * dr.y;
-		inertia.xz -= atom->mass * dr.x * dr.z;
-		inertia.yz -= atom->mass * dr.y * dr.z;
-
-		body->mass += AMU_TO_AU * atom->mass;
-	}
-
-	if (fabs(inertia.xy) > EPSILON ||
-	    fabs(inertia.xz) > EPSILON ||
-	    fabs(inertia.yz) > EPSILON ||
-	    inertia.xx > inertia.yy ||
-	    inertia.yy > inertia.zz ||
-	    inertia.yy < EPSILON)
-		error("INCORRECT FRAGMENT FRAME");
-
-	body->inertia.x = AMU_TO_AU * inertia.xx;
-	body->inertia.y = AMU_TO_AU * inertia.yy;
-	body->inertia.z = AMU_TO_AU * inertia.zz;
+	body->inertia_inv.x = body->inertia.x < EPSILON ? 0.0 : 1.0 / body->inertia.x;
+	body->inertia_inv.y = body->inertia.y < EPSILON ? 0.0 : 1.0 / body->inertia.y;
+	body->inertia_inv.z = body->inertia.z < EPSILON ? 0.0 : 1.0 / body->inertia.z;
 }
 
 static void rotate_step(int a1, int a2, double angle, vec_t *angmom, mat_t *rotmat)
@@ -349,28 +318,24 @@ static void rotate_body(struct body *body, double dt)
 	double angle;
 
 	/* rotate about x axis */
-	if (body->inertia.x > EPSILON) { /* non-linear body */
-		angle = 0.5 * dt * body->angmom.x / body->inertia.x;
-		rotate_step(1, 2, angle, &body->angmom, &body->rotmat);
-	}
+	angle = 0.5 * dt * body->angmom.x * body->inertia_inv.x;
+	rotate_step(1, 2, angle, &body->angmom, &body->rotmat);
 
 	/* rotate about y axis */
-	angle = 0.5 * dt * body->angmom.y / body->inertia.y;
+	angle = 0.5 * dt * body->angmom.y * body->inertia_inv.y;
 	rotate_step(2, 0, angle, &body->angmom, &body->rotmat);
 
 	/* rotate about z axis */
-	angle = dt * body->angmom.z / body->inertia.z;
+	angle = dt * body->angmom.z * body->inertia_inv.z;
 	rotate_step(0, 1, angle, &body->angmom, &body->rotmat);
 
 	/* rotate about y axis */
-	angle = 0.5 * dt * body->angmom.y / body->inertia.y;
+	angle = 0.5 * dt * body->angmom.y * body->inertia_inv.y;
 	rotate_step(2, 0, angle, &body->angmom, &body->rotmat);
 
 	/* rotate about x axis */
-	if (body->inertia.x > EPSILON) { /* non-linear body */
-		angle = 0.5 * dt * body->angmom.x / body->inertia.x;
-		rotate_step(1, 2, angle, &body->angmom, &body->rotmat);
-	}
+	angle = 0.5 * dt * body->angmom.x * body->inertia_inv.x;
+	rotate_step(1, 2, angle, &body->angmom, &body->rotmat);
 }
 
 static void update_step_nve(struct md *md)
@@ -425,16 +390,13 @@ static void print_info(const struct md *md)
 
 static void print_restart(const struct md *md)
 {
-	char name[64];
-	enum efp_result res;
-
 	printf("    RESTART DATA (ATOMIC UNITS)\n\n");
 
 	for (int i = 0; i < md->n_bodies; i++) {
 		struct body *body = md->bodies + i;
 
-		if ((res = efp_get_frag_name(md->efp, i, sizeof(name), name)))
-			lib_error(res);
+		char name[64];
+		check_fail(efp_get_frag_name(md->efp, i, sizeof(name), name));
 
 		double xyzabc[6] = { body->pos.x,
 				     body->pos.y,
@@ -445,10 +407,9 @@ static void print_restart(const struct md *md)
 		double vel[6] = { body->vel.x,
 				  body->vel.y,
 				  body->vel.z,
-				  body->inertia.x > EPSILON ?
-					body->angmom.x / body->inertia.x : 0.0,
-				  body->angmom.y / body->inertia.y,
-				  body->angmom.z / body->inertia.z };
+				  body->angmom.x * body->inertia_inv.x,
+				  body->angmom.y * body->inertia_inv.y,
+				  body->angmom.z * body->inertia_inv.z };
 
 		print_fragment(name, xyzabc, vel);
 	}
@@ -476,17 +437,11 @@ static struct md *md_create(struct efp *efp, const struct config *config)
 			assert(0);
 	}
 
-	enum efp_result res;
-
-	if ((res = efp_get_frag_count(efp, &md->n_bodies)))
-		lib_error(res);
-
+	md->n_bodies = config->n_frags;
 	md->bodies = xcalloc(md->n_bodies, sizeof(struct body));
 
 	double coord[6 * md->n_bodies];
-
-	if ((res = efp_get_coordinates(efp, md->n_bodies, coord)))
-		lib_error(res);
+	check_fail(efp_get_coordinates(efp, md->n_bodies, coord));
 
 	for (int i = 0; i < md->n_bodies; i++) {
 		struct body *body = md->bodies + i;
@@ -505,21 +460,20 @@ static struct md *md_create(struct efp *efp, const struct config *config)
 		body->vel.y = md->config->frags[i].vel[1];
 		body->vel.z = md->config->frags[i].vel[2];
 
-		int n_atoms;
-		if ((res = efp_get_frag_atom_count(efp, i, &n_atoms)))
-			lib_error(res);
-
-		struct efp_atom atoms[n_atoms];
-		if ((res = efp_get_frag_atoms(efp, i, n_atoms, atoms)))
-			lib_error(res);
-
-		set_body_mass_and_inertia(body, n_atoms, atoms);
+		set_body_mass_and_inertia(efp, i, body);
 
 		body->angmom.x = md->config->frags[i].vel[3] * body->inertia.x;
 		body->angmom.y = md->config->frags[i].vel[4] * body->inertia.y;
 		body->angmom.z = md->config->frags[i].vel[5] * body->inertia.z;
 
-		md->n_freedom += body->inertia.x > EPSILON ? 6 : 5;
+		md->n_freedom += 3;
+
+		if (body->inertia.x > EPSILON)
+			md->n_freedom++;
+		if (body->inertia.y > EPSILON)
+			md->n_freedom++;
+		if (body->inertia.z > EPSILON)
+			md->n_freedom++;
 	}
 
 	return md;

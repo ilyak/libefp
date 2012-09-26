@@ -448,8 +448,9 @@ static void set_config_defaults(struct config *config)
 	}
 }
 
-void parse_config(const char *path, struct config *config)
+struct config *parse_config(const char *path)
 {
+	struct config *config = xmalloc(sizeof(struct config));
 	set_config_defaults(config);
 
 	struct stream stream = {
@@ -499,6 +500,8 @@ next:
 
 	fclose(stream.in);
 	free(stream.buffer);
+
+	return config;
 }
 
 void free_config(struct config *config)
@@ -510,6 +513,5 @@ void free_config(struct config *config)
 		free(config->frags[i].name);
 
 	free(config->frags);
-
-	/* don't do free(config) here */
+	free(config);
 }

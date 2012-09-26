@@ -52,7 +52,8 @@
 
 void NORETURN die(const char *, ...);
 void NORETURN error(const char *, ...);
-void NORETURN lib_error(enum efp_result);
+
+void check_fail(enum efp_result);
 
 void *xmalloc(size_t);
 void *xcalloc(size_t, size_t);
@@ -62,6 +63,7 @@ void print_geometry(struct efp *);
 void print_energy(struct efp *);
 void print_gradient(struct efp *);
 void print_fragment(const char *, const double *, const double *);
+void print_vector(int, const double *);
 void print_matrix(int, int, const double *);
 
 #endif /* EFPMD_COMMON_H */
