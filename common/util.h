@@ -4,6 +4,7 @@
 #include "math_util.h"
 
 int check_rotation_matrix(const mat_t *);
+int matrix_eigen(const mat_t *, vec_t *, mat_t *);
 void matrix_to_euler(const mat_t *, double *, double *, double *);
 void euler_to_matrix(double, double, double, mat_t *);
 void points_to_matrix(const double *, mat_t *);

@@ -78,6 +78,8 @@ bin_PROGRAMS = efpmd/src/efpmd
 endif
 
 efpmd_src_efpmd_SOURCES = \
+	common/clapack.c \
+	common/clapack.h \
 	common/compat.c \
 	common/compat.h \
 	common/math_util.h \

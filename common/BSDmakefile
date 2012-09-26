@@ -8,6 +8,8 @@ OMP_CFLAGS?=	-fopenmp
 
 CFLAGS+=	${OMP_CFLAGS}
 
-SRCS=		compat.c util.c
+SRCS=		clapack.c \
+		compat.c \
+		util.c
 
 .include <bsd.lib.mk>
