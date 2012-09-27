@@ -10,6 +10,7 @@
 .depend
 .deps/
 .libs/
+tags
 
 /Makefile
 /Makefile.in
@@ -21,9 +22,6 @@
 /html
 /libtool
 /stamp-h1
-/tags
 
 /efpmd/src/efpmd
-/efpmd/cubegen/cubegen
-
 /tests/test
