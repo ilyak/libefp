@@ -3,10 +3,10 @@ INTERNALLIB=	yes
 WARNS=		6
 NO_MAN=		yes
 
-DEBUG_FLAGS?=	-O0 -g
-OMP_CFLAGS?=	-fopenmp
+USER_CFLAGS?=	-fopenmp
+CFLAGS+=	${USER_CFLAGS}
 
-CFLAGS+=	${OMP_CFLAGS}
+DEBUG_FLAGS?=	-O0 -g
 
 SRCS=		clapack.c \
 		compat.c \

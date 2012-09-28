@@ -2,12 +2,15 @@ PROG=		test
 WARNS=		6
 NO_MAN=		yes
 
-DEBUG_FLAGS?=	-O0 -g
-OMP_CFLAGS?=	-fopenmp
-CBLAS_LIBS?=	-lcblas -latlas
+USER_CFLAGS?=	-fopenmp
+CFLAGS+=	${USER_CFLAGS}
 
-CFLAGS+=	${OMP_CFLAGS} \
-		-I${.CURDIR}/../common \
+USER_LIBS?=	-lalapack -lcblas -lf77blas -latlas -lm
+LDADD+=		${USER_LIBS}
+
+DEBUG_FLAGS?=	-O0 -g
+
+CFLAGS+=	-I${.CURDIR}/../common \
 		-I${.CURDIR}/../src \
 		-DABS_TOP_SRCDIR="\"${.CURDIR}/..\""
 
@@ -15,8 +18,6 @@ LDADD+=		-L${.OBJDIR}/../common \
 		-L${.OBJDIR}/../src \
 		-lefp \
 		-lcommon \
-		${CBLAS_LIBS} \
-		-lm \
 		-lcheck
 
 SRCS=		test.c \
