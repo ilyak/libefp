@@ -26,15 +26,15 @@ To build LIBEFP from source you need the following:
 
 - GNU make
 
-If you are going to compile EFPMD you will need:
-
 - BLAS library (CBLAS)
+
+- LAPACK library
+
+If you are going to compile EFPMD you will need:
 
 - Fortran 77 compiler
 
 If you are going to run the test suite you will need:
-
-- BLAS library (CBLAS)
 
 - Check library (http://check.sourceforge.net/)
 
