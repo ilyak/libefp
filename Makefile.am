@@ -25,9 +25,6 @@ EXTRA_DIST += \
 	efpmd/optimizer/BSDmakefile \
 	efpmd/src/BSDmakefile
 
-include_HEADERS = src/efp.h
-lib_LTLIBRARIES = src/libefp.la
-
 dist_pkgdata_DATA = \
 	fraglib/makefp.inp \
 	fraglib/acetone.efp \
@@ -43,13 +40,23 @@ dist_pkgdata_DATA = \
 	fraglib/h2o.efp \
 	fraglib/nh3.efp
 
-src_libefp_la_SOURCES = \
+noinst_LTLIBRARIES = common/libcommon.la
+
+common_libcommon_la_SOURCES = \
 	common/cblas.h \
+	common/clapack.c \
+	common/clapack.h \
 	common/compat.c \
 	common/compat.h \
 	common/math_util.h \
+	common/phys_const.h \
 	common/util.c \
-	common/util.h \
+	common/util.h
+
+lib_LTLIBRARIES = src/libefp.la
+include_HEADERS = src/efp.h
+
+src_libefp_la_SOURCES = \
 	src/ai_disp.c \
 	src/ai_xr.c \
 	src/chtr.c \
@@ -68,24 +75,17 @@ src_libefp_la_SOURCES = \
 	src/terms.h \
 	src/xr.c
 
-EXTRA_DIST += AUTHORS LICENSE README.md
-
+src_libefp_la_LIBADD = common/libcommon.la
 src_libefp_la_LDFLAGS = $(AM_LDFLAGS) \
 	-version-info $(VERSION_MAJOR):$(VERSION_MINOR)
+
+EXTRA_DIST += AUTHORS LICENSE README.md
 
 if BUILD_EFPMD
 bin_PROGRAMS = efpmd/src/efpmd
 endif
 
 efpmd_src_efpmd_SOURCES = \
-	common/clapack.c \
-	common/clapack.h \
-	common/compat.c \
-	common/compat.h \
-	common/math_util.h \
-	common/phys_const.h \
-	common/util.c \
-	common/util.h \
 	efpmd/src/cfg.h \
 	efpmd/src/common.c \
 	efpmd/src/common.h \
@@ -103,7 +103,7 @@ efpmd_src_efpmd_SOURCES = \
 	efpmd/optimizer/optimizer.c \
 	efpmd/optimizer/optimizer.h
 
-efpmd_src_efpmd_LDADD = src/libefp.la
+efpmd_src_efpmd_LDADD = common/libcommon.la src/libefp.la
 efpmd_src_efpmd_CFLAGS = $(AM_CFLAGS)
 efpmd_src_efpmd_CPPFLAGS = $(AM_CPPFLAGS) \
 	-I${top_srcdir}/efpmd/optimizer \
@@ -129,7 +129,7 @@ TESTS = tests/test
 check_PROGRAMS = $(TESTS)
 endif
 
-tests_test_LDADD = src/libefp.la -lcheck
+tests_test_LDADD = common/libcommon.la src/libefp.la -lcheck
 tests_test_CPPFLAGS = $(AM_CPPFLAGS) -DABS_TOP_SRCDIR=\"$(abs_top_srcdir)\"
 
 tests_test_SOURCES = \
