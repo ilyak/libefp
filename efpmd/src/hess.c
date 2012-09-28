@@ -31,6 +31,59 @@
 
 void sim_hess(struct efp *, const struct config *);
 
+static void compute_hessian(struct efp *efp, double delta, double *hess)
+{
+	int n_frags;
+	check_fail(efp_get_frag_count(efp, &n_frags));
+
+	int n_coord = 6 * n_frags;
+	double *xyzabc = xmalloc(n_coord * sizeof(double));
+	double *grad = xmalloc(n_coord * sizeof(double));
+	double *grad_0 = xmalloc(n_coord * sizeof(double));
+
+	check_fail(efp_get_coordinates(efp, n_frags, xyzabc));
+	check_fail(efp_get_gradient(efp, n_frags, grad_0));
+	torque_to_deriv(n_frags, xyzabc, grad_0);
+
+	for (int i = 0; i < n_coord; i++) {
+		printf("COMPUTING DISPLACEMENT %5d OF %d\n", i + 1, n_coord);
+		fflush(stdout);
+
+		double save = xyzabc[i];
+		xyzabc[i] = save + delta;
+
+		check_fail(efp_set_coordinates(efp, EFP_COORD_TYPE_XYZABC, xyzabc));
+		check_fail(efp_compute(efp, 1));
+
+		check_fail(efp_get_gradient(efp, n_frags, grad));
+		torque_to_deriv(n_frags, xyzabc, grad);
+
+		for (int j = 0; j < n_coord; j++)
+			hess[i * n_coord + j] = (grad[j] - grad_0[j]) / delta;
+
+		xyzabc[i] = save;
+	}
+
+	/* restore original coordinates */
+	check_fail(efp_set_coordinates(efp, EFP_COORD_TYPE_XYZABC, xyzabc));
+
+	/* reduce error by computing the average of H(i,j) and H(j,i) */
+	for (int i = 0; i < n_coord; i++) {
+		for (int j = i + 1; j < n_coord; j++) {
+			double sum = hess[i * n_coord + j] + hess[j * n_coord + i];
+
+			hess[i * n_coord + j] = 0.5 * sum;
+			hess[j * n_coord + i] = 0.5 * sum;
+		}
+	}
+
+	free(xyzabc);
+	free(grad);
+	free(grad_0);
+
+	printf("\n\n");
+}
+
 static void get_inertia_fact(const double *inertia, const double *rotmat,
 					double *inertia_fact)
 {
@@ -39,11 +92,16 @@ static void get_inertia_fact(const double *inertia, const double *rotmat,
 	for (int i = 0; i < 3; i++)
 		fact[i] = inertia[i] < EPSILON ? 0.0 : 1.0 / sqrt(inertia[i]);
 
-	for (int i = 0; i < 3; i++)
-		for (int j = 0; j < 3; j++)
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++) {
+			double sum = 0.0;
+
 			for (int k = 0; k < 3; k++)
-				inertia_fact[3 * i + j] = fact[k] *
-					rotmat[3 * i + k] * rotmat[3 * j + k];
+				sum += fact[k] * rotmat[3 * i + k] * rotmat[3 * j + k];
+
+			inertia_fact[3 * i + j] = sum;
+		}
+	}
 }
 
 static void get_weight_fact(struct efp *efp, double *mass_fact, mat_t *inertia_fact)
@@ -73,28 +131,46 @@ static void get_weight_fact(struct efp *efp, double *mass_fact, mat_t *inertia_f
 	}
 }
 
-static void w_tr_tr(double fact1, double fact2, int stride, double *hess)
+static void w_tr_tr(double fact1, double fact2, int stride,
+			const double *in, double *out)
 {
 	for (int i = 0; i < 3; i++)
 		for (int j = 0; j < 3; j++)
-			hess[stride * i + j] *= fact1 * fact2;
+			out[stride * i + j] = fact1 * fact2 * in[stride * i + j];
 }
 
-static void w_tr_rot(double fact1, const mat_t *fact2, int stride, double *hess)
+static void w_tr_rot(double fact1, const mat_t *fact2, int stride,
+			const double *in, double *out)
 {
 	for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 3; j++) {
 			double w = 0.0;
 
 			for (int k = 0; k < 3; k++)
-				w += mat_get(fact2, i, k) * hess[stride * i + k];
+				w += mat_get(fact2, j, k) * in[stride * i + k];
 
-			hess[stride * i + j] = w * fact1;
+			out[stride * i + j] = w * fact1;
 		}
 	}
 }
 
-static void w_rot_rot(const mat_t *fact1, const mat_t *fact2, int stride, double *hess)
+static void w_rot_tr(const mat_t *fact1, double fact2, int stride,
+			const double *in, double *out)
+{
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++) {
+			double w = 0.0;
+
+			for (int k = 0; k < 3; k++)
+				w += mat_get(fact1, i, k) * in[stride * k + j];
+
+			out[stride * i + j] = w * fact2;
+		}
+	}
+}
+
+static void w_rot_rot(const mat_t *fact1, const mat_t *fact2, int stride,
+			const double *in, double *out)
 {
 	for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 3; j++) {
@@ -104,133 +180,102 @@ static void w_rot_rot(const mat_t *fact1, const mat_t *fact2, int stride, double
 				double w2 = 0.0;
 
 				for (int jj = 0; jj < 3; jj++)
-					w2 += mat_get(fact2, j, jj) * hess[stride * i + jj];
+					w2 += mat_get(fact2, j, jj) * in[stride * ii + jj];
 
 				w1 += w2 * mat_get(fact1, i, ii);
 			}
 
-			hess[i * stride + j] = w1;
+			out[i * stride + j] = w1;
 		}
 	}
 }
 
-static void hess_weight(int n_frags, const double *mass_fact,
-			const mat_t *inertia_fact, double *hess)
+static void compute_mass_weighted_hessian(struct efp *efp, const double *in, double *out)
 {
-	int stride = 6 * n_frags;
+	int n_frags;
+	check_fail(efp_get_frag_count(efp, &n_frags));
+
+	int n_coord = 6 * n_frags;
+	double mass_fact[n_frags];
+	mat_t inertia_fact[n_frags];
+
+	get_weight_fact(efp, mass_fact, inertia_fact);
 
 	for (int i = 0; i < n_frags; i++) {
 		for (int j = 0; j < n_frags; j++) {
-			double *block = hess + 6 * stride * i + 6 * j;
+			int offset = 6 * n_coord * i + 6 * j;
 
-			w_tr_tr(mass_fact[i], mass_fact[j], stride,
-					block);
+			w_tr_tr(mass_fact[i], mass_fact[j], n_coord,
+					in + offset,
+					out + offset);
 
-			w_tr_rot(mass_fact[i], inertia_fact + j, stride,
-					block + 3);
+			w_tr_rot(mass_fact[i], inertia_fact + j, n_coord,
+					in + offset + 3,
+					out + offset + 3);
 
-			w_tr_rot(mass_fact[j], inertia_fact + i, stride,
-					block + 3 * stride);
+			w_rot_tr(inertia_fact + i, mass_fact[j], n_coord,
+					in + offset + 3 * n_coord,
+					out + offset + 3 * n_coord);
 
-			w_rot_rot(inertia_fact + i, inertia_fact + j, stride,
-					block + 3 * stride + 3);
+			w_rot_rot(inertia_fact + i, inertia_fact + j, n_coord,
+					in + offset + 3 * n_coord + 3,
+					out + offset + 3 * n_coord + 3);
 		}
 	}
 }
 
-static double to_rcm(double eval)
+static void print_mode(int mode, double eigen)
 {
-	double freq = copysign(sqrt(fabs(eval)), eval);
+	/* preserve sign for imaginary frequencies */
+	eigen = copysign(sqrt(fabs(eigen)), eigen);
 
-	return AMU_TO_AU * FINE_CONST / 2.0 / PI / BOHR_RADIUS * 1.0e8 * freq;
-}
+	/* convert to cm-1 */
+	eigen = FINE_CONST / 2.0 / PI / BOHR_RADIUS / sqrt(AMU_TO_AU) * 1.0e8 * eigen;
 
-static void print_freq(int n_coord, const double *eval, const double *evec)
-{
-	for (int i = 0; i < n_coord; i++) {
-		printf("    MODE %4d    FREQUENCY %10.3lf cm-1\n\n", i + 1, to_rcm(eval[i]));
-		print_vector(n_coord, evec + i * n_coord);
-	}
+	printf("    MODE %4d    FREQUENCY %10.3lf cm-1\n\n", mode, eigen);
 }
 
 void sim_hess(struct efp *efp, const struct config *config)
 {
 	printf("HESSIAN JOB\n\n\n");
 
-	int n_frags = config->n_frags;
-	int n_coord = 6 * n_frags;
-
-	double *xyzabc = xmalloc(n_coord * sizeof(double));
-	double *grad = xmalloc(n_coord * sizeof(double));
-	double *grad_0 = xmalloc(n_coord * sizeof(double));
-	double *hess = xmalloc(n_coord * n_coord * sizeof(double));
-
 	print_geometry(efp);
 	check_fail(efp_compute(efp, 1));
 	print_energy(efp);
 	print_gradient(efp);
 
-	check_fail(efp_get_coordinates(efp, n_frags, xyzabc));
-	check_fail(efp_get_gradient(efp, n_frags, grad_0));
-	torque_to_deriv(n_frags, xyzabc, grad_0);
+	int n_frags = config->n_frags;
+	int n_coord = 6 * n_frags;
+	int work_size = 4 * n_coord;
+	double *hess = xmalloc(n_coord * n_coord * sizeof(double));
+	double *hess_mass = xmalloc(n_coord * n_coord * sizeof(double));
+	double *eigen = xmalloc(n_coord * sizeof(double));
+	double *work = xmalloc(work_size * sizeof(double));
 
-	for (int i = 0; i < n_coord; i++) {
-		printf("COMPUTING DISPLACEMENT %5d OF %d\n", i + 1, n_coord);
-		fflush(stdout);
+	compute_hessian(efp, config->hess_delta, hess);
 
-		double save = xyzabc[i];
-		xyzabc[i] = save + config->hess_delta;
-
-		check_fail(efp_set_coordinates(efp, EFP_COORD_TYPE_XYZABC, xyzabc));
-		check_fail(efp_compute(efp, 1));
-
-		check_fail(efp_get_gradient(efp, n_frags, grad));
-		torque_to_deriv(n_frags, xyzabc, grad);
-
-		for (int j = 0; j < n_coord; j++)
-			hess[i * n_coord + j] = (grad[j] - grad_0[j]) / config->hess_delta;
-
-		xyzabc[i] = save;
-	}
-
-	/* restore original coordinates */
-	check_fail(efp_set_coordinates(efp, EFP_COORD_TYPE_XYZABC, xyzabc));
-
-	/* reduce errors by computing the average of H(i,j) and H(j,i) */
-	for (int i = 0; i < n_coord; i++) {
-		for (int j = i + 1; j < n_coord; j++) {
-			double sum = hess[i * n_coord + j] + hess[j * n_coord + i];
-
-			hess[i * n_coord + j] = sum / 2.0;
-			hess[j * n_coord + i] = sum / 2.0;
-		}
-	}
-
-	printf("\n\n    HESSIAN MATRIX\n\n");
+	printf("    HESSIAN MATRIX\n\n");
 	print_matrix(n_coord, n_coord, hess);
+
+	compute_mass_weighted_hessian(efp, hess, hess_mass);
+
+	printf("    MASS-WEIGHTED HESSIAN MATRIX\n\n");
+	print_matrix(n_coord, n_coord, hess_mass);
 
 	printf("    VIBRATIONAL NORMAL MODE ANALYSIS\n\n");
 
-	double *eigen = xmalloc(n_coord * sizeof(double));
-	double *work = xmalloc(4 * n_coord * sizeof(double));
-
-	double mass_fact[n_frags];
-	mat_t inertia_fact[n_frags];
-
-	get_weight_fact(efp, mass_fact, inertia_fact);
-	hess_weight(n_frags, mass_fact, inertia_fact, hess);
-
-	if (u_dsyev('V', 'U', n_coord, hess, n_coord, eigen, work, 4 * n_coord))
+	if (u_dsyev('V', 'U', n_coord, hess_mass, n_coord, eigen, work, work_size))
 		error("UNABLE TO DIAGONALIZE MASS-WEIGHTED HESSIAN MATRIX");
 
-	print_freq(n_coord, eigen, hess);
+	for (int i = 0; i < n_coord; i++) {
+		print_mode(i + 1, eigen[i]);
+		print_vector(n_coord, hess_mass + i * n_coord);
+	}
 
+	free(hess);
+	free(hess_mass);
 	free(eigen);
 	free(work);
-	free(xyzabc);
-	free(grad);
-	free(grad_0);
-	free(hess);
 
 	printf("HESSIAN JOB COMPLETED SUCCESSFULLY\n");
 }
