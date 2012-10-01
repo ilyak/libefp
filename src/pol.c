@@ -320,13 +320,14 @@ efp_compute_pol_energy(struct efp *efp, double *energy_out)
 		}
 	}
 
-	int iter = 0;
-
 	/* compute induced dipoles self consistently */
-	while (pol_scf_iter(efp) > POL_SCF_TOL && iter++ < POL_SCF_MAX_ITER);
+	for (int iter = 0; iter < POL_SCF_MAX_ITER; iter++) {
+		if (pol_scf_iter(efp) < POL_SCF_TOL)
+			break;
 
-	if (iter >= POL_SCF_MAX_ITER)
-		return EFP_RESULT_POL_NOT_CONVERGED;
+		if (iter == POL_SCF_MAX_ITER - 1)
+			return EFP_RESULT_POL_NOT_CONVERGED;
+	}
 
 	double energy = 0.0;
 
