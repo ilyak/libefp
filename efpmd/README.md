@@ -7,13 +7,13 @@ canonical ensembles.
 
 Simulations can be accelerated by running in parallel mode on multi-core CPUs.
 To enable parallel computation set `OMP_NUM_THREADS` environmental variable to
-the desired number of parallel threads. For example on 4-core machine in bash
-shell do:
+the desired number of parallel threads. For example on 4-core machine do this
+in shell before starting the program:
 
 	export OMP_NUM_THREADS=4
 
-before starting the program to enable parallel computation using 4 threads.
-This should give almost 4x speedup in all computations.
+This will enable parallel computation using 4 threads and should give almost 4x
+speedup in all calculations.
 
 ## Input file format
 
@@ -29,7 +29,7 @@ Lines beginning with the `#` symbol are ignored during input parsing.
 
 `grad` - energy gradient calculation.
 
-`hess` - numerical Hessian calculation.
+`hess` - semi-numerical Hessian calculation and normal mode analysis.
 
 `opt` - geometry optimization.
 
@@ -107,11 +107,14 @@ Default value: `tt`
 
 Default value: `tt`
 
-##### Maximum number of steps to make
+##### Maximum number of steps
 
 `max_steps <number>`
 
 Default value: `100`
+
+This specifies maximum number of steps for both geometry optimization and
+molecular dynamics.
 
 ##### The path to the directory with fragment library
 
@@ -137,7 +140,7 @@ otherwise.
 
 `opt_tol <number>`
 
-Default value: `1.0e-5`
+Default value: `1.0e-4`
 
 Optimization will stop when maximum gradient component is less than `opt_tol`
 and RMS gradient is less than one third of `opt_tol`.
@@ -150,7 +153,7 @@ and RMS gradient is less than one third of `opt_tol`.
 
 `nve` - Microcanonical ensemble.
 
-`nvt` - Canonical ensemble.
+`nvt` - Canonical ensemble with Nose-Hoover thermostat.
 
 Default value: `nve`
 
@@ -161,6 +164,8 @@ Default value: `nve`
 Units: `Kelvins`
 
 Default value: `300.0`
+
+Target simulation temperature for NVT thermostat.
 
 ##### Time step
 
@@ -175,6 +180,18 @@ Default value: `1.0`
 `print_step <number>`
 
 Default value: `1`
+
+Number of steps between outputs of the system state.
+
+##### Thermostat parameter
+
+`thermostat_tau <number>`
+
+Units: `Femtoseconds`
+
+Default value: `1.0e3`
+
+Parameter of Nose-Hoover thermostat.
 
 ### Fragment input
 
