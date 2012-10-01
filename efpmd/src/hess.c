@@ -73,7 +73,7 @@ static void compute_hessian(struct efp *efp, double delta, double *hess)
 			double sum = hess[i * n_coord + j] + hess[j * n_coord + i];
 
 			hess[i * n_coord + j] = 0.5 * sum;
-			hess[j * n_coord + i] = 0.5 * sum;
+			hess[j * n_coord + i] = hess[i * n_coord + j];
 		}
 	}
 
@@ -84,7 +84,7 @@ static void compute_hessian(struct efp *efp, double delta, double *hess)
 	printf("\n\n");
 }
 
-static void get_inertia_fact(const double *inertia, const double *rotmat,
+static void get_inertia_factor(const double *inertia, const double *rotmat,
 					double *inertia_fact)
 {
 	double fact[3];
@@ -104,7 +104,8 @@ static void get_inertia_fact(const double *inertia, const double *rotmat,
 	}
 }
 
-static void get_weight_fact(struct efp *efp, double *mass_fact, mat_t *inertia_fact)
+static void get_weight_factor(struct efp *efp, double *mass_fact,
+				mat_t *inertia_fact)
 {
 	int n_frags;
 	check_fail(efp_get_frag_count(efp, &n_frags));
@@ -127,7 +128,8 @@ static void get_weight_fact(struct efp *efp, double *mass_fact, mat_t *inertia_f
 		euler_to_matrix(a, b, c, &rotmat);
 
 		mass_fact[i] = 1.0 / sqrt(mass);
-		get_inertia_fact(inertia, (double *)&rotmat, (double *)&inertia_fact[i]);
+		get_inertia_factor(inertia, (const double *)&rotmat,
+			(double *)&inertia_fact[i]);
 	}
 }
 
@@ -190,7 +192,8 @@ static void w_rot_rot(const mat_t *fact1, const mat_t *fact2, int stride,
 	}
 }
 
-static void compute_mass_weighted_hessian(struct efp *efp, const double *in, double *out)
+static void compute_mass_weighted_hessian(struct efp *efp, const double *in,
+						double *out)
 {
 	int n_frags;
 	check_fail(efp_get_frag_count(efp, &n_frags));
@@ -199,7 +202,7 @@ static void compute_mass_weighted_hessian(struct efp *efp, const double *in, dou
 	double mass_fact[n_frags];
 	mat_t inertia_fact[n_frags];
 
-	get_weight_fact(efp, mass_fact, inertia_fact);
+	get_weight_factor(efp, mass_fact, inertia_fact);
 
 	for (int i = 0; i < n_frags; i++) {
 		for (int j = 0; j < n_frags; j++) {
