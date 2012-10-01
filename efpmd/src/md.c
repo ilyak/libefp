@@ -28,6 +28,8 @@
 
 #include "common.h"
 
+#define HOOVER_MAX_ITER 20
+
 struct body {
 	mat_t rotmat;
 	vec_t pos;
@@ -42,6 +44,11 @@ struct body {
 	double mass;
 };
 
+struct nvt_data {
+	double chi;
+	double chi_dt;
+};
+
 struct md {
 	int n_bodies;
 	struct body *bodies;
@@ -51,6 +58,7 @@ struct md {
 	void (*update_step)(struct md *);
 	struct efp *efp;
 	const struct config *config;
+	void *data;
 };
 
 void sim_md(struct efp *, const struct config *);
@@ -86,9 +94,17 @@ static double get_invariant_nve(const struct md *md)
 	return md->potential_energy + get_kinetic_energy(md);
 }
 
-static double get_invariant_nvt(UNUSED const struct md *md)
+static double get_invariant_nvt(const struct md *md)
 {
-	assert(0);
+	struct nvt_data *data = (struct nvt_data *)md->data;
+
+	double tau = FS_TO_AU * md->config->thermostat_tau;
+	double target = md->config->target_temperature;
+
+	double virt = BOLTZMANN * target * md->n_freedom * (data->chi_dt +
+			0.5 * data->chi * data->chi * tau * tau);
+
+	return md->potential_energy + get_kinetic_energy(md) + virt;
 }
 
 static vec_t get_system_com(const struct md *md)
@@ -268,6 +284,7 @@ static void compute_forces(struct md *md)
 		body->torque.y = -grad[6 * i + 4];
 		body->torque.z = -grad[6 * i + 5];
 
+		/* convert torque to body frame */
 		body->torque = mat_trans_vec(&body->rotmat, &body->torque);
 	}
 }
@@ -313,6 +330,15 @@ static void rotate_step(int a1, int a2, double angle, vec_t *angmom, mat_t *rotm
 	*rotmat = mat_mat(rotmat, &rot);
 }
 
+/*
+ * Rotation algorithm reference:
+ *
+ * Andreas Dullweber, Benedict Leimkuhler, and Robert McLachlan
+ *
+ * Symplectic splitting methods for rigid body molecular dynamics
+ *
+ * J. Chem. Phys. 107, 5840 (1997)
+ */
 static void rotate_body(struct body *body, double dt)
 {
 	double angle;
@@ -375,9 +401,92 @@ static void update_step_nve(struct md *md)
 	}
 }
 
-static void update_step_nvt(UNUSED struct md *md)
+/*
+ * NVT with Nose-Hoover thermostat:
+ *
+ * William G. Hoover
+ *
+ * Canonical dynamics: Equilibrium phase-space distributions
+ *
+ * Phys. Rev. A 31, 1695 (1985)
+ */
+static void update_step_nvt(struct md *md)
 {
-	assert(0);
+	struct nvt_data *data = (struct nvt_data *)md->data;
+	double dt = FS_TO_AU * md->config->time_step;
+
+	for (int i = 0; i < md->n_bodies; i++) {
+		struct body *body = md->bodies + i;
+
+		body->vel.x += 0.5 * dt * (body->force.x / body->mass -
+					body->vel.x * data->chi);
+		body->vel.y += 0.5 * dt * (body->force.y / body->mass -
+					body->vel.y * data->chi);
+		body->vel.z += 0.5 * dt * (body->force.z / body->mass -
+					body->vel.z * data->chi);
+
+		body->angmom.x += 0.5 * dt * (body->torque.x -
+					body->angmom.x * data->chi);
+		body->angmom.y += 0.5 * dt * (body->torque.y -
+					body->angmom.y * data->chi);
+		body->angmom.z += 0.5 * dt * (body->torque.z -
+					body->angmom.z * data->chi);
+
+		body->pos.x += body->vel.x * dt;
+		body->pos.y += body->vel.y * dt;
+		body->pos.z += body->vel.z * dt;
+
+		rotate_body(body, dt);
+	}
+
+	double tau = FS_TO_AU * md->config->thermostat_tau;
+	double target = md->config->target_temperature;
+
+	data->chi += 0.5 * dt * (get_temperature(md) / target - 1.0) / tau / tau;
+	data->chi_dt += 0.5 * dt * data->chi;
+
+	compute_forces(md);
+
+	double chi_init = data->chi;
+	vec_t angmom_init[md->n_bodies], vel_init[md->n_bodies];
+
+	for (int i = 0; i < md->n_bodies; i++) {
+		angmom_init[i] = md->bodies[i].angmom;
+		vel_init[i] = md->bodies[i].vel;
+	}
+
+	for (int iter = 0; iter < HOOVER_MAX_ITER; iter++) {
+		double chi_prev = data->chi;
+		double ratio = get_temperature(md) / target;
+
+		data->chi = chi_init + 0.5 * dt * (ratio - 1.0) / tau / tau;
+
+		for (int i = 0; i < md->n_bodies; i++) {
+			struct body *body = md->bodies + i;
+
+			body->vel.x = vel_init[i].x + 0.5 * dt *
+				(body->force.x / body->mass - vel_init[i].x * data->chi);
+			body->vel.y = vel_init[i].y + 0.5 * dt *
+				(body->force.y / body->mass - vel_init[i].y * data->chi);
+			body->vel.z = vel_init[i].z + 0.5 * dt *
+				(body->force.z / body->mass - vel_init[i].z * data->chi);
+
+			body->angmom.x = angmom_init[i].x + 0.5 * dt *
+				(body->torque.x - angmom_init[i].x * data->chi);
+			body->angmom.y = angmom_init[i].y + 0.5 * dt *
+				(body->torque.y - angmom_init[i].y * data->chi);
+			body->angmom.z = angmom_init[i].z + 0.5 * dt *
+				(body->torque.z - angmom_init[i].z * data->chi);
+		}
+
+		if (fabs(data->chi - chi_prev) < EPSILON)
+			break;
+
+		if (iter == HOOVER_MAX_ITER - 1)
+			error("Nose-Hoover did not converge");
+	}
+
+	data->chi_dt += 0.5 * dt * data->chi;
 }
 
 static void print_info(const struct md *md)
@@ -432,6 +541,7 @@ static struct md *md_create(struct efp *efp, const struct config *config)
 		case ENSEMBLE_TYPE_NVT:
 			md->get_invariant = get_invariant_nvt;
 			md->update_step = update_step_nvt;
+			md->data = xcalloc(1, sizeof(struct nvt_data));
 			break;
 		default:
 			assert(0);
@@ -491,6 +601,7 @@ static void print_status(const struct md *md)
 static void md_shutdown(struct md *md)
 {
 	free(md->bodies);
+	free(md->data);
 	free(md);
 }
 

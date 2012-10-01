@@ -33,9 +33,10 @@ struct config {
 	double hess_delta;
 	int max_steps;
 	int print_step;
-	double temperature;
+	double target_temperature;
 	double time_step;
 	enum ensemble_type ensemble_type;
+	double thermostat_tau;
 	double opt_tol;
 	char *fraglib_path;
 	char *userlib_path;
