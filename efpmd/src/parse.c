@@ -101,6 +101,9 @@ static bool parse_string(char **str, void *out)
 	while (*ptr && isspace(*ptr))
 		ptr++;
 
+	if (*ptr == '\0')
+		return false;
+
 	if (*ptr == '"') {
 		start = ++ptr;
 
@@ -130,6 +133,9 @@ static bool parse_string(char **str, void *out)
 
 static bool parse_int(char **str, void *out)
 {
+	if (!*str)
+		return false;
+
 	char *endptr;
 	int val = strtol(*str, &endptr, 10);
 
@@ -143,6 +149,9 @@ static bool parse_int(char **str, void *out)
 
 static bool parse_double(char **str, void *out)
 {
+	if (!*str)
+		return false;
+
 	char *endptr;
 	double val = strtod(*str, &endptr);
 
