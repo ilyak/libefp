@@ -31,6 +31,7 @@
 #include <string.h>
 
 #define PI 3.14159265358979323846
+#define EPSILON 1.0e-8
 
 #define VEC(x) ((vec_t *)(&(x)))
 #define CVEC(x) ((const vec_t *)(&(x)))
@@ -46,6 +47,12 @@ typedef struct {
 typedef struct {
 	double xx, xy, xz, yx, yy, yz, zx, zy, zz;
 } mat_t;
+
+static inline int
+eq(double a, double b)
+{
+	return fabs(a - b) < EPSILON;
+}
 
 static inline double
 vec_get(const vec_t *vec, int idx)
@@ -151,13 +158,6 @@ static inline double
 vec_dist(const vec_t *a, const vec_t *b)
 {
 	return sqrt(vec_dist_2(a, b));
-}
-
-static inline int
-eq(double a, double b)
-{
-	static const double eps = 1.0e-8;
-	return fabs(a - b) < eps;
 }
 
 static inline void
