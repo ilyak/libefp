@@ -489,16 +489,14 @@ efp_compute_pol(struct efp *efp)
 void
 efp_update_pol(struct frag *frag)
 {
-	const mat_t *rotmat = &frag->rotmat;
-
 	for (int i = 0; i < frag->n_polarizable_pts; i++) {
-		move_pt(CVEC(frag->x), rotmat, CVEC(frag->lib->x),
+		move_pt(CVEC(frag->x), &frag->rotmat,
 			CVEC(frag->lib->polarizable_pts[i].x),
 			VEC(frag->polarizable_pts[i].x));
 
 		const mat_t *in = &frag->lib->polarizable_pts[i].tensor;
 		mat_t *out = &frag->polarizable_pts[i].tensor;
 
-		rotate_t2(rotmat, (const double *)in, (double *)out);
+		rotate_t2(&frag->rotmat, (const double *)in, (double *)out);
 	}
 }

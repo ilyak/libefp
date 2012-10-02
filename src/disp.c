@@ -260,7 +260,6 @@ efp_update_disp(struct frag *frag)
 		struct dynamic_polarizable_pt *pt_out =
 					frag->dynamic_polarizable_pts + i;
 
-		move_pt(CVEC(frag->x), rotmat, CVEC(frag->lib->x),
-			CVEC(pt_in->x), VEC(pt_out->x));
+		move_pt(CVEC(frag->x), rotmat, CVEC(pt_in->x), VEC(pt_out->x));
 	}
 }

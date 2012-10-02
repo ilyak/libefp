@@ -116,11 +116,9 @@ void torque_to_deriv(int nb, const double *x, double *gx)
 	}
 }
 
-void move_pt(const vec_t *com, const mat_t *rotmat, const vec_t *com_init,
-			const vec_t *pos_init, vec_t *out)
+void move_pt(const vec_t *com, const mat_t *rotmat, const vec_t *pos_int, vec_t *out)
 {
-	vec_t pos = vec_sub(pos_init, com_init);
-	*out = mat_vec(rotmat, &pos);
+	*out = mat_vec(rotmat, pos_int);
 	out->x += com->x, out->y += com->y, out->z += com->z;
 }
 

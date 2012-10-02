@@ -820,30 +820,6 @@ parse_file(struct efp *efp, struct stream *stream)
 	return EFP_RESULT_SUCCESS;
 }
 
-static void
-set_frag_com(struct frag *frag)
-{
-	frag->x = 0.0;
-	frag->y = 0.0;
-	frag->z = 0.0;
-
-	double mass = 0.0;
-
-	for (int i = 0; i < frag->n_atoms; i++) {
-		const struct efp_atom *atom = frag->atoms + i;
-
-		frag->x += atom->x * atom->mass;
-		frag->y += atom->y * atom->mass;
-		frag->z += atom->z * atom->mass;
-
-		mass += atom->mass;
-	}
-
-	frag->x /= mass;
-	frag->y /= mass;
-	frag->z /= mass;
-}
-
 enum efp_result
 efp_read_potential(struct efp *efp, const char *files)
 {
@@ -890,12 +866,9 @@ efp_read_potential(struct efp *efp, const char *files)
 			if (streq(efp->lib[i].name, efp->lib[j].name))
 				return EFP_RESULT_DUPLICATE_PARAMETERS;
 
-	for (int i = 0; i < efp->n_lib; i++) {
-		set_frag_com(efp->lib + i);
-
-		/* because of realloc we can't do this earlier */
+	/* because of realloc we can't do this earlier */
+	for (int i = 0; i < efp->n_lib; i++)
 		efp->lib[i].lib = efp->lib + i;
-	}
 
 	return EFP_RESULT_SUCCESS;
 }
