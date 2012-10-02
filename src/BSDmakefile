@@ -6,15 +6,13 @@ INCS=		efp.h
 WARNS=		6
 NO_MAN=		yes
 
+USER_CFLAGS?=	-fopenmp
+CFLAGS+=	${USER_CFLAGS}
+
 DEBUG_FLAGS?=	-O0 -g
-OMP_CFLAGS?=	-fopenmp
 
-CFLAGS+=	${OMP_CFLAGS} \
-		-I${.CURDIR}/../common \
+CFLAGS+=	-I${.CURDIR}/../common \
 		-DLIBEFP_VERSION="\"${LIBEFP_MAJOR}.${LIBEFP_MINOR}\""
-
-LDADD+=		-L${.OBJDIR}/../common \
-		-lcommon
 
 SRCS=		ai_disp.c \
 		ai_xr.c \
