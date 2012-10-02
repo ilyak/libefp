@@ -18,7 +18,7 @@ enum ensemble_type {
 
 struct frag {
 	char *name;
-	double coord[9];
+	double coord[12];
 	double vel[6];
 };
 

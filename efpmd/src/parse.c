@@ -204,11 +204,13 @@ static bool parse_coord(char **str, void *out)
 {
 	static const char names[] =
 		"points\n"
-		"xyzabc";
+		"xyzabc\n"
+		"rotmat";
 
 	static const enum efp_coord_type values[] = {
 		EFP_COORD_TYPE_POINTS,
-		EFP_COORD_TYPE_XYZABC
+		EFP_COORD_TYPE_XYZABC,
+		EFP_COORD_TYPE_ROTMAT
 	};
 
 	return parse_enum(str, out, names, values, sizeof(values[0]));
@@ -358,6 +360,24 @@ static const struct {
 	{ "userlib_path",   ".",                parse_string,    NULL,           offsetof(struct config, userlib_path)       }
 };
 
+static void convert_units(struct config *config)
+{
+	config->time_step = FS_TO_AU * config->time_step;
+	config->thermostat_tau = FS_TO_AU * config->thermostat_tau;
+
+	int n_convert;
+
+	switch (config->coord_type) {
+		case EFP_COORD_TYPE_XYZABC: n_convert = 3; break;
+		case EFP_COORD_TYPE_POINTS: n_convert = 9; break;
+		case EFP_COORD_TYPE_ROTMAT: n_convert = 3; break;
+	};
+
+	for (int i = 0; i < config->n_frags; i++)
+		for (int j = 0; j < n_convert; j++)
+			config->frags[i].coord[j] *= config->units_factor;
+}
+
 static void parse_field(struct stream *stream, struct config *config)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(config_list); i++) {
@@ -383,7 +403,7 @@ static void parse_field(struct stream *stream, struct config *config)
 }
 
 static void parse_frag(struct stream *stream, enum efp_coord_type coord_type,
-		       double units_factor, struct frag *frag)
+				struct frag *frag)
 {
 	memset(frag, 0, sizeof(struct frag));
 
@@ -392,30 +412,20 @@ static void parse_frag(struct stream *stream, enum efp_coord_type coord_type,
 
 	next_line(stream);
 
-	if (coord_type == EFP_COORD_TYPE_XYZABC) {
-		for (int i = 0; i < 6; i++)
-			if (!parse_double(&stream->ptr, frag->coord + i))
+	int n_rows, n_cols;
+
+	switch (coord_type) {
+		case EFP_COORD_TYPE_XYZABC: n_rows = 1; n_cols = 6; break;
+		case EFP_COORD_TYPE_POINTS: n_rows = 3; n_cols = 3; break;
+		case EFP_COORD_TYPE_ROTMAT: n_rows = 4; n_cols = 3; break;
+	}
+
+	for (int i = 0, idx = 0; i < n_rows; i++) {
+		for (int j = 0; j < n_cols; j++, idx++)
+			if (!parse_double(&stream->ptr, frag->coord + idx))
 				error("INCORRECT FRAGMENT COORDINATES FORMAT");
 
-		for (int i = 0; i < 3; i++)
-			frag->coord[i] *= units_factor;
-
 		next_line(stream);
-	}
-	else if (coord_type == EFP_COORD_TYPE_POINTS) {
-		for (int i = 0, idx = 0; i < 3; i++) {
-			for (int j = 0; j < 3; j++, idx++)
-				if (!parse_double(&stream->ptr, frag->coord + idx))
-					error("INCORRECT FRAGMENT COORDINATES FORMAT");
-
-			next_line(stream);
-		}
-
-		for (int i = 0; i < 9; i++)
-			frag->coord[i] *= units_factor;
-	}
-	else {
-		assert(0);
 	}
 
 	if (!stream->ptr)
@@ -481,8 +491,9 @@ struct config *parse_config(const char *path)
 			config->frags = xrealloc(config->frags,
 				config->n_frags * sizeof(struct frag));
 
-			parse_frag(&stream, config->coord_type, config->units_factor,
-					config->frags + config->n_frags - 1);
+			struct frag *frag = config->frags + config->n_frags - 1;
+			parse_frag(&stream, config->coord_type, frag);
+
 			continue;
 		}
 		else {
@@ -498,6 +509,8 @@ next:
 
 	if (config->n_frags < 1)
 		error("AT LEAST ONE FRAGMENT MUST BE SPECIFIED");
+
+	convert_units(config);
 
 	fclose(stream.in);
 	free(stream.buffer);

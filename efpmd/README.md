@@ -39,11 +39,13 @@ Default value: `sp`
 
 ##### Format of fragment input
 
-`coord [xyzabc|points]`
+`coord [xyzabc|points|rotmat]`
 
 `xyzabc` - Coordinates of the center of mass and Euler angles.
 
 `points` - Coordinates of three atoms for each fragment.
+
+`rotmat` - Coordinates of the center of mass and rotation matrix.
 
 Default value: `xyzabc`
 
@@ -197,8 +199,35 @@ Parameter of Nose-Hoover thermostat.
 
 One or more `fragment <name>` groups.
 
-Each `fragment <name>` line is followed by either a line of six numbers if
-`coord` is `xyzabc` or three lines with three numbers on each line if `coord`
-is `points`. If `<name>` contains an `_l` suffix the fragment parameters for
-this fragment will be searched in the `fraglib_path` directory. Otherwise the
-directory specified by the `userlib_path` option will be used.
+If `<name>` contains an `_l` suffix the parameters for this fragment will be
+searched for in the `fraglib_path` directory. Otherwise the directory specified
+by the `userlib_path` option will be used.
+
+Each group is followed by the specification of fragment position and
+orientation.
+
+###### Format of input when `coord` is `xyzabc`
+
+	fragment h2o
+		0.0 0.0 0.0 0.0 0.0 0.0
+
+Coordinates of the center of mass and three Euler rotation angels.
+
+###### Format of input when `coord` is `points`
+
+	fragment h2o
+		0.0 0.0 0.0
+		1.0 0.0 0.0
+		0.0 1.0 0.0
+
+Coordinates of three points belonging to a fragment.
+
+###### Format of input when `coord` is `rotmat`
+
+	fragment h2o
+		0.0 0.0 0.0
+		1.0 0.0 0.0
+		0.0 1.0 0.0
+		0.0 0.0 1.0
+
+Coordinated of the center of mass and 3 by 3 rotation matrix.

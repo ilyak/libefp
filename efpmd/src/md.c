@@ -98,7 +98,7 @@ static double get_invariant_nvt(const struct md *md)
 {
 	struct nvt_data *data = (struct nvt_data *)md->data;
 
-	double tau = FS_TO_AU * md->config->thermostat_tau;
+	double tau = md->config->thermostat_tau;
 	double target = md->config->target_temperature;
 
 	double virt = BOLTZMANN * target * md->n_freedom * (data->chi_dt +
@@ -366,7 +366,7 @@ static void rotate_body(struct body *body, double dt)
 
 static void update_step_nve(struct md *md)
 {
-	double dt = FS_TO_AU * md->config->time_step;
+	double dt = md->config->time_step;
 
 	for (int i = 0; i < md->n_bodies; i++) {
 		struct body *body = md->bodies + i;
@@ -413,7 +413,7 @@ static void update_step_nve(struct md *md)
 static void update_step_nvt(struct md *md)
 {
 	struct nvt_data *data = (struct nvt_data *)md->data;
-	double dt = FS_TO_AU * md->config->time_step;
+	double dt = md->config->time_step;
 
 	for (int i = 0; i < md->n_bodies; i++) {
 		struct body *body = md->bodies + i;
@@ -439,7 +439,7 @@ static void update_step_nvt(struct md *md)
 		rotate_body(body, dt);
 	}
 
-	double tau = FS_TO_AU * md->config->thermostat_tau;
+	double tau = md->config->thermostat_tau;
 	double target = md->config->target_temperature;
 
 	data->chi += 0.5 * dt * (get_temperature(md) / target - 1.0) / tau / tau;
