@@ -1,6 +1,3 @@
-VERSION_MAJOR = 0
-VERSION_MINOR = 9
-
 EXTRA_DIST =
 CLEANFILES =
 ACLOCAL_AMFLAGS = -I m4 ${ACLOCAL_FLAGS}
@@ -9,7 +6,6 @@ AM_LDFLAGS =
 
 AM_CPPFLAGS = \
 	-include $(top_builddir)/config.h \
-	-DLIBEFP_VERSION=\""$(VERSION_MAJOR).$(VERSION_MINOR)"\" \
 	-I${top_srcdir}/src \
 	-I${top_srcdir}/common
 
@@ -73,10 +69,9 @@ src_libefp_la_SOURCES = \
 	src/xr.c
 
 src_libefp_la_LIBADD = common/libcommon.la
-src_libefp_la_LDFLAGS = $(AM_LDFLAGS) \
-	-version-info $(VERSION_MAJOR):$(VERSION_MINOR)
+src_libefp_la_LDFLAGS = $(AM_LDFLAGS)
 
-EXTRA_DIST += AUTHORS LICENSE README.md
+EXTRA_DIST += AUTHORS LICENSE README.md VERSION
 
 if BUILD_EFPMD
 bin_PROGRAMS = efpmd/src/efpmd
@@ -104,8 +99,7 @@ efpmd_src_efpmd_LDADD = common/libcommon.la src/libefp.la
 efpmd_src_efpmd_CFLAGS = $(AM_CFLAGS)
 efpmd_src_efpmd_CPPFLAGS = $(AM_CPPFLAGS) \
 	-I${top_srcdir}/efpmd/optimizer \
-	-DEFP_DATA_DIR=\""$(datarootdir)/libefp"\" \
-	-DEFPMD_VERSION=\""$(VERSION_MAJOR).$(VERSION_MINOR)"\"
+	-DEFP_DATA_DIR=\""$(datarootdir)/libefp"\"
 
 EXTRA_DIST += \
 	efpmd/README.md \
@@ -127,7 +121,8 @@ check_PROGRAMS = $(TESTS)
 endif
 
 tests_test_LDADD = common/libcommon.la src/libefp.la -lcheck
-tests_test_CPPFLAGS = $(AM_CPPFLAGS) -DABS_TOP_SRCDIR=\"$(abs_top_srcdir)\"
+tests_test_CPPFLAGS = $(AM_CPPFLAGS) \
+	-DABS_TOP_SRCDIR=\""$(abs_top_srcdir)"\"
 
 tests_test_SOURCES = \
 	tests/test.c \

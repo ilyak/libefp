@@ -1,6 +1,6 @@
 AC_PREREQ([2.62])
 AC_INIT([libefp],
-	[0.9],
+	m4_esyscmd([cat VERSION | tr -d '\n']),
 	[ilya.kaliman@gmail.com],
 	[libefp],
 	[http://www.libefp.org/])

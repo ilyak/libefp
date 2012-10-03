@@ -1,9 +1,8 @@
-LIBEFP_MAJOR?=	0
-LIBEFP_MINOR?=	0
-
 PROG=		efpmd
 WARNS=		6
 NO_MAN=		yes
+
+VERSION!=	cat ${.CURDIR}/../../VERSION
 
 USER_CFLAGS?=	-fopenmp
 CFLAGS+=	${USER_CFLAGS}
@@ -17,7 +16,7 @@ CFLAGS+=	-I${.CURDIR}/../../common \
 		-I${.CURDIR}/../../src \
 		-I${.CURDIR}/../optimizer \
 		-DEFP_DATA_DIR="\"${.CURDIR}/../../fraglib\"" \
-		-DEFPMD_VERSION="\"${LIBEFP_MAJOR}.${LIBEFP_MINOR}\""
+		-DPACKAGE_VERSION="\"${VERSION}\""
 
 LDADD+=		-L${.OBJDIR}/../../common \
 		-L${.OBJDIR}/../../src \

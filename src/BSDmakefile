@@ -1,10 +1,9 @@
-LIBEFP_MAJOR?=	0
-LIBEFP_MINOR?=	0
-
 LIB=		efp
 INCS=		efp.h
 WARNS=		6
 NO_MAN=		yes
+
+VERSION!=	cat ${.CURDIR}/../VERSION
 
 USER_CFLAGS?=	-fopenmp
 CFLAGS+=	${USER_CFLAGS}
@@ -12,7 +11,7 @@ CFLAGS+=	${USER_CFLAGS}
 DEBUG_FLAGS?=	-O0 -g
 
 CFLAGS+=	-I${.CURDIR}/../common \
-		-DLIBEFP_VERSION="\"${LIBEFP_MAJOR}.${LIBEFP_MINOR}\""
+		-DPACKAGE_VERSION="\"${VERSION}\""
 
 SRCS=		disp.c \
 		efp.c \

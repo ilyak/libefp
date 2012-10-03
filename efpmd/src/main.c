@@ -46,7 +46,7 @@ static void run_sim(struct efp *efp, const struct config *config)
 
 static void print_banner(void)
 {
-	printf("EFPMD ver. " EFPMD_VERSION "\n");
+	printf("EFPMD ver. " PACKAGE_VERSION "\n");
 	printf("Copyright (c) 2012 Ilya Kaliman\n\n");
 	printf("%s\n", efp_banner());
 }
