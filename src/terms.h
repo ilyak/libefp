@@ -30,21 +30,17 @@
 struct efp;
 struct frag;
 
-enum efp_result efp_compute_elec(struct efp *efp);
-enum efp_result efp_compute_pol(struct efp *efp);
-enum efp_result efp_compute_disp(struct efp *efp);
-enum efp_result efp_compute_xr(struct efp *efp);
-enum efp_result efp_compute_chtr(struct efp *efp);
-enum efp_result efp_compute_ai_elec(struct efp *efp);
-enum efp_result efp_compute_ai_disp(struct efp *efp);
-enum efp_result efp_compute_ai_xr(struct efp *efp);
-enum efp_result efp_compute_ai_chtr(struct efp *efp);
+enum efp_result efp_compute_elec(struct efp *);
+enum efp_result efp_compute_pol(struct efp *);
+enum efp_result efp_compute_disp(struct efp *);
+enum efp_result efp_compute_xr(struct efp *);
+enum efp_result efp_compute_ai_elec(struct efp *);
 
 enum efp_result efp_compute_pol_energy(struct efp *, double *);
 
-void efp_update_elec(struct frag *frag);
-void efp_update_pol(struct frag *frag);
-void efp_update_disp(struct frag *frag);
-void efp_update_xr(struct frag *frag);
+void efp_update_elec(struct frag *);
+void efp_update_pol(struct frag *);
+void efp_update_disp(struct frag *);
+void efp_update_xr(struct frag *);
 
 #endif /* LIBEFP_TERMS_H */

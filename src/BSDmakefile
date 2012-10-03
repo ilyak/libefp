@@ -14,10 +14,7 @@ DEBUG_FLAGS?=	-O0 -g
 CFLAGS+=	-I${.CURDIR}/../common \
 		-DLIBEFP_VERSION="\"${LIBEFP_MAJOR}.${LIBEFP_MINOR}\""
 
-SRCS=		ai_disp.c \
-		ai_xr.c \
-		chtr.c \
-		disp.c \
+SRCS=		disp.c \
 		efp.c \
 		elec.c \
 		elec_grad.c \

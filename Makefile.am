@@ -57,9 +57,6 @@ lib_LTLIBRARIES = src/libefp.la
 include_HEADERS = src/efp.h
 
 src_libefp_la_SOURCES = \
-	src/ai_disp.c \
-	src/ai_xr.c \
-	src/chtr.c \
 	src/disp.c \
 	src/disp.h \
 	src/efp.c \

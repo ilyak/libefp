@@ -41,8 +41,6 @@ enum efp_result {
 	EFP_RESULT_SUCCESS = 0,
 	/** Insufficient memory. */
 	EFP_RESULT_NO_MEMORY,
-	/** Operation is not implemented. */
-	EFP_RESULT_NOT_IMPLEMENTED,
 	/** Unexpected NULL argument to function was specified. */
 	EFP_RESULT_ARGUMENT_NULL,
 	/** EFP structure was not properly initialized. */

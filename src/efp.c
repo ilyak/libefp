@@ -296,15 +296,11 @@ efp_compute(struct efp *efp, int do_gradient)
 	typedef enum efp_result (*term_fn)(struct efp *);
 
 	static const term_fn term_list[] = {
-		efp_compute_xr, /* xr must be first */
+		efp_compute_xr,   /* xr must be first */
 		efp_compute_elec,
 		efp_compute_pol,
 		efp_compute_disp,
-		efp_compute_chtr,
-		efp_compute_ai_elec,
-		efp_compute_ai_disp,
-		efp_compute_ai_xr,
-		efp_compute_ai_chtr
+		efp_compute_ai_elec
 	};
 
 	if (!initialized(efp))
@@ -957,8 +953,6 @@ efp_result_to_string(enum efp_result res)
 return "no error";
 	case EFP_RESULT_NO_MEMORY:
 return "out of memory";
-	case EFP_RESULT_NOT_IMPLEMENTED:
-return "operation is not implemented";
 	case EFP_RESULT_ARGUMENT_NULL:
 return "unexpected NULL argument to function";
 	case EFP_RESULT_NOT_INITIALIZED:
