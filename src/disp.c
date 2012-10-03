@@ -229,6 +229,16 @@ frag_frag_disp(struct efp *efp, int frag_i, int frag_j, int overlap_idx)
 	return energy;
 }
 
+/*
+ * Reference:
+ *
+ * Ivana Adamovic, Mark Gordon
+ *
+ * Dynamic polarizability, dispersion coefficient C6 and dispersion energy in
+ * the effective fragment potential method
+ *
+ * Mol. Phys. 103, 379 (2005)
+ */
 enum efp_result
 efp_compute_disp(struct efp *efp)
 {

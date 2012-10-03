@@ -403,6 +403,16 @@ lmo_lmo_xr_grad(struct frag *fr_i, struct frag *fr_j, int i, int j,
 	vec_atomic_sub(&fr_j->torque, &torque_j);
 }
 
+/*
+ * Reference:
+ *
+ * Hui Li, Mark Gordon
+ *
+ * Gradients of the exchange-repulsion energy in the general effective fragment
+ * potential method
+ *
+ * Theor. Chem. Acc. 115, 385 (2006)
+ */
 static void
 frag_frag_xr_grad(struct efp *efp, const double *s, const double *t,
 		  const double *lmo_s, const double *lmo_t, int frag_i,
