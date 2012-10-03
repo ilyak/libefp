@@ -177,19 +177,19 @@ struct efp_energy {
 	 * Exchange-repulsion energy. */
 	double exchange_repulsion;
 	/**
-	 * Charge transfer energy. */
+	 * Charge transfer energy, reserved for future use. */
 	double charge_transfer;
 	/**
-	 * AI/EFP electrostatic energy. */
+	 * Ab initio/EFP electrostatic energy. */
 	double ai_electrostatic;
 	/**
-	 * AI/EFP dispersion energy. */
+	 * Ab initio/EFP dispersion energy, reserved for future use. */
 	double ai_dispersion;
 	/**
-	 * AI/EFP exchange-repulsion energy. */
+	 * Ab initio/EFP exchange-repulsion energy, reserved for future use. */
 	double ai_exchange_repulsion;
 	/**
-	 * AI/EFP charge transfer energy. */
+	 * Ab initio/EFP charge transfer energy, reserved for future use. */
 	double ai_charge_transfer;
 	/**
 	 * Sum of all the above EFP energy terms. */
