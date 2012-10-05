@@ -56,6 +56,9 @@ struct test_data {
 	 * If not NULL geometry will be set up using EFP_COORD_TYPE_POINTS. */
 	const double *geometry_points;
 
+	/** Periodic box size. */
+	double box[3];
+
 	/** Number of atoms in quantum part. */
 	int n_qm_atoms;
 

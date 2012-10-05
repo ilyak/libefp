@@ -23,6 +23,8 @@ LDADD+=		-L${.OBJDIR}/../common \
 SRCS=		test.c \
 		disp_1a.c \
 		disp_1b.c \
+		disp_1c.c \
+		disp_1d.c \
 		disp_2a.c \
 		disp_2b.c \
 		disp_3a.c \

@@ -140,27 +140,6 @@ static char *make_potential_file_list(const struct config *config)
 	return files;
 }
 
-static struct efp *init_efp(const struct config *config)
-{
-	struct efp_opts opts = {
-		.terms = config->terms,
-		.elec_damp = config->elec_damp,
-		.disp_damp = config->disp_damp,
-		.pol_damp = config->pol_damp
-	};
-
-	char *files = make_potential_file_list(config);
-	char *names = make_name_list(config);
-
-	struct efp *efp;
-	check_fail(efp_init(&efp, &opts, NULL, files, names));
-
-	free(files);
-	free(names);
-
-	return efp;
-}
-
 static int get_coord_count(enum efp_coord_type coord_type)
 {
 	switch (coord_type) {
@@ -171,8 +150,23 @@ static int get_coord_count(enum efp_coord_type coord_type)
 	assert(0);
 }
 
-static void set_coord(struct efp *efp, const struct config *config)
+static struct efp *init_sim(const struct config *config)
 {
+	struct efp_opts opts = {
+		.terms = config->terms,
+		.elec_damp = config->elec_damp,
+		.disp_damp = config->disp_damp,
+		.pol_damp = config->pol_damp,
+		.enable_pbc = config->enable_pbc,
+		.swf_cutoff = config->swf_cutoff
+	};
+
+	char *files = make_potential_file_list(config);
+	char *names = make_name_list(config);
+
+	struct efp *efp;
+	check_fail(efp_init(&efp, &opts, NULL, files, names));
+
 	int n_coord = get_coord_count(config->coord_type);
 	double coord[n_coord * config->n_frags];
 
@@ -180,6 +174,19 @@ static void set_coord(struct efp *efp, const struct config *config)
 		memcpy(coord + n_coord * i, config->frags[i].coord, n_coord * sizeof(double));
 
 	check_fail(efp_set_coordinates(efp, config->coord_type, coord));
+
+	if (config->enable_pbc) {
+		double x = config->pbc_box[0];
+		double y = config->pbc_box[1];
+		double z = config->pbc_box[2];
+
+		check_fail(efp_set_periodic_box(efp, x, y, z));
+	}
+
+	free(files);
+	free(names);
+
+	return efp;
 }
 
 int main(int argc, char **argv)
@@ -190,9 +197,8 @@ int main(int argc, char **argv)
 	print_banner();
 
 	struct config *config = parse_config(argv[1]);
-	struct efp *efp = init_efp(config);
+	struct efp *efp = init_sim(config);
 
-	set_coord(efp, config);
 	run_sim(efp, config);
 
 	efp_shutdown(efp);

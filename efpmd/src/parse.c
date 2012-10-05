@@ -26,7 +26,6 @@
 
 #include <ctype.h>
 #include <stddef.h>
-#include <stdbool.h>
 
 #include "common.h"
 
@@ -163,6 +162,15 @@ static bool parse_double(char **str, void *out)
 	return true;
 }
 
+static bool parse_vec(char **str, void *out)
+{
+	double *ptr = (double *)out;
+
+	return parse_double(str, ptr) &&
+	       parse_double(str, ptr + 1) &&
+	       parse_double(str, ptr + 2);
+}
+
 static bool parse_enum(char **str, void *out, const char *names, const void *values,
 				size_t data_size)
 {
@@ -187,6 +195,20 @@ static bool parse_enum(char **str, void *out, const char *names, const void *val
 	}
 
 	return false;
+}
+
+static bool parse_bool(char **str, void *out)
+{
+	static const char names[] =
+		"true\n"
+		"false";
+
+	static const bool values[] = {
+		true,
+		false
+	};
+
+	return parse_enum(str, out, names, values, sizeof(values[0]));
 }
 
 static bool parse_run_type(char **str, void *out)
@@ -357,6 +379,9 @@ static const struct {
 	{ "elec_damp",      "screen",           parse_elec_damp, NULL,           offsetof(struct config, elec_damp)          },
 	{ "disp_damp",      "tt",               parse_disp_damp, NULL,           offsetof(struct config, disp_damp)          },
 	{ "pol_damp",       "tt",               parse_pol_damp,  NULL,           offsetof(struct config, pol_damp)           },
+	{ "enable_pbc",     "false",            parse_bool,      NULL,           offsetof(struct config, enable_pbc)         },
+	{ "pbc_box",        "15.0 15.0 15.0",   parse_vec,       NULL,           offsetof(struct config, pbc_box)            },
+	{ "swf_cutoff",     "6.0",              parse_double,    NULL,           offsetof(struct config, swf_cutoff)         },
 	{ "hess_delta",     "0.001",            parse_double,    double_gt_zero, offsetof(struct config, hess_delta)         },
 	{ "max_steps",      "100",              parse_int,       int_gt_zero,    offsetof(struct config, max_steps)          },
 	{ "print_step",     "1",                parse_int,       int_gt_zero,    offsetof(struct config, print_step)         },
@@ -371,8 +396,12 @@ static const struct {
 
 static void convert_units(struct config *config)
 {
-	config->time_step = FS_TO_AU * config->time_step;
-	config->thermostat_tau = FS_TO_AU * config->thermostat_tau;
+	config->time_step *= FS_TO_AU;
+	config->thermostat_tau *= FS_TO_AU;
+	config->pbc_box[0] /= BOHR_RADIUS;
+	config->pbc_box[1] /= BOHR_RADIUS;
+	config->pbc_box[2] /= BOHR_RADIUS;
+	config->swf_cutoff /= BOHR_RADIUS;
 
 	int n_convert;
 
@@ -394,6 +423,9 @@ static void parse_field(struct stream *stream, struct config *config)
 		size_t offset = config_list[i].member_offset;
 
 		if (strneq(name, stream->ptr, strlen(name))) {
+			if (!isspace(stream->ptr[strlen(name)]))
+				continue;
+
 			stream->ptr += strlen(name);
 			skip_space(stream);
 

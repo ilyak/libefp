@@ -41,8 +41,8 @@ enum efp_result {
 	EFP_RESULT_SUCCESS = 0,
 	/** Insufficient memory. */
 	EFP_RESULT_NO_MEMORY,
-	/** Unexpected NULL argument to function was specified. */
-	EFP_RESULT_ARGUMENT_NULL,
+	/** Invalid argument to function was specified. */
+	EFP_RESULT_INVALID_ARGUMENT,
 	/** EFP structure was not properly initialized. */
 	EFP_RESULT_NOT_INITIALIZED,
 	/** File not found on disk. */
@@ -59,6 +59,14 @@ enum efp_result {
 	EFP_RESULT_CALLBACK_FAILED,
 	/** Gradient computation was not requested. */
 	EFP_RESULT_GRADIENT_NOT_REQUESTED,
+	/**
+	 * Periodic boundary conditions are not supported for current selection
+	 * of energy terms. */
+	EFP_RESULT_PBC_NOT_SUPPORTED,
+	/** Switching function cutoff is too small. */
+	EFP_RESULT_SWF_CUTOFF_TOO_SMALL,
+	/** Periodic simulation box is too small. */
+	EFP_RESULT_BOX_TOO_SMALL,
 	/** Polarization SCF did not converge. */
 	EFP_RESULT_POL_NOT_CONVERGED,
 	/** Certain EFP parameters are missing. */
@@ -154,6 +162,15 @@ struct efp_opts {
 
 	/** Polarization damping type (see #efp_pol_damp). */
 	enum efp_pol_damp pol_damp;
+
+	/** Enable periodic boundary conditions if nonzero. */
+	int enable_pbc;
+
+	/**
+	 * Cutoff for the switching function used in calculations
+	 * with periodic boundary conditions.
+	 */
+	double swf_cutoff;
 };
 
 /** EFP energy terms. */
@@ -364,6 +381,19 @@ enum efp_result efp_set_coordinates(struct efp *efp,
 enum efp_result efp_get_coordinates(struct efp *efp,
 				    int n_frags,
 				    double *xyzabc);
+
+/**
+ * Setup periodic box size.
+ *
+ * \param[in] efp The efp structure.
+ * \param[in] x Box size in x dimension.
+ * \param[in] y Box size in y dimension.
+ * \param[in] z Box size in z dimension.
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_set_periodic_box(struct efp *efp,
+				     double x, double y, double z);
 
 /**
  * Update wave function dependent energy terms.

@@ -32,7 +32,7 @@
 
 #include "efp_private.h"
 
-static const double integral_threshold = 1.0e-7;
+#define INTEGRAL_THRESHOLD 1.0e-7
 
 static inline int
 fock_idx(int i, int j)
@@ -55,7 +55,7 @@ valence(double n)
 static double
 charge_penetration_energy(double s_ij, double r_ij)
 {
-	if (fabs(s_ij) < integral_threshold)
+	if (fabs(s_ij) < INTEGRAL_THRESHOLD)
 		return 0.0;
 
 	double ln_s = log(fabs(s_ij));
@@ -68,7 +68,7 @@ charge_penetration_grad(struct frag *fr_i, struct frag *fr_j,
 			int lmo_i_idx, int lmo_j_idx, double s_ij,
 			const six_t ds_ij)
 {
-	if (fabs(s_ij) < integral_threshold)
+	if (fabs(s_ij) < INTEGRAL_THRESHOLD)
 		return;
 
 	const vec_t *ct_i = fr_i->lmo_centroids + lmo_i_idx;
@@ -207,7 +207,7 @@ lmo_lmo_xr_grad(struct frag *fr_i, struct frag *fr_j, int i, int j,
 	vec_zero(&torque_i);
 
 	/* first part */
-	if (fabs(s_ij) > integral_threshold) {
+	if (fabs(s_ij) > INTEGRAL_THRESHOLD) {
 		double ln_s = log(fabs(s_ij));
 
 		t1 = s_ij / r_ij * (-sqrt(-2.0 / PI / ln_s) + 4.0 * sqrt(-2.0 / PI * ln_s));
@@ -493,7 +493,7 @@ lmo_lmo_xr_energy(struct frag *fr_i, struct frag *fr_j, int i, int j,
 	double exr = 0.0;
 
 	/* xr - first part */
-	if (fabs(s_ij) > integral_threshold)
+	if (fabs(s_ij) > INTEGRAL_THRESHOLD)
 		exr += -2.0 * sqrt(-2.0 * log(fabs(s_ij)) / PI) * s_ij * s_ij / r_ij;
 
 	/* xr - second part */

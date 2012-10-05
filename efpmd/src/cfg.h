@@ -1,6 +1,7 @@
 #ifndef EFPMD_CFG_H
 #define EFPMD_CFG_H
 
+#include <stdbool.h>
 #include <efp.h>
 
 enum run_type {
@@ -30,6 +31,9 @@ struct config {
 	enum efp_elec_damp elec_damp;
 	enum efp_disp_damp disp_damp;
 	enum efp_pol_damp pol_damp;
+	bool enable_pbc;
+	double pbc_box[3];
+	double swf_cutoff;
 	double hess_delta;
 	int max_steps;
 	int print_step;

@@ -20,6 +20,7 @@ SRCS=		disp.c \
 		int.c \
 		parse.c \
 		pol.c \
+		swf.c \
 		xr.c
 
 .include <bsd.lib.mk>

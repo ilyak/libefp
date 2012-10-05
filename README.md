@@ -153,10 +153,6 @@ GAMESS manual (see http://www.msg.ameslab.gov/gamess/).
   compilation produces no warnings. Use `make check` to make sure that all new
   code passes the test cases.
 
-- To debug using tests do `libtool --mode=execute gdb ./mytest` in tests
-  directory. This will start `gdb` so you will be able to set breakpoints and
-  inspect variables in your test program.
-
 
 ## References
 

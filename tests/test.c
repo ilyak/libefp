@@ -165,6 +165,15 @@ void run_test(const struct test_data *test_data)
 			lib_error("efp_set_qm_atoms", res);
 	}
 
+	if (test_data->opts.enable_pbc) {
+		double bx = test_data->box[0];
+		double by = test_data->box[1];
+		double bz = test_data->box[2];
+
+		if ((res = efp_set_periodic_box(efp, bx, by, bz)))
+			lib_error("efp_set_periodic_box", res);
+	}
+
 	/* Begin imaginary ab initio SCF */
 	double scf_energy;
 
@@ -219,6 +228,8 @@ static void add_tcases(Suite *s)
 {
 	suite_add_tcase(s, tcase_disp_1a());
 	suite_add_tcase(s, tcase_disp_1b());
+	suite_add_tcase(s, tcase_disp_1c());
+	suite_add_tcase(s, tcase_disp_1d());
 	suite_add_tcase(s, tcase_disp_2a());
 	suite_add_tcase(s, tcase_disp_2b());
 	suite_add_tcase(s, tcase_disp_3a());
@@ -253,6 +264,7 @@ int main(void)
 
 	SRunner *sr = srunner_create(s);
 
+	srunner_set_fork_status(sr, CK_FORK);
 	srunner_run_all(sr, CK_NORMAL);
 
 	int n_failed = srunner_ntests_failed(sr);

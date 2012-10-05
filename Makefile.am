@@ -65,6 +65,8 @@ src_libefp_la_SOURCES = \
 	src/int_shift.h \
 	src/parse.c \
 	src/pol.c \
+	src/swf.c \
+	src/swf.h \
 	src/terms.h \
 	src/xr.c
 
@@ -134,6 +136,8 @@ tests_test_SOURCES = \
 	tests/geometry_4.h \
 	tests/disp_1a.c \
 	tests/disp_1b.c \
+	tests/disp_1c.c \
+	tests/disp_1d.c \
 	tests/disp_2a.c \
 	tests/disp_2b.c \
 	tests/disp_3a.c \

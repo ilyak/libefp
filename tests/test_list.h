@@ -1,5 +1,7 @@
 TCase *tcase_disp_1a(void);
 TCase *tcase_disp_1b(void);
+TCase *tcase_disp_1c(void);
+TCase *tcase_disp_1d(void);
 TCase *tcase_disp_2a(void);
 TCase *tcase_disp_2b(void);
 TCase *tcase_disp_3a(void);
