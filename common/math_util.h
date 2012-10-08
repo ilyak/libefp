@@ -64,6 +64,17 @@ eq(double a, double b)
 }
 
 static inline double
+reduce(int n, const double *a)
+{
+	double sum = 0.0;
+
+	for (int i = 0; i < n; i++)
+		sum += *a++;
+
+	return sum;
+}
+
+static inline double
 vec_get(const vec_t *vec, int idx)
 {
 	return ((const double *)vec)[idx];
