@@ -103,7 +103,7 @@ compute_elec_field_pt(struct efp *efp, int frag_idx, int pt_idx)
 	struct frag *frag = efp->frags + frag_idx;
 	struct polarizable_pt *pt = frag->polarizable_pts + pt_idx;
 
-	vec_zero(&pt->elec_field);
+	pt->elec_field = vec_zero;
 
 	for (int i = 0; i < efp->n_frag; i++) {
 		if (i == frag_idx)
@@ -208,8 +208,8 @@ get_induced_dipole_field(struct efp *efp, int frag_idx,
 			 struct polarizable_pt *pt,
 			 vec_t *field, vec_t *field_conj)
 {
-	vec_zero(field);
-	vec_zero(field_conj);
+	*field = vec_zero;
+	*field_conj = vec_zero;
 
 	for (int j = 0; j < efp->n_frag; j++) {
 		if (j == frag_idx)
@@ -314,8 +314,9 @@ efp_compute_pol_energy(struct efp *efp, double *energy_out)
 		struct frag *frag = efp->frags + i;
 		for (int j = 0; j < frag->n_polarizable_pts; j++) {
 			struct polarizable_pt *pt = frag->polarizable_pts + j;
-			vec_zero(&pt->induced_dipole);
-			vec_zero(&pt->induced_dipole_conj);
+
+			pt->induced_dipole = vec_zero;
+			pt->induced_dipole_conj = vec_zero;
 		}
 	}
 

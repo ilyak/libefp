@@ -339,12 +339,12 @@ efp_compute(struct efp *efp, int do_gradient)
 
 	if (do_gradient) {
 		for (int i = 0; i < efp->n_frag; i++) {
-			vec_zero(&efp->frags[i].force);
-			vec_zero(&efp->frags[i].torque);
+			efp->frags[i].force = vec_zero;
+			efp->frags[i].torque = vec_zero;
 		}
 
 		for (int i = 0; i < efp->n_qm_atoms; i++)
-			vec_zero(&efp->qm_atoms[i].grad);
+			efp->qm_atoms[i].grad = vec_zero;
 	}
 
 	enum efp_result res;

@@ -48,6 +48,15 @@ typedef struct {
 	double xx, xy, xz, yx, yy, yz, zx, zy, zz;
 } mat_t;
 
+static const vec_t vec_zero = { 0.0, 0.0, 0.0 };
+
+static const six_t six_zero = { 0.0, 0.0, 0.0,
+				0.0, 0.0, 0.0 };
+
+static const mat_t mat_zero = { 0.0, 0.0, 0.0,
+				0.0, 0.0, 0.0,
+				0.0, 0.0, 0.0 };
+
 static inline int
 eq(double a, double b)
 {
@@ -58,12 +67,6 @@ static inline double
 vec_get(const vec_t *vec, int idx)
 {
 	return ((const double *)vec)[idx];
-}
-
-static inline void
-vec_zero(vec_t *vec)
-{
-	vec->x = 0.0, vec->y = 0.0, vec->z = 0.0;
 }
 
 static inline void
@@ -158,14 +161,6 @@ static inline double
 vec_dist(const vec_t *a, const vec_t *b)
 {
 	return sqrt(vec_dist_2(a, b));
-}
-
-static inline void
-mat_zero(mat_t *mat)
-{
-	mat->xx = 0.0, mat->xy = 0.0, mat->xz = 0.0;
-	mat->yx = 0.0, mat->yy = 0.0, mat->yz = 0.0;
-	mat->zx = 0.0, mat->zy = 0.0, mat->zz = 0.0;
 }
 
 static inline double

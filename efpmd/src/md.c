@@ -209,12 +209,11 @@ static void remove_system_drift(struct md *md)
 	vec_t am = get_system_angular_momentum(md);
 
 	mat_t inertia = get_system_inertia_tensor(md);
-	mat_t inertia_inv;
+	mat_t inertia_inv = mat_zero;
 
 	if (inertia.xx < EPSILON ||
 	    inertia.yy < EPSILON ||
 	    inertia.zz < EPSILON) {
-		mat_zero(&inertia_inv);
 		inertia_inv.xx = inertia.xx < EPSILON ? 0.0 : 1.0 / inertia.xx;
 		inertia_inv.yy = inertia.yy < EPSILON ? 0.0 : 1.0 / inertia.yy;
 		inertia_inv.zz = inertia.zz < EPSILON ? 0.0 : 1.0 / inertia.zz;
