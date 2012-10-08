@@ -46,7 +46,8 @@ SRCS=		test.c \
 		total_4a.c \
 		total_4b.c \
 		total_4c.c \
-		xr_1.c \
+		xr_1a.c \
+		xr_1b.c \
 		xr_2.c \
 		xr_3.c
 

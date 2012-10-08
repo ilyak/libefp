@@ -39,4 +39,4 @@ static const struct test_data test_data = {
 	}
 };
 
-DEFINE_TEST(xr_1)
+DEFINE_TEST(xr_1a)

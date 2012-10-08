@@ -23,6 +23,7 @@ TCase *tcase_total_3a(void);
 TCase *tcase_total_4a(void);
 TCase *tcase_total_4b(void);
 TCase *tcase_total_4c(void);
-TCase *tcase_xr_1(void);
+TCase *tcase_xr_1a(void);
+TCase *tcase_xr_1b(void);
 TCase *tcase_xr_2(void);
 TCase *tcase_xr_3(void);

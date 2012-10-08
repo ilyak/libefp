@@ -159,6 +159,7 @@ tests_test_SOURCES = \
 	tests/total_4a.c \
 	tests/total_4b.c \
 	tests/total_4c.c \
-	tests/xr_1.c \
+	tests/xr_1a.c \
+	tests/xr_1b.c \
 	tests/xr_2.c \
 	tests/xr_3.c
