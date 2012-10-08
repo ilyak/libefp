@@ -33,7 +33,6 @@ static const struct test_data test_data = {
 	.geometry_points = geometry,
 		/* xr from GAMESS */
 	.ref_energy = 0.0205771978,
-	.test_gradient = 1,
 	.opts = {
 		.terms = EFP_TERM_XR
 	}

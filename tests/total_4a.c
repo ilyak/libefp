@@ -32,7 +32,6 @@ static const struct test_data test_data = {
 	.names = names,
 	.geometry_xyzabc = xyzabc,
 	.ref_energy = -0.0097992771,
-	.test_gradient = 1,
 	.opts = {
 		.terms = EFP_TERM_ELEC | EFP_TERM_POL |
 			 EFP_TERM_DISP | EFP_TERM_XR,

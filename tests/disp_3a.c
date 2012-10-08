@@ -33,7 +33,6 @@ static const struct test_data test_data = {
 	.geometry_points = geometry,
 		/* disp from GAMESS */
 	.ref_energy = -0.0158589370,
-	.test_gradient = 1,
 	.opts = {
 		.terms = EFP_TERM_DISP,
 		.disp_damp = EFP_DISP_DAMP_TT

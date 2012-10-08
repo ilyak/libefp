@@ -71,9 +71,6 @@ struct test_data {
 	/** Reference energy value. */
 	double ref_energy;
 
-	/** If nonzero gradient test will also be performed. */
-	int test_gradient;
-
 	/** Simulation settings. */
 	struct efp_opts opts;
 

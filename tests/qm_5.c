@@ -70,7 +70,6 @@ static const struct test_data test_data = {
 	.qm_znuc = qm_znuc,
 	.qm_xyz = qm_xyz,
 	.ref_energy = -0.0810700395,
-	.test_gradient = 1,
 	.callbacks = {
 		.get_electron_density_field = get_electron_density_field,
 		.get_electron_density_field_user_data = NULL

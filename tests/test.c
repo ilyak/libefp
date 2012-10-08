@@ -181,7 +181,7 @@ void run_test(const struct test_data *test_data)
 		lib_error("efp_scf_update", res);
 	/* End imaginary ab initio SCF */
 
-	if ((res = efp_compute(efp, test_data->test_gradient)))
+	if ((res = efp_compute(efp, 1)))
 		lib_error("efp_compute", res);
 
 	struct efp_energy energy;
@@ -191,35 +191,33 @@ void run_test(const struct test_data *test_data)
 
 	fail_unless(fabs(energy.total - test_data->ref_energy) < FAIL_TOL);
 
-	if (test_data->test_gradient) {
-		int n_frag;
-		if ((res = efp_get_frag_count(efp, &n_frag)))
-			lib_error("efp_get_frag_count", res);
+	int n_frag;
+	if ((res = efp_get_frag_count(efp, &n_frag)))
+		lib_error("efp_get_frag_count", res);
 
-		double frag_grad[6 * n_frag];
-		if ((res = efp_get_gradient(efp, n_frag, frag_grad)))
-			lib_error("efp_get_gradient", res);
+	double frag_grad[6 * n_frag];
+	if ((res = efp_get_gradient(efp, n_frag, frag_grad)))
+		lib_error("efp_get_gradient", res);
 
-		double xyzabc[6 * n_frag];
-		if ((res = efp_get_coordinates(efp, n_frag, xyzabc)))
-			lib_error("efp_get_coordinates", res);
+	double xyzabc[6 * n_frag];
+	if ((res = efp_get_coordinates(efp, n_frag, xyzabc)))
+		lib_error("efp_get_coordinates", res);
 
-		torque_to_deriv(n_frag, xyzabc, frag_grad);
+	torque_to_deriv(n_frag, xyzabc, frag_grad);
 
-		if (do_qm) {
-			int n_qm_atoms;
-			if ((res = efp_get_qm_atom_count(efp, &n_qm_atoms)))
-				lib_error("efp_get_qm_atom_count", res);
+	if (do_qm) {
+		int n_qm_atoms;
+		if ((res = efp_get_qm_atom_count(efp, &n_qm_atoms)))
+			lib_error("efp_get_qm_atom_count", res);
 
-			double qm_grad[3 * n_qm_atoms];
-			if ((res = efp_get_qm_gradient(efp, n_qm_atoms, qm_grad)))
-				lib_error("efp_get_qm_gradient", res);
+		double qm_grad[3 * n_qm_atoms];
+		if ((res = efp_get_qm_gradient(efp, n_qm_atoms, qm_grad)))
+			lib_error("efp_get_qm_gradient", res);
 
-			test_qm_numerical_grad(efp, qm_grad);
-		}
-
-		test_frag_numerical_grad(efp, xyzabc, frag_grad);
+		test_qm_numerical_grad(efp, qm_grad);
 	}
+
+	test_frag_numerical_grad(efp, xyzabc, frag_grad);
 
 	efp_shutdown(efp);
 }

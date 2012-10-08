@@ -6,7 +6,6 @@ static const struct test_data test_data = {
 	.names = names,
 	.geometry_xyzabc = xyzabc,
 	.ref_energy = 0.0000134716,
-	.test_gradient = 1,
 	.box = { BOHR(20.0), BOHR(20.0), BOHR(20.0) },
 	.opts = {
 		.terms = EFP_TERM_XR,
