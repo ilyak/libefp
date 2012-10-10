@@ -358,9 +358,8 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 					       &force, &add_j, &add_i);
 			vec_negate(&force);
 
-			add_force_torque_2(fr_i, fr_j,
-					   VEC(pt_i->x), VEC(at_j->x),
-					   &force, &add_i, &add_j);
+			add_force(fr_i, CVEC(pt_i->x), &force, &add_i);
+			sub_force(fr_j, CVEC(at_j->x), &force, &add_j);
 		}
 
 		/* induced dipole - multipoles */
@@ -375,25 +374,22 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 					       &force, &add_j, &add_i);
 			vec_negate(&force);
 
-			add_force_torque_2(fr_i, fr_j,
-					   VEC(pt_i->x), VEC(pt_j->x),
-					   &force, &add_i, &add_j);
+			add_force(fr_i, CVEC(pt_i->x), &force, &add_i);
+			sub_force(fr_j, CVEC(pt_j->x), &force, &add_j);
 
 			/* induced dipole - dipole */
 			efp_dipole_dipole_grad(&dipole_i, &pt_j->dipole, &dr,
 					       &force, &add_i, &add_j);
 			vec_negate(&add_j);
 
-			add_force_torque_2(fr_i, fr_j,
-					   VEC(pt_i->x), VEC(pt_j->x),
-					   &force, &add_i, &add_j);
+			add_force(fr_i, CVEC(pt_i->x), &force, &add_i);
+			sub_force(fr_j, CVEC(pt_j->x), &force, &add_j);
 
 			/* induced dipole - quadrupole */
 			efp_dipole_quadrupole_grad(&dipole_i, pt_j->quadrupole,
 						   &dr, &force, &add_i, &add_j);
-			add_force_torque_2(fr_i, fr_j,
-					   VEC(pt_i->x), VEC(pt_j->x),
-					   &force, &add_i, &add_j);
+			add_force(fr_i, CVEC(pt_i->x), &force, &add_i);
+			sub_force(fr_j, CVEC(pt_j->x), &force, &add_j);
 
 			/* octupole-polarizability interactions are ignored */
 		}
@@ -418,9 +414,8 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 					       &dr, &force, &add_i, &add_j);
 			vec_negate(&add_j);
 
-			add_force_torque_2(fr_i, fr_j,
-					   VEC(pt_i->x), VEC(pt_j->x),
-					   &force, &add_i, &add_j);
+			add_force(fr_i, CVEC(pt_i->x), &force, &add_i);
+			sub_force(fr_j, CVEC(pt_j->x), &force, &add_j);
 		}
 	}
 
@@ -436,8 +431,8 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 					       &force, &add_j, &add_i);
 			vec_negate(&add_i);
 
-			add_force_torque_frag_point(fr_i, VEC(pt_i->x),
-						    &at_j->grad, &force, &add_i);
+			vec_atomic_add(&at_j->grad, &force);
+			sub_force(fr_i, CVEC(pt_i->x), &force, &add_i);
 		}
 	}
 }

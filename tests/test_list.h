@@ -8,6 +8,7 @@ TCase *tcase_disp_3a(void);
 TCase *tcase_disp_3b(void);
 TCase *tcase_elec_1a(void);
 TCase *tcase_elec_1b(void);
+TCase *tcase_elec_1c(void);
 TCase *tcase_elec_2a(void);
 TCase *tcase_elec_2b(void);
 TCase *tcase_elec_3a(void);

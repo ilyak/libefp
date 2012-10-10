@@ -66,7 +66,7 @@ charge_penetration_energy(double s_ij, double r_ij)
 static void
 charge_penetration_grad(struct frag *fr_i, struct frag *fr_j,
 			int lmo_i_idx, int lmo_j_idx, double s_ij,
-			const six_t ds_ij, double ecp, const struct swf *swf)
+			const six_t ds_ij, const struct swf *swf)
 {
 	if (fabs(s_ij) < INTEGRAL_THRESHOLD)
 		return;
@@ -89,9 +89,9 @@ charge_penetration_grad(struct frag *fr_i, struct frag *fr_j,
 
 	vec_t force, torque_i, torque_j;
 
-	force.x = (t2 * ds_ij.x - t1 * dr.x) * swf->swf + ecp * swf->dswf.x;
-	force.y = (t2 * ds_ij.y - t1 * dr.y) * swf->swf + ecp * swf->dswf.y;
-	force.z = (t2 * ds_ij.z - t1 * dr.z) * swf->swf + ecp * swf->dswf.z;
+	force.x = (t2 * ds_ij.x - t1 * dr.x) * swf->swf;
+	force.y = (t2 * ds_ij.y - t1 * dr.y) * swf->swf;
+	force.z = (t2 * ds_ij.z - t1 * dr.z) * swf->swf;
 
 	torque_i.x = -t2 * ds_ij.a + t1 * (dr.y * (ct_i->z - fr_i->z) -
 					   dr.z * (ct_i->y - fr_i->y));
@@ -195,7 +195,7 @@ add_six_vec(int el, int size, const double *vec, six_t *six)
 static void
 lmo_lmo_xr_grad(struct frag *fr_i, struct frag *fr_j, int i, int j,
 		const double *lmo_s, const double *lmo_t, const six_t *lmo_ds,
-		const six_t *lmo_dt, double exr, const struct swf *swf)
+		const six_t *lmo_dt, const struct swf *swf)
 {
 	int ij = i * fr_j->n_lmo + j;
 
@@ -408,10 +408,6 @@ lmo_lmo_xr_grad(struct frag *fr_i, struct frag *fr_j, int i, int j,
 	force.y *= 2.0 * swf->swf;
 	force.z *= 2.0 * swf->swf;
 
-	force.x += swf->dswf.x * exr;
-	force.y += swf->dswf.y * exr;
-	force.z += swf->dswf.z * exr;
-
 	torque_i.x *= 2.0 * swf->swf;
 	torque_i.y *= 2.0 * swf->swf;
 	torque_i.z *= 2.0 * swf->swf;
@@ -496,16 +492,13 @@ frag_frag_xr(struct efp *efp, int frag_i, int frag_j, int overlap_idx,
 	struct frag *fr_i = efp->frags + frag_i;
 	struct frag *fr_j = efp->frags + frag_j;
 
-	struct swf swf = make_swf(efp, fr_i, fr_j);
-
 	double *s = malloc(fr_i->xr_wf_size * fr_j->xr_wf_size * sizeof(double));
 	double *t = malloc(fr_i->xr_wf_size * fr_j->xr_wf_size * sizeof(double));
 
-	int n_lmo_ij = fr_i->n_lmo * fr_j->n_lmo;
+	double lmo_s[fr_i->n_lmo * fr_j->n_lmo];
+	double lmo_t[fr_i->n_lmo * fr_j->n_lmo];
 
-	double exr[n_lmo_ij], ecp[n_lmo_ij];
-	double lmo_s[n_lmo_ij], lmo_t[n_lmo_ij];
-
+	struct swf swf = make_swf(efp, fr_i, fr_j);
 	struct shell shells_j[fr_j->n_xr_shells];
 
 	for (int j = 0; j < fr_j->n_xr_shells; j++) {
@@ -529,8 +522,8 @@ frag_frag_xr(struct efp *efp, int frag_i, int frag_j, int overlap_idx,
 			    fr_i->xr_wf, fr_j->xr_wf,
 			    t, lmo_t);
 
-	memset(exr, 0, n_lmo_ij * sizeof(double));
-	memset(ecp, 0, n_lmo_ij * sizeof(double));
+	double exr = 0.0;
+	double ecp = 0.0;
 
 	for (int i = 0, idx = 0; i < fr_i->n_lmo; i++) {
 		for (int j = 0; j < fr_j->n_lmo; j++, idx++) {
@@ -553,16 +546,16 @@ frag_frag_xr(struct efp *efp, int frag_i, int frag_j, int overlap_idx,
 
 			if ((efp->opts.terms & EFP_TERM_ELEC) &&
 			    (efp->opts.elec_damp == EFP_ELEC_DAMP_OVERLAP))
-				ecp[idx] = charge_penetration_energy(s_ij, r_ij);
+				ecp += charge_penetration_energy(s_ij, r_ij);
 
 			if (efp->opts.terms & EFP_TERM_XR)
-				exr[idx] = lmo_lmo_xr_energy(fr_i, fr_j, i, j,
-							     lmo_s, lmo_t, &swf.cell);
+				exr += lmo_lmo_xr_energy(fr_i, fr_j, i, j,
+							 lmo_s, lmo_t, &swf.cell);
 		}
 	}
 
-	*exr_out = reduce(n_lmo_ij, exr) * swf.swf;
-	*ecp_out = reduce(n_lmo_ij, ecp) * swf.swf;
+	*exr_out = exr * swf.swf;
+	*ecp_out = ecp * swf.swf;
 
 	if (!efp->do_gradient) {
 		free(s);
@@ -619,14 +612,22 @@ frag_frag_xr(struct efp *efp, int frag_i, int frag_j, int overlap_idx,
 			if ((efp->opts.terms & EFP_TERM_ELEC) &&
 			    (efp->opts.elec_damp == EFP_ELEC_DAMP_OVERLAP))
 				charge_penetration_grad(fr_i, fr_j, i, j,
-							lmo_s[ij], lmo_ds[ij],
-							ecp[idx], &swf);
+							lmo_s[ij], lmo_ds[ij], &swf);
 
 			if (efp->opts.terms & EFP_TERM_XR)
 				lmo_lmo_xr_grad(fr_i, fr_j, i, j, lmo_s, lmo_t,
-						lmo_ds, lmo_dt, exr[idx], &swf);
+						lmo_ds, lmo_dt, &swf);
 		}
 	}
+
+	vec_t force = {
+		swf.dswf.x * (exr + ecp),
+		swf.dswf.y * (exr + ecp),
+		swf.dswf.z * (exr + ecp)
+	};
+
+	vec_atomic_add(&fr_i->force, &force);
+	vec_atomic_sub(&fr_j->force, &force);
 
 	free(s), free(ds), free(lmo_ds);
 	free(t), free(dt), free(lmo_dt);

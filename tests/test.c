@@ -234,6 +234,7 @@ static void add_tcases(Suite *s)
 	suite_add_tcase(s, tcase_disp_3b());
 	suite_add_tcase(s, tcase_elec_1a());
 	suite_add_tcase(s, tcase_elec_1b());
+	suite_add_tcase(s, tcase_elec_1c());
 	suite_add_tcase(s, tcase_elec_2a());
 	suite_add_tcase(s, tcase_elec_2b());
 	suite_add_tcase(s, tcase_elec_3a());

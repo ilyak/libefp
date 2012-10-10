@@ -86,15 +86,16 @@ disp_tt(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 		double g = 4.0 / 3.0 * sum * (gdamp / r - 6.0 * damp / r2) / r6;
 
 		vec_t force = {
-			g * dr.x * swf->swf + swf->dswf.x * energy,
-			g * dr.y * swf->swf + swf->dswf.y * energy,
-			g * dr.z * swf->swf + swf->dswf.z * energy
+			g * dr.x * swf->swf,
+			g * dr.y * swf->swf,
+			g * dr.z * swf->swf
 		};
 
-		add_force_torque(fr_i, fr_j, CVEC(pt_i->x), CVEC(pt_j->x), &force);
+		add_force(fr_i, CVEC(pt_i->x), &force, NULL);
+		sub_force(fr_j, CVEC(pt_j->x), &force, NULL);
 	}
 
-	return energy * swf->swf;
+	return energy;
 }
 
 static double
@@ -144,9 +145,9 @@ disp_overlap(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 			fr_j->z - fr_i->z - swf->cell.z
 		};
 
-		force.x = (t1 * dr.x - t2 * ds_ij.x) * swf->swf + swf->dswf.x * energy;
-		force.y = (t1 * dr.y - t2 * ds_ij.y) * swf->swf + swf->dswf.y * energy;
-		force.z = (t1 * dr.z - t2 * ds_ij.z) * swf->swf + swf->dswf.z * energy;
+		force.x = (t1 * dr.x - t2 * ds_ij.x) * swf->swf;
+		force.y = (t1 * dr.y - t2 * ds_ij.y) * swf->swf;
+		force.z = (t1 * dr.z - t2 * ds_ij.z) * swf->swf;
 
 		torque_i.x = swf->swf * (t1 * (dr.z * dr_i.y - dr.y * dr_i.z) +
 						t2 * ds_ij.a);
@@ -172,7 +173,7 @@ disp_overlap(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 		vec_atomic_sub(&fr_j->torque, &torque_j);
 	}
 
-	return energy * swf->swf;
+	return energy;
 }
 
 static double
@@ -201,15 +202,16 @@ disp_off(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 		double g = -8.0 * sum / r8;
 
 		vec_t force = {
-			g * dr.x * swf->swf + swf->dswf.x * energy,
-			g * dr.y * swf->swf + swf->dswf.y * energy,
-			g * dr.z * swf->swf + swf->dswf.z * energy
+			g * dr.x * swf->swf,
+			g * dr.y * swf->swf,
+			g * dr.z * swf->swf
 		};
 
-		add_force_torque(fr_i, fr_j, CVEC(pt_i->x), CVEC(pt_j->x), &force);
+		add_force(fr_i, CVEC(pt_i->x), &force, NULL);
+		sub_force(fr_j, CVEC(pt_j->x), &force, NULL);
 	}
 
-	return energy * swf->swf;
+	return energy;
 }
 
 static double
@@ -261,7 +263,16 @@ frag_frag_disp(struct efp *efp, int frag_i, int frag_j, int overlap_idx)
 		for (int jj = 0; jj < n_disp_j; jj++, idx++)
 			energy += point_point_disp(efp, frag_i, frag_j, ii, jj, idx, &swf);
 
-	return energy;
+	vec_t force = {
+		swf.dswf.x * energy,
+		swf.dswf.y * energy,
+		swf.dswf.z * energy
+	};
+
+	vec_atomic_add(&fr_i->force, &force);
+	vec_atomic_sub(&fr_j->force, &force);
+
+	return energy * swf.swf;
 }
 
 /*

@@ -144,6 +144,7 @@ tests_test_SOURCES = \
 	tests/disp_3b.c \
 	tests/elec_1a.c \
 	tests/elec_1b.c \
+	tests/elec_1c.c \
 	tests/elec_2a.c \
 	tests/elec_2b.c \
 	tests/elec_3a.c \
