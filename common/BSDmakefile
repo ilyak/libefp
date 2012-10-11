@@ -1,10 +1,7 @@
 LIB=		common
 INTERNALLIB=	yes
 WARNS=		6
-NO_MAN=		yes
-
-USER_CFLAGS?=	-fopenmp
-CFLAGS+=	${USER_CFLAGS}
+IGNORE_PRAGMA=	yes
 
 DEBUG_FLAGS?=	-O0 -g
 

@@ -24,8 +24,6 @@
  * SUCH DAMAGE.
  */
 
-#include <util.h>
-
 #include "efp_private.h"
 #include "elec.h"
 

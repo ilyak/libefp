@@ -24,7 +24,7 @@
  * SUCH DAMAGE.
  */
 
-#include <util.h>
+#include "../../common/util.h"
 
 #include "common.h"
 

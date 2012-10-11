@@ -1,7 +1,6 @@
 LIB=		optimizer
 INTERNALLIB=	yes
 WARNS=		6
-NO_MAN=		yes
 
 DEBUG_FLAGS?=	-O0 -g
 FFLAGS+=	${DEBUG_FLAGS}

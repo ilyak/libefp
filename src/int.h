@@ -27,7 +27,7 @@
 #ifndef LIBEFP_INT_H
 #define LIBEFP_INT_H
 
-#include <math_util.h>
+#include "../common/math_util.h"
 
 struct shell {
 	char type;       /* shell type - S,L,P,D,F */

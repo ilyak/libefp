@@ -2,7 +2,8 @@
 #define EFPMD_CFG_H
 
 #include <stdbool.h>
-#include <efp.h>
+
+#include "../../src/efp.h"
 
 enum run_type {
 	RUN_TYPE_SP,

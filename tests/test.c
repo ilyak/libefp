@@ -26,7 +26,7 @@
 
 #include <stdlib.h>
 
-#include <util.h>
+#include "../common/util.h"
 
 #include "test_common.h"
 

@@ -1,17 +1,12 @@
 LIB=		efp
 INCS=		efp.h
 WARNS=		6
-NO_MAN=		yes
+IGNORE_PRAGMA=	yes
 
 VERSION!=	cat ${.CURDIR}/../VERSION
 
-USER_CFLAGS?=	-fopenmp
-CFLAGS+=	${USER_CFLAGS}
-
 DEBUG_FLAGS?=	-O0 -g
-
-CFLAGS+=	-I${.CURDIR}/../common \
-		-DPACKAGE_VERSION="\"${VERSION}\""
+CFLAGS+=	-DPACKAGE_VERSION="\"${VERSION}\""
 
 SRCS=		disp.c \
 		efp.c \

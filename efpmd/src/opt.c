@@ -24,8 +24,8 @@
  * SUCH DAMAGE.
  */
 
-#include <optimizer.h>
-#include <util.h>
+#include "../../common/util.h"
+#include "../optimizer/optimizer.h"
 
 #include "common.h"
 

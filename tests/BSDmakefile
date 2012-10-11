@@ -1,18 +1,13 @@
 PROG=		test
-WARNS=		6
 NO_MAN=		yes
-
-USER_CFLAGS?=	-fopenmp
-CFLAGS+=	${USER_CFLAGS}
+WARNS=		6
+IGNORE_PRAGMA=	yes
 
 USER_LIBS?=	-lalapack -lcblas -lf77blas -latlas -lm
 LDADD+=		${USER_LIBS}
 
 DEBUG_FLAGS?=	-O0 -g
-
-CFLAGS+=	-I${.CURDIR}/../common \
-		-I${.CURDIR}/../src \
-		-DABS_TOP_SRCDIR="\"${.CURDIR}/..\""
+CFLAGS+=	-DABS_TOP_SRCDIR="\"${.CURDIR}/..\""
 
 LDADD+=		-L${.OBJDIR}/../common \
 		-L${.OBJDIR}/../src \

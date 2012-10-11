@@ -30,8 +30,8 @@
 #include <check.h>
 #include <stdio.h>
 
-#include <efp.h>
-#include <phys_const.h>
+#include "../src/efp.h"
+#include "../common/phys_const.h"
 
 #include "test_list.h"
 

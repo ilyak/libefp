@@ -24,8 +24,8 @@
  * SUCH DAMAGE.
  */
 
-#include <clapack.h>
-#include <util.h>
+#include "../../common/clapack.h"
+#include "../../common/util.h"
 
 #include "common.h"
 

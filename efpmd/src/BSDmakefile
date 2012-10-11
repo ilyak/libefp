@@ -1,21 +1,16 @@
 PROG=		efpmd
-WARNS=		6
 NO_MAN=		yes
+WARNS=		6
+IGNORE_PRAGMA=	yes
 
 VERSION!=	cat ${.CURDIR}/../../VERSION
-
-USER_CFLAGS?=	-fopenmp
-CFLAGS+=	${USER_CFLAGS}
 
 USER_LIBS?=	-lalapack -lcblas -lf77blas -latlas -lgfortran -lm
 LDADD+=		${USER_LIBS}
 
 DEBUG_FLAGS?=	-O0 -g
 
-CFLAGS+=	-I${.CURDIR}/../../common \
-		-I${.CURDIR}/../../src \
-		-I${.CURDIR}/../optimizer \
-		-DEFP_DATA_DIR="\"${.CURDIR}/../../fraglib\"" \
+CFLAGS+=	-DEFP_DATA_DIR="\"${.CURDIR}/../../fraglib\"" \
 		-DPACKAGE_VERSION="\"${VERSION}\""
 
 LDADD+=		-L${.OBJDIR}/../../common \

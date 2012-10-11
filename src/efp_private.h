@@ -27,7 +27,9 @@
 #ifndef LIBEFP_EFP_PRIVATE_H
 #define LIBEFP_EFP_PRIVATE_H
 
-#include <compat.h>
+#include "../common/compat.h"
+#include "../common/math_util.h"
+#include "../common/util.h"
 
 #include "efp.h"
 #include "int.h"

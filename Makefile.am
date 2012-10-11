@@ -4,10 +4,7 @@ ACLOCAL_AMFLAGS = -I m4 ${ACLOCAL_FLAGS}
 AM_MAKEFLAGS = --no-print-directory
 AM_LDFLAGS =
 
-AM_CPPFLAGS = \
-	-include $(top_builddir)/config.h \
-	-I${top_srcdir}/src \
-	-I${top_srcdir}/common
+AM_CPPFLAGS = -include $(top_builddir)/config.h
 
 AM_CFLAGS = ${my_CFLAGS} ${OPENMP_CFLAGS} \
 	-fvisibility=hidden
@@ -100,7 +97,6 @@ efpmd_src_efpmd_SOURCES = \
 efpmd_src_efpmd_LDADD = common/libcommon.la src/libefp.la
 efpmd_src_efpmd_CFLAGS = $(AM_CFLAGS)
 efpmd_src_efpmd_CPPFLAGS = $(AM_CPPFLAGS) \
-	-I${top_srcdir}/efpmd/optimizer \
 	-DEFP_DATA_DIR=\""$(datarootdir)/libefp"\"
 
 EXTRA_DIST += \

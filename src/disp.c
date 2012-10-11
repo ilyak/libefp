@@ -26,8 +26,6 @@
 
 #include <assert.h>
 
-#include <util.h>
-
 #include "efp_private.h"
 #include "disp.h"
 
