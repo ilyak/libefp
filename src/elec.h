@@ -29,6 +29,24 @@
 
 #include "../common/math_util.h"
 
+static inline void
+add_3(vec_t *a, const vec_t *aa,
+      vec_t *b, const vec_t *bb,
+      vec_t *c, const vec_t *cc)
+{
+	a->x += aa->x;
+	a->y += aa->y;
+	a->z += aa->z;
+
+	b->x += bb->x;
+	b->y += bb->y;
+	b->z += bb->z;
+
+	c->x += cc->x;
+	c->y += cc->y;
+	c->z += cc->z;
+}
+
 static inline int
 quad_idx(int a, int b)
 {
@@ -96,6 +114,14 @@ octupole_sum(const double *oct, const vec_t *dr)
 
 	return sum;
 }
+
+double charge_charge_energy(double, double, const vec_t *);
+double charge_dipole_energy(double, const vec_t *, const vec_t *);
+double charge_quadrupole_energy(double, const double *, const vec_t *);
+double charge_octupole_energy(double, const double *, const vec_t *);
+double dipole_dipole_energy(const vec_t *, const vec_t *, const vec_t *);
+double dipole_quadrupole_energy(const vec_t *, const double *, const vec_t *);
+double quadrupole_quadrupole_energy(const double *, const double *, const vec_t *);
 
 void efp_charge_charge_grad(double q1, double q2, const vec_t *dr,
 			    vec_t *force, vec_t *add1, vec_t *add2);

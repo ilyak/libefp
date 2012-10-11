@@ -61,123 +61,6 @@ get_screen_damping_grad(double r_ij, double pi, double pj)
 }
 
 static double
-charge_charge_energy(double q1, double q2, double r)
-{
-	return q1 * q2 / r;
-}
-
-static double
-charge_dipole_energy(double q1, const vec_t *d2, const vec_t *dr, double r)
-{
-	double r3 = r * r * r;
-
-	return -q1 / r3 * vec_dot(d2, dr);
-}
-
-static double
-charge_quadrupole_energy(double q1, const double *quad2, const vec_t *dr, double r)
-{
-	double r2 = r * r;
-	double r5 = r2 * r2 * r;
-
-	return q1 / r5 * quadrupole_sum(quad2, dr);
-}
-
-static double
-charge_octupole_energy(double q1, const double *oct2, const vec_t *dr, double r)
-{
-	double r2 = r * r;
-	double r7 = r2 * r2 * r2 * r;
-
-	return -q1 / r7 * octupole_sum(oct2, dr);
-}
-
-static double
-dipole_dipole_energy(const vec_t *d1, const vec_t *d2, const vec_t *dr, double r)
-{
-	double r2 = r * r;
-	double r3 = r2 * r;
-	double r5 = r3 * r2;
-
-	double d1dr = vec_dot(d1, dr);
-	double d2dr = vec_dot(d2, dr);
-
-	return vec_dot(d1, d2) / r3 - 3.0 * d1dr * d2dr / r5;
-}
-
-static double
-dipole_quadrupole_energy(const vec_t *d1, const double *quad2, const vec_t *dr, double r)
-{
-	double r2 = r * r;
-	double r5 = r2 * r2 * r;
-	double r7 = r5 * r2;
-
-	double d1dr = vec_dot(d1, dr);
-	double q2dr = quadrupole_sum(quad2, dr);
-	double d1q2dr = 0.0;
-
-	for (int a = 0; a < 3; a++)
-		for (int b = 0; b < 3; b++) {
-			int idx = quad_idx(a, b);
-			d1q2dr += quad2[idx] * vec_get(d1, a) * vec_get(dr, b);
-		}
-
-	return 5.0 / r7 * q2dr * d1dr - 2.0 / r5 * d1q2dr;
-}
-
-static double
-quadrupole_quadrupole_energy(const double *quad1, const double *quad2,
-			     const vec_t *dr, double r)
-{
-	double r2 = r * r;
-	double r5 = r2 * r2 * r;
-	double r7 = r5 * r2;
-	double r9 = r7 * r2;
-
-	double q1dr = quadrupole_sum(quad1, dr);
-	double q2dr = quadrupole_sum(quad2, dr);
-
-	double q1q2 = 0.0;
-	double q1q2dr = 0.0;
-
-	for (int a = 0; a < 3; a++) {
-		double t1 = 0.0;
-		double t2 = 0.0;
-
-		for (int b = 0; b < 3; b++) {
-			int idx = quad_idx(a, b);
-
-			t1 += quad1[idx] * vec_get(dr, b);
-			t2 += quad2[idx] * vec_get(dr, b);
-
-			q1q2 += quad1[idx] * quad2[idx];
-		}
-
-		q1q2dr += t1 * t2;
-	}
-
-	return (2.0 / r5 * q1q2 - 20.0 / r7 * q1q2dr + 35.0 / r9 * q1dr * q2dr) / 3.0;
-}
-
-static inline void
-add_3(vec_t *a, const vec_t *aa,
-      vec_t *b, const vec_t *bb,
-      vec_t *c, const vec_t *cc)
-{
-	a->x += aa->x;
-	a->y += aa->y;
-	a->z += aa->z;
-
-	b->x += bb->x;
-	b->y += bb->y;
-	b->z += bb->z;
-
-	c->x += cc->x;
-	c->y += cc->y;
-	c->z += cc->z;
-}
-
-static double
 atom_mult_energy(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 		 int atom_i_idx, int pt_j_idx, const struct swf *swf)
 {
@@ -190,25 +73,25 @@ atom_mult_energy(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 		pt_j->z - at_i->z - swf->cell.z
 	};
 
-	double r = vec_len(&dr);
 	double energy = 0.0, ccdamp = 1.0;
 
 	if (efp->opts.elec_damp == EFP_ELEC_DAMP_SCREEN) {
+		double r = vec_len(&dr);
 		double sp = fr_j->screen_params[pt_j_idx];
 		ccdamp = get_screen_damping(r, sp, HUGE_VAL);
 	}
 
 	/* charge - monopole */
-	energy += ccdamp * charge_charge_energy(at_i->znuc, pt_j->monopole, r);
+	energy += ccdamp * charge_charge_energy(at_i->znuc, pt_j->monopole, &dr);
 
 	/* charge - dipole */
-	energy += charge_dipole_energy(at_i->znuc, &pt_j->dipole, &dr, r);
+	energy += charge_dipole_energy(at_i->znuc, &pt_j->dipole, &dr);
 
 	/* charge - quadrupole */
-	energy += charge_quadrupole_energy(at_i->znuc, pt_j->quadrupole, &dr, r);
+	energy += charge_quadrupole_energy(at_i->znuc, pt_j->quadrupole, &dr);
 
 	/* charge - octupole */
-	energy += charge_octupole_energy(at_i->znuc, pt_j->octupole, &dr, r);
+	energy += charge_octupole_energy(at_i->znuc, pt_j->octupole, &dr);
 
 	return energy;
 }
@@ -285,58 +168,47 @@ mult_mult_energy(struct efp *efp, int fr_i_idx, int fr_j_idx,
 		pt_j->z - pt_i->z - swf->cell.z
 	};
 
-	double r = vec_len(&dr);
 	double energy = 0.0, ccdamp = 1.0;
 
 	if (efp->opts.elec_damp == EFP_ELEC_DAMP_SCREEN) {
+		double r = vec_len(&dr);
 		double screen_i = fr_i->screen_params[pt_i_idx];
 		double screen_j = fr_j->screen_params[pt_j_idx];
 		ccdamp = get_screen_damping(r, screen_i, screen_j);
 	}
 
 	/* monopole - monopole */
-	energy += ccdamp * charge_charge_energy(
-				pt_i->monopole, pt_j->monopole, r);
+	energy += ccdamp * charge_charge_energy(pt_i->monopole, pt_j->monopole, &dr);
 
 	/* monopole - dipole */
-	energy += charge_dipole_energy(
-				pt_i->monopole, &pt_j->dipole, &dr, r);
+	energy += charge_dipole_energy(pt_i->monopole, &pt_j->dipole, &dr);
 
 	/* dipole - monopole */
-	energy -= charge_dipole_energy(
-				pt_j->monopole, &pt_i->dipole, &dr, r);
+	energy -= charge_dipole_energy(pt_j->monopole, &pt_i->dipole, &dr);
 
 	/* monopole - quadrupole */
-	energy += charge_quadrupole_energy(
-				pt_i->monopole, pt_j->quadrupole, &dr, r);
+	energy += charge_quadrupole_energy(pt_i->monopole, pt_j->quadrupole, &dr);
 
 	/* quadrupole - monopole */
-	energy += charge_quadrupole_energy(
-				pt_j->monopole, pt_i->quadrupole, &dr, r);
+	energy += charge_quadrupole_energy(pt_j->monopole, pt_i->quadrupole, &dr);
 
 	/* monopole - octupole */
-	energy += charge_octupole_energy(
-				pt_i->monopole, pt_j->octupole, &dr, r);
+	energy += charge_octupole_energy(pt_i->monopole, pt_j->octupole, &dr);
 
 	/* octupole - monopole */
-	energy -= charge_octupole_energy(
-				pt_j->monopole, pt_i->octupole, &dr, r);
+	energy -= charge_octupole_energy(pt_j->monopole, pt_i->octupole, &dr);
 
 	/* dipole - dipole */
-	energy += dipole_dipole_energy(
-				&pt_i->dipole, &pt_j->dipole, &dr, r);
+	energy += dipole_dipole_energy(&pt_i->dipole, &pt_j->dipole, &dr);
 
 	/* dipole - quadrupole */
-	energy += dipole_quadrupole_energy(
-				&pt_i->dipole, pt_j->quadrupole, &dr, r);
+	energy += dipole_quadrupole_energy(&pt_i->dipole, pt_j->quadrupole, &dr);
 
 	/* quadrupole - dipole */
-	energy -= dipole_quadrupole_energy(
-				&pt_j->dipole, pt_i->quadrupole, &dr, r);
+	energy -= dipole_quadrupole_energy(&pt_j->dipole, pt_i->quadrupole, &dr);
 
 	/* quadrupole - quadrupole */
-	energy += quadrupole_quadrupole_energy(
-				pt_i->quadrupole, pt_j->quadrupole, &dr, r);
+	energy += quadrupole_quadrupole_energy(pt_i->quadrupole, pt_j->quadrupole, &dr);
 
 	return energy;
 }
@@ -464,8 +336,7 @@ frag_frag_elec(struct efp *efp, int fr_i_idx, int fr_j_idx)
 				at_j->z - at_i->z - swf.cell.z
 			};
 
-			double r = vec_len(&dr);
-			energy += charge_charge_energy(at_i->znuc, at_j->znuc, r);
+			energy += charge_charge_energy(at_i->znuc, at_j->znuc, &dr);
 
 			if (efp->do_gradient) {
 				vec_t force, add_i, add_j;
@@ -651,9 +522,9 @@ compute_ai_elec_frag(struct efp *efp, int frag_idx)
 		for (int j = 0; j < efp->n_qm_atoms; j++) {
 			struct efp_atom *at_i = fr_i->atoms + i;
 			struct qm_atom *at_j = efp->qm_atoms + j;
-			double r = vec_dist(CVEC(at_i->x), CVEC(at_j->x));
+			vec_t dr = vec_sub(CVEC(at_i->x), CVEC(at_j->x));
 
-			energy += charge_charge_energy(at_i->znuc, at_j->znuc, r);
+			energy += charge_charge_energy(at_i->znuc, at_j->znuc, &dr);
 		}
 	}
 	for (int i = 0; i < fr_i->n_multipole_pts; i++) {
@@ -662,23 +533,18 @@ compute_ai_elec_frag(struct efp *efp, int frag_idx)
 			struct qm_atom *at_j = efp->qm_atoms + j;
 
 			vec_t dr = vec_sub(CVEC(pt_i->x), CVEC(at_j->x));
-			double r = vec_len(&dr);
 
 			/* charge - monopole */
-			energy += charge_charge_energy(
-						at_j->znuc, pt_i->monopole, r);
+			energy += charge_charge_energy(at_j->znuc, pt_i->monopole, &dr);
 
 			/* charge - dipole */
-			energy += charge_dipole_energy(
-						at_j->znuc, &pt_i->dipole, &dr, r);
+			energy += charge_dipole_energy(at_j->znuc, &pt_i->dipole, &dr);
 
 			/* charge - quadrupole */
-			energy += charge_quadrupole_energy(
-						at_j->znuc, pt_i->quadrupole, &dr, r);
+			energy += charge_quadrupole_energy(at_j->znuc, pt_i->quadrupole, &dr);
 
 			/* charge - octupole */
-			energy += charge_octupole_energy(
-						at_j->znuc, pt_i->octupole, &dr, r);
+			energy += charge_octupole_energy(at_j->znuc, pt_i->octupole, &dr);
 		}
 	}
 	return energy;

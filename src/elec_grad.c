@@ -44,6 +44,112 @@ octupole_sum_xyz(const double *oct, const vec_t *dr, int axis)
 	return sum;
 }
 
+double
+charge_charge_energy(double q1, double q2, const vec_t *dr)
+{
+	double r = vec_len(dr);
+
+	return q1 * q2 / r;
+}
+
+double
+charge_dipole_energy(double q1, const vec_t *d2, const vec_t *dr)
+{
+	double r = vec_len(dr);
+	double r3 = r * r * r;
+
+	return -q1 / r3 * vec_dot(d2, dr);
+}
+
+double
+charge_quadrupole_energy(double q1, const double *quad2, const vec_t *dr)
+{
+	double r = vec_len(dr);
+	double r2 = r * r;
+	double r5 = r2 * r2 * r;
+
+	return q1 / r5 * quadrupole_sum(quad2, dr);
+}
+
+double
+charge_octupole_energy(double q1, const double *oct2, const vec_t *dr)
+{
+	double r = vec_len(dr);
+	double r2 = r * r;
+	double r7 = r2 * r2 * r2 * r;
+
+	return -q1 / r7 * octupole_sum(oct2, dr);
+}
+
+double
+dipole_dipole_energy(const vec_t *d1, const vec_t *d2, const vec_t *dr)
+{
+	double r = vec_len(dr);
+	double r2 = r * r;
+	double r3 = r2 * r;
+	double r5 = r3 * r2;
+
+	double d1dr = vec_dot(d1, dr);
+	double d2dr = vec_dot(d2, dr);
+
+	return vec_dot(d1, d2) / r3 - 3.0 * d1dr * d2dr / r5;
+}
+
+double
+dipole_quadrupole_energy(const vec_t *d1, const double *quad2, const vec_t *dr)
+{
+	double r = vec_len(dr);
+	double r2 = r * r;
+	double r5 = r2 * r2 * r;
+	double r7 = r5 * r2;
+
+	double d1dr = vec_dot(d1, dr);
+	double q2dr = quadrupole_sum(quad2, dr);
+	double d1q2dr = 0.0;
+
+	for (int a = 0; a < 3; a++)
+		for (int b = 0; b < 3; b++) {
+			int idx = quad_idx(a, b);
+			d1q2dr += quad2[idx] * vec_get(d1, a) * vec_get(dr, b);
+		}
+
+	return 5.0 / r7 * q2dr * d1dr - 2.0 / r5 * d1q2dr;
+}
+
+double
+quadrupole_quadrupole_energy(const double *quad1, const double *quad2, const vec_t *dr)
+{
+	double r = vec_len(dr);
+	double r2 = r * r;
+	double r5 = r2 * r2 * r;
+	double r7 = r5 * r2;
+	double r9 = r7 * r2;
+
+	double q1dr = quadrupole_sum(quad1, dr);
+	double q2dr = quadrupole_sum(quad2, dr);
+
+	double q1q2 = 0.0;
+	double q1q2dr = 0.0;
+
+	for (int a = 0; a < 3; a++) {
+		double t1 = 0.0;
+		double t2 = 0.0;
+
+		for (int b = 0; b < 3; b++) {
+			int idx = quad_idx(a, b);
+
+			t1 += quad1[idx] * vec_get(dr, b);
+			t2 += quad2[idx] * vec_get(dr, b);
+
+			q1q2 += quad1[idx] * quad2[idx];
+		}
+
+		q1q2dr += t1 * t2;
+	}
+
+	return (2.0 / r5 * q1q2 - 20.0 / r7 * q1q2dr + 35.0 / r9 * q1dr * q2dr) / 3.0;
+}
+
 void
 efp_charge_charge_grad(double q1, double q2, const vec_t *dr,
 		       vec_t *force, vec_t *add1, vec_t *add2)
