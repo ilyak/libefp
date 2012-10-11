@@ -43,28 +43,33 @@ get_pol_damp_tt(double r)
 
 static void
 add_multipole_field(struct polarizable_pt *pt,
-		    const struct multipole_pt *mult_pt)
+		    const struct multipole_pt *mult_pt,
+		    const struct swf *swf)
 {
-	vec_t dr = vec_sub(CVEC(pt->x), CVEC(mult_pt->x));
-
-	double t1, t2;
+	vec_t dr = {
+		pt->x - mult_pt->x - swf->cell.x,
+		pt->y - mult_pt->y - swf->cell.y,
+		pt->z - mult_pt->z - swf->cell.z
+	};
 
 	double r = vec_len(&dr);
 	double r3 = r * r * r;
 	double r5 = r3 * r * r;
 	double r7 = r5 * r * r;
 
+	double t1, t2;
+
 	/* charge */
-	pt->elec_field.x += mult_pt->monopole * dr.x / r3;
-	pt->elec_field.y += mult_pt->monopole * dr.y / r3;
-	pt->elec_field.z += mult_pt->monopole * dr.z / r3;
+	pt->elec_field.x += swf->swf * mult_pt->monopole * dr.x / r3;
+	pt->elec_field.y += swf->swf * mult_pt->monopole * dr.y / r3;
+	pt->elec_field.z += swf->swf * mult_pt->monopole * dr.z / r3;
 
 	/* dipole */
 	t1 = vec_dot(&mult_pt->dipole, &dr);
 
-	pt->elec_field.x += -mult_pt->dipole.x / r3 + 3.0 / r5 * t1 * dr.x;
-	pt->elec_field.y += -mult_pt->dipole.y / r3 + 3.0 / r5 * t1 * dr.y;
-	pt->elec_field.z += -mult_pt->dipole.z / r3 + 3.0 / r5 * t1 * dr.z;
+	pt->elec_field.x += swf->swf * (3.0 / r5 * t1 * dr.x - mult_pt->dipole.x / r3);
+	pt->elec_field.y += swf->swf * (3.0 / r5 * t1 * dr.y - mult_pt->dipole.y / r3);
+	pt->elec_field.z += swf->swf * (3.0 / r5 * t1 * dr.z - mult_pt->dipole.z / r3);
 
 	/* quadrupole */
 	t1 = quadrupole_sum(mult_pt->quadrupole, &dr);
@@ -72,17 +77,17 @@ add_multipole_field(struct polarizable_pt *pt,
 	t2 = mult_pt->quadrupole[quad_idx(0, 0)] * dr.x +
 	     mult_pt->quadrupole[quad_idx(1, 0)] * dr.y +
 	     mult_pt->quadrupole[quad_idx(2, 0)] * dr.z;
-	pt->elec_field.x += -2.0 / r5 * t2 + 5.0 / r7 * t1 * dr.x;
+	pt->elec_field.x += swf->swf * (-2.0 / r5 * t2 + 5.0 / r7 * t1 * dr.x);
 
 	t2 = mult_pt->quadrupole[quad_idx(0, 1)] * dr.x +
 	     mult_pt->quadrupole[quad_idx(1, 1)] * dr.y +
 	     mult_pt->quadrupole[quad_idx(2, 1)] * dr.z;
-	pt->elec_field.y += -2.0 / r5 * t2 + 5.0 / r7 * t1 * dr.y;
+	pt->elec_field.y += swf->swf * (-2.0 / r5 * t2 + 5.0 / r7 * t1 * dr.y);
 
 	t2 = mult_pt->quadrupole[quad_idx(0, 2)] * dr.x +
 	     mult_pt->quadrupole[quad_idx(1, 2)] * dr.y +
 	     mult_pt->quadrupole[quad_idx(2, 2)] * dr.z;
-	pt->elec_field.z += -2.0 / r5 * t2 + 5.0 / r7 * t1 * dr.z;
+	pt->elec_field.z += swf->swf * (-2.0 / r5 * t2 + 5.0 / r7 * t1 * dr.z);
 
 	/* octupole-polarizability interactions are ignored */
 }
@@ -99,30 +104,36 @@ compute_elec_field_pt(struct efp *efp, int frag_idx, int pt_idx)
 		if (i == frag_idx)
 			continue;
 
-		/* field due to nuclei */
-		for (int j = 0; j < efp->frags[i].n_atoms; j++) {
-			struct efp_atom *at = efp->frags[i].atoms + j;
+		struct frag *fr_i = efp->frags + i;
+		struct swf swf = make_swf(efp, fr_i, frag);
 
-			vec_t dr = vec_sub(VEC(pt->x), VEC(at->x));
+		/* field due to nuclei */
+		for (int j = 0; j < fr_i->n_atoms; j++) {
+			struct efp_atom *at = fr_i->atoms + j;
+
+			vec_t dr = {
+				pt->x - at->x - swf.cell.x,
+				pt->y - at->y - swf.cell.y,
+				pt->z - at->z - swf.cell.z
+			};
 
 			double r = vec_len(&dr);
 			double r3 = r * r * r;
 
-			pt->elec_field.x += at->znuc * dr.x / r3;
-			pt->elec_field.y += at->znuc * dr.y / r3;
-			pt->elec_field.z += at->znuc * dr.z / r3;
+			pt->elec_field.x += swf.swf * at->znuc * dr.x / r3;
+			pt->elec_field.y += swf.swf * at->znuc * dr.y / r3;
+			pt->elec_field.z += swf.swf * at->znuc * dr.z / r3;
 		}
 
 		/* field due to multipoles */
-		for (int j = 0; j < efp->frags[i].n_multipole_pts; j++) {
-			struct multipole_pt *mult_pt =
-					efp->frags[i].multipole_pts + j;
-			add_multipole_field(pt, mult_pt);
+		for (int j = 0; j < fr_i->n_multipole_pts; j++) {
+			struct multipole_pt *mult_pt = fr_i->multipole_pts + j;
+			add_multipole_field(pt, mult_pt, &swf);
 		}
 	}
 
 	if (efp->opts.terms & EFP_TERM_AI_POL) {
-		/* field due to QM nuclei */
+		/* field due to nuclei from ab initio subsystem */
 		for (int i = 0; i < efp->n_qm_atoms; i++) {
 			struct qm_atom *at_i = efp->qm_atoms + i;
 
@@ -190,6 +201,8 @@ get_induced_dipole_field(struct efp *efp, int frag_idx,
 			 struct polarizable_pt *pt,
 			 vec_t *field, vec_t *field_conj)
 {
+	struct frag *fr_i = efp->frags + frag_idx;
+
 	*field = vec_zero;
 	*field_conj = vec_zero;
 
@@ -198,12 +211,17 @@ get_induced_dipole_field(struct efp *efp, int frag_idx,
 			continue;
 
 		struct frag *fr_j = efp->frags + j;
+		struct swf swf = make_swf(efp, fr_i, fr_j);
 
 		for (int jj = 0; jj < fr_j->n_polarizable_pts; jj++) {
 			struct polarizable_pt *pt_j =
 				fr_j->polarizable_pts + jj;
 
-			vec_t dr = vec_sub(VEC(pt->x), VEC(pt_j->x));
+			vec_t dr = {
+				pt->x - pt_j->x + swf.cell.x,
+				pt->y - pt_j->y + swf.cell.y,
+				pt->z - pt_j->z + swf.cell.z
+			};
 
 			double r = vec_len(&dr);
 			double r3 = r * r * r;
@@ -217,19 +235,19 @@ get_induced_dipole_field(struct efp *efp, int frag_idx,
 			if (efp->opts.pol_damp == EFP_POL_DAMP_TT)
 				p1 = get_pol_damp_tt(r);
 
-			field->x -= p1 * (pt_j->induced_dipole.x / r3 -
-							3.0 * t1 * dr.x / r5);
-			field->y -= p1 * (pt_j->induced_dipole.y / r3 -
-							3.0 * t1 * dr.y / r5);
-			field->z -= p1 * (pt_j->induced_dipole.z / r3 -
-							3.0 * t1 * dr.z / r5);
+			field->x -= swf.swf * (p1 * (pt_j->induced_dipole.x / r3 -
+							3.0 * t1 * dr.x / r5));
+			field->y -= swf.swf * (p1 * (pt_j->induced_dipole.y / r3 -
+							3.0 * t1 * dr.y / r5));
+			field->z -= swf.swf * (p1 * (pt_j->induced_dipole.z / r3 -
+							3.0 * t1 * dr.z / r5));
 
-			field_conj->x -= p1 * (pt_j->induced_dipole_conj.x / r3 -
-							3.0 * t2 * dr.x / r5);
-			field_conj->y -= p1 * (pt_j->induced_dipole_conj.y / r3 -
-							3.0 * t2 * dr.y / r5);
-			field_conj->z -= p1 * (pt_j->induced_dipole_conj.z / r3 -
-							3.0 * t2 * dr.z / r5);
+			field_conj->x -= swf.swf * (p1 * (pt_j->induced_dipole_conj.x / r3 -
+							3.0 * t2 * dr.x / r5));
+			field_conj->y -= swf.swf * (p1 * (pt_j->induced_dipole_conj.y / r3 -
+							3.0 * t2 * dr.y / r5));
+			field_conj->z -= swf.swf * (p1 * (pt_j->induced_dipole_conj.z / r3 -
+							3.0 * t2 * dr.z / r5));
 		}
 	}
 }
@@ -252,6 +270,7 @@ pol_scf_iter(struct efp *efp)
 			field.x += pt->elec_field.x;
 			field.y += pt->elec_field.y;
 			field.z += pt->elec_field.z;
+
 			field_conj.x += pt->elec_field.x;
 			field_conj.y += pt->elec_field.y;
 			field_conj.z += pt->elec_field.z;
@@ -344,17 +363,32 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 			continue;
 
 		struct frag *fr_j = efp->frags + j;
+		struct swf swf = make_swf(efp, fr_i, fr_j);
+
+		/* energy without switching applied */
+		double energy = 0.0;
 
 		/* induced dipole - nuclei */
 		for (int k = 0; k < fr_j->n_atoms; k++) {
 			struct efp_atom *at_j = fr_j->atoms + k;
 
-			vec_t dr = vec_sub(VEC(at_j->x), VEC(pt_i->x));
+			vec_t dr = {
+				at_j->x - pt_i->x - swf.cell.x,
+				at_j->y - pt_i->y - swf.cell.y,
+				at_j->z - pt_i->z - swf.cell.z
+			};
+
 			vec_t force, add_i, add_j;
+
+			energy -= charge_dipole_energy(at_j->znuc, &dipole_i, &dr);
 
 			efp_charge_dipole_grad(at_j->znuc, &dipole_i, &dr,
 					       &force, &add_j, &add_i);
 			vec_negate(&force);
+
+			vec_scale(&force, swf.swf);
+			vec_scale(&add_i, swf.swf);
+			vec_scale(&add_j, swf.swf);
 
 			add_force(fr_i, CVEC(pt_i->x), &force, &add_i);
 			sub_force(fr_j, CVEC(at_j->x), &force, &add_j);
@@ -364,28 +398,42 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 		for (int k = 0; k < fr_j->n_multipole_pts; k++) {
 			struct multipole_pt *pt_j = fr_j->multipole_pts + k;
 
-			vec_t dr = vec_sub(VEC(pt_j->x), VEC(pt_i->x));
-			vec_t force, add_i, add_j;
+			vec_t dr = {
+				pt_j->x - pt_i->x - swf.cell.x,
+				pt_j->y - pt_i->y - swf.cell.y,
+				pt_j->z - pt_i->z - swf.cell.z
+			};
+
+			vec_t force_, add_i_, add_j_;
+			vec_t force = vec_zero, add_i = vec_zero, add_j = vec_zero;
 
 			/* induced dipole - charge */
-			efp_charge_dipole_grad(pt_j->monopole, &dipole_i, &dr,
-					       &force, &add_j, &add_i);
-			vec_negate(&force);
+			energy -= charge_dipole_energy(pt_j->monopole, &dipole_i, &dr);
 
-			add_force(fr_i, CVEC(pt_i->x), &force, &add_i);
-			sub_force(fr_j, CVEC(pt_j->x), &force, &add_j);
+			efp_charge_dipole_grad(pt_j->monopole, &dipole_i, &dr,
+					       &force_, &add_j_, &add_i_);
+			vec_negate(&force_);
+			add_3(&force, &force_, &add_i, &add_i_, &add_j, &add_j_);
 
 			/* induced dipole - dipole */
-			efp_dipole_dipole_grad(&dipole_i, &pt_j->dipole, &dr,
-					       &force, &add_i, &add_j);
-			vec_negate(&add_j);
+			energy += dipole_dipole_energy(&dipole_i, &pt_j->dipole, &dr);
 
-			add_force(fr_i, CVEC(pt_i->x), &force, &add_i);
-			sub_force(fr_j, CVEC(pt_j->x), &force, &add_j);
+			efp_dipole_dipole_grad(&dipole_i, &pt_j->dipole, &dr,
+					       &force_, &add_i_, &add_j_);
+			vec_negate(&add_j_);
+			add_3(&force, &force_, &add_i, &add_i_, &add_j, &add_j_);
 
 			/* induced dipole - quadrupole */
-			efp_dipole_quadrupole_grad(&dipole_i, pt_j->quadrupole,
-						   &dr, &force, &add_i, &add_j);
+			energy += dipole_quadrupole_energy(&dipole_i, pt_j->quadrupole, &dr);
+
+			efp_dipole_quadrupole_grad(&dipole_i, pt_j->quadrupole, &dr,
+						   &force_, &add_i_, &add_j_);
+			add_3(&force, &force_, &add_i, &add_i_, &add_j, &add_j_);
+
+			vec_scale(&force, swf.swf);
+			vec_scale(&add_i, swf.swf);
+			vec_scale(&add_j, swf.swf);
+
 			add_force(fr_i, CVEC(pt_i->x), &force, &add_i);
 			sub_force(fr_j, CVEC(pt_j->x), &force, &add_j);
 
@@ -393,11 +441,14 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 		}
 
 		/* induced dipole - induced dipoles */
-		for (int k = 0; k < fr_j->n_polarizable_pts; k++) {
-			struct polarizable_pt *pt_j =
-					fr_j->polarizable_pts + k;
+		for (int jj = 0; jj < fr_j->n_polarizable_pts; jj++) {
+			struct polarizable_pt *pt_j = fr_j->polarizable_pts + jj;
 
-			vec_t dr = vec_sub(VEC(pt_j->x), VEC(pt_i->x));
+			vec_t dr = {
+				pt_j->x - pt_i->x - swf.cell.x,
+				pt_j->y - pt_i->y - swf.cell.y,
+				pt_j->z - pt_i->z - swf.cell.z
+			};
 
 			vec_t half_dipole_i = {
 				0.5 * pt_i->induced_dipole.x,
@@ -407,14 +458,29 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 
 			vec_t force, add_i, add_j;
 
-			efp_dipole_dipole_grad(&half_dipole_i,
-					       &pt_j->induced_dipole_conj,
+			energy += dipole_dipole_energy(&half_dipole_i,
+					&pt_j->induced_dipole_conj, &dr);
+
+			efp_dipole_dipole_grad(&half_dipole_i, &pt_j->induced_dipole_conj,
 					       &dr, &force, &add_i, &add_j);
 			vec_negate(&add_j);
+
+			vec_scale(&force, swf.swf);
+			vec_scale(&add_i, swf.swf);
+			vec_scale(&add_j, swf.swf);
 
 			add_force(fr_i, CVEC(pt_i->x), &force, &add_i);
 			sub_force(fr_j, CVEC(pt_j->x), &force, &add_j);
 		}
+
+		vec_t force = {
+			swf.dswf.x * energy,
+			swf.dswf.y * energy,
+			swf.dswf.z * energy
+		};
+
+		vec_atomic_add(&fr_i->force, &force);
+		vec_atomic_sub(&fr_j->force, &force);
 	}
 
 	/* induced dipole - ab initio nuclei */
