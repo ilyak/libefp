@@ -130,6 +130,7 @@ tests_test_SOURCES = \
 	tests/geometry_2.h \
 	tests/geometry_3.h \
 	tests/geometry_4.h \
+	tests/geometry_5.h \
 	tests/disp_1a.c \
 	tests/disp_1b.c \
 	tests/disp_1c.c \
@@ -156,6 +157,9 @@ tests_test_SOURCES = \
 	tests/total_4a.c \
 	tests/total_4b.c \
 	tests/total_4c.c \
+	tests/total_5a.c \
+	tests/total_5b.c \
+	tests/total_5c.c \
 	tests/xr_1a.c \
 	tests/xr_1b.c \
 	tests/xr_2.c \
