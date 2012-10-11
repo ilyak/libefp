@@ -92,12 +92,12 @@ charge_penetration_grad(struct frag *fr_i, struct frag *fr_j,
 	force.y = (t2 * ds_ij.y - t1 * dr.y) * swf->swf;
 	force.z = (t2 * ds_ij.z - t1 * dr.z) * swf->swf;
 
-	torque_i.x = -t2 * ds_ij.a + t1 * (dr.y * (ct_i->z - fr_i->z) -
-					   dr.z * (ct_i->y - fr_i->y));
-	torque_i.y = -t2 * ds_ij.b + t1 * (dr.z * (ct_i->x - fr_i->x) -
-					   dr.x * (ct_i->z - fr_i->z));
-	torque_i.z = -t2 * ds_ij.c + t1 * (dr.x * (ct_i->y - fr_i->y) -
-					   dr.y * (ct_i->x - fr_i->x));
+	torque_i.x = swf->swf * (-t2 * ds_ij.a + t1 * (dr.y * (ct_i->z - fr_i->z) -
+					dr.z * (ct_i->y - fr_i->y)));
+	torque_i.y = swf->swf * (-t2 * ds_ij.b + t1 * (dr.z * (ct_i->x - fr_i->x) -
+					dr.x * (ct_i->z - fr_i->z)));
+	torque_i.z = swf->swf * (-t2 * ds_ij.c + t1 * (dr.x * (ct_i->y - fr_i->y) -
+					dr.y * (ct_i->x - fr_i->x)));
 
 	torque_j.x = torque_i.x + force.y * (fr_j->z - fr_i->z - swf->cell.z) -
 				  force.z * (fr_j->y - fr_i->y - swf->cell.y);
@@ -429,15 +429,18 @@ lmo_lmo_xr_grad(struct frag *fr_i, struct frag *fr_j, int i, int j,
 
 static double
 lmo_lmo_xr_energy(struct frag *fr_i, struct frag *fr_j, int i, int j,
-		  const double *lmo_s, const double *lmo_t, const vec_t *cell)
+		  const double *lmo_s, const double *lmo_t, const struct swf *swf)
 {
 	double s_ij = lmo_s[i * fr_j->n_lmo + j];
 	double t_ij = lmo_t[i * fr_j->n_lmo + j];
 
+	const vec_t *ct_i = fr_i->lmo_centroids + i;
+	const vec_t *ct_j = fr_j->lmo_centroids + j;
+
 	vec_t dr = {
-		fr_j->lmo_centroids[j].x - fr_i->lmo_centroids[i].x - cell->x,
-		fr_j->lmo_centroids[j].y - fr_i->lmo_centroids[i].y - cell->y,
-		fr_j->lmo_centroids[j].z - fr_i->lmo_centroids[i].z - cell->z
+		ct_j->x - ct_i->x - swf->cell.x,
+		ct_j->y - ct_i->y - swf->cell.y,
+		ct_j->z - ct_i->z - swf->cell.z
 	};
 
 	double r_ij = vec_len(&dr);
@@ -460,23 +463,55 @@ lmo_lmo_xr_energy(struct frag *fr_i, struct frag *fr_j, int i, int j,
 
 	/* xr - third part */
 	for (int jj = 0; jj < fr_j->n_atoms; jj++) {
-		struct efp_atom *at = fr_j->atoms + jj;
-		double r = vec_dist(fr_i->lmo_centroids + i, VEC(at->x));
-		exr -= s_ij * s_ij * valence(at->znuc) / r;
+		struct efp_atom *at_j = fr_j->atoms + jj;
+
+		vec_t dr_a = {
+			at_j->x - ct_i->x - swf->cell.x,
+			at_j->y - ct_i->y - swf->cell.y,
+			at_j->z - ct_i->z - swf->cell.z
+		};
+
+		double r = vec_len(&dr_a);
+
+		exr -= s_ij * s_ij * valence(at_j->znuc) / r;
 	}
-	for (int l = 0; l < fr_j->n_lmo; l++) {
-		double r = vec_dist(fr_i->lmo_centroids + i,
-				    fr_j->lmo_centroids + l);
+	for (int jj = 0; jj < fr_j->n_lmo; jj++) {
+		const vec_t *ct_jj = fr_j->lmo_centroids + jj;
+
+		vec_t dr_a = {
+			ct_jj->x - ct_i->x - swf->cell.x,
+			ct_jj->y - ct_i->y - swf->cell.y,
+			ct_jj->z - ct_i->z - swf->cell.z
+		};
+
+		double r = vec_len(&dr_a);
+
 		exr += 2.0 * s_ij * s_ij / r;
 	}
 	for (int ii = 0; ii < fr_i->n_atoms; ii++) {
-		struct efp_atom *at = fr_i->atoms + ii;
-		double r = vec_dist(fr_j->lmo_centroids + j, VEC(at->x));
-		exr -= s_ij * s_ij * valence(at->znuc) / r;
+		struct efp_atom *at_i = fr_i->atoms + ii;
+
+		vec_t dr_a = {
+			ct_j->x - at_i->x - swf->cell.x,
+			ct_j->y - at_i->y - swf->cell.y,
+			ct_j->z - at_i->z - swf->cell.z
+		};
+
+		double r = vec_len(&dr_a);
+
+		exr -= s_ij * s_ij * valence(at_i->znuc) / r;
 	}
-	for (int k = 0; k < fr_i->n_lmo; k++) {
-		double r = vec_dist(fr_i->lmo_centroids + k,
-				    fr_j->lmo_centroids + j);
+	for (int ii = 0; ii < fr_i->n_lmo; ii++) {
+		const vec_t *ct_ii = fr_i->lmo_centroids + ii;
+
+		vec_t dr_a = {
+			ct_j->x - ct_ii->x - swf->cell.x,
+			ct_j->y - ct_ii->y - swf->cell.y,
+			ct_j->z - ct_ii->z - swf->cell.z
+		};
+
+		double r = vec_len(&dr_a);
+
 		exr += 2.0 * s_ij * s_ij / r;
 	}
 	exr -= s_ij * s_ij / r_ij;
@@ -549,7 +584,7 @@ frag_frag_xr(struct efp *efp, int frag_i, int frag_j, int overlap_idx,
 
 			if (efp->opts.terms & EFP_TERM_XR)
 				exr += lmo_lmo_xr_energy(fr_i, fr_j, i, j,
-							 lmo_s, lmo_t, &swf.cell);
+							 lmo_s, lmo_t, &swf);
 		}
 	}
 
