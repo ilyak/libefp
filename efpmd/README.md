@@ -136,6 +136,33 @@ Default value: `"."` (current directory)
 The `<path>` parameter should not contain spaces or should be in double quotes
 otherwise.
 
+### Periodic Boundary Conditions (PBC)
+
+##### Enable/Disable PBC
+
+`enable_pbc [true|false]`
+
+Default value: `false`
+
+##### Periodic Box Size
+
+`pbc_box <x> <y> <z>`
+
+Default value: `15.0 15.0 15.0`
+
+Units: Angstroms
+
+##### Cutoff for the Switching Function
+
+`swf_cutoff <value>`
+
+Default value: `6.0`
+
+Units: Angstroms
+
+Specifies the cutoff for fragment interactions. The value must be less than a
+half of the smallest periodic box dimension.
+
 ### Geometry optimization related parameters
 
 ##### Optimization tolerance
@@ -206,23 +233,24 @@ by the `userlib_path` option will be used.
 Each group is followed by the specification of fragment position and
 orientation.
 
-###### Format of input when `coord` is `xyzabc`
+##### Format of input when `coord` is `xyzabc`
 
 	fragment h2o
 		0.0 0.0 0.0 0.0 0.0 0.0
 
-Coordinates of the center of mass and three Euler rotation angels.
+The numbers are coordinates of the center of mass of a fragment and three Euler
+rotation angels.
 
-###### Format of input when `coord` is `points`
+##### Format of input when `coord` is `points`
 
 	fragment h2o
 		0.0 0.0 0.0
 		1.0 0.0 0.0
 		0.0 1.0 0.0
 
-Coordinates of three points belonging to a fragment.
+The numbers are coordinates of three points belonging to a fragment.
 
-###### Format of input when `coord` is `rotmat`
+##### Format of input when `coord` is `rotmat`
 
 	fragment h2o
 		0.0 0.0 0.0
@@ -230,4 +258,5 @@ Coordinates of three points belonging to a fragment.
 		0.0 1.0 0.0
 		0.0 0.0 1.0
 
-Coordinated of the center of mass and 3 by 3 rotation matrix.
+The numbers are coordinates of the center of mass of a fragment and a 3 x 3
+rotation matrix.
