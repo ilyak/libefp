@@ -82,6 +82,7 @@ efpmd_src_efpmd_SOURCES = \
 	efpmd/src/common.h \
 	efpmd/src/grad.c \
 	efpmd/src/hess.c \
+	efpmd/src/keywords.h \
 	efpmd/src/main.c \
 	efpmd/src/md.c \
 	efpmd/src/opt.c \
