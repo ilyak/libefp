@@ -150,8 +150,8 @@ tests_test_SOURCES = \
 	tests/pol_1.c \
 	tests/pol_2.c \
 	tests/pol_3.c \
-	tests/qm_5.c \
-	tests/qm_6.c \
+	tests/qm_1.c \
+	tests/qm_2.c \
 	tests/total_1a.c \
 	tests/total_2a.c \
 	tests/total_3a.c \
@@ -161,6 +161,9 @@ tests_test_SOURCES = \
 	tests/total_5a.c \
 	tests/total_5b.c \
 	tests/total_5c.c \
+	tests/total_6a.c \
+	tests/total_6b.c \
+	tests/total_6c.c \
 	tests/xr_1a.c \
 	tests/xr_1b.c \
 	tests/xr_2.c \

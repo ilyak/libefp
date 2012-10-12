@@ -34,8 +34,8 @@ SRCS=		test.c \
 		pol_1.c \
 		pol_2.c \
 		pol_3.c \
-		qm_5.c \
-		qm_6.c \
+		qm_1.c \
+		qm_2.c \
 		total_1a.c \
 		total_2a.c \
 		total_3a.c \
@@ -45,6 +45,9 @@ SRCS=		test.c \
 		total_5a.c \
 		total_5b.c \
 		total_5c.c \
+		total_6a.c \
+		total_6b.c \
+		total_6c.c \
 		xr_1a.c \
 		xr_1b.c \
 		xr_2.c \

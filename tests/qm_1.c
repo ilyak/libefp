@@ -83,4 +83,4 @@ static const struct test_data test_data = {
 	}
 };
 
-DEFINE_TEST(qm_5)
+DEFINE_TEST(qm_1)

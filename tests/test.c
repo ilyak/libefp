@@ -242,8 +242,8 @@ static void add_tcases(Suite *s)
 	suite_add_tcase(s, tcase_pol_1());
 	suite_add_tcase(s, tcase_pol_2());
 	suite_add_tcase(s, tcase_pol_3());
-	suite_add_tcase(s, tcase_qm_5());
-	suite_add_tcase(s, tcase_qm_6());
+	suite_add_tcase(s, tcase_qm_1());
+	suite_add_tcase(s, tcase_qm_2());
 	suite_add_tcase(s, tcase_total_1a());
 	suite_add_tcase(s, tcase_total_2a());
 	suite_add_tcase(s, tcase_total_3a());
@@ -253,6 +253,9 @@ static void add_tcases(Suite *s)
 	suite_add_tcase(s, tcase_total_5a());
 	suite_add_tcase(s, tcase_total_5b());
 	suite_add_tcase(s, tcase_total_5c());
+	suite_add_tcase(s, tcase_total_6a());
+	suite_add_tcase(s, tcase_total_6b());
+	suite_add_tcase(s, tcase_total_6c());
 	suite_add_tcase(s, tcase_xr_1a());
 	suite_add_tcase(s, tcase_xr_1b());
 	suite_add_tcase(s, tcase_xr_2());
