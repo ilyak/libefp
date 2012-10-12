@@ -235,19 +235,19 @@ get_induced_dipole_field(struct efp *efp, int frag_idx,
 			if (efp->opts.pol_damp == EFP_POL_DAMP_TT)
 				p1 = get_pol_damp_tt(r);
 
-			field->x -= swf.swf * (p1 * (pt_j->induced_dipole.x / r3 -
-							3.0 * t1 * dr.x / r5));
-			field->y -= swf.swf * (p1 * (pt_j->induced_dipole.y / r3 -
-							3.0 * t1 * dr.y / r5));
-			field->z -= swf.swf * (p1 * (pt_j->induced_dipole.z / r3 -
-							3.0 * t1 * dr.z / r5));
+			field->x -= swf.swf * p1 * (pt_j->induced_dipole.x / r3 -
+							3.0 * t1 * dr.x / r5);
+			field->y -= swf.swf * p1 * (pt_j->induced_dipole.y / r3 -
+							3.0 * t1 * dr.y / r5);
+			field->z -= swf.swf * p1 * (pt_j->induced_dipole.z / r3 -
+							3.0 * t1 * dr.z / r5);
 
-			field_conj->x -= swf.swf * (p1 * (pt_j->induced_dipole_conj.x / r3 -
-							3.0 * t2 * dr.x / r5));
-			field_conj->y -= swf.swf * (p1 * (pt_j->induced_dipole_conj.y / r3 -
-							3.0 * t2 * dr.y / r5));
-			field_conj->z -= swf.swf * (p1 * (pt_j->induced_dipole_conj.z / r3 -
-							3.0 * t2 * dr.z / r5));
+			field_conj->x -= swf.swf * p1 * (pt_j->induced_dipole_conj.x / r3 -
+							3.0 * t2 * dr.x / r5);
+			field_conj->y -= swf.swf * p1 * (pt_j->induced_dipole_conj.y / r3 -
+							3.0 * t2 * dr.y / r5);
+			field_conj->z -= swf.swf * p1 * (pt_j->induced_dipole_conj.z / r3 -
+							3.0 * t2 * dr.z / r5);
 		}
 	}
 }
@@ -458,8 +458,14 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 
 			vec_t force, add_i, add_j;
 
-			energy += dipole_dipole_energy(&half_dipole_i,
-					&pt_j->induced_dipole_conj, &dr);
+			double p1 = 1.0;
+			double r = vec_len(&dr);
+
+			if (efp->opts.pol_damp == EFP_POL_DAMP_TT)
+				p1 = get_pol_damp_tt(r);
+
+			energy += p1 * dipole_dipole_energy(&half_dipole_i,
+						&pt_j->induced_dipole_conj, &dr);
 
 			efp_dipole_dipole_grad(&half_dipole_i, &pt_j->induced_dipole_conj,
 					       &dr, &force, &add_i, &add_j);
