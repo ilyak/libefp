@@ -34,7 +34,7 @@ static double
 get_pol_damp_tt(double r)
 {
 	/* induced dipole - induced dipole damping parameter */
-	static const double a = 0.6;
+	static const double a = 0.5;
 
 	double ar = a * r;
 
