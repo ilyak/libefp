@@ -81,7 +81,8 @@ Default value: `elec pol disp xr`
 
 `screen` - Damping formula based on SCREEN group in the EFP potential.
 
-`overlap` - Overlap based damping which computes charge penetration energy.
+`overlap` - Overlap-based damping formula. This damping correction is printed
+as charge penetration energy.
 
 `off` - No electrostatic damping.
 
