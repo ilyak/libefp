@@ -120,7 +120,7 @@ Default value: `false`
 
 `swf_cutoff <value>`
 
-Default value: `6.0`
+Default value: `10.0`
 
 Unit: Angstrom
 
@@ -165,7 +165,7 @@ Setting `enable_pbc` to `true` also sets `enable_cutoff` to `true`.
 
 `pbc_box <x> <y> <z>`
 
-Default value: `15.0 15.0 15.0`
+Default value: `30.0 30.0 30.0`
 
 Unit: Angstrom
 
