@@ -51,13 +51,13 @@ Default value: `xyzabc`
 
 See fragment input specification for more details.
 
-##### Geometry units
+##### Units used for geometry specification
 
 `units [angs|bohr]`
 
-`angs` - Units are Angstroms.
+`angs` - Length unit is Angstrom.
 
-`bohr` - Units are Bohr.
+`bohr` - Length unit is Bohr.
 
 Default value: `angs`
 
@@ -110,7 +110,21 @@ Default value: `tt`
 
 Default value: `tt`
 
-##### Maximum number of steps
+##### Enable/Disable the cutoff for fragment/fragment interactions
+
+`enable_cutoff [true|false]`
+
+Default value: `false`
+
+##### Cutoff distance for fragment/fragment interactions
+
+`swf_cutoff <value>`
+
+Default value: `6.0`
+
+Unit: Angstrom
+
+##### Maximum number of steps to make
 
 `max_steps <number>`
 
@@ -125,8 +139,8 @@ molecular dynamics.
 
 Default value: `"$(prefix)/share/libefp"` (data install directory)
 
-The `<path>` parameter should not contain spaces or should be in double quotes
-otherwise.
+The `<path>` parameter should not contain spaces or should be inside double
+quotes otherwise.
 
 ##### The path to the directory with user-created fragments
 
@@ -145,30 +159,23 @@ otherwise.
 
 Default value: `false`
 
+Setting `enable_pbc` to `true` also sets `enable_cutoff` to `true`.
+
 ##### Periodic Box Size
 
 `pbc_box <x> <y> <z>`
 
 Default value: `15.0 15.0 15.0`
 
-Units: Angstroms
+Unit: Angstrom
 
-##### Cutoff for the Switching Function
-
-`swf_cutoff <value>`
-
-Default value: `6.0`
-
-Units: Angstroms
-
-Specifies the cutoff for fragment interactions. The value must be less than a
-half of the smallest periodic box dimension.
+The smallest box dimension must be greater than `2 * swf_cutoff`.
 
 ### Geometry optimization related parameters
 
 ##### Optimization tolerance
 
-`opt_tol <number>`
+`opt_tol <value>`
 
 Default value: `1.0e-4`
 
@@ -189,9 +196,9 @@ Default value: `nve`
 
 ##### Simulation temperature
 
-`temperature <number>`
+`temperature <value>`
 
-Units: `Kelvins`
+Unit: Kelvin
 
 Default value: `300.0`
 
@@ -199,15 +206,15 @@ Target simulation temperature for NVT thermostat.
 
 ##### Time step
 
-`time_step <number>`
+`time_step <value>`
 
-Units: `Femtoseconds`
+Unit: Femtosecond
 
 Default value: `1.0`
 
 ##### Print step
 
-`print_step <number>`
+`print_step <value>`
 
 Default value: `1`
 
@@ -215,9 +222,9 @@ Number of steps between outputs of the system state.
 
 ##### Thermostat parameter
 
-`thermostat_tau <number>`
+`thermostat_tau <value>`
 
-Units: `Femtoseconds`
+Unit: Femtosecond
 
 Default value: `1.0e3`
 
