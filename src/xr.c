@@ -685,14 +685,28 @@ efp_compute_xr(struct efp *efp)
 	#pragma omp parallel for schedule(dynamic, 4) reduction(+:exr,ecp)
 	for (int i = 0; i < efp->n_frag; i++) {
 		for (int j = i + 1, idx = 0; j < efp->n_frag; j++) {
-			double exr_out, ecp_out;
+			int n_lmo_ij = efp->frags[i].n_lmo * efp->frags[j].n_lmo;
 
-			frag_frag_xr(efp, i, j, idx, &exr_out, &ecp_out);
+			if (!skip_frag_pair(efp, i, j)) {
+				double exr_out, ecp_out;
 
-			exr += exr_out;
-			ecp += ecp_out;
+				frag_frag_xr(efp, i, j, idx, &exr_out, &ecp_out);
 
-			idx += efp->frags[i].n_lmo * efp->frags[j].n_lmo;
+				exr += exr_out;
+				ecp += ecp_out;
+			}
+			else {
+				/* also skips integrals */
+				if ((efp->opts.terms & EFP_TERM_DISP) &&
+				    (efp->opts.disp_damp == EFP_DISP_DAMP_OVERLAP)) {
+					memset(efp->frags[i].overlap_int + idx, 0,
+								n_lmo_ij * sizeof(double));
+					memset(efp->frags[i].overlap_int_deriv + idx, 0,
+								n_lmo_ij * sizeof(six_t));
+				}
+			}
+
+			idx += n_lmo_ij;
 		}
 	}
 

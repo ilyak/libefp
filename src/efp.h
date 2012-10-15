@@ -63,6 +63,8 @@ enum efp_result {
 	 * Periodic boundary conditions are not supported for current selection
 	 * of energy terms. */
 	EFP_RESULT_PBC_NOT_SUPPORTED,
+	/** Interaction cutoff must be enabled. */
+	EFP_RESULT_PBC_REQUIRES_CUTOFF,
 	/** Switching function cutoff is too small. */
 	EFP_RESULT_SWF_CUTOFF_TOO_SMALL,
 	/** Periodic simulation box is too small. */
@@ -166,10 +168,10 @@ struct efp_opts {
 	/** Enable periodic boundary conditions if nonzero. */
 	int enable_pbc;
 
-	/**
-	 * Cutoff for the switching function used in calculations
-	 * with periodic boundary conditions.
-	 */
+	/** Enable fragment-fragment interaction cutoff if nonzero. */
+	int enable_cutoff;
+
+	/** Cutoff for fragment-fragment interactions. */
 	double swf_cutoff;
 };
 

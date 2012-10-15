@@ -681,6 +681,11 @@ check_opts(const struct efp_opts *opts)
 		    (opts->terms & EFP_TERM_AI_CHTR))
 			return EFP_RESULT_PBC_NOT_SUPPORTED;
 
+		if (!opts->enable_cutoff)
+			return EFP_RESULT_PBC_REQUIRES_CUTOFF;
+	}
+
+	if (opts->enable_cutoff) {
 		if (opts->swf_cutoff < 1.0)
 			return EFP_RESULT_SWF_CUTOFF_TOO_SMALL;
 	}
@@ -732,7 +737,8 @@ check_params(struct efp *efp)
 static enum efp_result
 setup_disp(struct efp *efp)
 {
-	if (efp->opts.disp_damp != EFP_DISP_DAMP_OVERLAP)
+	if ((efp->opts.terms & EFP_TERM_DISP) == 0 ||
+	    (efp->opts.disp_damp != EFP_DISP_DAMP_OVERLAP))
 		return EFP_RESULT_SUCCESS;
 
 	for (int i = 0; i < efp->n_frag; i++) {
@@ -1011,6 +1017,8 @@ return "callback function failed";
 return "gradient computation was not requested";
 	case EFP_RESULT_PBC_NOT_SUPPORTED:
 return "periodic simulation is not supported for selected energy terms";
+	case EFP_RESULT_PBC_REQUIRES_CUTOFF:
+return "interaction cutoff must be enabled for periodic simulation";
 	case EFP_RESULT_SWF_CUTOFF_TOO_SMALL:
 return "switching function cutoff is too small";
 	case EFP_RESULT_BOX_TOO_SMALL:

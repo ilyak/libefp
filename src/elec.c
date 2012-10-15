@@ -409,7 +409,8 @@ efp_compute_elec(struct efp *efp)
 	#pragma omp parallel for schedule(dynamic, 4) reduction(+:energy)
 	for (int i = 0; i < efp->n_frag; i++)
 		for (int j = i + 1; j < efp->n_frag; j++)
-			energy += frag_frag_elec(efp, i, j);
+			if (!skip_frag_pair(efp, i, j))
+				energy += frag_frag_elec(efp, i, j);
 
 	efp->energy.electrostatic = energy;
 	return EFP_RESULT_SUCCESS;

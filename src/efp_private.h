@@ -183,6 +183,29 @@ struct efp {
 	unsigned magic;
 };
 
+static inline int
+skip_frag_pair(struct efp *efp, int fr_i_idx, int fr_j_idx)
+{
+	if (!efp->opts.enable_cutoff)
+		return 0;
+
+	const struct frag *fr_i = efp->frags + fr_i_idx;
+	const struct frag *fr_j = efp->frags + fr_j_idx;
+
+	double cutoff2 = efp->opts.swf_cutoff * efp->opts.swf_cutoff;
+	vec_t dr = vec_sub(CVEC(fr_j->x), CVEC(fr_i->x));
+
+	if (efp->opts.enable_pbc) {
+		vec_t cell = { efp->box.x * round(dr.x / efp->box.x),
+			       efp->box.y * round(dr.y / efp->box.y),
+			       efp->box.z * round(dr.z / efp->box.z) };
+
+		dr = vec_sub(&dr, &cell);
+	}
+
+	return vec_len_2(&dr) > cutoff2;
+}
+
 static inline struct swf
 make_swf(struct efp *efp, const struct frag *fr_i, const struct frag *fr_j)
 {
@@ -192,18 +215,20 @@ make_swf(struct efp *efp, const struct frag *fr_i, const struct frag *fr_j)
 		.cell = { 0.0, 0.0, 0.0 }
 	};
 
-	if (!efp->opts.enable_pbc)
+	if (!efp->opts.enable_cutoff)
 		return swf;
 
 	vec_t dr = vec_sub(CVEC(fr_j->x), CVEC(fr_i->x));
 
-	swf.cell.x = efp->box.x * round(dr.x / efp->box.x);
-	swf.cell.y = efp->box.y * round(dr.y / efp->box.y);
-	swf.cell.z = efp->box.z * round(dr.z / efp->box.z);
+	if (efp->opts.enable_pbc) {
+		swf.cell.x = efp->box.x * round(dr.x / efp->box.x);
+		swf.cell.y = efp->box.y * round(dr.y / efp->box.y);
+		swf.cell.z = efp->box.z * round(dr.z / efp->box.z);
 
-	dr.x -= swf.cell.x;
-	dr.y -= swf.cell.y;
-	dr.z -= swf.cell.z;
+		dr.x -= swf.cell.x;
+		dr.y -= swf.cell.y;
+		dr.z -= swf.cell.z;
+	}
 
 	double r = vec_len(&dr);
 

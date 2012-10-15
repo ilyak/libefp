@@ -101,7 +101,7 @@ compute_elec_field_pt(struct efp *efp, int frag_idx, int pt_idx)
 	pt->elec_field = vec_zero;
 
 	for (int i = 0; i < efp->n_frag; i++) {
-		if (i == frag_idx)
+		if (i == frag_idx || skip_frag_pair(efp, i, frag_idx))
 			continue;
 
 		struct frag *fr_i = efp->frags + i;
@@ -207,7 +207,7 @@ get_induced_dipole_field(struct efp *efp, int frag_idx,
 	*field_conj = vec_zero;
 
 	for (int j = 0; j < efp->n_frag; j++) {
-		if (j == frag_idx)
+		if (j == frag_idx || skip_frag_pair(efp, frag_idx, j))
 			continue;
 
 		struct frag *fr_j = efp->frags + j;
@@ -359,7 +359,7 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 	};
 
 	for (int j = 0; j < efp->n_frag; j++) {
-		if (j == frag_idx)
+		if (j == frag_idx || skip_frag_pair(efp, frag_idx, j))
 			continue;
 
 		struct frag *fr_j = efp->frags + j;
