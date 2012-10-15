@@ -11,6 +11,7 @@ static const struct test_data test_data = {
 		.terms = EFP_TERM_DISP,
 		.disp_damp = EFP_DISP_DAMP_OVERLAP,
 		.enable_pbc = 1,
+		.enable_cutoff = 1,
 		.swf_cutoff = BOHR(6.0)
 	}
 };

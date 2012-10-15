@@ -11,6 +11,7 @@ static const struct test_data test_data = {
 		.terms = EFP_TERM_ELEC,
 		.elec_damp = EFP_ELEC_DAMP_OFF,
 		.enable_pbc = 1,
+		.enable_cutoff = 1,
 		.swf_cutoff = BOHR(6.0)
 	}
 };

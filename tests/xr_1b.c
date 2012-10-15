@@ -10,6 +10,7 @@ static const struct test_data test_data = {
 	.opts = {
 		.terms = EFP_TERM_XR,
 		.enable_pbc = 1,
+		.enable_cutoff = 1,
 		.swf_cutoff = BOHR(6.0)
 	}
 };
