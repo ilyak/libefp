@@ -34,6 +34,7 @@ struct config {
 	enum efp_pol_damp pol_damp;
 	bool enable_pbc;
 	double pbc_box[3];
+	bool enable_cutoff;
 	double swf_cutoff;
 	double hess_delta;
 	int max_steps;

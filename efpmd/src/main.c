@@ -158,6 +158,7 @@ static struct efp *init_sim(const struct config *config)
 		.disp_damp = config->disp_damp,
 		.pol_damp = config->pol_damp,
 		.enable_pbc = config->enable_pbc,
+		.enable_cutoff = config->enable_cutoff,
 		.swf_cutoff = config->swf_cutoff
 	};
 

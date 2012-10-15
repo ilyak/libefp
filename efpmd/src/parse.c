@@ -532,6 +532,9 @@ next:
 	if (config->n_frags < 1)
 		error("AT LEAST ONE FRAGMENT MUST BE SPECIFIED");
 
+	if (config->enable_pbc)
+		config->enable_cutoff = true;
+
 	convert_units(config);
 
 	fclose(stream.in);
