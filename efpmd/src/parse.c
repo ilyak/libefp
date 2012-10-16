@@ -554,3 +554,9 @@ void free_config(struct config *config)
 	free(config->frags);
 	free(config);
 }
+
+void print_defaults(void)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(config_list); i++)
+		printf("%s %s\n", config_list[i].name, config_list[i].default_value);
+}

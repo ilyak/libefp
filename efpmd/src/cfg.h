@@ -52,5 +52,6 @@ struct config {
 
 struct config *parse_config(const char *);
 void free_config(struct config *);
+void print_defaults(void);
 
 #endif /* EFPMD_CFG_H */

@@ -48,7 +48,7 @@ static void print_banner(void)
 {
 	printf("EFPMD ver. " PACKAGE_VERSION "\n");
 	printf("Copyright (c) 2012 Ilya Kaliman\n\n");
-	printf("%s\n", efp_banner());
+	printf("%s", efp_banner());
 }
 
 static int string_compare(const void *a, const void *b)
@@ -190,12 +190,37 @@ static struct efp *init_sim(const struct config *config)
 	return efp;
 }
 
+static void print_usage(void)
+{
+	puts("usage: efpmd [-d | -v | -h | input]");
+	puts("  -d  print the list of all keywords and their default values");
+	puts("  -v  print package version");
+	puts("  -h  print this help message");
+}
+
 int main(int argc, char **argv)
 {
-	if (argc < 2)
-		die("usage: efpmd <input>");
+	if (argc < 2) {
+		print_usage();
+		return EXIT_FAILURE;
+	}
+
+	if (argv[1][0] == '-') {
+		switch (argv[1][1]) {
+		case 'd':
+			print_defaults();
+			return EXIT_FAILURE;
+		case 'v':
+			print_banner();
+			return EXIT_FAILURE;
+		default:
+			print_usage();
+			return EXIT_FAILURE;
+		}
+	}
 
 	print_banner();
+	printf("\n");
 
 	struct config *config = parse_config(argv[1]);
 	struct efp *efp = init_sim(config);
