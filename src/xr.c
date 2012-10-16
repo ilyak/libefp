@@ -133,43 +133,53 @@ static void
 transform_integral_derivatives(int n_lmo_i, int n_lmo_j, int wf_size_i, int wf_size_j,
 	const double *wf_i, const double *wf_j, const six_t *ds, six_t *lmo_ds)
 {
-	int wf_size = wf_size_i * wf_size_j;
-	int lmo_size = n_lmo_i * n_lmo_j;
+	six_t tmp[n_lmo_i * wf_size_j];
+	const six_t *p_ds;
+	six_t *p_tmp, *p_lmo_ds;
 
-	double *ds2 = malloc(wf_size * 6 * sizeof(double));
-	double *lmo_ds2 = malloc(lmo_size * 6 * sizeof(double));
+	p_tmp = tmp;
 
-	/* unpack */
-	const six_t *ds_ptr = ds;
+	for (int i = 0; i < n_lmo_i; i++) {
+		for (int j = 0; j < wf_size_j; j++, p_tmp++) {
+			six_t sum = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+			p_ds = ds + j;
 
-	for (int i = 0; i < wf_size; i++, ds_ptr++) {
-		ds2[0 * wf_size + i] = ds_ptr->x;
-		ds2[1 * wf_size + i] = ds_ptr->y;
-		ds2[2 * wf_size + i] = ds_ptr->z;
-		ds2[3 * wf_size + i] = ds_ptr->a;
-		ds2[4 * wf_size + i] = ds_ptr->b;
-		ds2[5 * wf_size + i] = ds_ptr->c;
+			for (int k = 0; k < wf_size_i; k++, p_ds += wf_size_j) {
+				double w = wf_i[wf_size_i * i + k];
+
+				sum.x += p_ds->x * w;
+				sum.y += p_ds->y * w;
+				sum.z += p_ds->z * w;
+				sum.a += p_ds->a * w;
+				sum.b += p_ds->b * w;
+				sum.c += p_ds->c * w;
+			}
+
+			*p_tmp = sum;
+		}
 	}
 
-	/* transform */
-	for (int k = 0; k < 6; k++) {
-		transform_integrals(n_lmo_i, n_lmo_j, wf_size_i, wf_size_j,
-				wf_i, wf_j, ds2 + k * wf_size, lmo_ds2 + k * lmo_size);
+	p_lmo_ds = lmo_ds;
+
+	for (int i = 0; i < n_lmo_i; i++) {
+		for (int j = 0; j < n_lmo_j; j++, p_lmo_ds++) {
+			six_t sum = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+			p_tmp = tmp + i * wf_size_j;
+
+			for (int k = 0; k < wf_size_j; k++, p_tmp++) {
+				double w = wf_j[wf_size_j * j + k];
+
+				sum.x += p_tmp->x * w;
+				sum.y += p_tmp->y * w;
+				sum.z += p_tmp->z * w;
+				sum.a += p_tmp->a * w;
+				sum.b += p_tmp->b * w;
+				sum.c += p_tmp->c * w;
+			}
+
+			*p_lmo_ds = sum;
+		}
 	}
-
-	/* pack */
-	six_t *lmo_ds_ptr = lmo_ds;
-
-	for (int i = 0; i < lmo_size; i++, lmo_ds_ptr++) {
-		lmo_ds_ptr->x = lmo_ds2[0 * lmo_size + i];
-		lmo_ds_ptr->y = lmo_ds2[1 * lmo_size + i];
-		lmo_ds_ptr->z = lmo_ds2[2 * lmo_size + i];
-		lmo_ds_ptr->a = lmo_ds2[3 * lmo_size + i];
-		lmo_ds_ptr->b = lmo_ds2[4 * lmo_size + i];
-		lmo_ds_ptr->c = lmo_ds2[5 * lmo_size + i];
-	}
-
-	free(ds2), free(lmo_ds2);
 }
 
 static void
