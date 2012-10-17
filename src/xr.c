@@ -141,7 +141,7 @@ transform_integral_derivatives(int n_lmo_i, int n_lmo_j, int wf_size_i, int wf_s
 
 	for (int i = 0; i < n_lmo_i; i++) {
 		for (int j = 0; j < wf_size_j; j++, p_tmp++) {
-			six_t sum = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+			six_t sum = six_zero;
 			p_ds = ds + j;
 
 			for (int k = 0; k < wf_size_i; k++, p_ds += wf_size_j) {
@@ -163,7 +163,7 @@ transform_integral_derivatives(int n_lmo_i, int n_lmo_j, int wf_size_i, int wf_s
 
 	for (int i = 0; i < n_lmo_i; i++) {
 		for (int j = 0; j < n_lmo_j; j++, p_lmo_ds++) {
-			six_t sum = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+			six_t sum = six_zero;
 			p_tmp = tmp + i * wf_size_j;
 
 			for (int k = 0; k < wf_size_j; k++, p_tmp++) {

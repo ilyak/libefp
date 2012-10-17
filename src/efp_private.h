@@ -211,8 +211,8 @@ make_swf(struct efp *efp, const struct frag *fr_i, const struct frag *fr_j)
 {
 	struct swf swf = {
 		.swf = 1.0,
-		.dswf = { 0.0, 0.0, 0.0 },
-		.cell = { 0.0, 0.0, 0.0 }
+		.dswf = vec_zero,
+		.cell = vec_zero
 	};
 
 	if (!efp->opts.enable_cutoff)

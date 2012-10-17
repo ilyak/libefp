@@ -917,7 +917,7 @@ efp_get_frag_inertia(struct efp *efp, int frag_idx, double *inertia_out)
 		return EFP_RESULT_INDEX_OUT_OF_RANGE;
 
 	const struct frag *frag = efp->frags[frag_idx].lib;
-	vec_t inertia = { 0.0, 0.0, 0.0 };
+	vec_t inertia = vec_zero;
 
 	for (int i = 0; i < frag->n_atoms; i++) {
 		const struct efp_atom *atom = frag->atoms + i;
