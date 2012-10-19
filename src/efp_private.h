@@ -167,6 +167,9 @@ struct efp {
 	/* periodic simulation box size */
 	vec_t box;
 
+	/* stress tensor */
+	mat_t stress;
+
 	/* number of ab initio atoms */
 	int n_qm_atoms;
 
@@ -183,95 +186,10 @@ struct efp {
 	unsigned magic;
 };
 
-static inline int
-skip_frag_pair(struct efp *efp, int fr_i_idx, int fr_j_idx)
-{
-	if (!efp->opts.enable_cutoff)
-		return 0;
-
-	const struct frag *fr_i = efp->frags + fr_i_idx;
-	const struct frag *fr_j = efp->frags + fr_j_idx;
-
-	double cutoff2 = efp->opts.swf_cutoff * efp->opts.swf_cutoff;
-	vec_t dr = vec_sub(CVEC(fr_j->x), CVEC(fr_i->x));
-
-	if (efp->opts.enable_pbc) {
-		vec_t cell = { efp->box.x * round(dr.x / efp->box.x),
-			       efp->box.y * round(dr.y / efp->box.y),
-			       efp->box.z * round(dr.z / efp->box.z) };
-
-		dr = vec_sub(&dr, &cell);
-	}
-
-	return vec_len_2(&dr) > cutoff2;
-}
-
-static inline struct swf
-make_swf(struct efp *efp, const struct frag *fr_i, const struct frag *fr_j)
-{
-	struct swf swf = {
-		.swf = 1.0,
-		.dswf = vec_zero,
-		.cell = vec_zero
-	};
-
-	if (!efp->opts.enable_cutoff)
-		return swf;
-
-	vec_t dr = vec_sub(CVEC(fr_j->x), CVEC(fr_i->x));
-
-	if (efp->opts.enable_pbc) {
-		swf.cell.x = efp->box.x * round(dr.x / efp->box.x);
-		swf.cell.y = efp->box.y * round(dr.y / efp->box.y);
-		swf.cell.z = efp->box.z * round(dr.z / efp->box.z);
-
-		dr.x -= swf.cell.x;
-		dr.y -= swf.cell.y;
-		dr.z -= swf.cell.z;
-	}
-
-	double r = vec_len(&dr);
-
-	swf.swf = get_swf(r, efp->opts.swf_cutoff);
-	double dswf = get_dswf(r, efp->opts.swf_cutoff);
-
-	swf.dswf.x = -dswf * dr.x;
-	swf.dswf.y = -dswf * dr.y;
-	swf.dswf.z = -dswf * dr.z;
-
-	return swf;
-}
-
-static inline void
-add_force(struct frag *frag, const vec_t *pt, const vec_t *force, const vec_t *add)
-{
-	vec_t dr = vec_sub(CVEC(pt->x), CVEC(frag->x));
-	vec_t torque = vec_cross(&dr, force);
-
-	if (add) {
-		torque.x += add->x;
-		torque.y += add->y;
-		torque.z += add->z;
-	}
-
-	vec_atomic_add(&frag->force, force);
-	vec_atomic_add(&frag->torque, &torque);
-}
-
-static inline void
-sub_force(struct frag *frag, const vec_t *pt, const vec_t *force, const vec_t *add)
-{
-	vec_t dr = vec_sub(CVEC(pt->x), CVEC(frag->x));
-	vec_t torque = vec_cross(&dr, force);
-
-	if (add) {
-		torque.x += add->x;
-		torque.y += add->y;
-		torque.z += add->z;
-	}
-
-	vec_atomic_sub(&frag->force, force);
-	vec_atomic_sub(&frag->torque, &torque);
-}
+int skip_frag_pair(struct efp *, int, int);
+struct swf make_swf(struct efp *, const struct frag *, const struct frag *);
+void add_stress(const vec_t *, const vec_t *, mat_t *);
+void add_force(struct frag *, const vec_t *, const vec_t *, const vec_t *);
+void sub_force(struct frag *, const vec_t *, const vec_t *, const vec_t *);
 
 #endif /* LIBEFP_EFP_PRIVATE_H */

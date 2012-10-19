@@ -63,9 +63,9 @@ charge_penetration_energy(double s_ij, double r_ij)
 }
 
 static void
-charge_penetration_grad(struct frag *fr_i, struct frag *fr_j,
-			int lmo_i_idx, int lmo_j_idx, double s_ij,
-			const six_t ds_ij, const struct swf *swf)
+charge_penetration_grad(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
+			int lmo_i_idx, int lmo_j_idx, double s_ij, const six_t ds_ij,
+			const struct swf *swf)
 {
 	if (fabs(s_ij) < INTEGRAL_THRESHOLD)
 		return;
@@ -111,6 +111,8 @@ charge_penetration_grad(struct frag *fr_i, struct frag *fr_j,
 
 	vec_atomic_sub(&fr_j->force, &force);
 	vec_atomic_sub(&fr_j->torque, &torque_j);
+
+	add_stress(&dr, &force, &efp->stress);
 }
 
 static void
@@ -202,9 +204,9 @@ add_six_vec(int el, int size, const double *vec, six_t *six)
  * Theor. Chem. Acc. 115, 385 (2006)
  */
 static void
-lmo_lmo_xr_grad(struct frag *fr_i, struct frag *fr_j, int i, int j,
-		const double *lmo_s, const double *lmo_t, const six_t *lmo_ds,
-		const six_t *lmo_dt, const struct swf *swf)
+lmo_lmo_xr_grad(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
+		int i, int j, const double *lmo_s, const double *lmo_t,
+		const six_t *lmo_ds, const six_t *lmo_dt, const struct swf *swf)
 {
 	int ij = i * fr_j->n_lmo + j;
 
@@ -435,6 +437,8 @@ lmo_lmo_xr_grad(struct frag *fr_i, struct frag *fr_j, int i, int j,
 
 	vec_atomic_sub(&fr_j->force, &force);
 	vec_atomic_sub(&fr_j->torque, &torque_j);
+
+	add_stress(&dr, &force, &efp->stress);
 }
 
 static double
@@ -655,11 +659,11 @@ frag_frag_xr(struct efp *efp, int frag_i, int frag_j, int overlap_idx,
 
 			if ((efp->opts.terms & EFP_TERM_ELEC) &&
 			    (efp->opts.elec_damp == EFP_ELEC_DAMP_OVERLAP))
-				charge_penetration_grad(fr_i, fr_j, i, j,
+				charge_penetration_grad(efp, fr_i, fr_j, i, j,
 							lmo_s[ij], lmo_ds[ij], &swf);
 
 			if (efp->opts.terms & EFP_TERM_XR)
-				lmo_lmo_xr_grad(fr_i, fr_j, i, j, lmo_s, lmo_t,
+				lmo_lmo_xr_grad(efp, fr_i, fr_j, i, j, lmo_s, lmo_t,
 						lmo_ds, lmo_dt, &swf);
 		}
 	}

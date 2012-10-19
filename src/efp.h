@@ -380,9 +380,7 @@ enum efp_result efp_set_coordinates(struct efp *efp,
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_coordinates(struct efp *efp,
-				    int n_frags,
-				    double *xyzabc);
+enum efp_result efp_get_coordinates(struct efp *efp, int n_frags, double *xyzabc);
 
 /**
  * Setup periodic box size.
@@ -394,8 +392,18 @@ enum efp_result efp_get_coordinates(struct efp *efp,
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_set_periodic_box(struct efp *efp,
-				     double x, double y, double z);
+enum efp_result efp_set_periodic_box(struct efp *efp, double x, double y, double z);
+
+/**
+ * Get the stress tensor.
+ *
+ * \param[in] efp The efp structure.
+ * \param[out] stress Array of 9 elements where the stress tensor
+ *                    will be stored.
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_get_stress_tensor(struct efp *efp, double *stress);
 
 /**
  * Update wave function dependent energy terms.
@@ -499,9 +507,7 @@ enum efp_result efp_get_energy(struct efp *efp, struct efp_energy *energy);
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_gradient(struct efp *efp,
-				 int n_frags,
-				 double *grad);
+enum efp_result efp_get_gradient(struct efp *efp, int n_frags, double *grad);
 
 /**
  * Get the gradient on atoms in \a ab \a initio subsystem due to EFP
@@ -519,9 +525,7 @@ enum efp_result efp_get_gradient(struct efp *efp,
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_qm_gradient(struct efp *efp,
-				    int n_atoms,
-				    double *grad);
+enum efp_result efp_get_qm_gradient(struct efp *efp, int n_atoms, double *grad);
 
 /**
  * Get the number of fragments in this computation.

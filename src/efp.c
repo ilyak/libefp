@@ -117,12 +117,18 @@ efp_set_qm_atoms(struct efp *efp, int n_atoms,
 	if (!initialized(efp))
 		return EFP_RESULT_NOT_INITIALIZED;
 
-	if (!znuc || !xyz)
+	if (!znuc || !xyz || n_atoms < 0)
 		return EFP_RESULT_INVALID_ARGUMENT;
 
 	efp->n_qm_atoms = n_atoms;
 
+	if (n_atoms == 0) {
+		free(efp->qm_atoms);
+		return EFP_RESULT_SUCCESS;
+	}
+
 	efp->qm_atoms = realloc(efp->qm_atoms, n_atoms * sizeof(struct qm_atom));
+
 	if (!efp->qm_atoms)
 		return EFP_RESULT_NO_MEMORY;
 
@@ -306,6 +312,23 @@ efp_set_periodic_box(struct efp *efp, double x, double y, double z)
 }
 
 EFP_EXPORT enum efp_result
+efp_get_stress_tensor(struct efp *efp, double *stress)
+{
+	if (!initialized(efp))
+		return EFP_RESULT_NOT_INITIALIZED;
+
+	if (!stress)
+		return EFP_RESULT_INVALID_ARGUMENT;
+
+	if (!efp->do_gradient)
+		return EFP_RESULT_GRADIENT_NOT_REQUESTED;
+
+	*(mat_t *)stress = efp->stress;
+
+	return EFP_RESULT_SUCCESS;
+}
+
+EFP_EXPORT enum efp_result
 efp_scf_update(struct efp *efp, double *energy)
 {
 	if (!initialized(efp))
@@ -334,16 +357,15 @@ efp_compute(struct efp *efp, int do_gradient)
 		return EFP_RESULT_NOT_INITIALIZED;
 
 	efp->do_gradient = do_gradient;
+	efp->stress = mat_zero;
 
-	if (do_gradient) {
-		for (int i = 0; i < efp->n_frag; i++) {
-			efp->frags[i].force = vec_zero;
-			efp->frags[i].torque = vec_zero;
-		}
-
-		for (int i = 0; i < efp->n_qm_atoms; i++)
-			efp->qm_atoms[i].grad = vec_zero;
+	for (int i = 0; i < efp->n_frag; i++) {
+		efp->frags[i].force = vec_zero;
+		efp->frags[i].torque = vec_zero;
 	}
+
+	for (int i = 0; i < efp->n_qm_atoms; i++)
+		efp->qm_atoms[i].grad = vec_zero;
 
 	enum efp_result res;
 

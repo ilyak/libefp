@@ -91,6 +91,7 @@ disp_tt(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 
 		add_force(fr_i, CVEC(pt_i->x), &force, NULL);
 		sub_force(fr_j, CVEC(pt_j->x), &force, NULL);
+		add_stress(&dr, &force, &efp->stress);
 	}
 
 	return energy;
@@ -169,6 +170,8 @@ disp_overlap(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 
 		vec_atomic_sub(&fr_j->force, &force);
 		vec_atomic_sub(&fr_j->torque, &torque_j);
+
+		add_stress(&dr, &force, &efp->stress);
 	}
 
 	return energy;
@@ -207,6 +210,7 @@ disp_off(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 
 		add_force(fr_i, CVEC(pt_i->x), &force, NULL);
 		sub_force(fr_j, CVEC(pt_j->x), &force, NULL);
+		add_stress(&dr, &force, &efp->stress);
 	}
 
 	return energy;
