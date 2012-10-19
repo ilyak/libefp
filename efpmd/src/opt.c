@@ -102,9 +102,9 @@ static void print_status(struct efp *efp, double e_diff, double rms_grad,
 	print_restart(efp);
 	print_energy(efp);
 
-	printf("                ENERGY CHANGE %16.10lf\n", e_diff);
-	printf("                 RMS GRADIENT %16.10lf\n", rms_grad);
-	printf("             MAXIMUM GRADIENT %16.10lf\n", max_grad);
+	printf("%30s %16.10lf\n", "ENERGY CHANGE", e_diff);
+	printf("%30s %16.10lf\n", "RMS GRADIENT", rms_grad);
+	printf("%30s %16.10lf\n", "MAXIMUM GRADIENT", max_grad);
 	printf("\n\n");
 
 	fflush(stdout);

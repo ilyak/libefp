@@ -120,13 +120,13 @@ void print_energy(struct efp *efp)
 	check_fail(efp_get_energy(efp, &energy));
 
 	printf("    ENERGY COMPONENTS (ATOMIC UNITS)\n\n");
-	printf("         ELECTROSTATIC ENERGY %16.10lf\n", energy.electrostatic);
-	printf("          POLARIZATION ENERGY %16.10lf\n", energy.polarization);
-	printf("            DISPERSION ENERGY %16.10lf\n", energy.dispersion);
-	printf("    EXCHANGE REPULSION ENERGY %16.10lf\n", energy.exchange_repulsion);
-	printf("    CHARGE PENETRATION ENERGY %16.10lf\n", energy.charge_penetration);
+	printf("%30s %16.10lf\n", "ELECTROSTATIC ENERGY", energy.electrostatic);
+	printf("%30s %16.10lf\n", "POLARIZATION ENERGY", energy.polarization);
+	printf("%30s %16.10lf\n", "DISPERSION ENERGY", energy.dispersion);
+	printf("%30s %16.10lf\n", "EXCHANGE REPULSION ENERGY", energy.exchange_repulsion);
+	printf("%30s %16.10lf\n", "CHARGE PENETRATION ENERGY", energy.charge_penetration);
 	printf("\n");
-	printf("                 TOTAL ENERGY %16.10lf\n", energy.total);
+	printf("%30s %16.10lf\n", "TOTAL ENERGY", energy.total);
 	printf("\n\n");
 }
 
