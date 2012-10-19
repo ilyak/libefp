@@ -18,11 +18,12 @@ is a molecular simulation package based on <i>LIBEFP</i>. Its main features incl
 
  - Geometry optimization using efficient LBFGS optimizer
 
- - Molecular dynamics in NVE and NVT ensembles
+ - Molecular dynamics in microcanonical (NVE), canonical (NVT), and
+isobaric-isothermal (NPT) ensembles
 
  - Seminumerical Hessian and normal mode analysis
 
- - Support for simulation of periodic systems
+ - Simulation of periodic systems
 
  - Parallelization of calculations on multi-core machines
 
