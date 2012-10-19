@@ -13,6 +13,12 @@
 /* AMU to atomic units of mass conversion */
 #define AMU_TO_AU (1.0 / 5.485799094622e-4)
 
+/* Hertree energy in Joules */
+#define HARTREE 4.35974434e-18
+
+/* Bar to atomic units of pressure */
+#define BAR_TO_AU (1.0e-25 * BOHR_RADIUS * BOHR_RADIUS * BOHR_RADIUS / HARTREE)
+
 /* Fine structure constant */
 #define FINE_CONST 7.297352569824e-3
 
