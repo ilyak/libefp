@@ -78,7 +78,7 @@ static char *make_name_list(const struct config *config)
 	return names;
 }
 
-/**
+/*
  * This function constructs the list of library potential data files from
  * the list of fragment names.
  *
@@ -177,9 +177,9 @@ static struct efp *init_sim(const struct config *config)
 	check_fail(efp_set_coordinates(efp, config->coord_type, coord));
 
 	if (config->enable_pbc) {
-		double x = config->pbc_box[0];
-		double y = config->pbc_box[1];
-		double z = config->pbc_box[2];
+		double x = config->box[0];
+		double y = config->box[1];
+		double z = config->box[2];
 
 		check_fail(efp_set_periodic_box(efp, x, y, z));
 	}

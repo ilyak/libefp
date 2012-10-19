@@ -311,11 +311,13 @@ static bool parse_ensemble(char **str, void *out)
 {
 	static const char names[] =
 		"nve\n"
-		"nvt";
+		"nvt\n"
+		"npt";
 
 	static const enum ensemble_type values[] = {
 		ENSEMBLE_TYPE_NVE,
-		ENSEMBLE_TYPE_NVT
+		ENSEMBLE_TYPE_NVT,
+		ENSEMBLE_TYPE_NPT
 	};
 
 	return parse_enum(str, out, names, values, sizeof(values[0]));
@@ -379,9 +381,11 @@ static void convert_units(struct config *config)
 {
 	config->time_step *= FS_TO_AU;
 	config->thermostat_tau *= FS_TO_AU;
-	config->pbc_box[0] /= BOHR_RADIUS;
-	config->pbc_box[1] /= BOHR_RADIUS;
-	config->pbc_box[2] /= BOHR_RADIUS;
+	config->barostat_tau *= FS_TO_AU;
+	config->target_pressure *= BAR_TO_AU;
+	config->box[0] /= BOHR_RADIUS;
+	config->box[1] /= BOHR_RADIUS;
+	config->box[2] /= BOHR_RADIUS;
 	config->swf_cutoff /= BOHR_RADIUS;
 
 	int n_convert;
@@ -531,6 +535,9 @@ next:
 
 	if (config->n_frags < 1)
 		error("AT LEAST ONE FRAGMENT MUST BE SPECIFIED");
+
+	if (config->ensemble_type == ENSEMBLE_TYPE_NPT)
+		config->enable_pbc = true;
 
 	if (config->enable_pbc)
 		config->enable_cutoff = true;

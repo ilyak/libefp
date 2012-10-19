@@ -28,7 +28,7 @@
 
 #include "common.h"
 
-#define HOOVER_MAX_ITER 20
+#define MAX_ITER 20
 
 struct body {
 	mat_t rotmat;
@@ -49,10 +49,17 @@ struct nvt_data {
 	double chi_dt;
 };
 
+struct npt_data {
+	double chi;
+	double chi_dt;
+	double eta;
+};
+
 struct md {
 	int n_bodies;
 	struct body *bodies;
 	int n_freedom;
+	vec_t box;
 	double potential_energy;
 	double (*get_invariant)(const struct md *);
 	void (*update_step)(struct md *);
@@ -62,6 +69,20 @@ struct md {
 };
 
 void sim_md(struct efp *, const struct config *);
+
+static vec_t wrap(const struct md *md, const vec_t *pos)
+{
+	if (!md->config->enable_pbc)
+		return *pos;
+
+	vec_t sub = {
+		md->box.x * floor(pos->x / md->box.x),
+		md->box.y * floor(pos->y / md->box.y),
+		md->box.z * floor(pos->z / md->box.z)
+	};
+
+	return vec_sub(pos, &sub);
+}
 
 static double get_kinetic_energy(const struct md *md)
 {
@@ -89,6 +110,34 @@ static double get_temperature(const struct md *md)
 	return 2.0 * ke / BOLTZMANN / md->n_freedom;
 }
 
+static double get_volume(const struct md *md)
+{
+	return md->box.x * md->box.y * md->box.z;
+}
+
+static double get_pressure(const struct md *md)
+{
+	double volume = get_volume(md);
+	vec_t pressure = vec_zero;
+
+	for (int i = 0; i < md->n_bodies; i++) {
+		const struct body *body = md->bodies + i;
+
+		pressure.x += body->mass * body->vel.x * body->vel.x;
+		pressure.y += body->mass * body->vel.y * body->vel.y;
+		pressure.z += body->mass * body->vel.z * body->vel.z;
+	}
+
+	mat_t stress;
+	check_fail(efp_get_stress_tensor(md->efp, (double *)&stress));
+
+	pressure.x = (pressure.x + stress.xx) / volume;
+	pressure.y = (pressure.y + stress.yy) / volume;
+	pressure.z = (pressure.z + stress.zz) / volume;
+
+	return (pressure.x + pressure.y + pressure.z) / 3.0;
+}
+
 static double get_invariant_nve(const struct md *md)
 {
 	return md->potential_energy + get_kinetic_energy(md);
@@ -98,26 +147,50 @@ static double get_invariant_nvt(const struct md *md)
 {
 	struct nvt_data *data = (struct nvt_data *)md->data;
 
-	double tau = md->config->thermostat_tau;
-	double target = md->config->target_temperature;
+	double t_tau = md->config->thermostat_tau;
+	double t_target = md->config->target_temperature;
 
-	double virt = BOLTZMANN * target * md->n_freedom * (data->chi_dt +
-			0.5 * data->chi * data->chi * tau * tau);
+	double kbt = BOLTZMANN * t_target;
 
-	return md->potential_energy + get_kinetic_energy(md) + virt;
+	double t_virt = kbt * md->n_freedom * (data->chi_dt +
+				data->chi * data->chi * t_tau * t_tau / 2.0);
+
+	return md->potential_energy + get_kinetic_energy(md) + t_virt;
+}
+
+static double get_invariant_npt(const struct md *md)
+{
+	struct npt_data *data = (struct npt_data *)md->data;
+
+	double t_tau = md->config->thermostat_tau;
+	double t_target = md->config->target_temperature;
+	double p_tau = md->config->barostat_tau;
+	double p_target = md->config->target_pressure;
+
+	double kbt = BOLTZMANN * t_target;
+	double volume = get_volume(md);
+
+	double t_virt = kbt * md->n_freedom * (data->chi_dt +
+				data->chi * data->chi * t_tau * t_tau / 2.0);
+
+	double p_virt = p_target * volume + 3.0 * md->n_bodies * kbt *
+				data->eta * data->eta * p_tau * p_tau / 2.0;
+
+	return md->potential_energy + get_kinetic_energy(md) + t_virt + p_virt;
 }
 
 static vec_t get_system_com(const struct md *md)
 {
 	double mass = 0.0;
-	vec_t com = { 0.0, 0.0, 0.0 };
+	vec_t com = vec_zero;
 
 	for (int i = 0; i < md->n_bodies; i++) {
 		struct body *body = md->bodies + i;
+		vec_t pos = wrap(md, &body->pos);
 
-		com.x += body->mass * body->pos.x;
-		com.y += body->mass * body->pos.y;
-		com.z += body->mass * body->pos.z;
+		com.x += body->mass * pos.x;
+		com.y += body->mass * pos.y;
+		com.z += body->mass * pos.z;
 
 		mass += body->mass;
 	}
@@ -132,7 +205,7 @@ static vec_t get_system_com(const struct md *md)
 static vec_t get_system_com_velocity(const struct md *md)
 {
 	double mass = 0.0;
-	vec_t cv = { 0.0, 0.0, 0.0 };
+	vec_t cv = vec_zero;
 
 	for (int i = 0; i < md->n_bodies; i++) {
 		struct body *body = md->bodies + i;
@@ -156,12 +229,13 @@ static vec_t get_system_angular_momentum(const struct md *md)
 	vec_t cp = get_system_com(md);
 	vec_t cv = get_system_com_velocity(md);
 
-	vec_t am = { 0.0, 0.0, 0.0 };
+	vec_t am = vec_zero;
 
 	for (int i = 0; i < md->n_bodies; i++) {
 		struct body *body = md->bodies + i;
 
-		vec_t dr = vec_sub(&body->pos, &cp);
+		vec_t pos = wrap(md, &body->pos);
+		vec_t dr = vec_sub(&pos, &cp);
 		vec_t dv = vec_sub(&body->vel, &cv);
 
 		am.x += (dr.y * dv.z - dr.z * dv.y) * body->mass;
@@ -174,18 +248,14 @@ static vec_t get_system_angular_momentum(const struct md *md)
 
 static mat_t get_system_inertia_tensor(const struct md *md)
 {
-	mat_t inertia = { 0.0, 0.0, 0.0,
-			  0.0, 0.0, 0.0,
-			  0.0, 0.0, 0.0 };
-
+	mat_t inertia = mat_zero;
 	vec_t com = get_system_com(md);
 
 	for (int i = 0; i < md->n_bodies; i++) {
 		struct body *body = md->bodies + i;
 
-		vec_t dr = { body->pos.x - com.x,
-			     body->pos.y - com.y,
-			     body->pos.z - com.z };
+		vec_t pos = wrap(md, &body->pos);
+		vec_t dr = vec_sub(&pos, &com);
 
 		inertia.xx += body->mass * (dr.y * dr.y + dr.z * dr.z);
 		inertia.yy += body->mass * (dr.x * dr.x + dr.z * dr.z);
@@ -226,11 +296,12 @@ static void remove_system_drift(struct md *md)
 
 	for (int i = 0; i < md->n_bodies; i++) {
 		struct body *body = md->bodies + i;
+		vec_t pos = wrap(md, &body->pos);
 
 		vec_t cross = {
-			av.y * (body->pos.z - cp.z) - av.z * (body->pos.y - cp.y),
-			av.z * (body->pos.x - cp.x) - av.x * (body->pos.z - cp.z),
-			av.x * (body->pos.y - cp.y) - av.y * (body->pos.x - cp.x)
+			av.y * (pos.z - cp.z) - av.z * (pos.y - cp.y),
+			av.z * (pos.x - cp.x) - av.x * (pos.z - cp.z),
+			av.x * (pos.y - cp.y) - av.y * (pos.x - cp.x)
 		};
 
 		body->vel.x -= cv.x + cross.x;
@@ -412,7 +483,12 @@ static void update_step_nve(struct md *md)
 static void update_step_nvt(struct md *md)
 {
 	struct nvt_data *data = (struct nvt_data *)md->data;
+
 	double dt = md->config->time_step;
+	double target = md->config->target_temperature;
+	double tau = md->config->thermostat_tau;
+
+	double t0 = get_temperature(md);
 
 	for (int i = 0; i < md->n_bodies; i++) {
 		struct body *body = md->bodies + i;
@@ -438,10 +514,7 @@ static void update_step_nvt(struct md *md)
 		rotate_body(body, dt);
 	}
 
-	double tau = md->config->thermostat_tau;
-	double target = md->config->target_temperature;
-
-	data->chi += 0.5 * dt * (get_temperature(md) / target - 1.0) / tau / tau;
+	data->chi += 0.5 * dt * (t0 / target - 1.0) / tau / tau;
 	data->chi_dt += 0.5 * dt * data->chi;
 
 	compute_forces(md);
@@ -454,7 +527,7 @@ static void update_step_nvt(struct md *md)
 		vel_init[i] = md->bodies[i].vel;
 	}
 
-	for (int iter = 0; iter < HOOVER_MAX_ITER; iter++) {
+	for (int iter = 0; iter < MAX_ITER; iter++) {
 		double chi_prev = data->chi;
 		double ratio = get_temperature(md) / target;
 
@@ -481,8 +554,151 @@ static void update_step_nvt(struct md *md)
 		if (fabs(data->chi - chi_prev) < EPSILON)
 			break;
 
-		if (iter == HOOVER_MAX_ITER - 1)
+		if (iter == MAX_ITER - 1)
 			error("Nose-Hoover did not converge");
+	}
+
+	data->chi_dt += 0.5 * dt * data->chi;
+}
+
+/*
+ * Reference
+ *
+ * Simone Melchionna, Giovanni Ciccotti, Brad Lee Holian
+ *
+ * Hoover NPT dynamics for systems varying in shape and size
+ *
+ * Mol. Phys. 78, 533 (1993)
+ */
+static void update_step_npt(struct md *md)
+{
+	struct npt_data *data = (struct npt_data *)md->data;
+
+	double dt = md->config->time_step;
+	double t_tau = md->config->thermostat_tau;
+	double t_target = md->config->target_temperature;
+	double p_tau = md->config->barostat_tau;
+	double p_target = md->config->target_pressure;
+
+	double t_tau2 = t_tau * t_tau;
+	double p_tau2 = p_tau * p_tau;
+	double kbt = BOLTZMANN * t_target;
+
+	double t0 = get_temperature(md);
+	double p0 = get_pressure(md);
+	double v0 = get_volume(md);
+
+	for (int i = 0; i < md->n_bodies; i++) {
+		struct body *body = md->bodies + i;
+
+		body->vel.x += 0.5 * dt * (body->force.x / body->mass -
+					body->vel.x * (data->chi + data->eta));
+		body->vel.y += 0.5 * dt * (body->force.y / body->mass -
+					body->vel.y * (data->chi + data->eta));
+		body->vel.z += 0.5 * dt * (body->force.z / body->mass -
+					body->vel.z * (data->chi + data->eta));
+
+		body->angmom.x += 0.5 * dt * (body->torque.x -
+						body->angmom.x * data->chi);
+		body->angmom.y += 0.5 * dt * (body->torque.y -
+						body->angmom.y * data->chi);
+		body->angmom.z += 0.5 * dt * (body->torque.z -
+						body->angmom.z * data->chi);
+
+		rotate_body(body, dt);
+	}
+
+	data->chi += 0.5 * dt * (t0 / t_target - 1.0) / t_tau2;
+	data->chi_dt += 0.5 * dt * data->chi;
+	data->eta += 0.5 * dt * v0 * (p0 - p_target) / md->n_bodies / kbt / p_tau2;
+
+	vec_t com = get_system_com(md);
+	vec_t pos_init[md->n_bodies];
+
+	for (int i = 0; i < md->n_bodies; i++)
+		pos_init[i] = md->bodies[i].pos;
+
+	for (int iter = 0; iter < MAX_ITER; iter++) {
+		bool done = true;
+
+		for (int i = 0; i < md->n_bodies; i++) {
+			struct body *body = md->bodies + i;
+			vec_t pos = wrap(md, &body->pos);
+
+			vec_t v = {
+				data->eta * (pos.x - com.x),
+				data->eta * (pos.y - com.y),
+				data->eta * (pos.z - com.z)
+			};
+
+			vec_t new_pos = {
+				pos_init[i].x + dt * (body->vel.x + v.x),
+				pos_init[i].y + dt * (body->vel.y + v.y),
+				pos_init[i].z + dt * (body->vel.z + v.z)
+			};
+
+			done = done && vec_dist(&body->pos, &new_pos) < EPSILON;
+			body->pos = new_pos;
+		}
+
+		if (done)
+			break;
+
+		if (iter == MAX_ITER - 1)
+			error("NPT update did not converge");
+	}
+
+	vec_scale(&md->box, exp(dt * data->eta));
+	check_fail(efp_set_periodic_box(md->efp, md->box.x, md->box.y, md->box.z));
+
+	compute_forces(md);
+
+	double chi_init = data->chi, eta_init = data->eta;
+	vec_t angmom_init[md->n_bodies], vel_init[md->n_bodies];
+
+	for (int i = 0; i < md->n_bodies; i++) {
+		angmom_init[i] = md->bodies[i].angmom;
+		vel_init[i] = md->bodies[i].vel;
+	}
+
+	for (int iter = 0; iter < MAX_ITER; iter++) {
+		double chi_prev = data->chi;
+		double eta_prev = data->eta;
+		double t_cur = get_temperature(md);
+		double p_cur = get_pressure(md);
+		double v_cur = get_volume(md);
+
+		data->chi = chi_init + 0.5 * dt * (t_cur / t_target - 1.0) / t_tau2;
+		data->eta = eta_init + 0.5 * dt * v_cur * (p_cur - p_target) /
+							md->n_bodies / kbt / p_tau2;
+
+		for (int i = 0; i < md->n_bodies; i++) {
+			struct body *body = md->bodies + i;
+
+			body->vel.x = vel_init[i].x + 0.5 * dt *
+				(body->force.x / body->mass -
+					vel_init[i].x * (data->chi + data->eta));
+			body->vel.y = vel_init[i].y + 0.5 * dt *
+				(body->force.y / body->mass -
+					vel_init[i].y * (data->chi + data->eta));
+			body->vel.z = vel_init[i].z + 0.5 * dt *
+				(body->force.z / body->mass -
+					vel_init[i].z * (data->chi + data->eta));
+
+			body->angmom.x = angmom_init[i].x + 0.5 * dt *
+				(body->torque.x - angmom_init[i].x * data->chi);
+			body->angmom.y = angmom_init[i].y + 0.5 * dt *
+				(body->torque.y - angmom_init[i].y * data->chi);
+			body->angmom.z = angmom_init[i].z + 0.5 * dt *
+				(body->torque.z - angmom_init[i].z * data->chi);
+		}
+
+		if (fabs(data->chi - chi_prev) < EPSILON &&
+		    fabs(data->eta - eta_prev) < EPSILON)
+			break;
+
+		if (iter == MAX_ITER - 1)
+			error("NPT update did not converge");
 	}
 
 	data->chi_dt += 0.5 * dt * data->chi;
@@ -490,9 +706,28 @@ static void update_step_nvt(struct md *md)
 
 static void print_info(const struct md *md)
 {
-	printf("             POTENTIAL ENERGY %16.10lf\n", md->potential_energy);
-	printf("                    INVARIANT %16.10lf\n", md->get_invariant(md));
-	printf("           SYSTEM TEMPERATURE %16.10lf\n", get_temperature(md));
+	double energy = md->potential_energy;
+	double invariant = md->get_invariant(md);
+	double temperature = get_temperature(md);
+
+	printf("%30s %16.10lf\n", "POTENTIAL ENERGY", energy);
+	printf("%30s %16.10lf\n", "INVARIANT", invariant);
+	printf("%30s %16.10lf\n", "TEMPERATURE", temperature);
+
+	if (md->config->ensemble_type == ENSEMBLE_TYPE_NPT) {
+		double pressure = get_pressure(md) / BAR_TO_AU;
+
+		printf("%30s %16.10lf\n", "PRESSURE", pressure);
+	}
+
+	if (md->config->enable_pbc) {
+		double x = md->box.x * BOHR_RADIUS;
+		double y = md->box.y * BOHR_RADIUS;
+		double z = md->box.z * BOHR_RADIUS;
+
+		printf("%30s %8.3lf %8.3lf %8.3lf\n", "PERIODIC BOX SIZE", x, y, z);
+	}
+
 	printf("\n\n");
 }
 
@@ -531,6 +766,7 @@ static struct md *md_create(struct efp *efp, const struct config *config)
 
 	md->efp = efp;
 	md->config = config;
+	md->box = *(const vec_t *)config->box;
 
 	switch (config->ensemble_type) {
 		case ENSEMBLE_TYPE_NVE:
@@ -541,6 +777,11 @@ static struct md *md_create(struct efp *efp, const struct config *config)
 			md->get_invariant = get_invariant_nvt;
 			md->update_step = update_step_nvt;
 			md->data = xcalloc(1, sizeof(struct nvt_data));
+			break;
+		case ENSEMBLE_TYPE_NPT:
+			md->get_invariant = get_invariant_npt;
+			md->update_step = update_step_npt;
+			md->data = xcalloc(1, sizeof(struct npt_data));
 			break;
 		default:
 			assert(0);
