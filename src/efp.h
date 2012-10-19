@@ -171,7 +171,7 @@ struct efp_opts {
 	/** Enable fragment-fragment interaction cutoff if nonzero. */
 	int enable_cutoff;
 
-	/** Cutoff for fragment-fragment interactions. */
+	/** Cutoff distance for fragment-fragment interactions. */
 	double swf_cutoff;
 };
 
