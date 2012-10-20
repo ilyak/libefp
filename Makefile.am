@@ -9,15 +9,6 @@ AM_CPPFLAGS = -include $(top_builddir)/config.h
 AM_CFLAGS = ${my_CFLAGS} ${OPENMP_CFLAGS} \
 	-fvisibility=hidden
 
-EXTRA_DIST += \
-	BSDmakefile \
-	common/BSDmakefile \
-	src/BSDmakefile \
-	tests/BSDmakefile \
-	efpmd/BSDmakefile \
-	efpmd/optimizer/BSDmakefile \
-	efpmd/src/BSDmakefile
-
 dist_pkgdata_DATA = \
 	fraglib/makefp.inp \
 	fraglib/acetone.efp \
