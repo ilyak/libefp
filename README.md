@@ -84,21 +84,22 @@ After that proceed with compilation as usual.
 
 ## How to use the library
 
-The description of the public API functions and structures provided by the
-library is available at project's web site at http://www.libefp.org/.
+For the description of the public API functions and structures provided by the
+library see the Documentation section at project's web site
+http://www.libefp.org/.
 
 To obtain an executable program link with provided shared (recommended) or
 static libraries:
 
-	gcc -o prog prog.c CBLAS_LIBS -lm -lefp
+	cc -o prog prog.c LIBS -lefp
 
 or
 
-	gcc -o prog prog.c CBLAS_LIBS -lm libefp.a
+	cc -o prog prog.c LIBS libefp.a
 
-In the above command `CBLAS_LIBS` are CBLAS libraries. You should substitute
-`CBLAS_LIBS` with the command to link against the CBLAS library implementation
-of your choice.
+In the above command `LIBS` are necessary CBLAS and LAPACK libraries. You
+should substitute `LIBS` with the command to link against the implementation of
+your choice.
 
 
 ## How to create custom EFP fragment types
