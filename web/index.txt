@@ -29,6 +29,14 @@ isobaric-isothermal (NPT) ensembles
 
  - Very simple input format
 
+The Effective Fragment Potential method is much more accurate than traditional
+force-field based methods. For example it was shown that the EFP method
+accurately predicts structures and binding energies in the water-benzene
+complexes which is a challenge for many computational methods (see <a
+href="http://dx.doi.org/10.1021/jp808845b"><i>Slipchenko et al., J. Phys. Chem.
+A, 2009</i></a>). Thus <i>EFPMD</i> is one of the best tools for high-accuracy
+modeling of solid state and liquid molecular systems.
+
 <i>EFPMD</i> is a part of <i>LIBEFP</i> distribution and is compiled by default
 when you build <i>LIBEFP</i>. See
 <a href="http://github.com/libefp/libefp/tree/master/efpmd/README.md"><i>README</i></a>
