@@ -676,6 +676,7 @@ frag_frag_xr(struct efp *efp, int frag_i, int frag_j, int overlap_idx,
 
 	vec_atomic_add(&fr_i->force, &force);
 	vec_atomic_sub(&fr_j->force, &force);
+	add_stress(&swf.dr, &force, &efp->stress);
 
 	free(s), free(ds), free(lmo_ds);
 	free(t), free(dt), free(lmo_dt);

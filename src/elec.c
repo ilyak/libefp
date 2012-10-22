@@ -369,6 +369,7 @@ frag_frag_elec(struct efp *efp, int fr_i_idx, int fr_j_idx)
 			struct swf swf2 = {
 				.swf = swf.swf,
 				.dswf = { -swf.dswf.x, -swf.dswf.y, -swf.dswf.z },
+				.dr = { -swf.dr.x, -swf.dr.y, -swf.dr.z },
 				.cell = { -swf.cell.x, -swf.cell.y, -swf.cell.z }
 			};
 
@@ -397,6 +398,7 @@ frag_frag_elec(struct efp *efp, int fr_i_idx, int fr_j_idx)
 
 	vec_atomic_add(&fr_i->force, &force);
 	vec_atomic_sub(&fr_j->force, &force);
+	add_stress(&swf.dr, &force, &efp->stress);
 
 	return energy * swf.swf;
 }

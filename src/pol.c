@@ -490,6 +490,7 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 
 		vec_atomic_add(&fr_i->force, &force);
 		vec_atomic_sub(&fr_j->force, &force);
+		add_stress(&swf.dr, &force, &efp->stress);
 	}
 
 	/* induced dipole - ab initio nuclei */

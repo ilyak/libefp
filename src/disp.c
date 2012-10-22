@@ -267,6 +267,7 @@ frag_frag_disp(struct efp *efp, int frag_i, int frag_j, int overlap_idx)
 
 	vec_atomic_add(&fr_i->force, &force);
 	vec_atomic_sub(&fr_j->force, &force);
+	add_stress(&swf.dr, &force, &efp->stress);
 
 	return energy * swf.swf;
 }
