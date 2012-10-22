@@ -31,7 +31,7 @@
 
 void sim_hess(struct efp *, const struct config *);
 
-static void compute_hessian(struct efp *efp, double delta, double *hess)
+static void compute_hessian(struct efp *efp, double d_dist, double d_angle, double *hess)
 {
 	int n_frags;
 	check_fail(efp_get_frag_count(efp, &n_frags));
@@ -50,6 +50,8 @@ static void compute_hessian(struct efp *efp, double delta, double *hess)
 		fflush(stdout);
 
 		double save = xyzabc[i];
+		double delta = i % 6 < 3 ? d_dist : d_angle;
+
 		xyzabc[i] = save + delta;
 
 		check_fail(efp_set_coordinates(efp, EFP_COORD_TYPE_XYZABC, xyzabc));
@@ -255,7 +257,7 @@ void sim_hess(struct efp *efp, const struct config *config)
 	double *eigen = xmalloc(n_coord * sizeof(double));
 	double *work = xmalloc(work_size * sizeof(double));
 
-	compute_hessian(efp, config->hess_delta, hess);
+	compute_hessian(efp, config->hess_step_dist, config->hess_step_angle, hess);
 
 	printf("    HESSIAN MATRIX\n\n");
 	print_matrix(n_coord, n_coord, hess);

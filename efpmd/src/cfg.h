@@ -63,7 +63,8 @@ struct config {
 	double box[3];
 	bool enable_cutoff;
 	double swf_cutoff;
-	double hess_delta;
+	double hess_step_dist;
+	double hess_step_angle;
 	int max_steps;
 	int print_step;
 	double target_temperature;

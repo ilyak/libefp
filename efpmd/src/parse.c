@@ -387,6 +387,7 @@ static void convert_units(struct config *config)
 	config->box[1] /= BOHR_RADIUS;
 	config->box[2] /= BOHR_RADIUS;
 	config->swf_cutoff /= BOHR_RADIUS;
+	config->hess_step_dist /= BOHR_RADIUS;
 
 	int n_convert;
 
