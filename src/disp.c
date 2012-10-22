@@ -91,7 +91,7 @@ disp_tt(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 
 		add_force(fr_i, CVEC(pt_i->x), &force, NULL);
 		sub_force(fr_j, CVEC(pt_j->x), &force, NULL);
-		add_stress(&dr, &force, &efp->stress);
+		add_stress(&swf->dr, &force, &efp->stress);
 	}
 
 	return energy;
@@ -138,12 +138,6 @@ disp_overlap(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 		vec_t dr_i = vec_sub(CVEC(pt_i->x), VEC(fr_i->x));
 		vec_t dr_j = vec_sub(CVEC(pt_j->x), VEC(fr_j->x));
 
-		vec_t dr_com = {
-			fr_j->x - fr_i->x - swf->cell.x,
-			fr_j->y - fr_i->y - swf->cell.y,
-			fr_j->z - fr_i->z - swf->cell.z
-		};
-
 		force.x = (t1 * dr.x - t2 * ds_ij.x) * swf->swf;
 		force.y = (t1 * dr.y - t2 * ds_ij.y) * swf->swf;
 		force.z = (t1 * dr.z - t2 * ds_ij.z) * swf->swf;
@@ -156,13 +150,13 @@ disp_overlap(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 						t2 * ds_ij.c);
 
 		torque_j.x = swf->swf * (t1 * (dr.z * dr_j.y - dr.y * dr_j.z) +
-			     t2 * (ds_ij.z * dr_com.y - ds_ij.y * dr_com.z) +
+			     t2 * (ds_ij.z * swf->dr.y - ds_ij.y * swf->dr.z) +
 			     t2 * ds_ij.a);
 		torque_j.y = swf->swf * (t1 * (dr.x * dr_j.z - dr.z * dr_j.x) +
-			     t2 * (ds_ij.x * dr_com.z - ds_ij.z * dr_com.x) +
+			     t2 * (ds_ij.x * swf->dr.z - ds_ij.z * swf->dr.x) +
 			     t2 * ds_ij.b);
 		torque_j.z = swf->swf * (t1 * (dr.y * dr_j.x - dr.x * dr_j.y) +
-			     t2 * (ds_ij.y * dr_com.x - ds_ij.x * dr_com.y) +
+			     t2 * (ds_ij.y * swf->dr.x - ds_ij.x * swf->dr.y) +
 			     t2 * ds_ij.c);
 
 		vec_atomic_add(&fr_i->force, &force);
@@ -171,7 +165,7 @@ disp_overlap(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 		vec_atomic_sub(&fr_j->force, &force);
 		vec_atomic_sub(&fr_j->torque, &torque_j);
 
-		add_stress(&dr, &force, &efp->stress);
+		add_stress(&swf->dr, &force, &efp->stress);
 	}
 
 	return energy;
@@ -210,7 +204,7 @@ disp_off(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 
 		add_force(fr_i, CVEC(pt_i->x), &force, NULL);
 		sub_force(fr_j, CVEC(pt_j->x), &force, NULL);
-		add_stress(&dr, &force, &efp->stress);
+		add_stress(&swf->dr, &force, &efp->stress);
 	}
 
 	return energy;

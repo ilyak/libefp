@@ -6,6 +6,7 @@
 struct swf {
 	double swf;
 	vec_t dswf;
+	vec_t dr;
 	vec_t cell;
 };
 

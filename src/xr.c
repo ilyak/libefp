@@ -112,7 +112,7 @@ charge_penetration_grad(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 	vec_atomic_sub(&fr_j->force, &force);
 	vec_atomic_sub(&fr_j->torque, &torque_j);
 
-	add_stress(&dr, &force, &efp->stress);
+	add_stress(&swf->dr, &force, &efp->stress);
 }
 
 static void
@@ -438,7 +438,7 @@ lmo_lmo_xr_grad(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 	vec_atomic_sub(&fr_j->force, &force);
 	vec_atomic_sub(&fr_j->torque, &torque_j);
 
-	add_stress(&dr, &force, &efp->stress);
+	add_stress(&swf->dr, &force, &efp->stress);
 }
 
 static double

@@ -53,32 +53,31 @@ struct swf make_swf(struct efp *efp, const struct frag *fr_i, const struct frag 
 	struct swf swf = {
 		.swf = 1.0,
 		.dswf = vec_zero,
+		.dr = vec_sub(CVEC(fr_j->x), CVEC(fr_i->x)),
 		.cell = vec_zero
 	};
 
 	if (!efp->opts.enable_cutoff)
 		return swf;
 
-	vec_t dr = vec_sub(CVEC(fr_j->x), CVEC(fr_i->x));
-
 	if (efp->opts.enable_pbc) {
-		swf.cell.x = efp->box.x * round(dr.x / efp->box.x);
-		swf.cell.y = efp->box.y * round(dr.y / efp->box.y);
-		swf.cell.z = efp->box.z * round(dr.z / efp->box.z);
+		swf.cell.x = efp->box.x * round(swf.dr.x / efp->box.x);
+		swf.cell.y = efp->box.y * round(swf.dr.y / efp->box.y);
+		swf.cell.z = efp->box.z * round(swf.dr.z / efp->box.z);
 
-		dr.x -= swf.cell.x;
-		dr.y -= swf.cell.y;
-		dr.z -= swf.cell.z;
+		swf.dr.x -= swf.cell.x;
+		swf.dr.y -= swf.cell.y;
+		swf.dr.z -= swf.cell.z;
 	}
 
-	double r = vec_len(&dr);
+	double r = vec_len(&swf.dr);
 
 	swf.swf = get_swf(r, efp->opts.swf_cutoff);
 	double dswf = get_dswf(r, efp->opts.swf_cutoff);
 
-	swf.dswf.x = -dswf * dr.x;
-	swf.dswf.y = -dswf * dr.y;
-	swf.dswf.z = -dswf * dr.z;
+	swf.dswf.x = -dswf * swf.dr.x;
+	swf.dswf.y = -dswf * swf.dr.y;
+	swf.dswf.z = -dswf * swf.dr.z;
 
 	return swf;
 }

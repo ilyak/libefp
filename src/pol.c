@@ -392,7 +392,7 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 
 			add_force(fr_i, CVEC(pt_i->x), &force, &add_i);
 			sub_force(fr_j, CVEC(at_j->x), &force, &add_j);
-			add_stress(&dr, &force, &efp->stress);
+			add_stress(&swf.dr, &force, &efp->stress);
 		}
 
 		/* induced dipole - multipoles */
@@ -437,7 +437,7 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 
 			add_force(fr_i, CVEC(pt_i->x), &force, &add_i);
 			sub_force(fr_j, CVEC(pt_j->x), &force, &add_j);
-			add_stress(&dr, &force, &efp->stress);
+			add_stress(&swf.dr, &force, &efp->stress);
 
 			/* octupole-polarizability interactions are ignored */
 		}
@@ -479,7 +479,7 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 
 			add_force(fr_i, CVEC(pt_i->x), &force, &add_i);
 			sub_force(fr_j, CVEC(pt_j->x), &force, &add_j);
-			add_stress(&dr, &force, &efp->stress);
+			add_stress(&swf.dr, &force, &efp->stress);
 		}
 
 		vec_t force = {

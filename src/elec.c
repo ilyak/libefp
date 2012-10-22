@@ -150,7 +150,7 @@ atom_mult_grad(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 
 	add_force(fr_i, CVEC(at_i->x), &force, &torque_i);
 	sub_force(fr_j, CVEC(pt_j->x), &force, &torque_j);
-	add_stress(&dr, &force, &efp->stress);
+	add_stress(&swf->dr, &force, &efp->stress);
 }
 
 static double
@@ -314,7 +314,7 @@ mult_mult_grad(struct efp *efp, int fr_i_idx, int fr_j_idx,
 
 	add_force(fr_i, CVEC(pt_i->x), &force, &torque_i);
 	sub_force(fr_j, CVEC(pt_j->x), &force, &torque_j);
-	add_stress(&dr, &force, &efp->stress);
+	add_stress(&swf->dr, &force, &efp->stress);
 }
 
 static double
@@ -348,7 +348,7 @@ frag_frag_elec(struct efp *efp, int fr_i_idx, int fr_j_idx)
 				vec_scale(&force, swf.swf);
 				add_force(fr_i, CVEC(at_i->x), &force, NULL);
 				sub_force(fr_j, CVEC(at_j->x), &force, NULL);
-				add_stress(&dr, &force, &efp->stress);
+				add_stress(&swf.dr, &force, &efp->stress);
 			}
 		}
 	}
