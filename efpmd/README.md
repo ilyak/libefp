@@ -1,9 +1,9 @@
 # EFPMD
 
-EFPMD is a molecular simulation program based on LIBEFP. It supports EFP-only
-single point energy and gradient calculations, semi-numerical Hessian, geometry
-optimization, and molecular dynamics simulations in microcanonical and
-canonical ensembles.
+EFPMD is a molecular simulation program based on LIBEFP. It supports single
+point energy and gradient calculations, semi-numerical Hessian and normal mode
+analysis, geometry optimization, molecular dynamics simulations in
+microcanonical (NVE), canonical (NVT), and isobaric-isothermal (NPT) ensembles.
 
 Simulations can be accelerated by running in parallel mode on multi-core CPUs.
 To enable parallel computation set `OMP_NUM_THREADS` environmental variable to
@@ -163,7 +163,7 @@ Setting `enable_pbc` to `true` also sets `enable_cutoff` to `true`.
 
 ##### Periodic Box Size
 
-`pbc_box <x> <y> <z>`
+`periodic_box <x> <y> <z>`
 
 Default value: `30.0 30.0 30.0`
 
@@ -177,32 +177,44 @@ The smallest box dimension must be greater than `2 * swf_cutoff`.
 
 `opt_tol <value>`
 
-Default value: `1.0e-4`
+Default value: `0.0001`
+
+Unit: Hartree/Bohr
 
 Optimization will stop when maximum gradient component is less than `opt_tol`
 and RMS gradient is less than one third of `opt_tol`.
+
+### Hessian calculation related parameters
+
+##### Differentiation step length for distances
+
+`hess_step_dist <value>`
+
+Default value: `0.001`
+
+Unit: Angstrom
+
+##### Differentiation step length for angles
+
+`hess_step_angle <value>`
+
+Default value: `0.01`
+
+Unit: Radian
 
 ### Molecular dynamics related parameters
 
 ##### Ensemble
 
-`ensemble [nve|nvt]`
+`ensemble [nve|nvt|npt]`
 
 `nve` - Microcanonical ensemble.
 
 `nvt` - Canonical ensemble with Nose-Hoover thermostat.
 
+`npt` - Isobaric-isothermal ensemble. This also sets `enable_pbc` to `true`.
+
 Default value: `nve`
-
-##### Simulation temperature
-
-`temperature <value>`
-
-Unit: Kelvin
-
-Default value: `300.0`
-
-Target simulation temperature for NVT thermostat.
 
 ##### Time step
 
@@ -220,15 +232,45 @@ Default value: `1`
 
 Number of steps between outputs of the system state.
 
+##### Simulation temperature
+
+`temperature <value>`
+
+Unit: Kelvin
+
+Default value: `300.0`
+
+Target simulation temperature for NVT and NPT thermostats.
+
+##### Simulation pressure
+
+`pressure <value>`
+
+Unit: Bar
+
+Default value: `1.0`
+
+Target simulation pressure for NPT barostat.
+
 ##### Thermostat parameter
 
 `thermostat_tau <value>`
 
 Unit: Femtosecond
 
-Default value: `1.0e3`
+Default value: `1000.0`
 
 Parameter of Nose-Hoover thermostat.
+
+##### Barostat parameter
+
+`barostat_tau <value>`
+
+Unit: Femtosecond
+
+Default value: `10000.0`
+
+Parameter of Melchionna-Nose-Hoover-Andersen barostat.
 
 ### Fragment input
 
