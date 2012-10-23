@@ -527,7 +527,7 @@ static void update_step_nvt(struct md *md)
 		vel_init[i] = md->bodies[i].vel;
 	}
 
-	for (int iter = 0; iter < MAX_ITER; iter++) {
+	for (int iter = 1; iter <= MAX_ITER; iter++) {
 		double chi_prev = data->chi;
 		double ratio = get_temperature(md) / target;
 
@@ -554,8 +554,8 @@ static void update_step_nvt(struct md *md)
 		if (fabs(data->chi - chi_prev) < EPSILON)
 			break;
 
-		if (iter == MAX_ITER - 1)
-			error("Nose-Hoover did not converge");
+		if (iter == MAX_ITER)
+			printf("WARNING: NVT UPDATE DID NOT CONVERGE\n\n");
 	}
 
 	data->chi_dt += 0.5 * dt * data->chi;
@@ -618,7 +618,7 @@ static void update_step_npt(struct md *md)
 	for (int i = 0; i < md->n_bodies; i++)
 		pos_init[i] = md->bodies[i].pos;
 
-	for (int iter = 0; iter < MAX_ITER; iter++) {
+	for (int iter = 1; iter <= MAX_ITER; iter++) {
 		bool done = true;
 
 		for (int i = 0; i < md->n_bodies; i++) {
@@ -644,8 +644,8 @@ static void update_step_npt(struct md *md)
 		if (done)
 			break;
 
-		if (iter == MAX_ITER - 1)
-			error("NPT update did not converge");
+		if (iter == MAX_ITER)
+			printf("WARNING: NPT UPDATE DID NOT CONVERGE\n\n");
 	}
 
 	vec_scale(&md->box, exp(dt * data->eta));
@@ -661,7 +661,7 @@ static void update_step_npt(struct md *md)
 		vel_init[i] = md->bodies[i].vel;
 	}
 
-	for (int iter = 0; iter < MAX_ITER; iter++) {
+	for (int iter = 1; iter <= MAX_ITER; iter++) {
 		double chi_prev = data->chi;
 		double eta_prev = data->eta;
 		double t_cur = get_temperature(md);
@@ -697,8 +697,8 @@ static void update_step_npt(struct md *md)
 		    fabs(data->eta - eta_prev) < EPSILON)
 			break;
 
-		if (iter == MAX_ITER - 1)
-			error("NPT update did not converge");
+		if (iter == MAX_ITER)
+			printf("WARNING: NPT UPDATE DID NOT CONVERGE\n\n");
 	}
 
 	data->chi_dt += 0.5 * dt * data->chi;
