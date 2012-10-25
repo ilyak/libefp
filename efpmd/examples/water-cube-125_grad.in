@@ -2,7 +2,6 @@
 
 run_type grad
 coord xyzabc
-units angs
 terms elec pol disp xr
 elec_damp screen
 disp_damp tt

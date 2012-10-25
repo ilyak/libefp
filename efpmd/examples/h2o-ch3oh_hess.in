@@ -1,5 +1,4 @@
 run_type hess
-units angs
 coord xyzabc
 
 fragment h2o_l
