@@ -51,16 +51,6 @@ Default value: `xyzabc`
 
 See fragment input specification for more details.
 
-##### Units used for geometry specification
-
-`units [angs|bohr]`
-
-`angs` - Length unit is Angstrom.
-
-`bohr` - Length unit is Bohr.
-
-Default value: `angs`
-
 ##### Energy terms for EFP computation
 
 `terms [elec [pol [disp [xr]]]]`
@@ -288,8 +278,8 @@ orientation.
 	fragment h2o
 		0.0 0.0 0.0 0.0 0.0 0.0
 
-The numbers are coordinates of the center of mass of a fragment and three Euler
-rotation angels.
+The numbers are coordinates of the center of mass of a fragment in Angstroms
+and three Euler rotation angels in Radians.
 
 ##### Format of input when `coord` is `points`
 
@@ -298,7 +288,7 @@ rotation angels.
 		1.0 0.0 0.0
 		0.0 1.0 0.0
 
-The numbers are coordinates of three points belonging to a fragment.
+The numbers are coordinates of three points belonging to a fragment in Angstroms.
 
 ##### Format of input when `coord` is `rotmat`
 
@@ -308,5 +298,5 @@ The numbers are coordinates of three points belonging to a fragment.
 		0.0 1.0 0.0
 		0.0 0.0 1.0
 
-The numbers are coordinates of the center of mass of a fragment and a 3 x 3
-rotation matrix.
+The numbers are coordinates of the center of mass of a fragment in Angstroms
+and a 3 x 3 rotation matrix.
