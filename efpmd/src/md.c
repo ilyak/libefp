@@ -725,7 +725,7 @@ static void print_info(const struct md *md)
 		double y = md->box.y * BOHR_RADIUS;
 		double z = md->box.z * BOHR_RADIUS;
 
-		printf("%30s %8.3lf %8.3lf %8.3lf\n", "PERIODIC BOX SIZE", x, y, z);
+		printf("%30s %9.3lf %9.3lf %9.3lf\n", "PERIODIC BOX SIZE", x, y, z);
 	}
 
 	printf("\n\n");
@@ -733,7 +733,7 @@ static void print_info(const struct md *md)
 
 static void print_restart(const struct md *md)
 {
-	printf("    RESTART DATA (ATOMIC UNITS)\n\n");
+	printf("    RESTART DATA\n\n");
 
 	for (int i = 0; i < md->n_bodies; i++) {
 		struct body *body = md->bodies + i;
@@ -741,9 +741,9 @@ static void print_restart(const struct md *md)
 		char name[64];
 		check_fail(efp_get_frag_name(md->efp, i, sizeof(name), name));
 
-		double xyzabc[6] = { body->pos.x,
-				     body->pos.y,
-				     body->pos.z };
+		double xyzabc[6] = { body->pos.x * BOHR_RADIUS,
+				     body->pos.y * BOHR_RADIUS,
+				     body->pos.z * BOHR_RADIUS };
 
 		matrix_to_euler(&body->rotmat, xyzabc + 3, xyzabc + 4, xyzabc + 5);
 

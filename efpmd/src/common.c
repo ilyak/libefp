@@ -104,10 +104,11 @@ void print_geometry(struct efp *efp)
 		check_fail(efp_get_frag_atoms(efp, i, n_atoms, atoms));
 
 		for (int a = 0; a < n_atoms; a++) {
-			printf("%s %12.6lf %12.6lf %12.6lf\n", atoms[a].label,
-					BOHR_TO_ANGSTROM(atoms[a].x),
-					BOHR_TO_ANGSTROM(atoms[a].y),
-					BOHR_TO_ANGSTROM(atoms[a].z));
+			double x = atoms[a].x * BOHR_RADIUS;
+			double y = atoms[a].y * BOHR_RADIUS;
+			double z = atoms[a].z * BOHR_RADIUS;
+
+			printf("%s %12.6lf %12.6lf %12.6lf\n", atoms[a].label, x, y, z);
 		}
 	}
 

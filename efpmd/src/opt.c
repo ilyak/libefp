@@ -60,11 +60,15 @@ static void print_restart(struct efp *efp)
 	double coord[6 * n_frags];
 	check_fail(efp_get_coordinates(efp, n_frags, coord));
 
-	printf("    RESTART DATA (ATOMIC UNITS)\n\n");
+	printf("    RESTART DATA\n\n");
 
 	for (int i = 0; i < n_frags; i++) {
 		char name[64];
 		check_fail(efp_get_frag_name(efp, i, sizeof(name), name));
+
+		coord[6 * i + 0] *= BOHR_RADIUS;
+		coord[6 * i + 1] *= BOHR_RADIUS;
+		coord[6 * i + 2] *= BOHR_RADIUS;
 
 		print_fragment(name, coord + 6 * i, NULL);
 	}

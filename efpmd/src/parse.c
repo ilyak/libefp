@@ -247,20 +247,6 @@ static bool parse_coord(char **str, void *out)
 	return parse_enum(str, out, names, values, sizeof(values[0]));
 }
 
-static bool parse_units(char **str, void *out)
-{
-	static const char names[] =
-		"bohr\n"
-		"angs";
-
-	static const double values[] = {
-		1.0,
-		1.0 / BOHR_RADIUS
-	};
-
-	return parse_enum(str, out, names, values, sizeof(values[0]));
-}
-
 static bool parse_elec_damp(char **str, void *out)
 {
 	static const char names[] =
@@ -399,7 +385,7 @@ static void convert_units(struct config *config)
 
 	for (int i = 0; i < config->n_frags; i++)
 		for (int j = 0; j < n_convert; j++)
-			config->frags[i].coord[j] *= config->units_factor;
+			config->frags[i].coord[j] /= BOHR_RADIUS;
 }
 
 static void parse_field(struct stream *stream, struct config *config)
@@ -416,17 +402,23 @@ static void parse_field(struct stream *stream, struct config *config)
 			skip_space(stream);
 
 			if (!config_list[i].parse_fn(&stream->ptr, (char *)config + offset))
-				error("INCORRECT VALUE FOR OPTION %s", name);
+				error("INCORRECT VALUE FOR KEYWORD '%s'", name);
 
 			bool (*check_fn)(void *) = config_list[i].check_fn;
 
 			if (check_fn && !check_fn((char *)config + offset))
-				error("OPTION %s VALUE IS OUT OF RANGE", name);
+				error("VALUE IS OUT OF RANGE FOR KEYWORD '%s'", name);
 
 			return;
 		}
 	}
-	error("UNKNOWN OPTION IN INPUT FILE");
+
+	int len = 0;
+
+	while (stream->ptr[len] && !isspace(stream->ptr[len]))
+		len++;
+
+	error("UNKNOWN KEYWORD '%.*s'", len, stream->ptr);
 }
 
 static void parse_frag(struct stream *stream, enum efp_coord_type coord_type,

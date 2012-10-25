@@ -46,9 +46,6 @@
 #define streq(a, b) (u_strcasecmp(a, b) == 0)
 #define strneq(a, b, n) (u_strncasecmp(a, b, n) == 0)
 
-#define ANGSTROM_TO_BOHR(x) ((x) / BOHR_RADIUS)
-#define BOHR_TO_ANGSTROM(x) ((x) * BOHR_RADIUS)
-
 void NORETURN die(const char *, ...);
 void NORETURN error(const char *, ...);
 

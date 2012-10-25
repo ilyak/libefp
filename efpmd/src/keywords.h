@@ -1,6 +1,5 @@
 { "run_type",        "sp",               parse_run_type,  NULL,           offsetof(struct config, run_type)           },
 { "coord",           "xyzabc",           parse_coord,     NULL,           offsetof(struct config, coord_type)         },
-{ "units",           "angs",             parse_units,     NULL,           offsetof(struct config, units_factor)       },
 { "terms",           "elec pol disp xr", parse_terms,     NULL,           offsetof(struct config, terms)              },
 { "elec_damp",       "screen",           parse_elec_damp, NULL,           offsetof(struct config, elec_damp)          },
 { "disp_damp",       "tt",               parse_disp_damp, NULL,           offsetof(struct config, disp_damp)          },
