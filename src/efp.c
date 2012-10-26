@@ -938,20 +938,17 @@ efp_get_frag_inertia(struct efp *efp, int frag_idx, double *inertia_out)
 	if (frag_idx < 0 || frag_idx >= efp->n_frag)
 		return EFP_RESULT_INDEX_OUT_OF_RANGE;
 
+	/* center of mass is in origin and axes are principal axes of inertia */
+
 	const struct frag *frag = efp->frags[frag_idx].lib;
 	vec_t inertia = vec_zero;
 
 	for (int i = 0; i < frag->n_atoms; i++) {
 		const struct efp_atom *atom = frag->atoms + i;
 
-		/* center of mass is in origin */
-		/* axes are principal axes of inertia */
-
-		vec_t dr = { atom->x, atom->y, atom->z };
-
-		inertia.x += atom->mass * (dr.y * dr.y + dr.z * dr.z);
-		inertia.y += atom->mass * (dr.x * dr.x + dr.z * dr.z);
-		inertia.z += atom->mass * (dr.x * dr.x + dr.y * dr.y);
+		inertia.x += atom->mass * (atom->y * atom->y + atom->z * atom->z);
+		inertia.y += atom->mass * (atom->x * atom->x + atom->z * atom->z);
+		inertia.z += atom->mass * (atom->x * atom->x + atom->y * atom->y);
 	}
 
 	inertia_out[0] = inertia.x;
