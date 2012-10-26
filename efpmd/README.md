@@ -240,7 +240,13 @@ Unit: Bar
 
 Default value: `1.0`
 
-Target simulation pressure for NPT barostat.
+Target simulation pressure for NPT barostat. Note that whether or not pressure
+coupling is used, the pressure value will oscillate significantly. Fluctuations
+on the order of hundreds of bar are typical. This variation is entirely normal
+due to the fact that pressure is a macroscopic property and can only be
+measured properly as time average. The actual variations of instantaneous
+pressure depend on the size of the system and the values of barostat
+parameters.
 
 ##### Thermostat parameter
 
