@@ -28,8 +28,6 @@ noinst_LTLIBRARIES = common/libcommon.la
 
 common_libcommon_la_SOURCES = \
 	common/cblas.h \
-	common/clapack.c \
-	common/clapack.h \
 	common/compat.c \
 	common/compat.h \
 	common/math_util.h \
@@ -70,6 +68,8 @@ endif
 
 efpmd_src_efpmd_SOURCES = \
 	efpmd/src/cfg.h \
+	efpmd/src/clapack.c \
+	efpmd/src/clapack.h \
 	efpmd/src/common.c \
 	efpmd/src/common.h \
 	efpmd/src/grad.c \

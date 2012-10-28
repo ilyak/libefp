@@ -20,7 +20,8 @@ LDADD+=		-L${.OBJDIR}/../../common \
 		-lefp \
 		-loptimizer
 
-SRCS=		common.c \
+SRCS=		clapack.c \
+		common.c \
 		grad.c \
 		hess.c \
 		main.c \

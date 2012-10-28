@@ -24,9 +24,9 @@
  * SUCH DAMAGE.
  */
 
-#include "../../common/clapack.h"
 #include "../../common/util.h"
 
+#include "clapack.h"
 #include "common.h"
 
 void sim_hess(struct efp *, const struct config *);

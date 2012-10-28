@@ -5,8 +5,7 @@ IGNORE_PRAGMA=	yes
 
 DEBUG_FLAGS?=	-O0 -g
 
-SRCS=		clapack.c \
-		compat.c \
+SRCS=		compat.c \
 		util.c
 
 .include <bsd.lib.mk>

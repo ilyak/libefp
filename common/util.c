@@ -1,5 +1,4 @@
 #include "util.h"
-#include "clapack.h"
 
 int check_rotation_matrix(const mat_t *rotmat)
 {
@@ -23,15 +22,6 @@ int check_rotation_matrix(const mat_t *rotmat)
 		return 0;
 
 	return 1;
-}
-
-int matrix_eigen(const mat_t *mat, vec_t *eval, mat_t *evec)
-{
-	double work[32];
-
-	*evec = *mat;
-
-	return u_dsyev('V', 'U', 3, (double *)evec, 3, (double *)eval, work, 32);
 }
 
 void euler_to_matrix(double a, double b, double c, mat_t *out)
