@@ -69,6 +69,8 @@ enum efp_result {
 	EFP_RESULT_SWF_CUTOFF_TOO_SMALL,
 	/** Periodic simulation box is too small. */
 	EFP_RESULT_BOX_TOO_SMALL,
+	/** Fragment must contain at least three atoms. */
+	EFP_RESULT_NEED_THREE_ATOMS,
 	/** Polarization SCF did not converge. */
 	EFP_RESULT_POL_NOT_CONVERGED,
 	/** Certain EFP parameters are missing. */

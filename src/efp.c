@@ -208,8 +208,23 @@ set_coord_points(struct efp *efp, const double *coord)
 	for (int i = 0; i < efp->n_frag; i++, coord += 9) {
 		struct frag *frag = efp->frags + i;
 
-		points_to_matrix(coord, &frag->rotmat);
-		vec_t p1 = mat_vec(&frag->rotmat, VEC(frag->lib->atoms[0].x));
+		if (frag->n_atoms < 3)
+			return EFP_RESULT_NEED_THREE_ATOMS;
+
+		double ref[9] = {
+			frag->lib->atoms[0].x, frag->lib->atoms[0].y, frag->lib->atoms[0].z,
+			frag->lib->atoms[1].x, frag->lib->atoms[1].y, frag->lib->atoms[1].z,
+			frag->lib->atoms[2].x, frag->lib->atoms[2].y, frag->lib->atoms[2].z
+		};
+
+		vec_t p1;
+		mat_t rot1, rot2;
+
+		points_to_matrix(coord, &rot1);
+		points_to_matrix(ref, &rot2);
+		rot2 = mat_transpose(&rot2);
+		frag->rotmat = mat_mat(&rot1, &rot2);
+		p1 = mat_vec(&frag->rotmat, VEC(frag->lib->atoms[0].x));
 
 		/* center of mass */
 		frag->x = coord[0] - p1.x;
@@ -1042,6 +1057,8 @@ return "interaction cutoff must be enabled for periodic simulation";
 return "switching function cutoff is too small";
 	case EFP_RESULT_BOX_TOO_SMALL:
 return "periodic simulation box is too small";
+	case EFP_RESULT_NEED_THREE_ATOMS:
+return "fragment must contain at least three atoms";
 	case EFP_RESULT_POL_NOT_CONVERGED:
 return "polarization SCF did not converge";
 	case EFP_RESULT_PARAMETERS_MISSING:
