@@ -2,11 +2,11 @@
 
 ## Overview
 
-The Effective Fragment Potential method (EFP) allows one to describe large
+The Effective Fragment Potential (EFP) method allows one to describe large
 molecular systems by replacing chemically inert part of a system by a set of
 Effective Fragments while performing regular ab initio calculation on the
 chemically active part [1-8]. The libefp library is a full implementation of
-the EFP2 method. It allows users to easily incorporate EFP2 support into their
+the EFP method. It allows users to easily incorporate EFP support into their
 favourite quantum chemistry package.
 
 
@@ -28,7 +28,7 @@ To build LIBEFP from source you need the following:
 
 - BLAS library (CBLAS)
 
-If you are going to compile EFPMD you will need:
+If you are going to compile EFPMD program you will need:
 
 - Fortran 77 compiler
 
@@ -49,16 +49,17 @@ If you are using a checkout from source code repository you will need:
 
 To configure libefp issue the following command:
 
-	./configure LIBS=CBLAS_LIBS --prefix=INSTALL_PATH
+	./configure LIBS=MY_LIBS --prefix=MY_PREFIX
 
-In the above command `INSTALL_PATH` is the path where the library will be
-installed (e.g. `--prefix=/usr`) and `CBLAS_LIBS` are libraries providing CBLAS
-implementation (e.g. `LIBS='-lcblas -lblas'`). For best parallel performance be
-sure to use _SEQUENTIAL_ (i.e. not parallelized) BLAS implementation.
+In the above command `MY_PREFIX` is the path where the library will be
+installed (e.g. `--prefix=/usr`) and `MY_LIBS` are the libraries providing
+CBLAS and LAPACK implementation (e.g. `LIBS='-llapack -lcblas -lblas'`). For
+best parallel performance be sure to use _SEQUENTIAL_ (i.e. not parallelized)
+BLAS and LAPACK implementation.
 
 Alternatively if you only need the library you can run:
 
-	./configure --disable-efpmd --prefix=INSTALL_PATH
+	./configure --disable-efpmd --prefix=MY_PREFIX
 
 To compile the library issue:
 
@@ -97,9 +98,9 @@ or
 
 	cc -o prog prog.c LIBS libefp.a
 
-In the above command `LIBS` are necessary CBLAS and LAPACK libraries. You
-should substitute `LIBS` with the command to link against the implementation of
-your choice.
+In the above command `LIBS` are necessary CBLAS libraries. You should
+substitute `LIBS` with the command to link against the implementation of your
+choice.
 
 
 ## How to create custom EFP fragment types
