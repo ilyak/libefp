@@ -5,7 +5,7 @@ static const struct test_data test_data = {
 	.files = files,
 	.names = names,
 	.geometry_points = geometry,
-	.ref_energy = -0.0097958916,
+	.ref_energy = -0.0066095992,
 	.opts = {
 		.terms = EFP_TERM_ELEC | EFP_TERM_POL
 	}
