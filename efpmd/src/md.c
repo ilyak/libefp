@@ -28,7 +28,7 @@
 
 #include "common.h"
 
-#define MAX_ITER 20
+#define MAX_ITER 10
 
 struct body {
 	mat_t rotmat;
