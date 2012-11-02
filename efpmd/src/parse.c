@@ -375,7 +375,7 @@ static void convert_units(struct config *config)
 	config->swf_cutoff /= BOHR_RADIUS;
 	config->hess_step_dist /= BOHR_RADIUS;
 
-	int n_convert;
+	int n_convert = 0;
 
 	switch (config->coord_type) {
 		case EFP_COORD_TYPE_XYZABC: n_convert = 3; break;
@@ -431,7 +431,7 @@ static void parse_frag(struct stream *stream, enum efp_coord_type coord_type,
 
 	next_line(stream);
 
-	int n_rows, n_cols;
+	int n_rows = 0, n_cols = 0;
 
 	switch (coord_type) {
 		case EFP_COORD_TYPE_XYZABC: n_rows = 1; n_cols = 6; break;
