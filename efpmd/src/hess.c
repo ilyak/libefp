@@ -33,13 +33,15 @@ void sim_hess(struct efp *, const struct config *);
 
 static void compute_hessian(struct efp *efp, double d_dist, double d_angle, double *hess)
 {
-	int n_frags;
-	check_fail(efp_get_frag_count(efp, &n_frags));
+	int n_frags, n_coord;
+	double *xyzabc, *grad, *grad_0;
 
-	int n_coord = 6 * n_frags;
-	double *xyzabc = xmalloc(n_coord * sizeof(double));
-	double *grad = xmalloc(n_coord * sizeof(double));
-	double *grad_0 = xmalloc(n_coord * sizeof(double));
+	check_fail(efp_get_frag_count(efp, &n_frags));
+	n_coord = 6 * n_frags;
+
+	xyzabc = xmalloc(n_coord * sizeof(double));
+	grad = xmalloc(n_coord * sizeof(double));
+	grad_0 = xmalloc(n_coord * sizeof(double));
 
 	check_fail(efp_get_coordinates(efp, n_frags, xyzabc));
 	check_fail(efp_get_gradient(efp, n_frags, grad_0));
@@ -249,38 +251,36 @@ void sim_hess(struct efp *efp, const struct config *config)
 	print_energy(efp);
 	print_gradient(efp);
 
-	int n_frags = config->n_frags;
-	int n_coord = 6 * n_frags;
-	int work_size = 4 * n_coord;
-	double *hess = xmalloc(n_coord * n_coord * sizeof(double));
-	double *hess_mass = xmalloc(n_coord * n_coord * sizeof(double));
-	double *eigen = xmalloc(n_coord * sizeof(double));
-	double *work = xmalloc(work_size * sizeof(double));
+	int n_frags = config->n_frags, n_coord = 6 * n_frags;
+	double *hess, *mass_hess, *eigen;
 
+	hess = xmalloc(n_coord * n_coord * sizeof(double));
 	compute_hessian(efp, config->hess_step_dist, config->hess_step_angle, hess);
 
 	printf("    HESSIAN MATRIX\n\n");
 	print_matrix(n_coord, n_coord, hess);
 
-	compute_mass_weighted_hessian(efp, hess, hess_mass);
+	mass_hess = xmalloc(n_coord * n_coord * sizeof(double));
+	compute_mass_weighted_hessian(efp, hess, mass_hess);
 
 	printf("    MASS-WEIGHTED HESSIAN MATRIX\n\n");
-	print_matrix(n_coord, n_coord, hess_mass);
+	print_matrix(n_coord, n_coord, mass_hess);
 
 	printf("    VIBRATIONAL NORMAL MODE ANALYSIS\n\n");
 
-	if (u_dsyev('V', 'U', n_coord, hess_mass, n_coord, eigen, work, work_size))
+	eigen = xmalloc(n_coord * sizeof(double));
+
+	if (c_dsyev('V', 'U', n_coord, mass_hess, n_coord, eigen))
 		error("UNABLE TO DIAGONALIZE MASS-WEIGHTED HESSIAN MATRIX");
 
 	for (int i = 0; i < n_coord; i++) {
 		print_mode(i + 1, eigen[i]);
-		print_vector(n_coord, hess_mass + i * n_coord);
+		print_vector(n_coord, mass_hess + i * n_coord);
 	}
 
 	free(hess);
-	free(hess_mass);
+	free(mass_hess);
 	free(eigen);
-	free(work);
 
 	printf("HESSIAN JOB COMPLETED SUCCESSFULLY\n");
 }

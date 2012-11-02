@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include "clapack.h"
 
 void dsyev_(char *,
@@ -10,12 +12,16 @@ void dsyev_(char *,
 	    int *,
 	    int *);
 
-int u_dsyev(char jobz, char uplo, int n, double *a, int lda,
-		double *w, double *work, int lwork)
+int c_dsyev(char jobz, char uplo, int n, double *a, int lda, double *w)
 {
-	int info;
+	int info, lwork;
+	double *work;
+
+	lwork = n * n;
+	work = malloc(lwork * sizeof(double));
 
 	dsyev_(&jobz, &uplo, &n, a, &lda, w, work, &lwork, &info);
 
+	free(work);
 	return info;
 }
