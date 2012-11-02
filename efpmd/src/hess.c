@@ -88,8 +88,8 @@ static void compute_hessian(struct efp *efp, double d_dist, double d_angle, doub
 	printf("\n\n");
 }
 
-static void get_inertia_factor(const double *inertia, const double *rotmat,
-					double *inertia_fact)
+static void get_inertia_factor(const double *inertia, const mat_t *rotmat,
+					mat_t *inertia_fact)
 {
 	double fact[3];
 
@@ -101,9 +101,9 @@ static void get_inertia_factor(const double *inertia, const double *rotmat,
 			double sum = 0.0;
 
 			for (int k = 0; k < 3; k++)
-				sum += fact[k] * rotmat[3 * i + k] * rotmat[3 * j + k];
+				sum += fact[k] * mat_get(rotmat, i, k) * mat_get(rotmat, j, k);
 
-			inertia_fact[3 * i + j] = sum;
+			mat_set(inertia_fact, i, j, sum);
 		}
 	}
 }
@@ -132,8 +132,7 @@ static void get_weight_factor(struct efp *efp, double *mass_fact,
 		euler_to_matrix(a, b, c, &rotmat);
 
 		mass_fact[i] = 1.0 / sqrt(mass);
-		get_inertia_factor(inertia, (const double *)&rotmat,
-			(double *)&inertia_fact[i]);
+		get_inertia_factor(inertia, &rotmat, inertia_fact + i);
 	}
 }
 
@@ -199,10 +198,11 @@ static void w_rot_rot(const mat_t *fact1, const mat_t *fact2, int stride,
 static void compute_mass_weighted_hessian(struct efp *efp, const double *in,
 						double *out)
 {
-	int n_frags;
-	check_fail(efp_get_frag_count(efp, &n_frags));
+	int n_frags, n_coord;
 
-	int n_coord = 6 * n_frags;
+	check_fail(efp_get_frag_count(efp, &n_frags));
+	n_coord = 6 * n_frags;
+
 	double mass_fact[n_frags];
 	mat_t inertia_fact[n_frags];
 
@@ -266,7 +266,7 @@ void sim_hess(struct efp *efp, const struct config *config)
 	printf("    MASS-WEIGHTED HESSIAN MATRIX\n\n");
 	print_matrix(n_coord, n_coord, mass_hess);
 
-	printf("    VIBRATIONAL NORMAL MODE ANALYSIS\n\n");
+	printf("    NORMAL MODE ANALYSIS\n\n");
 
 	eigen = xmalloc(n_coord * sizeof(double));
 
