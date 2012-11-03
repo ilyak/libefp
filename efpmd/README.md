@@ -200,9 +200,11 @@ Unit: Radian
 
 `nve` - Microcanonical ensemble.
 
-`nvt` - Canonical ensemble with Nose-Hoover thermostat.
+`nvt` - Canonical ensemble with Nose-Hoover thermostat. For the description of
+the algorithm see _Phys. Rev. A 31, 1695 (1985)_.
 
 `npt` - Isobaric-isothermal ensemble. This also sets `enable_pbc` to `true`.
+For the description of the algorithm see _Mol. Phys. 78, 533 (1993)_.
 
 Default value: `nve`
 
