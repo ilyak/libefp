@@ -124,6 +124,7 @@ tests_test_SOURCES = \
 	tests/geometry_3.h \
 	tests/geometry_4.h \
 	tests/geometry_5.h \
+	tests/geometry_6.h \
 	tests/disp_1a.c \
 	tests/disp_1b.c \
 	tests/disp_1c.c \
