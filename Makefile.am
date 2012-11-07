@@ -60,7 +60,7 @@ src_libefp_la_SOURCES = \
 src_libefp_la_LIBADD = common/libcommon.la
 src_libefp_la_LDFLAGS = $(AM_LDFLAGS)
 
-EXTRA_DIST += AUTHORS LICENSE README.md VERSION
+EXTRA_DIST += AUTHORS LICENSE NEWS README.md VERSION
 
 if BUILD_EFPMD
 bin_PROGRAMS = efpmd/src/efpmd
