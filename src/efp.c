@@ -736,6 +736,9 @@ check_params_frag(const struct efp_opts *opts, const struct frag *frag)
 	if (opts->terms & EFP_TERM_ELEC) {
 		if (!frag->multipole_pts)
 			return EFP_RESULT_PARAMETERS_MISSING;
+
+		if (opts->elec_damp == EFP_ELEC_DAMP_SCREEN && !frag->screen_params)
+			return EFP_RESULT_PARAMETERS_MISSING;
 	}
 	if (opts->terms & EFP_TERM_POL) {
 		if (!frag->polarizable_pts)
