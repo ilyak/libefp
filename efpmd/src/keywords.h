@@ -12,6 +12,7 @@
 { "enable_pbc",      "false",            parse_bool,      NULL,           offsetof(struct config, enable_pbc)         },
 { "periodic_box",    "30.0 30.0 30.0",   parse_vec,       NULL,           offsetof(struct config, box)                },
 { "opt_tol",         "0.0001",           parse_double,    double_gt_zero, offsetof(struct config, opt_tol)            },
+{ "hess_central",    "false",            parse_bool,      NULL,           offsetof(struct config, hess_central)       },
 { "hess_step_dist",  "0.001",            parse_double,    double_gt_zero, offsetof(struct config, hess_step_dist)     },
 { "hess_step_angle", "0.01",             parse_double,    double_gt_zero, offsetof(struct config, hess_step_angle)    },
 { "ensemble",        "nve",              parse_ensemble,  NULL,           offsetof(struct config, ensemble_type)      },

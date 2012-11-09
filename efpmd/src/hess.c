@@ -31,39 +31,57 @@
 
 void sim_hess(struct efp *, const struct config *);
 
-static void compute_hessian(struct efp *efp, double d_dist, double d_angle, double *hess)
+static void compute_gradient(struct efp *efp, int n_frags, const double *xyzabc, double *grad)
+{
+	check_fail(efp_set_coordinates(efp, EFP_COORD_TYPE_XYZABC, xyzabc));
+	check_fail(efp_compute(efp, 1));
+	check_fail(efp_get_gradient(efp, n_frags, grad));
+	torque_to_deriv(n_frags, xyzabc, grad);
+}
+
+static void show_progress(int disp, int total, const char *dir)
+{
+	printf("COMPUTING DISPLACEMENT %4d OF %d (%s)\n", disp, total, dir);
+	fflush(stdout);
+}
+
+static void compute_hessian(struct efp *efp, const struct config *config, double *hess)
 {
 	int n_frags, n_coord;
-	double *xyzabc, *grad, *grad_0;
+	double *xyzabc, *grad_f, *grad_b;
 
 	check_fail(efp_get_frag_count(efp, &n_frags));
 	n_coord = 6 * n_frags;
 
 	xyzabc = xmalloc(n_coord * sizeof(double));
-	grad = xmalloc(n_coord * sizeof(double));
-	grad_0 = xmalloc(n_coord * sizeof(double));
+	grad_f = xmalloc(n_coord * sizeof(double));
+	grad_b = xmalloc(n_coord * sizeof(double));
 
 	check_fail(efp_get_coordinates(efp, n_frags, xyzabc));
-	check_fail(efp_get_gradient(efp, n_frags, grad_0));
-	torque_to_deriv(n_frags, xyzabc, grad_0);
+
+	if (!config->hess_central) {
+		check_fail(efp_get_gradient(efp, n_frags, grad_b));
+		torque_to_deriv(n_frags, xyzabc, grad_b);
+	}
 
 	for (int i = 0; i < n_coord; i++) {
-		printf("COMPUTING DISPLACEMENT %5d OF %d\n", i + 1, n_coord);
-		fflush(stdout);
-
 		double save = xyzabc[i];
-		double delta = i % 6 < 3 ? d_dist : d_angle;
+		double step = i % 6 < 3 ? config->hess_step_dist : config->hess_step_angle;
 
-		xyzabc[i] = save + delta;
+		show_progress(i + 1, n_coord, "FORWARD");
+		xyzabc[i] = save + step;
+		compute_gradient(efp, n_frags, xyzabc, grad_f);
 
-		check_fail(efp_set_coordinates(efp, EFP_COORD_TYPE_XYZABC, xyzabc));
-		check_fail(efp_compute(efp, 1));
+		if (config->hess_central) {
+			show_progress(i + 1, n_coord, "BACKWARD");
+			xyzabc[i] = save - step;
+			compute_gradient(efp, n_frags, xyzabc, grad_b);
+		}
 
-		check_fail(efp_get_gradient(efp, n_frags, grad));
-		torque_to_deriv(n_frags, xyzabc, grad);
+		double delta = config->hess_central ? 2.0 * step : step;
 
 		for (int j = 0; j < n_coord; j++)
-			hess[i * n_coord + j] = (grad[j] - grad_0[j]) / delta;
+			hess[i * n_coord + j] = (grad_f[j] - grad_b[j]) / delta;
 
 		xyzabc[i] = save;
 	}
@@ -82,8 +100,8 @@ static void compute_hessian(struct efp *efp, double d_dist, double d_angle, doub
 	}
 
 	free(xyzabc);
-	free(grad);
-	free(grad_0);
+	free(grad_f);
+	free(grad_b);
 
 	printf("\n\n");
 }
@@ -195,8 +213,7 @@ static void w_rot_rot(const mat_t *fact1, const mat_t *fact2, int stride,
 	}
 }
 
-static void compute_mass_weighted_hessian(struct efp *efp, const double *in,
-						double *out)
+static void mass_weight_hessian(struct efp *efp, const double *in, double *out)
 {
 	int n_frags, n_coord;
 
@@ -255,13 +272,13 @@ void sim_hess(struct efp *efp, const struct config *config)
 	double *hess, *mass_hess, *eigen;
 
 	hess = xmalloc(n_coord * n_coord * sizeof(double));
-	compute_hessian(efp, config->hess_step_dist, config->hess_step_angle, hess);
+	compute_hessian(efp, config, hess);
 
 	printf("    HESSIAN MATRIX\n\n");
 	print_matrix(n_coord, n_coord, hess);
 
 	mass_hess = xmalloc(n_coord * n_coord * sizeof(double));
-	compute_mass_weighted_hessian(efp, hess, mass_hess);
+	mass_weight_hessian(efp, hess, mass_hess);
 
 	printf("    MASS-WEIGHTED HESSIAN MATRIX\n\n");
 	print_matrix(n_coord, n_coord, mass_hess);

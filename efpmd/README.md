@@ -176,6 +176,17 @@ and RMS gradient is less than one third of `opt_tol`.
 
 ### Hessian calculation related parameters
 
+##### Hessian accuracy
+
+`hess_central [true|false]`
+
+Default value: `false`
+
+If `hess_central` is `true` then the more accurate central differences will be
+used for numerical Hessian calculation. Otherwise only forward differences will
+be used. Note that central differences require twice as many gradient
+calculations.
+
 ##### Differentiation step length for distances
 
 `hess_step_dist <value>`

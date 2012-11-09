@@ -66,6 +66,7 @@ struct config {
 	bool enable_pbc;
 	double box[3];
 	double opt_tol;
+	bool hess_central;
 	double hess_step_dist;
 	double hess_step_angle;
 	enum ensemble_type ensemble_type;
