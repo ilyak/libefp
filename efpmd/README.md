@@ -269,7 +269,7 @@ Unit: Femtosecond
 
 Default value: `1000.0`
 
-Parameter of Nose-Hoover thermostat.
+Temperature relaxation time parameter of the Nose-Hoover thermostat.
 
 ##### Barostat parameter
 
@@ -279,7 +279,7 @@ Unit: Femtosecond
 
 Default value: `10000.0`
 
-Parameter of Melchionna-Nose-Hoover-Andersen barostat.
+Pressure relaxation time parameter of the barostat.
 
 ### Fragment input
 
