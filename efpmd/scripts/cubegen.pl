@@ -67,11 +67,11 @@ sub print_fragment {
 		      pi * rand,
 		      2.0 * pi * rand);
 
-	print "fragment ", $name[$idx], "\n";
+	print "\n", "fragment ", $name[$idx], "\n";
 
 	foreach (@xyzabc) {
 		printf " %8.3f", $_;
 	}
 
-	print "\n\n";
+	print "\n";
 }
