@@ -4,10 +4,10 @@
 \par Introduction
 
 <i>LIBEFP</i> is a full implementation of the Effective Fragment Potential (EFP)
-method (see <a href="http://dx.doi.org/10.1021/cr200093j"><i>Gordon et al.,
-Chem. Rev., 2012</i></a>).
+method (see <a href="http://dx.doi.org/10.1021/cr200093j">
+<i>Gordon et al., Chem. Rev., 2012</i></a>).
 <i>LIBEFP</i> is designed to give developers of quantum chemistry software an
-easy way to add EFP support to their favourite quantum chemistry package.
+easy way to add EFP support to their favourite package.
 
 \par EFPMD molecular simulation package
 
@@ -42,6 +42,24 @@ when you build <i>LIBEFP</i>. See
 <a href="http://github.com/libefp/libefp/tree/master/efpmd/README.md"><i>README</i></a>
 file for more information on how to use the package.
 
+\par News
+
+2012-11-15 Version 0.9.5-beta released.
+
+\par How to get the source code
+
+The latest release can be found in the
+<a href="https://github.com/libefp/libefp/downloads"><i>downloads</i></a> section.
+
+Latest development version of code can be viewed online
+<a href="http://github.com/libefp/libefp"><i>here</i></a>.
+
+To get the latest development source tree use:
+
+\verbatim
+git clone git://github.com/libefp/libefp.git
+\endverbatim
+
 \par Library users
 
 <i>LIBEFP</i> is currently used in
@@ -57,17 +75,6 @@ Documentation for public <i>LIBEFP</i> API is available
 For installation instructions and additional information see
 <a href="http://github.com/libefp/libefp/blob/master/README.md"><i>README</i></a>
 file.
-
-\par How to get the source code
-
-Latest development version of code can be viewed online
-<a href="http://github.com/libefp/libefp"><i>here</i></a>.
-
-To get the latest source tree use:
-
-\verbatim
-git clone git://github.com/libefp/libefp.git
-\endverbatim
 
 \par Parallel performance
 
