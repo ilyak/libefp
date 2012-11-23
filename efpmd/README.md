@@ -285,12 +285,16 @@ Pressure relaxation time parameter of the barostat.
 
 One or more `fragment <name>` groups.
 
-If `<name>` contains an `_l` suffix the parameters for this fragment will be
-searched for in the `fraglib_path` directory. Otherwise the directory specified
-by the `userlib_path` option will be used.
+If `<name>` contains an `_l` suffix the parameters (`.efp` files) for this
+fragment will be searched for in the `fraglib_path` directory. Otherwise the
+directory specified by the `userlib_path` option will be used. The name of the
+`.efp` file must be the same as the name of the fragment without an `_l` suffix
+and must be all lowercase. For example for the fragment named `H2O_L` the
+parameters must be in the `fraglib_path` directory in the file named `h2o.efp`.
+For the fragment named `NH3` the parameters must be in the `userlib_path`
+directory in the file named `nh3.efp`.
 
-Each group is followed by the specification of fragment position and
-orientation.
+Fragment position and orientation are specified on the next line(s).
 
 ##### Format of input when `coord` is `xyzabc`
 
