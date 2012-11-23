@@ -75,11 +75,6 @@ static void next_line(struct stream *stream)
 
 	stream->buffer = read_line(stream->in);
 	stream->ptr = stream->buffer;
-
-	if (stream->buffer) {
-		for (char *p = stream->buffer; *p; p++)
-			*p = tolower(*p);
-	}
 }
 
 static void skip_space(struct stream *stream)
@@ -428,6 +423,9 @@ static void parse_frag(struct stream *stream, enum efp_coord_type coord_type,
 
 	if (!parse_string(&stream->ptr, &frag->name))
 		error("UNABLE TO READ FRAGMENT NAME");
+
+	for (char *p = frag->name; *p; p++)
+		*p = tolower(*p);
 
 	next_line(stream);
 
