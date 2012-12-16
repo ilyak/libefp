@@ -28,6 +28,7 @@ SRCS=		clapack.c \
 		md.c \
 		opt.c \
 		parse.c \
+		rand.c \
 		sp.c
 
 .include <bsd.prog.mk>

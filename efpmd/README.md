@@ -235,6 +235,17 @@ Default value: `1`
 
 Number of steps between outputs of the system state.
 
+##### Assign initial velocities
+
+`velocitize [true|false]`
+
+Default value: `false`
+
+If `true` then random initial velocities will be assigned to fragments using
+Gaussian distribution. Velocity magnitudes are chosen so that initial
+temperature of the system is approximately equal to the target simulation
+temperature.
+
 ##### Simulation temperature
 
 `temperature <value>`

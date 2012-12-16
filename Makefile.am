@@ -79,6 +79,8 @@ efpmd_src_efpmd_SOURCES = \
 	efpmd/src/md.c \
 	efpmd/src/opt.c \
 	efpmd/src/parse.c \
+	efpmd/src/rand.c \
+	efpmd/src/rand.h \
 	efpmd/src/sp.c \
 	efpmd/optimizer/blas.f \
 	efpmd/optimizer/lbfgsb.f \

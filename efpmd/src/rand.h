@@ -24,65 +24,12 @@
  * SUCH DAMAGE.
  */
 
-#ifndef EFPMD_CFG_H
-#define EFPMD_CFG_H
+#ifndef LIBEFP_RAND_H
+#define LIBEFP_RAND_H
 
-#include <stdbool.h>
+void rand_init(void);
+double rand_uniform_1(void);
+double rand_uniform_2(void);
+double rand_normal(void);
 
-#include "../../src/efp.h"
-
-enum run_type {
-	RUN_TYPE_SP,
-	RUN_TYPE_GRAD,
-	RUN_TYPE_HESS,
-	RUN_TYPE_OPT,
-	RUN_TYPE_MD
-};
-
-enum ensemble_type {
-	ENSEMBLE_TYPE_NVE,
-	ENSEMBLE_TYPE_NVT,
-	ENSEMBLE_TYPE_NPT
-};
-
-struct frag {
-	char *name;
-	double coord[12];
-	double vel[6];
-};
-
-struct config {
-	enum run_type run_type;
-	enum efp_coord_type coord_type;
-	unsigned terms;
-	enum efp_elec_damp elec_damp;
-	enum efp_disp_damp disp_damp;
-	enum efp_pol_damp pol_damp;
-	bool enable_cutoff;
-	double swf_cutoff;
-	int max_steps;
-	char *fraglib_path;
-	char *userlib_path;
-	bool enable_pbc;
-	double box[3];
-	double opt_tol;
-	bool hess_central;
-	double hess_step_dist;
-	double hess_step_angle;
-	enum ensemble_type ensemble_type;
-	double time_step;
-	int print_step;
-	bool velocitize;
-	double target_temperature;
-	double target_pressure;
-	double thermostat_tau;
-	double barostat_tau;
-	int n_frags;
-	struct frag *frags;
-};
-
-struct config *parse_config(const char *);
-void free_config(struct config *);
-void print_defaults(void);
-
-#endif /* EFPMD_CFG_H */
+#endif /* LIBEFP_RAND_H */

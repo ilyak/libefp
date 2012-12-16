@@ -27,6 +27,7 @@
 #include "../../common/util.h"
 
 #include "common.h"
+#include "rand.h"
 
 #define MAX_ITER 10
 
@@ -829,6 +830,28 @@ static struct md *md_create(struct efp *efp, const struct config *config)
 	return md;
 }
 
+static void velocitize(struct md *md)
+{
+	rand_init();
+
+	double temperature = md->config->target_temperature;
+	double ke = temperature * BOLTZMANN * md->n_freedom / (2.0 * 6.0 * md->n_bodies);
+
+	for (int i = 0; i < md->n_bodies; i++) {
+		struct body *body = md->bodies + i;
+
+		double vel = sqrt(2.0 * ke / body->mass);
+
+		body->vel.x = vel * rand_normal();
+		body->vel.y = vel * rand_normal();
+		body->vel.z = vel * rand_normal();
+
+		body->angmom.x = sqrt(2.0 * ke * body->inertia.x) * rand_normal();
+		body->angmom.y = sqrt(2.0 * ke * body->inertia.y) * rand_normal();
+		body->angmom.z = sqrt(2.0 * ke * body->inertia.z) * rand_normal();
+	}
+}
+
 static void print_status(const struct md *md)
 {
 	print_geometry(md->efp);
@@ -850,6 +873,9 @@ void sim_md(struct efp *efp, const struct config *config)
 	printf("MOLECULAR DYNAMICS JOB\n\n\n");
 
 	struct md *md = md_create(efp, config);
+
+	if (config->velocitize)
+		velocitize(md);
 
 	remove_system_drift(md);
 	compute_forces(md);

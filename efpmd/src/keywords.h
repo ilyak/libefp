@@ -18,6 +18,7 @@
 { "ensemble",        "nve",              parse_ensemble,  NULL,           offsetof(struct config, ensemble_type)      },
 { "time_step",       "1.0",              parse_double,    double_gt_zero, offsetof(struct config, time_step)          },
 { "print_step",      "1",                parse_int,       int_gt_zero,    offsetof(struct config, print_step)         },
+{ "velocitize",      "false",            parse_bool,      NULL,           offsetof(struct config, velocitize)         },
 { "temperature",     "300.0",            parse_double,    double_gt_zero, offsetof(struct config, target_temperature) },
 { "pressure",        "1.0",              parse_double,    double_gt_zero, offsetof(struct config, target_pressure)    },
 { "thermostat_tau",  "1000.0",           parse_double,    double_gt_zero, offsetof(struct config, thermostat_tau)     },
