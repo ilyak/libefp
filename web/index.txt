@@ -44,12 +44,13 @@ file for more information on how to use the package.
 
 \par News
 
+2012-12-17 Version 0.9.6-beta released.
+<a href="downloads/libefp-0.9.6-beta.tar.gz"><i>Download</i></a>.
+
 2012-11-15 Version 0.9.5-beta released.
+<a href="downloads/libefp-0.9.5-beta.tar.gz"><i>Download</i></a>.
 
 \par How to get the source code
-
-The latest release can be found in the
-<a href="https://github.com/libefp/libefp/downloads"><i>downloads</i></a> section.
 
 Latest development version of code can be viewed online
 <a href="http://github.com/libefp/libefp"><i>here</i></a>.
