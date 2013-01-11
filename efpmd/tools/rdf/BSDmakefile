@@ -1,0 +1,7 @@
+PROG=	rdf
+WARNS=	6
+NO_MAN=
+LDADD=	-lm
+SRCS=	rdf.c
+
+.include <bsd.prog.mk>

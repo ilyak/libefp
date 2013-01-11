@@ -97,6 +97,7 @@ efpmd_src_efpmd_CPPFLAGS = $(AM_CPPFLAGS) \
 EXTRA_DIST += \
 	efpmd/README.md \
 	efpmd/optimizer/License.txt \
+	efpmd/tools/rdf/rdf.c \
 	efpmd/tools/cubegen.pl \
 	efpmd/tools/trajectory.pl \
 	efpmd/examples/c6h6-dimer_opt.in \

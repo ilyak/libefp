@@ -24,4 +24,5 @@ tags
 /stamp-h1
 
 /efpmd/src/efpmd
+/efpmd/tools/rdf/rdf
 /tests/test
