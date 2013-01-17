@@ -505,7 +505,7 @@ enum efp_result efp_get_energy(struct efp *efp, struct efp_energy *energy);
  * \param[in] n_frags Expected number of fragments.
  * \param[out] grad For each fragment \a x \a y \a z components of negative
  *                  force and torque will be written to this array. The size
- *                  of this array must be at least [3 * \p n_frags] elements.
+ *                  of this array must be at least [6 * \p n_frags] elements.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
