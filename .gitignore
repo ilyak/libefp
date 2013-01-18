@@ -1,10 +1,12 @@
 *~
 *.So
 *.a
-*.o
+*.d
 *.la
 *.lo
+*.o
 *.po
+*.so
 .*.swp
 .dirstamp
 .depend
