@@ -34,7 +34,10 @@ force-field based methods. For example it was shown that the EFP method
 accurately predicts structures and binding energies in the water-benzene
 complexes which is a challenge for many computational methods (see <a
 href="http://dx.doi.org/10.1021/jp808845b"><i>Slipchenko et al., J. Phys. Chem.
-A, 2009</i></a>). Thus <i>EFPMD</i> is one of the best tools for high-accuracy
+A, 2009</i></a>). With <i>EFPMD</i> we are able to perform geometry
+optimization on systems containing tens of thousands of atoms and
+nanosecond-scale molecular dynamics on systems containing thousands of atoms.
+<i>EFPMD</i> is one of the best currently available tools for high-accuracy
 modeling of solid state and liquid molecular systems.
 
 <i>EFPMD</i> is a part of <i>LIBEFP</i> distribution and is compiled by default
@@ -50,6 +53,14 @@ file for more information on how to use the package.
 2012-11-15 Version 0.9.5-beta released.
 <a href="downloads/libefp-0.9.5-beta.tar.gz"><i>Download</i></a>.
 
+\par Documentation
+
+Documentation for public <i>LIBEFP</i> API is available
+<a href="efp_8h.html"><i>here</i></a>.
+For installation instructions and additional information see
+<a href="http://github.com/libefp/libefp/blob/master/README.md"><i>README</i></a>
+file.
+
 \par How to get the source code
 
 Latest development version of code can be viewed online
@@ -61,21 +72,16 @@ To get the latest development source tree use:
 git clone git://github.com/libefp/libefp.git
 \endverbatim
 
-\par Library users
+\par LIBEFP is used by the following software packages
 
-<i>LIBEFP</i> is currently used in
-<a href="http://www.psicode.org/"><i>PSI</i></a>
-(development version) and
-<a href="http://github.com/libefp/libefp/tree/master/efpmd"><i>EFPMD</i></a>
-packages.
+ - <a href="http://www.psicode.org/"><i>PSI</i></a> package (development version)
 
-\par Documentation
+ - <a href="http://www.q-chem.com/"><i>Q-Chem</i></a> commercial software
+(old EFP implementation is replaced by an order of magnitude faster
+implementation based on <i>LIBEFP</i>)
 
-Documentation for public <i>LIBEFP</i> API is available
-<a href="efp_8h.html"><i>here</i></a>.
-For installation instructions and additional information see
-<a href="http://github.com/libefp/libefp/blob/master/README.md"><i>README</i></a>
-file.
+ - <a href="http://github.com/libefp/libefp/tree/master/efpmd"><i>EFPMD</i></a>
+program (included with <i>LIBEFP</i> distribution)
 
 \par Parallel performance
 
