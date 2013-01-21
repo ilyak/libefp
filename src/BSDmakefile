@@ -1,22 +1,23 @@
-LIB=		efp
-INCS=		efp.h
-WARNS=		6
-IGNORE_PRAGMA=	yes
+LIB = efp
+WARNINGS_SET = HIGH
+MKPROFILE = no
+MKPICLIB = no
 
-VERSION!=	cat ${.CURDIR}/../VERSION
+DEBUG_FLAGS ?= -O0 -g
+VERSION != cat ${.CURDIR}/../VERSION
 
-DEBUG_FLAGS?=	-O0 -g
-CFLAGS+=	-DPACKAGE_VERSION="\"${VERSION}\""
+CFLAGS += ${DEBUG_FLAGS}
+CFLAGS_efp.o += -DPACKAGE_VERSION="\"${VERSION}\""
 
-SRCS=		disp.c \
-		efp.c \
-		efp_util.c \
-		elec.c \
-		elec_grad.c \
-		int.c \
-		parse.c \
-		pol.c \
-		swf.c \
-		xr.c
+SRCS = disp.c \
+       efp.c \
+       efp_util.c \
+       elec.c \
+       elec_grad.c \
+       int.c \
+       parse.c \
+       pol.c \
+       swf.c \
+       xr.c
 
-.include <bsd.lib.mk>
+.include <lib.mk>

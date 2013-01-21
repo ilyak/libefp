@@ -1,14 +1,17 @@
-LIB=		optimizer
-INTERNALLIB=	yes
-WARNS=		6
+LIB = optimizer
+WARNINGS_SET = HIGH
+MKPROFILE = no
+MKPICLIB = no
 
-DEBUG_FLAGS?=	-O0 -g
-FFLAGS+=	${DEBUG_FLAGS}
+DEBUG_FLAGS ?= -O0 -g
+CFLAGS += ${DEBUG_FLAGS}
+FFLAGS += ${DEBUG_FLAGS}
 
-SRCS=		optimizer.c \
-		blas.f \
-		lbfgsb.f \
-		linpack.f \
-		timer.f
+SRCS = optimizer.c \
+       optimizer.h \
+       blas.f \
+       lbfgsb.f \
+       linpack.f \
+       timer.f
 
-.include <bsd.lib.mk>
+.include <lib.mk>

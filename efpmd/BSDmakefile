@@ -1,4 +1,3 @@
-SUBDIR=		optimizer \
-		src
+SUBDIR = optimizer src
 
-.include <bsd.subdir.mk>
+.include <subdir.mk>

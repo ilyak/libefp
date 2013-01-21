@@ -1,34 +1,29 @@
-PROG=		efpmd
-NO_MAN=		yes
-WARNS=		6
-IGNORE_PRAGMA=	yes
+PROG = efpmd
+WARNINGS_SET = HIGH
 
-VERSION!=	cat ${.CURDIR}/../../VERSION
+USER_LIBS ?= -lalapack -lcblas -lf77blas -latlas -lgfortran -lm
+DEBUG_FLAGS ?= -O0 -g
 
-USER_LIBS?=	-lalapack -lcblas -lf77blas -latlas -lgfortran -lm
-LDADD+=		${USER_LIBS}
+VERSION != cat ${.CURDIR}/../../VERSION
 
-DEBUG_FLAGS?=	-O0 -g
+CFLAGS += ${DEBUG_FLAGS}
+CFLAGS_parse.o += -DEFP_DATA_DIR="\"${.CURDIR}/../../fraglib\""
+CFLAGS_main.o += -DPACKAGE_VERSION="\"${VERSION}\""
 
-CFLAGS+=	-DEFP_DATA_DIR="\"${.CURDIR}/../../fraglib\"" \
-		-DPACKAGE_VERSION="\"${VERSION}\""
+LDADD += ${USER_LIBS}
+LDADD += -L${.OBJDIR}/../../common -lcommon \
+         -L${.OBJDIR}/../../src -lefp \
+         -L${.OBJDIR}/../optimizer -loptimizer
 
-LDADD+=		-L${.OBJDIR}/../../common \
-		-L${.OBJDIR}/../../src \
-		-L${.OBJDIR}/../optimizer \
-		-lcommon \
-		-lefp \
-		-loptimizer
+SRCS = clapack.c \
+       common.c \
+       grad.c \
+       hess.c \
+       main.c \
+       md.c \
+       opt.c \
+       parse.c \
+       rand.c \
+       sp.c
 
-SRCS=		clapack.c \
-		common.c \
-		grad.c \
-		hess.c \
-		main.c \
-		md.c \
-		opt.c \
-		parse.c \
-		rand.c \
-		sp.c
-
-.include <bsd.prog.mk>
+.include <prog.mk>
