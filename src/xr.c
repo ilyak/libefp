@@ -697,7 +697,9 @@ efp_compute_xr(struct efp *efp)
 	double exr = 0.0;
 	double ecp = 0.0;
 
-	#pragma omp parallel for schedule(dynamic, 4) reduction(+:exr,ecp)
+#ifdef _OPENMP
+#pragma omp parallel for schedule(dynamic, 4) reduction(+:exr,ecp)
+#endif
 	for (int i = 0; i < efp->n_frag; i++) {
 		for (int j = i + 1, idx = 0; j < efp->n_frag; j++) {
 			int n_lmo_ij = efp->frags[i].n_lmo * efp->frags[j].n_lmo;

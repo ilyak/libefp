@@ -103,22 +103,34 @@ vec_cross(const vec_t *a, const vec_t *b)
 static inline void
 vec_atomic_add(vec_t *a, const vec_t *b)
 {
-	#pragma omp atomic
+#ifdef _OPENMP
+#pragma omp atomic
+#endif
 	a->x += b->x;
-	#pragma omp atomic
+#ifdef _OPENMP
+#pragma omp atomic
+#endif
 	a->y += b->y;
-	#pragma omp atomic
+#ifdef _OPENMP
+#pragma omp atomic
+#endif
 	a->z += b->z;
 }
 
 static inline void
 vec_atomic_sub(vec_t *a, const vec_t *b)
 {
-	#pragma omp atomic
+#ifdef _OPENMP
+#pragma omp atomic
+#endif
 	a->x -= b->x;
-	#pragma omp atomic
+#ifdef _OPENMP
+#pragma omp atomic
+#endif
 	a->y -= b->y;
-	#pragma omp atomic
+#ifdef _OPENMP
+#pragma omp atomic
+#endif
 	a->z -= b->z;
 }
 

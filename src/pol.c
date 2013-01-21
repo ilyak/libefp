@@ -207,7 +207,9 @@ add_electron_density_field(struct efp *efp)
 static void
 compute_elec_field(struct efp *efp)
 {
-	#pragma omp parallel for schedule(dynamic, 4)
+#ifdef _OPENMP
+#pragma omp parallel for schedule(dynamic, 4)
+#endif
 	for (int i = 0; i < efp->n_frag; i++)
 		for (int j = 0; j < efp->frags[i].n_polarizable_pts; j++)
 			compute_elec_field_pt(efp, i, j);
@@ -276,7 +278,9 @@ static double
 pol_scf_iter(struct efp *efp)
 {
 	/* compute new induced dipoles on polarizable points */
-	#pragma omp parallel for schedule(dynamic, 4)
+#ifdef _OPENMP
+#pragma omp parallel for schedule(dynamic, 4)
+#endif
 	for (int i = 0; i < efp->n_frag; i++) {
 		struct frag *frag = efp->frags + i;
 		for (int j = 0; j < frag->n_polarizable_pts; j++) {
@@ -303,7 +307,9 @@ pol_scf_iter(struct efp *efp)
 	int n_pt = 0;
 	double conv = 0.0;
 
-	#pragma omp parallel for schedule(dynamic, 4) reduction(+:n_pt,conv)
+#ifdef _OPENMP
+#pragma omp parallel for schedule(dynamic, 4) reduction(+:n_pt,conv)
+#endif
 	for (int i = 0; i < efp->n_frag; i++) {
 		struct frag *frag = efp->frags + i;
 		n_pt += frag->n_polarizable_pts;
@@ -330,7 +336,9 @@ efp_compute_pol_energy(struct efp *efp, double *energy)
 	compute_elec_field(efp);
 
 	/* set initial approximation - all induced dipoles are zero */
-	#pragma omp parallel for schedule(dynamic, 4)
+#ifdef _OPENMP
+#pragma omp parallel for schedule(dynamic, 4)
+#endif
 	for (int i = 0; i < efp->n_frag; i++) {
 		struct frag *frag = efp->frags + i;
 
@@ -353,7 +361,9 @@ efp_compute_pol_energy(struct efp *efp, double *energy)
 
 	double energy_ = 0.0;
 
-	#pragma omp parallel for schedule(dynamic, 4) reduction(+:energy_)
+#ifdef _OPENMP
+#pragma omp parallel for schedule(dynamic, 4) reduction(+:energy_)
+#endif
 	for (int i = 0; i < efp->n_frag; i++) {
 		struct frag *frag = efp->frags + i;
 
@@ -588,7 +598,9 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 static void
 compute_grad(struct efp *efp)
 {
-	#pragma omp parallel for schedule(dynamic, 4)
+#ifdef _OPENMP
+#pragma omp parallel for schedule(dynamic, 4)
+#endif
 	for (int i = 0; i < efp->n_frag; i++)
 		for (int j = 0; j < efp->frags[i].n_polarizable_pts; j++)
 			compute_grad_point(efp, i, j);

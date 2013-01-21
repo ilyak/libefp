@@ -290,7 +290,9 @@ efp_compute_disp(struct efp *efp)
 
 	double energy = 0.0;
 
-	#pragma omp parallel for schedule(dynamic, 4) reduction(+:energy)
+#ifdef _OPENMP
+#pragma omp parallel for schedule(dynamic, 4) reduction(+:energy)
+#endif
 	for (int i = 0; i < efp->n_frag; i++) {
 		for (int j = i + 1, idx = 0; j < efp->n_frag; j++) {
 			if (!skip_frag_pair(efp, i, j))

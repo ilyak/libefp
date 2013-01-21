@@ -84,7 +84,9 @@ struct swf make_swf(struct efp *efp, const struct frag *fr_i, const struct frag 
 
 void add_stress(const vec_t *dr, const vec_t *force, mat_t *stress)
 {
-	#pragma omp critical
+#ifdef _OPENMP
+#pragma omp critical
+#endif
 	{
 		stress->xx += dr->x * force->x;
 		stress->xy += dr->x * force->y;

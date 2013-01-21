@@ -411,7 +411,9 @@ efp_compute_elec(struct efp *efp)
 
 	double energy = 0.0;
 
-	#pragma omp parallel for schedule(dynamic, 4) reduction(+:energy)
+#ifdef _OPENMP
+#pragma omp parallel for schedule(dynamic, 4) reduction(+:energy)
+#endif
 	for (int i = 0; i < efp->n_frag; i++)
 		for (int j = i + 1; j < efp->n_frag; j++)
 			if (!skip_frag_pair(efp, i, j))
@@ -621,7 +623,9 @@ efp_compute_ai_elec(struct efp *efp)
 
 	double energy = 0.0;
 
-	#pragma omp parallel for schedule(dynamic, 4) reduction(+:energy)
+#ifdef _OPENMP
+#pragma omp parallel for schedule(dynamic, 4) reduction(+:energy)
+#endif
 	for (int i = 0; i < efp->n_frag; i++) {
 		energy += compute_ai_elec_frag(efp, i);
 
