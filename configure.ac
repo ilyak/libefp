@@ -45,7 +45,7 @@ AM_CONDITIONAL(BUILD_EFPMD, test x$enable_efpmd = xtrue)
 
 AC_CONFIG_HEADERS(config.h)
 AC_CONFIG_FILES([
-	Makefile
+	GNUmakefile
 ])
 
 AC_OUTPUT
