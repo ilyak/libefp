@@ -817,11 +817,8 @@ setup_xr(struct efp *efp)
 }
 
 EFP_EXPORT enum efp_result
-efp_init(struct efp **out,
-	 const struct efp_opts *opts,
-	 const struct efp_callbacks *callbacks,
-	 const char *potential_file_list,
-	 const char *frag_name_list)
+efp_init(struct efp **out, const struct efp_opts *opts,
+	 const char *potential_file_list, const char *frag_name_list)
 {
 	if (!out || !opts || !potential_file_list || !frag_name_list)
 		return EFP_RESULT_INVALID_ARGUMENT;
@@ -837,13 +834,6 @@ efp_init(struct efp **out,
 		return res;
 
 	memcpy(&efp->opts, opts, sizeof(struct efp_opts));
-
-	if (efp->opts.terms & EFP_TERM_AI_POL)
-		if (!callbacks || !callbacks->get_electron_density_field)
-			return EFP_RESULT_CALLBACK_NOT_SET;
-
-	if (callbacks)
-		memcpy(&efp->callbacks, callbacks, sizeof(struct efp_callbacks));
 
 	if ((res = efp_read_potential(efp, potential_file_list)))
 		return res;
@@ -887,6 +877,28 @@ efp_init(struct efp **out,
 		return res;
 
 	efp->magic = EFP_INIT_MAGIC;
+	return EFP_RESULT_SUCCESS;
+}
+
+EFP_EXPORT enum efp_result
+efp_set_electron_density_field_fn(struct efp *efp, efp_electron_density_field_fn fn)
+{
+	if (!initialized(efp))
+		return EFP_RESULT_NOT_INITIALIZED;
+
+	efp->get_electron_density_field = fn;
+
+	return EFP_RESULT_SUCCESS;
+}
+
+EFP_EXPORT enum efp_result
+efp_set_electron_density_field_user_data(struct efp *efp, void *user_data)
+{
+	if (!initialized(efp))
+		return EFP_RESULT_NOT_INITIALIZED;
+
+	efp->get_electron_density_field_user_data = user_data;
+
 	return EFP_RESULT_SUCCESS;
 }
 

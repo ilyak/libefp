@@ -247,16 +247,6 @@ typedef enum efp_result (*efp_electron_density_field_fn)(int n_pt,
 							 double *field,
 							 void *user_data);
 
-/** Callback function information. */
-struct efp_callbacks {
-	/** Callback function, see ::efp_electron_density_field_fn. */
-	efp_electron_density_field_fn get_electron_density_field;
-
-	/** Will be passed as a last parameter to
-	 * efp_callbacks::get_electron_density_field. */
-	void *get_electron_density_field_user_data;
-};
-
 /**
  * Get a human readable banner string with information about the library.
  *
@@ -276,7 +266,6 @@ void efp_opts_default(struct efp_opts *opts);
  *
  * \param[out] out Initialized efp structure.
  * \param[in] opts User defined options controlling the computation.
- * \param[in] callbacks User supplied callback functions (see efp_callbacks).
  * \param[in] potential_file_list Zero-terminated string with paths to the EFP
  *                                parameter files separated by the new-line
  *                                character. The last line must not include the
@@ -289,9 +278,34 @@ void efp_opts_default(struct efp_opts *opts);
  */
 enum efp_result efp_init(struct efp **out,
 			 const struct efp_opts *opts,
-			 const struct efp_callbacks *callbacks,
 			 const char *potential_file_list,
 			 const char *frag_name_list);
+
+/**
+ * Set the callback function which computes electric field from electrons
+ * in \a ab \a initio subsystem.
+ *
+ * \param[in] efp The efp structure.
+ * \param[in] fn The callback function. See ::efp_electron_density_field_fn.
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_set_electron_density_field_fn(
+			struct efp *efp,
+			efp_electron_density_field_fn fn);
+
+/**
+ * Set user data to be passed to ::efp_electron_density_field_fn.
+ *
+ * \param[in] efp The efp structure.
+ * \param[in] user_data User data which will be passed as a last parameter to
+ *                      ::efp_electron_density_field_fn.
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_set_electron_density_field_user_data(
+			struct efp *efp,
+			void *user_data);
 
 /**
  * Update information about \a ab \a initio subsystem.

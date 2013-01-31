@@ -139,9 +139,16 @@ void run_test(const struct test_data *test_data)
 	enum efp_result res;
 	struct efp *efp;
 
-	if ((res = efp_init(&efp, &test_data->opts, &test_data->callbacks,
-				test_data->files, test_data->names)))
+	if ((res = efp_init(&efp, &test_data->opts, test_data->files, test_data->names)))
 		lib_error("efp_init", res);
+
+	if ((res = efp_set_electron_density_field_fn(efp,
+			test_data->electron_density_field_fn)))
+		lib_error("efp_set_electron_density_field_fn", res);
+
+	if ((res = efp_set_electron_density_field_user_data(efp,
+			test_data->electron_density_field_user_data)))
+		lib_error("efp_set_electron_density_field_user_data", res);
 
 	if (test_data->geometry_xyzabc) {
 		if ((res = efp_set_coordinates(efp, EFP_COORD_TYPE_XYZABC,

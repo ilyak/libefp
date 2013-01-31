@@ -169,17 +169,18 @@ compute_elec_field_pt(struct efp *efp, int frag_idx, int pt_idx)
 	}
 }
 
-static void
+static enum efp_result
 add_electron_density_field(struct efp *efp)
 {
-	int n_pt = 0;
-	for (int i = 0; i < efp->n_frag; i++)
+	int n_pt, i;
+	enum efp_result res;
+
+	for (i = 0, n_pt = 0; i < efp->n_frag; i++)
 		n_pt += efp->frags[i].n_polarizable_pts;
 
 	double xyz[3 * n_pt], field[3 * n_pt], *ptr;
 
-	ptr = xyz;
-	for (int i = 0; i < efp->n_frag; i++) {
+	for (i = 0, ptr = xyz; i < efp->n_frag; i++) {
 		struct frag *frag = efp->frags + i;
 		for (int j = 0; j < frag->n_polarizable_pts; j++) {
 			struct polarizable_pt *pt = frag->polarizable_pts + j;
@@ -189,11 +190,14 @@ add_electron_density_field(struct efp *efp)
 		}
 	}
 
-	efp->callbacks.get_electron_density_field(n_pt, xyz, field,
-			efp->callbacks.get_electron_density_field_user_data);
+	if (!efp->get_electron_density_field)
+		return EFP_RESULT_CALLBACK_NOT_SET;
 
-	ptr = field;
-	for (int i = 0; i < efp->n_frag; i++) {
+	if ((res = efp->get_electron_density_field(n_pt, xyz, field,
+				efp->get_electron_density_field_user_data)))
+		return res;
+
+	for (i = 0, ptr = field; i < efp->n_frag; i++) {
 		struct frag *frag = efp->frags + i;
 		for (int j = 0; j < frag->n_polarizable_pts; j++) {
 			struct polarizable_pt *pt = frag->polarizable_pts + j;
@@ -202,11 +206,15 @@ add_electron_density_field(struct efp *efp)
 			pt->elec_field.z += *ptr++;
 		}
 	}
+
+	return EFP_RESULT_SUCCESS;
 }
 
-static void
+static enum efp_result
 compute_elec_field(struct efp *efp)
 {
+	enum efp_result res;
+
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 4)
 #endif
@@ -215,7 +223,10 @@ compute_elec_field(struct efp *efp)
 			compute_elec_field_pt(efp, i, j);
 
 	if (efp->opts.terms & EFP_TERM_AI_POL)
-		add_electron_density_field(efp);
+		if ((res = add_electron_density_field(efp)))
+			return res;
+
+	return EFP_RESULT_SUCCESS;
 }
 
 static void
@@ -333,7 +344,10 @@ pol_scf_iter(struct efp *efp)
 enum efp_result
 efp_compute_pol_energy(struct efp *efp, double *energy)
 {
-	compute_elec_field(efp);
+	enum efp_result res;
+
+	if ((res = compute_elec_field(efp)))
+		return res;
 
 	/* set initial approximation - all induced dipoles are zero */
 #ifdef _OPENMP

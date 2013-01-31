@@ -74,8 +74,11 @@ struct test_data {
 	/** Simulation settings. */
 	struct efp_opts opts;
 
-	/** Callbacks. */
-	struct efp_callbacks callbacks;
+	/** Callback which computes electric field from electrons. */
+	efp_electron_density_field_fn electron_density_field_fn;
+
+	/** User data for electron_density_field_fn. */
+	void *electron_density_field_user_data;
 };
 
 void run_test(const struct test_data *);

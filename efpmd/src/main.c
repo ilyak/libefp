@@ -166,7 +166,7 @@ static struct efp *init_sim(const struct config *config)
 	char *names = make_name_list(config);
 
 	struct efp *efp;
-	check_fail(efp_init(&efp, &opts, NULL, files, names));
+	check_fail(efp_init(&efp, &opts, files, names));
 
 	int n_coord = get_coord_count(config->coord_type);
 	double coord[n_coord * config->n_frags];

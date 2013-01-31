@@ -80,10 +80,8 @@ static const struct test_data test_data = {
 	.qm_znuc = qm_znuc,
 	.qm_xyz = qm_xyz,
 	.ref_energy = -0.2314262632,
-	.callbacks = {
-		.get_electron_density_field = get_electron_density_field,
-		.get_electron_density_field_user_data = NULL
-	},
+	.electron_density_field_fn = get_electron_density_field,
+	.electron_density_field_user_data = NULL,
 	.opts = {
 		.terms = EFP_TERM_ELEC | EFP_TERM_POL |
 			 EFP_TERM_DISP | EFP_TERM_XR |

@@ -155,8 +155,11 @@ struct efp {
 	/* array with the library of fragment initial parameters */
 	struct frag *lib;
 
-	/* callbacks */
-	struct efp_callbacks callbacks;
+	/* callback which computes electric field from electrons */
+	efp_electron_density_field_fn get_electron_density_field;
+
+	/* user data for get_electron_density_field */
+	void *get_electron_density_field_user_data;
 
 	/* user parameters for this EFP computation */
 	struct efp_opts opts;
