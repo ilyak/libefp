@@ -184,8 +184,8 @@ void run_test(const struct test_data *test_data)
 	/* Begin imaginary ab initio SCF */
 	double scf_energy;
 
-	if ((res = efp_scf_update(efp, &scf_energy)))
-		lib_error("efp_scf_update", res);
+	if ((res = efp_get_wavefunction_dependent_energy(efp, &scf_energy)))
+		lib_error("efp_get_wavefunction_dependent_energy", res);
 	/* End imaginary ab initio SCF */
 
 	if ((res = efp_compute(efp, 1)))

@@ -344,7 +344,7 @@ efp_get_stress_tensor(struct efp *efp, double *stress)
 }
 
 EFP_EXPORT enum efp_result
-efp_scf_update(struct efp *efp, double *energy)
+efp_get_wavefunction_dependent_energy(struct efp *efp, double *energy)
 {
 	if (!initialized(efp))
 		return EFP_RESULT_NOT_INITIALIZED;

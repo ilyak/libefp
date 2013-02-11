@@ -431,7 +431,9 @@ enum efp_result efp_get_stress_tensor(struct efp *efp, double *stress);
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_scf_update(struct efp *efp, double *energy);
+enum efp_result efp_get_wavefunction_dependent_energy(
+			struct efp *efp,
+			double *energy);
 
 /**
  * Perform the EFP computation.
