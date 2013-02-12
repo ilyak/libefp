@@ -228,7 +228,10 @@ struct efp_atom {
 };
 
 /**
- * Computes electric field form electrons in the specified points.
+ * Callback used to compute electric field in the specified points.
+ *
+ * This can be used to provide electric field from electrons in \a ab \a initio
+ * subsystem. This callback is used during polarization calculation.
  *
  * \param[in] n_pt Number of points in \p xyz array.
  *
