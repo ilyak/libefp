@@ -40,17 +40,21 @@ static void lib_error(const char *title, enum efp_result res)
 
 static void test_qm_numerical_grad(struct efp *efp, const double *grad)
 {
+	int n_ptc;
 	enum efp_result res;
 
-	int n_qm_atoms;
-	if ((res = efp_get_qm_atom_count(efp, &n_qm_atoms)))
-		lib_error("efp_get_qm_atom_count", res);
+	if ((res = efp_get_point_charge_count(efp, &n_ptc)))
+		lib_error("efp_get_point_charge_count", res);
 
-	double znuc[n_qm_atoms], xyz[3 * n_qm_atoms];
-	if ((res = efp_get_qm_atoms(efp, n_qm_atoms, znuc, xyz)))
-		lib_error("efp_get_qm_atoms", res);
+	double znuc[n_ptc], xyz[3 * n_ptc];
 
-	for (int i = 0; i < n_qm_atoms; i++) {
+	if ((res = efp_get_point_charge_coordinates(efp, xyz)))
+		lib_error("efp_get_point_charge_coordinates", res);
+
+	if ((res = efp_get_point_charge_values(efp, znuc)))
+		lib_error("efp_get_point_charge_values", res);
+
+	for (int i = 0; i < n_ptc; i++) {
 		double grad_num[3];
 
 		for (int j = 0; j < 3; j++) {
@@ -59,8 +63,8 @@ static void test_qm_numerical_grad(struct efp *efp, const double *grad)
 			struct efp_energy e1;
 			xyz[3 * i + j] = coord - NUM_GRAD_DELTA;
 
-			if ((res = efp_set_qm_atoms(efp, n_qm_atoms, znuc, xyz)))
-				lib_error("efp_set_qm_atoms", res);
+			if ((res = efp_set_point_charges(efp, n_ptc, znuc, xyz)))
+				lib_error("efp_set_point_charges", res);
 			if ((res = efp_compute(efp, 0)))
 				lib_error("efp_compute", res);
 			if ((res = efp_get_energy(efp, &e1)))
@@ -69,8 +73,8 @@ static void test_qm_numerical_grad(struct efp *efp, const double *grad)
 			struct efp_energy e2;
 			xyz[3 * i + j] = coord + NUM_GRAD_DELTA;
 
-			if ((res = efp_set_qm_atoms(efp, n_qm_atoms, znuc, xyz)))
-				lib_error("efp_set_qm_atoms", res);
+			if ((res = efp_set_point_charges(efp, n_ptc, znuc, xyz)))
+				lib_error("efp_set_point_charges", res);
 			if ((res = efp_compute(efp, 0)))
 				lib_error("efp_compute", res);
 			if ((res = efp_get_energy(efp, &e2)))
@@ -84,8 +88,8 @@ static void test_qm_numerical_grad(struct efp *efp, const double *grad)
 			fail_unless(fabs(grad_num[j] - grad[3 * i + j]) < FAIL_TOL);
 	}
 
-	if ((res = efp_set_qm_atoms(efp, n_qm_atoms, znuc, xyz)))
-		lib_error("efp_set_qm_atoms", res);
+	if ((res = efp_set_point_charges(efp, n_ptc, znuc, xyz)))
+		lib_error("efp_set_point_charges", res);
 }
 
 static void test_frag_numerical_grad(struct efp *efp, double *xyzabc, const double *grad)
@@ -164,12 +168,12 @@ void run_test(const struct test_data *test_data)
 		fail("geometry is not set");
 	}
 
-	int do_qm = test_data->qm_znuc && test_data->qm_xyz;
+	int do_qm = test_data->ptc_charges && test_data->ptc_xyz;
 
 	if (do_qm) {
-		if ((res = efp_set_qm_atoms(efp, test_data->n_qm_atoms,
-				test_data->qm_znuc, test_data->qm_xyz)))
-			lib_error("efp_set_qm_atoms", res);
+		if ((res = efp_set_point_charges(efp, test_data->n_ptc,
+					test_data->ptc_charges, test_data->ptc_xyz)))
+			lib_error("efp_set_point_charges", res);
 	}
 
 	if (test_data->opts.enable_pbc) {
@@ -213,13 +217,13 @@ void run_test(const struct test_data *test_data)
 	torque_to_deriv(n_frag, xyzabc, frag_grad);
 
 	if (do_qm) {
-		int n_qm_atoms;
-		if ((res = efp_get_qm_atom_count(efp, &n_qm_atoms)))
-			lib_error("efp_get_qm_atom_count", res);
+		int n_ptc;
+		if ((res = efp_get_point_charge_count(efp, &n_ptc)))
+			lib_error("efp_get_point_charge_count", res);
 
-		double qm_grad[3 * n_qm_atoms];
-		if ((res = efp_get_qm_gradient(efp, n_qm_atoms, qm_grad)))
-			lib_error("efp_get_qm_gradient", res);
+		double qm_grad[3 * n_ptc];
+		if ((res = efp_get_point_charge_gradient(efp, qm_grad)))
+			lib_error("efp_get_point_charge_gradient", res);
 
 		test_qm_numerical_grad(efp, qm_grad);
 	}

@@ -59,14 +59,14 @@ struct test_data {
 	/** Periodic box size. */
 	double box[3];
 
-	/** Number of atoms in quantum part. */
-	int n_qm_atoms;
+	/** Number of point charges. */
+	int n_ptc;
 
-	/** Nuclear charges of quantum atoms. */
-	const double *qm_znuc;
+	/** Point charges. */
+	const double *ptc_charges;
 
-	/** Coordinates of quantum atoms. */
-	const double *qm_xyz;
+	/** Coordinates of point charges. */
+	const double *ptc_xyz;
 
 	/** Reference energy value. */
 	double ref_energy;
