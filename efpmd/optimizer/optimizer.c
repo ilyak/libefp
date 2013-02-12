@@ -138,7 +138,7 @@ enum opt_result opt_init(struct opt_state *state, int n, const double *x)
 
 	state->f = state->func(state->n, state->x, state->g, state->data);
 
-	if (state->f == NAN)
+	if (isnan(state->f))
 		return OPT_RESULT_ERROR;
 
 	return OPT_RESULT_SUCCESS;
@@ -177,7 +177,7 @@ next:
 	if (strncmp(state->task, "FG", strlen("FG")) == 0) {
 		state->f = state->func(state->n, state->x, state->g, state->data);
 
-		if (state->f == NAN)
+		if (isnan(state->f))
 			return OPT_RESULT_ERROR;
 
 		goto next;
