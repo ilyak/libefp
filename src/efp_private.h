@@ -90,6 +90,7 @@ struct frag {
 		double x, y, z;
 		mat_t tensor;
 		vec_t elec_field;
+		vec_t elec_field_wf;
 		vec_t induced_dipole;
 		vec_t induced_dipole_new;
 		vec_t induced_dipole_conj;
@@ -173,14 +174,14 @@ struct efp {
 	/* stress tensor */
 	mat_t stress;
 
-	/* number of ab initio atoms */
-	int n_qm_atoms;
+	/* number of point charges */
+	int n_ptc;
 
-	struct qm_atom {
+	struct point_charge {
 		double x, y, z;
-		double znuc;
+		double charge;
 		vec_t grad;
-	} *qm_atoms;
+	} *point_charges;
 
 	/* EFP energy terms */
 	struct efp_energy energy;

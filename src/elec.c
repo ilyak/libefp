@@ -527,32 +527,36 @@ compute_ai_elec_frag(struct efp *efp, int frag_idx)
 	struct frag *fr_i = efp->frags + frag_idx;
 
 	for (int i = 0; i < fr_i->n_atoms; i++) {
-		for (int j = 0; j < efp->n_qm_atoms; j++) {
+		for (int j = 0; j < efp->n_ptc; j++) {
 			struct efp_atom *at_i = fr_i->atoms + i;
-			struct qm_atom *at_j = efp->qm_atoms + j;
+			struct point_charge *at_j = efp->point_charges + j;
 			vec_t dr = vec_sub(CVEC(at_i->x), CVEC(at_j->x));
 
-			energy += charge_charge_energy(at_i->znuc, at_j->znuc, &dr);
+			energy += charge_charge_energy(at_i->znuc, at_j->charge, &dr);
 		}
 	}
 	for (int i = 0; i < fr_i->n_multipole_pts; i++) {
-		for (int j = 0; j < efp->n_qm_atoms; j++) {
+		for (int j = 0; j < efp->n_ptc; j++) {
 			struct multipole_pt *pt_i = fr_i->multipole_pts + i;
-			struct qm_atom *at_j = efp->qm_atoms + j;
+			struct point_charge *at_j = efp->point_charges + j;
 
 			vec_t dr = vec_sub(CVEC(pt_i->x), CVEC(at_j->x));
 
 			/* charge - monopole */
-			energy += charge_charge_energy(at_j->znuc, pt_i->monopole, &dr);
+			energy += charge_charge_energy(at_j->charge,
+					pt_i->monopole, &dr);
 
 			/* charge - dipole */
-			energy += charge_dipole_energy(at_j->znuc, &pt_i->dipole, &dr);
+			energy += charge_dipole_energy(at_j->charge,
+					&pt_i->dipole, &dr);
 
 			/* charge - quadrupole */
-			energy += charge_quadrupole_energy(at_j->znuc, pt_i->quadrupole, &dr);
+			energy += charge_quadrupole_energy(at_j->charge,
+					pt_i->quadrupole, &dr);
 
 			/* charge - octupole */
-			energy += charge_octupole_energy(at_j->znuc, pt_i->octupole, &dr);
+			energy += charge_octupole_energy(at_j->charge,
+					pt_i->octupole, &dr);
 		}
 	}
 	return energy;
@@ -563,8 +567,8 @@ compute_ai_elec_frag_grad(struct efp *efp, int frag_idx)
 {
 	struct frag *fr_j = efp->frags + frag_idx;
 
-	for (int i = 0; i < efp->n_qm_atoms; i++) {
-		struct qm_atom *at_i = efp->qm_atoms + i;
+	for (int i = 0; i < efp->n_ptc; i++) {
+		struct point_charge *at_i = efp->point_charges + i;
 
 		/* ab initio atom - fragment atoms */
 		for (int k = 0; k < fr_j->n_atoms; k++) {
@@ -573,7 +577,7 @@ compute_ai_elec_frag_grad(struct efp *efp, int frag_idx)
 			vec_t force, add_i, add_j;
 			vec_t dr = vec_sub(CVEC(at_j->x), CVEC(at_i->x));
 
-			efp_charge_charge_grad(at_i->znuc, at_j->znuc, &dr,
+			efp_charge_charge_grad(at_i->charge, at_j->znuc, &dr,
 					       &force, &add_i, &add_j);
 
 			vec_atomic_add(&at_i->grad, &force);
@@ -589,23 +593,23 @@ compute_ai_elec_frag_grad(struct efp *efp, int frag_idx)
 			vec_t dr = vec_sub(CVEC(pt_j->x), CVEC(at_i->x));
 
 			/* monopole */
-			efp_charge_charge_grad(at_i->znuc, pt_j->monopole, &dr,
+			efp_charge_charge_grad(at_i->charge, pt_j->monopole, &dr,
 					       &force_, &add_i_, &add_j_);
 			add_3(&force, &force_, &add_i, &add_i_, &add_j, &add_j_);
 
 			/* dipole */
-			efp_charge_dipole_grad(at_i->znuc, &pt_j->dipole, &dr,
+			efp_charge_dipole_grad(at_i->charge, &pt_j->dipole, &dr,
 					       &force_, &add_i_, &add_j_);
 			add_3(&force, &force_, &add_i, &add_i_, &add_j, &add_j_);
 
 			/* quadrupole */
-			efp_charge_quadrupole_grad(at_i->znuc, pt_j->quadrupole, &dr,
+			efp_charge_quadrupole_grad(at_i->charge, pt_j->quadrupole, &dr,
 						   &force_, &add_i_, &add_j_);
 			vec_negate(&add_j_);
 			add_3(&force, &force_, &add_i, &add_i_, &add_j, &add_j_);
 
 			/* octupole */
-			efp_charge_octupole_grad(at_i->znuc, pt_j->octupole, &dr,
+			efp_charge_octupole_grad(at_i->charge, pt_j->octupole, &dr,
 						 &force_, &add_i_, &add_j_);
 			add_3(&force, &force_, &add_i, &add_i_, &add_j, &add_j_);
 

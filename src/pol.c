@@ -114,6 +114,7 @@ compute_elec_field_pt(struct efp *efp, int frag_idx, int pt_idx)
 	struct polarizable_pt *pt = frag->polarizable_pts + pt_idx;
 
 	pt->elec_field = vec_zero;
+	pt->elec_field_wf = vec_zero;
 
 	for (int i = 0; i < efp->n_frag; i++) {
 		if (i == frag_idx || skip_frag_pair(efp, i, frag_idx))
@@ -154,17 +155,17 @@ compute_elec_field_pt(struct efp *efp, int frag_idx, int pt_idx)
 
 	if (efp->opts.terms & EFP_TERM_AI_POL) {
 		/* field due to nuclei from ab initio subsystem */
-		for (int i = 0; i < efp->n_qm_atoms; i++) {
-			struct qm_atom *at_i = efp->qm_atoms + i;
+		for (int i = 0; i < efp->n_ptc; i++) {
+			struct point_charge *at_i = efp->point_charges + i;
 
 			vec_t dr = vec_sub(CVEC(pt->x), CVEC(at_i->x));
 
 			double r = vec_len(&dr);
 			double r3 = r * r * r;
 
-			pt->elec_field.x += at_i->znuc * dr.x / r3;
-			pt->elec_field.y += at_i->znuc * dr.y / r3;
-			pt->elec_field.z += at_i->znuc * dr.z / r3;
+			pt->elec_field.x += at_i->charge * dr.x / r3;
+			pt->elec_field.y += at_i->charge * dr.y / r3;
+			pt->elec_field.z += at_i->charge * dr.z / r3;
 		}
 	}
 }
@@ -182,8 +183,10 @@ add_electron_density_field(struct efp *efp)
 
 	for (i = 0, ptr = xyz; i < efp->n_frag; i++) {
 		struct frag *frag = efp->frags + i;
+
 		for (int j = 0; j < frag->n_polarizable_pts; j++) {
 			struct polarizable_pt *pt = frag->polarizable_pts + j;
+
 			*ptr++ = pt->x;
 			*ptr++ = pt->y;
 			*ptr++ = pt->z;
@@ -199,11 +202,13 @@ add_electron_density_field(struct efp *efp)
 
 	for (i = 0, ptr = field; i < efp->n_frag; i++) {
 		struct frag *frag = efp->frags + i;
+
 		for (int j = 0; j < frag->n_polarizable_pts; j++) {
 			struct polarizable_pt *pt = frag->polarizable_pts + j;
-			pt->elec_field.x += *ptr++;
-			pt->elec_field.y += *ptr++;
-			pt->elec_field.z += *ptr++;
+
+			pt->elec_field_wf.x = *ptr++;
+			pt->elec_field_wf.y = *ptr++;
+			pt->elec_field_wf.z = *ptr++;
 		}
 	}
 
@@ -294,6 +299,7 @@ pol_scf_iter(struct efp *efp)
 #endif
 	for (int i = 0; i < efp->n_frag; i++) {
 		struct frag *frag = efp->frags + i;
+
 		for (int j = 0; j < frag->n_polarizable_pts; j++) {
 			struct polarizable_pt *pt = frag->polarizable_pts + j;
 
@@ -302,13 +308,13 @@ pol_scf_iter(struct efp *efp)
 			get_induced_dipole_field(efp, i, pt, &field, &field_conj);
 
 			/* add field that doesn't change during scf */
-			field.x += pt->elec_field.x;
-			field.y += pt->elec_field.y;
-			field.z += pt->elec_field.z;
+			field.x += pt->elec_field.x + pt->elec_field_wf.x;
+			field.y += pt->elec_field.y + pt->elec_field_wf.y;
+			field.z += pt->elec_field.z + pt->elec_field_wf.z;
 
-			field_conj.x += pt->elec_field.x;
-			field_conj.y += pt->elec_field.y;
-			field_conj.z += pt->elec_field.z;
+			field_conj.x += pt->elec_field.x + pt->elec_field_wf.x;
+			field_conj.y += pt->elec_field.y + pt->elec_field_wf.y;
+			field_conj.z += pt->elec_field.z + pt->elec_field_wf.z;
 
 			pt->induced_dipole_new = mat_vec(&pt->tensor, &field);
 			pt->induced_dipole_conj_new = mat_trans_vec(&pt->tensor, &field_conj);
@@ -383,7 +389,11 @@ efp_compute_pol_energy(struct efp *efp, double *energy)
 
 		for (int j = 0; j < frag->n_polarizable_pts; j++) {
 			struct polarizable_pt *pt = frag->polarizable_pts + j;
-			energy_ += -0.5 * vec_dot(&pt->induced_dipole, &pt->elec_field);
+
+			energy_ += 0.5 * vec_dot(&pt->induced_dipole_conj,
+						 &pt->elec_field_wf) -
+				   0.5 * vec_dot(&pt->induced_dipole,
+						 &pt->elec_field);
 		}
 	}
 
@@ -593,13 +603,13 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 
 	/* induced dipole - ab initio nuclei */
 	if (efp->opts.terms & EFP_TERM_AI_POL) {
-		for (int j = 0; j < efp->n_qm_atoms; j++) {
-			struct qm_atom *at_j = efp->qm_atoms + j;
+		for (int j = 0; j < efp->n_ptc; j++) {
+			struct point_charge *at_j = efp->point_charges + j;
 
 			vec_t dr = vec_sub(CVEC(at_j->x), CVEC(pt_i->x));
 			vec_t force, add_i, add_j;
 
-			efp_charge_dipole_grad(at_j->znuc, &dipole_i, &dr,
+			efp_charge_dipole_grad(at_j->charge, &dipole_i, &dr,
 					       &force, &add_j, &add_i);
 			vec_negate(&add_i);
 

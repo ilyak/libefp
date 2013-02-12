@@ -228,24 +228,26 @@ struct efp_atom {
 };
 
 /**
- * Compute electric field form electrons in the specified points.
+ * Computes electric field form electrons in the specified points.
  *
  * \param[in] n_pt Number of points in \p xyz array.
+ *
  * \param[in] xyz Coordinates of points where electric field should be
- *                computed. The size of this array must be [3 * \p n_pt]
- *                elements.
- * \param[out] field Computed \a x \a y \a z components of electric field.
- *                   The size of this array must be at least [3 * \p n_pt]
- *                   elements.
+ * computed. The size of this array must be [3 * \p n_pt] elements.
+ *
+ * \param[out] field Computed \a x \a y \a z components of electric field. The
+ * size of this array must be at least [3 * \p n_pt] elements.
+ *
  * \param[in] user_data User data which was specified during initialization.
  *
  * \return ::EFP_RESULT_CALLBACK_FAILED on error or ::EFP_RESULT_SUCCESS
  *         otherwise.
  */
-typedef enum efp_result (*efp_electron_density_field_fn)(int n_pt,
-							 const double *xyz,
-							 double *field,
-							 void *user_data);
+typedef enum efp_result (*efp_electron_density_field_fn)(
+				int n_pt,
+				const double *xyz,
+				double *field,
+				void *user_data);
 
 /**
  * Get a human readable banner string with information about the library.
@@ -265,14 +267,16 @@ void efp_opts_default(struct efp_opts *opts);
  * Initialize the EFP computation.
  *
  * \param[out] out Initialized efp structure.
+ *
  * \param[in] opts User defined options controlling the computation.
+ *
  * \param[in] potential_file_list Zero-terminated string with paths to the EFP
- *                                parameter files separated by the new-line
- *                                character. The last line must not include the
- *                                new-line character.
+ * parameter files separated by the new-line character. The last line must not
+ * include the new-line character.
+ *
  * \param[in] frag_name_list Zero-terminated string with names of the fragments
- *                           separated by the new-line character. The last line
- *                           must not include the new-line character.
+ * separated by the new-line character. The last line must not include the
+ * new-line character.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
@@ -286,6 +290,7 @@ enum efp_result efp_init(struct efp **out,
  * in \a ab \a initio subsystem.
  *
  * \param[in] efp The efp structure.
+ *
  * \param[in] fn The callback function. See ::efp_electron_density_field_fn.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
@@ -298,8 +303,9 @@ enum efp_result efp_set_electron_density_field_fn(
  * Set user data to be passed to ::efp_electron_density_field_fn.
  *
  * \param[in] efp The efp structure.
+ *
  * \param[in] user_data User data which will be passed as a last parameter to
- *                      ::efp_electron_density_field_fn.
+ * ::efp_electron_density_field_fn.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
@@ -308,54 +314,88 @@ enum efp_result efp_set_electron_density_field_user_data(
 			void *user_data);
 
 /**
- * Update information about \a ab \a initio subsystem.
+ * Setup arbitrary point charges interacting with EFP subsystem.
+ *
+ * This can be used to compute contributions from \a ab \a initio nuclei.
  *
  * \param[in] efp The efp structure.
- * \param[in] n_atoms Number of atoms in \a ab \a initio subsystem.
- * \param[in] znuc Array of \p n_atoms elements with atom nuclear charges.
- * \param[in] xyz Array of [3 * \p n_atoms] elements with \a x \a y \a z
- *                coordinates of atoms.
+ *
+ * \param[in] n_ptc Number of point charges.
+ *
+ * \param[in] q Array of \p n_ptc elements with charge values.
+ *
+ * \param[in] xyz Array of [3 * \p n_ptc] elements with \a x \a y \a z
+ * coordinates of charge positions.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_set_qm_atoms(struct efp *efp,
-				 int n_atoms,
-				 const double *znuc,
-				 const double *xyz);
+enum efp_result efp_set_point_charges(
+			struct efp *efp,
+			int n_ptc,
+			const double *q,
+			const double *xyz);
 
 /**
- * Get number of atoms in \a ab \a initio subsystem.
+ * Get the number of currently set point charges.
  *
  * \param[in] efp The efp structure.
- * \param[out] n_atoms Number of atoms in \a ab \a initio subsystem.
+ * \param[out] n_ptc Number of point charges.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_qm_atom_count(struct efp *efp, int *n_atoms);
+enum efp_result efp_get_point_charge_count(
+			struct efp *efp,
+			int *n_ptc);
 
 /**
- * Get information about \a ab \a initio subsystem.
+ * Get values of currently set point charges.
  *
  * \param[in] efp The efp structure.
- * \param[in] n_atoms Expected number of atoms in \a ab \a initio subsystem.
- * \param[out] znuc Array of \p n_atoms elements where atom nuclear charges
- *                  will be stored.
- * \param[out] xyz Array of [3 * \p n_atoms] elements where \a x \a y \a z
- *                 coordinates of atom positions will be stored.
+ * \param[out] q Array of \p n_ptc elements where charges will be stored.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_qm_atoms(struct efp *efp,
-				 int n_atoms,
-				 double *znuc,
-				 double *xyz);
+enum efp_result efp_get_point_charge_values(
+			struct efp *efp,
+			double *q);
+
+/**
+ * Get coordinates of currently set point charges.
+ *
+ * \param[in] efp The efp structure.
+ *
+ * \param[out] xyz Array of [3 * \p n_ptc] elements where \a x \a y \a z
+ * coordinates of point charges will be stored.
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_get_point_charge_coordinates(
+			struct efp *efp,
+			double *xyz);
+
+/**
+ * Get gradient on point charges from EFP subsystem.
+ *
+ * \param[in] efp The efp structure.
+ *
+ * \param[out] grad For each point charge \a x \a y \a z components of energy
+ * gradient are stored. The size of this array must be at least [3 * \p n_ptc]
+ * elements.
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_get_point_charge_gradient(
+			struct efp *efp,
+			double *grad);
 
 /**
  * Update positions and orientations of effective fragments.
  *
  * \param[in] efp The efp structure.
+ *
  * \param[in] coord_type Specifies the type of coordinates in the \a coord
- *                       array (see #efp_coord_type).
+ * array (see #efp_coord_type).
+ *
  * \param[in] coord Array of fragment coordinates.
  *
  * If \p coord_type is \a EFP_COORD_TYPE_XYZABC then for each fragment the \p
@@ -389,10 +429,12 @@ enum efp_result efp_set_coordinates(struct efp *efp,
  * Get center of mass positions and Euler angles of the effective fragments.
  *
  * \param[in] efp The efp structure.
+ *
  * \param[in] n_frags Expected number of fragments.
- * \param[out] xyzabc Upon return [6 * \p n_frags] elements will be written to
- *                    this array. The coordinates of the center of mass and
- *                    Euler rotation angles for each fragment will be stored.
+ *
+ * \param[out] xyzabc Upon return the coordinates of the center of mass and
+ * Euler rotation angles for each fragment will be written to this array. The
+ * size of the \p xyzabc array must be at least [6 * \p n_frags] elements.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
@@ -414,8 +456,9 @@ enum efp_result efp_set_periodic_box(struct efp *efp, double x, double y, double
  * Get the stress tensor.
  *
  * \param[in] efp The efp structure.
- * \param[out] stress Array of 9 elements where the stress tensor
- *                    will be stored.
+ *
+ * \param[out] stress Array of 9 elements where the stress tensor will be
+ * stored.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
@@ -438,71 +481,110 @@ enum efp_result efp_get_wavefunction_dependent_energy(
 /**
  * Perform the EFP computation.
  *
- * This call may take long time to complete.
- *
  * \param[in] efp The efp structure.
- * \param[in] do_gradient Also compute energy gradient if nonzero value is
- *                        specified.
+ *
+ * \param[in] do_gradient If nonzero value is specified in addition to energy
+ * compute the gradient.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
 enum efp_result efp_compute(struct efp *efp, int do_gradient);
 
 /**
- * Get total number of EFP multipoles.
+ * Get total number of multipoles from EFP electrostatics.
  *
  * \param[in] efp The efp structure.
- * \param[out] n_mult Array of 4 integers where the total number of charges,
- *                    dipoles, quadrupoles and octupoles will be stored.
+ * \param[out] n_mult Number of electrostatics multipoles.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
 enum efp_result efp_get_multipole_count(struct efp *efp, int *n_mult);
 
 /**
- * Get all electrostatic multipoles from all fragments.
+ * Get coordinates of electrostatics multipoles.
  *
  * \param[in] efp The efp structure.
  *
- * \param[out] xyz Array of four pointers to arrays where the corresponding
- *                 multipole point coordinates will be stored. The size of
- *                 each array must be at least [3 * \p n_mult] elements, where
- *                 \p n_mult is the corresponding value in the array returned
- *                 by the ::efp_get_multipole_count function.
- *
- * \param[out] z Array of four pointers to arrays where the charges, dipoles,
- *               quadrupoles, and octupoles will be stored.
- *
- *               The size of the first array \p z[0] (charges) must be at least
- *               [\p n_mult] elements, where \p n_mult is the corresponding
- *               first element of the array returned by the
- *               ::efp_get_multipole_count function.
- *
- *               The size of the second array \p z[1] (dipoles) must be at
- *               least [3 * \p n_mult] elements, where \p n_mult is the
- *               corresponding second element of the array returned by the
- *               ::efp_get_multipole_count function.
- *
- *               The size of the third array \p z[2] (quadrupoles) must be at
- *               least [6 * \p n_mult] elements, where \p n_mult is the
- *               corresponding third element of the array returned by the
- *               ::efp_get_multipole_count function.
- *
- *               Quadrupoles are stored in the following order:
- *                   \a xx, \a yy, \a zz, \a xy, \a xz, \a yz
- *
- *               The size of the fourth array \p z[3] (octupoles) must be at
- *               least [10 * \p n_mult] elements, where \p n_mult is the
- *               corresponding fourth element of the array returned by the
- *               ::efp_get_multipole_count function.
- *
- *               Octupoles are stored in the following order:
- *                   \a xxx, \a yyy, \a zzz, \a xxy, \a xxz,
- *                   \a xyy, \a yyz, \a xzz, \a yzz, \a xyz
+ * \param[out] xyz Array where coordinates of EFP electrostatics multipoles
+ * will be stored. Size of the \p xyz array must be at least [3 * \p n_mult]
+ * elements, where \p n_mult is the value returned by the
+ * ::efp_get_multipole_count function.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_multipoles(struct efp *efp, double **xyz, double **z);
+enum efp_result efp_get_multipole_coordinates(
+			struct efp *efp,
+			double *xyz);
+
+/**
+ * Get electrostatics multipoles from EFP fragments.
+ *
+ * \param[in] efp The efp structure.
+ *
+ * \param[out] mult Array where charges, dipoles, quadrupoles, and octupoles
+ * for each point will be stored.
+ *
+ * The size of the \p mult array must be at least [(1 + 3 + 6 + 10) * \p
+ * n_mult] elements (charges + dipoles + quadrupoles + octupoles), where \p
+ * n_mult is the value returned by the ::efp_get_multipole_count function.
+ *
+ * Quadrupoles are stored in the following order:
+ *    \a xx, \a yy, \a zz, \a xy, \a xz, \a yz
+ *
+ * Octupoles are stored in the following order:
+ *    \a xxx, \a yyy, \a zzz, \a xxy, \a xxz,
+ *    \a xyy, \a yyz, \a xzz, \a yzz, \a xyz
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_get_multipole_values(struct efp *efp, double *mult);
+
+/**
+ *  Get the number of polarization induced dipoles.
+ *
+ * \param[in] efp The efp structure.
+ * \param[out] n_dip Number of polarization induced dipoles.
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_get_induced_dipole_count(struct efp *efp, int *n_dip);
+
+/**
+ * Get coordinates of induced dipoles.
+ *
+ * \param[in] efp The efp structure.
+ *
+ * \param[out] xyz Array where the coordinates of polarizable points will be
+ * stored. The size of the \p xyz array must be at least [3 * \p n_dip]
+ * elements.
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_get_induced_dipole_coordinates(struct efp *efp, double *xyz);
+
+/**
+ * Get values of polarization induced dipoles.
+ *
+ * \param[in] efp The efp structure.
+ *
+ * \param[out] dip Array where induced dipoles will be stored. The size of the
+ * array must be at least [3 * \p n_dip] elements.
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_get_induced_dipole_values(struct efp *efp, double *dip);
+
+/**
+ * Get values of polarization conjugated induced dipoles.
+ *
+ * \param[in] efp The efp structure.
+ *
+ * \param[out] dip Array where induced dipoles will be stored. The size of the
+ * array must be at least [3 * \p n_dip] elements.
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_get_induced_dipole_conj_values(struct efp *efp, double *dip);
 
 /**
  * Get computed energy components.
@@ -518,32 +600,16 @@ enum efp_result efp_get_energy(struct efp *efp, struct efp_energy *energy);
  * Get computed EFP energy gradient.
  *
  * \param[in] efp The efp structure.
+ *
  * \param[in] n_frags Expected number of fragments.
+ *
  * \param[out] grad For each fragment \a x \a y \a z components of negative
- *                  force and torque will be written to this array. The size
- *                  of this array must be at least [6 * \p n_frags] elements.
+ * force and torque will be written to this array. The size of this array must
+ * be at least [6 * \p n_frags] elements.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
 enum efp_result efp_get_gradient(struct efp *efp, int n_frags, double *grad);
-
-/**
- * Get the gradient on atoms in \a ab \a initio subsystem due to EFP
- * interaction.
- *
- * This does not include additional correction due to changes in the
- * \a ab \a initio wave function affected by EFP subsystem.
- *
- * \param[in] efp The efp structure.
- * \param[in] n_atoms Expected number of atoms in the \a ab \a initio
- *                    subsystem.
- * \param[out] grad For each atom \a x \a y \a z components of energy
- *                  gradient are stored. The size of this array must be
- *                  at least [3 * \p n_atoms] elements.
- *
- * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
- */
-enum efp_result efp_get_qm_gradient(struct efp *efp, int n_atoms, double *grad);
 
 /**
  * Get the number of fragments in this computation.
@@ -559,9 +625,12 @@ enum efp_result efp_get_frag_count(struct efp *efp, int *n_frag);
  * Get the name of the specified effective fragment.
  *
  * \param[in] efp The efp structure.
+ *
  * \param[in] frag_idx Index of a fragment. Must be a value between zero and
- *                     the total number of fragments minus one.
+ * the total number of fragments minus one.
+ *
  * \param[in] size Size of a \p frag_name buffer.
+ *
  * \param[out] frag_name A buffer where name of the fragment will be stored.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
@@ -575,8 +644,10 @@ enum efp_result efp_get_frag_name(struct efp *efp,
  * Get total mass of a fragment.
  *
  * \param[in] efp The efp structure.
- * \param[in] frag_idx Index of a fragment. Must be a value between zero and
- *                     the total number of fragments minus one.
+ *
+ * \param[in] frag_idx Index of a fragment. This must be a value between zero
+ * and the total number of fragments minus one.
+ *
  * \param[out] mass_out Output mass value.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
@@ -589,10 +660,12 @@ enum efp_result efp_get_frag_mass(struct efp *efp,
  * Get fragment principal moments of inertia.
  *
  * \param[in] efp The efp structure.
+ *
  * \param[in] frag_idx Index of a fragment. Must be a value between zero and
- *                     the total number of fragments minus one.
+ * the total number of fragments minus one.
+ *
  * \param[out] inertia_out Array of 3 elements where principal moments of
- *                         inertia of a fragment will be stored.
+ * inertia of a fragment will be stored.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
@@ -604,8 +677,10 @@ enum efp_result efp_get_frag_inertia(struct efp *efp,
  * Get the number of atoms in the specified fragment.
  *
  * \param[in] efp The efp structure.
+ *
  * \param[in] frag_idx Index of a fragment. Must be a value between zero and
- *                     the total number of fragments minus one.
+ * the total number of fragments minus one.
+ *
  * \param[out] n_atoms Total number of atoms in the fragment.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
@@ -618,10 +693,13 @@ enum efp_result efp_get_frag_atom_count(struct efp *efp,
  * Get atoms comprising the specified fragment.
  *
  * \param[in] efp The efp structure.
+ *
  * \param[in] frag_idx Index of a fragment. Must be a value between zero and
- *                     the total number of fragments minus one.
+ * the total number of fragments minus one.
+ *
  * \param[in] size Size of the \p atoms array. Must be greater than or equal to
- *                 the size returned by the ::efp_get_frag_atom_count function.
+ * the size returned by the ::efp_get_frag_atom_count function.
+ *
  * \param[out] atoms Array where atom information will be stored.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
@@ -643,7 +721,7 @@ void efp_shutdown(struct efp *efp);
  *
  * \param res Result value to be converted to string.
  *
- * \return Human readable string with description of the result,
+ * \return Human readable string with the description of the result,
  *         zero-terminated.
  */
 const char *efp_result_to_string(enum efp_result res);
