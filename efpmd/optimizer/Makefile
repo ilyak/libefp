@@ -1,11 +1,13 @@
 LIB = optimizer
 WARNINGS_SET = HIGH
-MKPROFILE = no
-MKPICLIB = no
+MK_PROFILE = no
+MK_PICLIB = no
 
-DEBUG_FLAGS ?= -O0 -g
-CFLAGS += ${DEBUG_FLAGS}
-FFLAGS += ${DEBUG_FLAGS}
+CFLAGS += -std=c99
+
+.if defined(WITH_DEBUG)
+CFLAGS += -O0 -g
+.endif
 
 SRCS = optimizer.c \
        optimizer.h \

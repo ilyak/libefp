@@ -1,16 +1,17 @@
 PROG = test
 WARNINGS_SET = HIGH
 
-DEBUG_FLAGS ?= -O0 -g
-USER_LIBS ?= -lalapack -lcblas -lf77blas -latlas -lm
-
-CFLAGS += ${DEBUG_FLAGS}
+CFLAGS += -std=c99
 CFLAGS += -DABS_TOP_SRCDIR="\"${.CURDIR}/..\""
 
-LDADD += ${USER_LIBS}
-LDADD += -L${.OBJDIR}/../src -lefp \
-         -L${.OBJDIR}/../common -lcommon \
-         -lcheck
+.if defined(WITH_DEBUG)
+CFLAGS += -O0 -g
+.endif
+
+LDFLAGS += -L${.OBJDIR}/../src -L${.OBJDIR}/../common
+
+LDADD += -lefp -lcommon -lcheck -lm
+LDADD += -lalapack -lcblas -lf77blas -latlas
 
 SRCS = test.c \
        disp_1a.c \

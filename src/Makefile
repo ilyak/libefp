@@ -1,13 +1,16 @@
 LIB = efp
 WARNINGS_SET = HIGH
-MKPROFILE = no
-MKPICLIB = no
+MK_PROFILE = no
+MK_PICLIB = no
 
-DEBUG_FLAGS ?= -O0 -g
-VERSION != cat ${.CURDIR}/../VERSION
+LIBEFP_VERSION != cat ${.CURDIR}/../VERSION
 
-CFLAGS += ${DEBUG_FLAGS}
-CFLAGS_efp.o += -DPACKAGE_VERSION="\"${VERSION}\""
+CFLAGS += -std=c99
+CFLAGS_efp.o += -DPACKAGE_VERSION="\"${LIBEFP_VERSION}\""
+
+.if defined(WITH_DEBUG)
+CFLAGS += -O0 -g
+.endif
 
 SRCS = disp.c \
        efp.c \

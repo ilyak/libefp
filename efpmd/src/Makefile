@@ -1,19 +1,22 @@
 PROG = efpmd
 WARNINGS_SET = HIGH
 
-USER_LIBS ?= -lalapack -lcblas -lf77blas -latlas -lgfortran -lm
-DEBUG_FLAGS ?= -O0 -g
+LIBEFP_VERSION != cat ${.CURDIR}/../../VERSION
 
-VERSION != cat ${.CURDIR}/../../VERSION
-
-CFLAGS += ${DEBUG_FLAGS}
+CFLAGS += -std=c99
 CFLAGS_parse.o += -DEFP_DATA_DIR="\"${.CURDIR}/../../fraglib\""
-CFLAGS_main.o += -DPACKAGE_VERSION="\"${VERSION}\""
+CFLAGS_main.o += -DPACKAGE_VERSION="\"${LIBEFP_VERSION}\""
 
-LDADD += ${USER_LIBS}
-LDADD += -L${.OBJDIR}/../../common -lcommon \
-         -L${.OBJDIR}/../../src -lefp \
-         -L${.OBJDIR}/../optimizer -loptimizer
+.if defined(WITH_DEBUG)
+CFLAGS += -O0 -g
+.endif
+
+LDFLAGS += -L${.OBJDIR}/../../common \
+           -L${.OBJDIR}/../../src \
+           -L${.OBJDIR}/../optimizer
+
+LDADD += -lcommon -lefp -loptimizer -lm
+LDADD += -lalapack -lcblas -lf77blas -latlas -lgfortran
 
 SRCS = clapack.c \
        common.c \
