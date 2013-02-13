@@ -114,23 +114,29 @@ efp_set_point_charges(struct efp *efp, int n_ptc,
 	if (!initialized(efp))
 		return EFP_RESULT_NOT_INITIALIZED;
 
-	if (!q || !xyz || n_ptc < 0)
+	if (n_ptc < 0)
 		return EFP_RESULT_INVALID_ARGUMENT;
-
-	efp->n_ptc = n_ptc;
 
 	if (n_ptc == 0) {
 		free(efp->point_charges);
+
+		efp->n_ptc = 0;
+		efp->point_charges = NULL;
+
 		return EFP_RESULT_SUCCESS;
 	}
 
+	if (!q || !xyz)
+		return EFP_RESULT_INVALID_ARGUMENT;
+
+	efp->n_ptc = n_ptc;
 	efp->point_charges = realloc(efp->point_charges,
-				n_ptc * sizeof(struct point_charge));
+				efp->n_ptc * sizeof(struct point_charge));
 
 	if (!efp->point_charges)
 		return EFP_RESULT_NO_MEMORY;
 
-	for (int i = 0; i < n_ptc; i++) {
+	for (int i = 0; i < efp->n_ptc; i++) {
 		struct point_charge *ptc = efp->point_charges + i;
 
 		ptc->x = *xyz++;
