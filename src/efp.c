@@ -404,14 +404,10 @@ efp_compute(struct efp *efp, int do_gradient)
 
 	efp->energy.total = efp->energy.electrostatic +
 			    efp->energy.charge_penetration +
+			    efp->energy.electrostatic_point_charges +
 			    efp->energy.polarization +
 			    efp->energy.dispersion +
-			    efp->energy.exchange_repulsion +
-			    efp->energy.charge_transfer +
-			    efp->energy.ai_electrostatic +
-			    efp->energy.ai_dispersion +
-			    efp->energy.ai_exchange_repulsion +
-			    efp->energy.ai_charge_transfer;
+			    efp->energy.exchange_repulsion;
 
 	return EFP_RESULT_SUCCESS;
 }

@@ -637,6 +637,6 @@ efp_compute_ai_elec(struct efp *efp)
 			compute_ai_elec_frag_grad(efp, i);
 	}
 
-	efp->energy.ai_electrostatic = energy;
+	efp->energy.electrostatic_point_charges = energy;
 	return EFP_RESULT_SUCCESS;
 }

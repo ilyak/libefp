@@ -180,40 +180,28 @@ struct efp_opts {
 /** EFP energy terms. */
 struct efp_energy {
 	/**
-	 * Electrostatic energy. */
+	 * EFP/EFP electrostatic energy. */
 	double electrostatic;
 	/**
 	 * Charge penetration energy from overlap-based electrostatic
 	 * damping. Zero if overlap-based damping is turned off. */
 	double charge_penetration;
 	/**
+	 * Interaction energy of EFP electrostatics with point charges. */
+	double electrostatic_point_charges;
+	/**
 	 * All polarization energy goes here. Polarization is computed
 	 * self-consistently so it can't be separated into EFP/EFP and AI/EFP
 	 * parts. */
 	double polarization;
 	/**
-	 * Dispersion energy. */
+	 * EFP/EFP dispersion energy. */
 	double dispersion;
 	/**
-	 * Exchange-repulsion energy. */
+	 * EFP/EFP exchange-repulsion energy. */
 	double exchange_repulsion;
 	/**
-	 * Charge transfer energy, reserved for future use. */
-	double charge_transfer;
-	/**
-	 * Ab initio/EFP electrostatic energy. */
-	double ai_electrostatic;
-	/**
-	 * Ab initio/EFP dispersion energy, reserved for future use. */
-	double ai_dispersion;
-	/**
-	 * Ab initio/EFP exchange-repulsion energy, reserved for future use. */
-	double ai_exchange_repulsion;
-	/**
-	 * Ab initio/EFP charge transfer energy, reserved for future use. */
-	double ai_charge_transfer;
-	/**
-	 * Sum of all the above EFP energy terms. */
+	 * Sum of all the above energy terms. */
 	double total;
 };
 
