@@ -366,6 +366,11 @@ efp_get_wavefunction_dependent_energy(struct efp *efp, double *energy)
 	if (!energy)
 		return EFP_RESULT_INVALID_ARGUMENT;
 
+	if (!(efp->opts.terms & EFP_TERM_POL)) {
+		*energy = 0.0;
+		return EFP_RESULT_SUCCESS;
+	}
+
 	return efp_compute_pol_energy(efp, energy);
 }
 
