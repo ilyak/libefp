@@ -8,10 +8,16 @@ CFLAGS += -DABS_TOP_SRCDIR="\"${.CURDIR}/..\""
 CFLAGS += -O0 -g
 .endif
 
-LDFLAGS += -L${.OBJDIR}/../src -L${.OBJDIR}/../common
+LDFLAGS += -L${.OBJDIR}/../common
+LDFLAGS += -L${.OBJDIR}/../src
 
 LDADD += -lefp -lcommon -lcheck -lm
+
+.if defined(WITH_MKL)
+LDADD += -lmkl_rt -lpthread
+.elif defined(WITH_ATLAS)
 LDADD += -lalapack -lcblas -lf77blas -latlas
+.endif
 
 SRCS = test.c \
        disp_1a.c \

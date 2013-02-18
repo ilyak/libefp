@@ -11,12 +11,18 @@ CFLAGS_main.o += -DPACKAGE_VERSION="\"${LIBEFP_VERSION}\""
 CFLAGS += -O0 -g
 .endif
 
-LDFLAGS += -L${.OBJDIR}/../../common \
-           -L${.OBJDIR}/../../src \
-           -L${.OBJDIR}/../optimizer
+LDFLAGS += -L${.OBJDIR}/../../common
+LDFLAGS += -L${.OBJDIR}/../../src
+LDFLAGS += -L${.OBJDIR}/../optimizer
 
-LDADD += -lcommon -lefp -loptimizer -lm
-LDADD += -lalapack -lcblas -lf77blas -latlas -lgfortran
+LDADD += -lefp -lcommon -loptimizer -lm
+LDADD += -lgfortran
+
+.if defined(WITH_MKL)
+LDADD += -lmkl_rt -lpthread
+.elif defined(WITH_ATLAS)
+LDADD += -lalapack -lcblas -lf77blas -latlas
+.endif
 
 SRCS = clapack.c \
        common.c \
