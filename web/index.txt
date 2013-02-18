@@ -47,6 +47,9 @@ file for more information on how to use the package.
 
 \par News
 
+2013-02-18 Version 0.9.7-beta released.
+<a href="downloads/libefp-0.9.7-beta.tar.gz"><i>Download</i></a>.
+
 2012-12-17 Version 0.9.6-beta released.
 <a href="downloads/libefp-0.9.6-beta.tar.gz"><i>Download</i></a>.
 
@@ -76,9 +79,11 @@ git clone git://github.com/libefp/libefp.git
 
  - <a href="http://www.psicode.org/"><i>PSI</i></a> package (development version)
 
- - <a href="http://www.q-chem.com/"><i>Q-Chem</i></a> commercial software
-(old EFP implementation is replaced by an order of magnitude faster
-implementation based on <i>LIBEFP</i>)
+ - <a href="http://www.q-chem.com/"><i>Q-Chem</i></a> commercial software.
+An old EFP implementation in Q-Chem is replaced by an order of magnitude faster
+implementation based on <i>LIBEFP</i>. Interface with various high-level
+techniques such as Coupled Cluster and Equation of Motion Coupled Cluster
+methods is implemented.
 
  - <a href="http://github.com/libefp/libefp/tree/master/efpmd"><i>EFPMD</i></a>
 program (included with <i>LIBEFP</i> distribution)
