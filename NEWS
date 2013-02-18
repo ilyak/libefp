@@ -1,11 +1,5 @@
+0.9.7-beta (2013-02-18)
 0.9.6-beta (2012-12-17)
-
-	* (LIBEFP) Better polarization damping.
-
-	* (EFPMD) New option to initialize velocities in MD.
-
-	* (EFPMD) Fixed a bug with upper case path options.
-
 0.9.5-beta (2012-11-15)
 
-	* First public release.
+For list of changes see git log.
