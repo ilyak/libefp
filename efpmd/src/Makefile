@@ -1,5 +1,6 @@
 PROG = efpmd
 WARNINGS_SET = HIGH
+CLEANFILES += tags
 
 LIBEFP_VERSION != cat ${.CURDIR}/../../VERSION
 

@@ -1,5 +1,6 @@
 PROG = test
 WARNINGS_SET = HIGH
+CLEANFILES += tags
 
 CFLAGS += -std=c99
 CFLAGS += -DABS_TOP_SRCDIR="\"${.CURDIR}/..\""

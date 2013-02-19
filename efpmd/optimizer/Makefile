@@ -2,6 +2,7 @@ LIB = optimizer
 WARNINGS_SET = HIGH
 MK_PROFILE = no
 MK_PICLIB = no
+CLEANFILES += tags
 
 CFLAGS += -std=c99
 
