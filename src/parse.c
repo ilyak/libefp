@@ -735,7 +735,7 @@ parse_screen(struct efp *efp, struct stream *stream)
 	return EFP_RESULT_SUCCESS;
 }
 
-typedef enum efp_result (*parse_fn)(struct efp *efp, struct stream *stream);
+typedef enum efp_result (*parse_fn)(struct efp *, struct stream *);
 
 static parse_fn
 get_parse_fn(struct stream *stream)
