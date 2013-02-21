@@ -14,17 +14,6 @@
 .libs/
 tags
 
-/GNUmakefile
-/GNUmakefile.in
-/aclocal.m4
-/autom4te.cache
-/build-aux
-/config.*
-/configure
-/html
-/libtool
-/stamp-h1
-
 /efpmd/src/efpmd
 /efpmd/tools/rdf/rdf
 /tests/test
