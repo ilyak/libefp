@@ -32,19 +32,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "../../common/compat.h"
-#include "../../common/phys_const.h"
+#include <strings.h>
 
 #include "cfg.h"
+#include "phys.h"
 
 #define NORETURN __attribute__((noreturn))
 #define UNUSED __attribute__((unused))
 
 #define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))
-
-#define streq(a, b) (u_strcasecmp(a, b) == 0)
-#define strneq(a, b, n) (u_strncasecmp(a, b, n) == 0)
 
 void NORETURN die(const char *, ...);
 void NORETURN error(const char *, ...);
@@ -54,6 +50,8 @@ void check_fail(enum efp_result);
 void *xmalloc(size_t);
 void *xcalloc(size_t, size_t);
 void *xrealloc(void *, size_t);
+
+void torque_to_deriv(int, const double *, double *);
 
 void print_geometry(struct efp *);
 void print_energy(struct efp *);

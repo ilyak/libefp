@@ -27,13 +27,14 @@
 #ifndef LIBEFP_TEST_COMMON_H
 #define LIBEFP_TEST_COMMON_H
 
-#include <check.h>
 #include <stdio.h>
 
-#include "../src/efp.h"
-#include "../common/phys_const.h"
+#include <check.h>
+#include <efp.h>
 
 #include "test_list.h"
+
+#define BOHR_RADIUS 0.52917721092
 
 #define UNUSED __attribute__((unused))
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))

@@ -1,11 +1,25 @@
-SUBDIR = common src
+V= 0.9.8-beta
 
-.if !defined(WITHOUT_EFPMD)
-SUBDIR += efpmd
-.endif
+all: efpmd tests
 
-.if !defined(WITHOUT_TESTS)
-SUBDIR += tests
-.endif
+efpmd: libefp
+	cd efpmd/src && $(MAKE)
 
-.include <subdir.mk>
+tests: libefp
+	cd tests && $(MAKE)
+
+libefp:
+	cd src && $(MAKE)
+
+tags clean:
+	cd src && $(MAKE) $@
+	cd efpmd/src && $(MAKE) $@
+	cd tests && $(MAKE) $@
+
+check: tests
+	@./tests/test
+
+dist:
+	git archive --format=tar.gz --prefix=libefp-$V/ -o libefp-$V.tar.gz HEAD
+
+.PHONY: all efpmd tests libefp tags clean check dist

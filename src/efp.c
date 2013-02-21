@@ -25,16 +25,421 @@
  */
 
 #include <stdlib.h>
+#include <strings.h>
 
-#include "efp_private.h"
 #include "elec.h"
+#include "private.h"
 
 enum efp_result efp_read_potential(struct efp *, const char *);
 
-static inline int
+static int
 initialized(struct efp *efp)
 {
 	return efp && efp->magic == EFP_INIT_MAGIC;
+}
+
+static int
+check_rotation_matrix(const mat_t *rotmat)
+{
+	vec_t ax = { rotmat->xx, rotmat->yx, rotmat->zx };
+	vec_t ay = { rotmat->xy, rotmat->yy, rotmat->zy };
+	vec_t az = { rotmat->xz, rotmat->yz, rotmat->zz };
+
+	if (!eq(vec_len(&ax), 1.0) ||
+	    !eq(vec_len(&ay), 1.0) ||
+	    !eq(vec_len(&az), 1.0))
+		return 0;
+
+	if (!eq(vec_dot(&ax, &ay), 0.0))
+		return 0;
+
+	vec_t cross = vec_cross(&ax, &ay);
+
+	if (!eq(cross.x, az.x) ||
+	    !eq(cross.y, az.y) ||
+	    !eq(cross.z, az.z))
+		return 0;
+
+	return 1;
+}
+
+static void
+points_to_matrix(const double *pts, mat_t *rotmat)
+{
+	vec_t p1 = { pts[0], pts[1], pts[2] };
+	vec_t p2 = { pts[3], pts[4], pts[5] };
+	vec_t p3 = { pts[6], pts[7], pts[8] };
+
+	vec_t r12 = vec_sub(&p2, &p1);
+	vec_t r13 = vec_sub(&p3, &p1);
+
+	vec_normalize(&r12);
+	vec_normalize(&r13);
+
+	double dot = vec_dot(&r12, &r13);
+
+	r13.x -= dot * r12.x;
+	r13.y -= dot * r12.y;
+	r13.z -= dot * r12.z;
+
+	vec_t cross = vec_cross(&r12, &r13);
+
+	vec_normalize(&r13);
+	vec_normalize(&cross);
+
+	rotmat->xx = r12.x, rotmat->xy = r13.x, rotmat->xz = cross.x;
+	rotmat->yx = r12.y, rotmat->yy = r13.y, rotmat->yz = cross.y;
+	rotmat->zx = r12.z, rotmat->zy = r13.z, rotmat->zz = cross.z;
+}
+
+static void
+update_fragment(struct frag *frag)
+{
+	/* update atoms */
+	for (int i = 0; i < frag->n_atoms; i++)
+		efp_move_pt(CVEC(frag->x), &frag->rotmat,
+			CVEC(frag->lib->atoms[i].x), VEC(frag->atoms[i].x));
+
+	efp_update_elec(frag);
+	efp_update_pol(frag);
+	efp_update_disp(frag);
+	efp_update_xr(frag);
+}
+
+static enum efp_result
+set_coord_xyzabc(struct efp *efp, const double *coord)
+{
+	for (int i = 0; i < efp->n_frag; i++, coord += 6) {
+		struct frag *frag = efp->frags + i;
+
+		frag->x = coord[0];
+		frag->y = coord[1];
+		frag->z = coord[2];
+
+		euler_to_matrix(coord[3], coord[4], coord[5], &frag->rotmat);
+		update_fragment(frag);
+	}
+
+	return EFP_RESULT_SUCCESS;
+}
+
+static enum efp_result
+set_coord_points(struct efp *efp, const double *coord)
+{
+	for (int i = 0; i < efp->n_frag; i++, coord += 9) {
+		struct frag *frag = efp->frags + i;
+
+		if (frag->n_atoms < 3)
+			return EFP_RESULT_NEED_THREE_ATOMS;
+
+		double ref[9] = {
+			frag->lib->atoms[0].x, frag->lib->atoms[0].y, frag->lib->atoms[0].z,
+			frag->lib->atoms[1].x, frag->lib->atoms[1].y, frag->lib->atoms[1].z,
+			frag->lib->atoms[2].x, frag->lib->atoms[2].y, frag->lib->atoms[2].z
+		};
+
+		vec_t p1;
+		mat_t rot1, rot2;
+
+		points_to_matrix(coord, &rot1);
+		points_to_matrix(ref, &rot2);
+		rot2 = mat_transpose(&rot2);
+		frag->rotmat = mat_mat(&rot1, &rot2);
+		p1 = mat_vec(&frag->rotmat, VEC(frag->lib->atoms[0].x));
+
+		/* center of mass */
+		frag->x = coord[0] - p1.x;
+		frag->y = coord[1] - p1.y;
+		frag->z = coord[2] - p1.z;
+
+		update_fragment(frag);
+	}
+
+	return EFP_RESULT_SUCCESS;
+}
+
+static enum efp_result
+set_coord_rotmat(struct efp *efp, const double *coord)
+{
+	for (int i = 0; i < efp->n_frag; i++, coord += 12) {
+		struct frag *frag = efp->frags + i;
+
+		if (!check_rotation_matrix((const mat_t *)(coord + 3)))
+			return EFP_RESULT_INVALID_ROTATION_MATRIX;
+
+		frag->x = coord[0];
+		frag->y = coord[1];
+		frag->z = coord[2];
+
+		memcpy(&frag->rotmat, coord + 3, sizeof(mat_t));
+		update_fragment(frag);
+	}
+
+	return EFP_RESULT_SUCCESS;
+}
+
+static void
+free_frag(struct frag *frag)
+{
+	if (!frag)
+		return;
+
+	free(frag->atoms);
+	free(frag->multipole_pts);
+	free(frag->polarizable_pts);
+	free(frag->dynamic_polarizable_pts);
+	free(frag->lmo_centroids);
+	free(frag->xr_fock_mat);
+	free(frag->xr_wf);
+	free(frag->screen_params);
+	free(frag->ai_screen_params);
+
+	for (int i = 0; i < 3; i++)
+		free(frag->xr_wf_deriv[i]);
+
+	for (int i = 0; i < frag->n_xr_shells; i++)
+		free(frag->xr_shells[i].coef);
+
+	free(frag->xr_shells);
+	free(frag->overlap_int);
+	free(frag->overlap_int_deriv);
+
+	/* don't do free(frag) here */
+}
+
+static enum efp_result
+copy_frag(struct frag *dest, const struct frag *src)
+{
+	size_t size;
+	memcpy(dest, src, sizeof(struct frag));
+
+	if (src->atoms) {
+		size = src->n_atoms * sizeof(struct efp_atom);
+		dest->atoms = malloc(size);
+		if (!dest->atoms)
+			return EFP_RESULT_NO_MEMORY;
+		memcpy(dest->atoms, src->atoms, size);
+	}
+	if (src->multipole_pts) {
+		size = src->n_multipole_pts * sizeof(struct multipole_pt);
+		dest->multipole_pts = malloc(size);
+		if (!dest->multipole_pts)
+			return EFP_RESULT_NO_MEMORY;
+		memcpy(dest->multipole_pts, src->multipole_pts, size);
+	}
+	if (src->screen_params) {
+		size = src->n_multipole_pts * sizeof(double);
+		dest->screen_params = malloc(size);
+		if (!dest->screen_params)
+			return EFP_RESULT_NO_MEMORY;
+		memcpy(dest->screen_params, src->screen_params, size);
+	}
+	if (src->ai_screen_params) {
+		size = src->n_multipole_pts * sizeof(double);
+		dest->ai_screen_params = malloc(size);
+		if (!dest->ai_screen_params)
+			return EFP_RESULT_NO_MEMORY;
+		memcpy(dest->ai_screen_params, src->ai_screen_params, size);
+	}
+	if (src->polarizable_pts) {
+		size = src->n_polarizable_pts * sizeof(struct polarizable_pt);
+		dest->polarizable_pts = malloc(size);
+		if (!dest->polarizable_pts)
+			return EFP_RESULT_NO_MEMORY;
+		memcpy(dest->polarizable_pts, src->polarizable_pts, size);
+	}
+	if (src->dynamic_polarizable_pts) {
+		size = src->n_dynamic_polarizable_pts *
+				sizeof(struct dynamic_polarizable_pt);
+		dest->dynamic_polarizable_pts = malloc(size);
+		if (!dest->dynamic_polarizable_pts)
+			return EFP_RESULT_NO_MEMORY;
+		memcpy(dest->dynamic_polarizable_pts,
+				src->dynamic_polarizable_pts, size);
+	}
+	if (src->lmo_centroids) {
+		size = src->n_lmo * sizeof(vec_t);
+		dest->lmo_centroids = malloc(size);
+		if (!dest->lmo_centroids)
+			return EFP_RESULT_NO_MEMORY;
+		memcpy(dest->lmo_centroids, src->lmo_centroids, size);
+	}
+	if (src->xr_shells) {
+		size = src->n_xr_shells * sizeof(struct shell);
+		dest->xr_shells = malloc(size);
+		if (!dest->xr_shells)
+			return EFP_RESULT_NO_MEMORY;
+		memcpy(dest->xr_shells, src->xr_shells, size);
+
+		for (int i = 0; i < src->n_xr_shells; i++) {
+			size = (src->xr_shells[i].type == 'L' ? 3 : 2) *
+				src->xr_shells[i].n_funcs * sizeof(double);
+
+			dest->xr_shells[i].coef = malloc(size);
+			if (!dest->xr_shells[i].coef)
+				return EFP_RESULT_NO_MEMORY;
+			memcpy(dest->xr_shells[i].coef,
+					src->xr_shells[i].coef, size);
+		}
+	}
+	if (src->xr_fock_mat) {
+		size = src->n_lmo * (src->n_lmo + 1) / 2 * sizeof(double);
+		dest->xr_fock_mat = malloc(size);
+		if (!dest->xr_fock_mat)
+			return EFP_RESULT_NO_MEMORY;
+		memcpy(dest->xr_fock_mat, src->xr_fock_mat, size);
+	}
+	if (src->xr_wf) {
+		size = src->n_lmo * src->xr_wf_size * sizeof(double);
+		dest->xr_wf = malloc(size);
+		if (!dest->xr_wf)
+			return EFP_RESULT_NO_MEMORY;
+		memcpy(dest->xr_wf, src->xr_wf, size);
+	}
+	return EFP_RESULT_SUCCESS;
+}
+
+static const struct frag *
+find_frag_in_library(struct efp *efp, const char *name)
+{
+	for (int i = 0; i < efp->n_lib; i++)
+		if (strcasecmp(efp->lib[i].name, name) == 0)
+			return efp->lib + i;
+
+	return NULL;
+}
+
+static enum efp_result
+check_opts(const struct efp_opts *opts)
+{
+	unsigned terms = opts->terms;
+
+	if (((terms & EFP_TERM_AI_ELEC) && !(terms & EFP_TERM_ELEC)) ||
+	    ((terms & EFP_TERM_AI_POL) && !(terms & EFP_TERM_POL)) ||
+	    ((terms & EFP_TERM_POL) && !(terms & EFP_TERM_ELEC)) ||
+	    ((terms & EFP_TERM_AI_DISP) && !(terms & EFP_TERM_DISP)) ||
+	    ((terms & EFP_TERM_AI_XR) && !(terms & EFP_TERM_XR)) ||
+	    ((terms & EFP_TERM_AI_CHTR) && !(terms & EFP_TERM_CHTR)))
+		return EFP_RESULT_INCONSISTENT_TERMS;
+
+	if (opts->elec_damp != EFP_ELEC_DAMP_SCREEN &&
+	    opts->elec_damp != EFP_ELEC_DAMP_OVERLAP &&
+	    opts->elec_damp != EFP_ELEC_DAMP_OFF)
+		return EFP_RESULT_INCORRECT_ENUM_VALUE;
+
+	if (opts->disp_damp != EFP_DISP_DAMP_OVERLAP &&
+	    opts->disp_damp != EFP_DISP_DAMP_TT &&
+	    opts->disp_damp != EFP_DISP_DAMP_OFF)
+		return EFP_RESULT_INCORRECT_ENUM_VALUE;
+
+	if (opts->pol_damp != EFP_POL_DAMP_TT &&
+	    opts->pol_damp != EFP_POL_DAMP_OFF)
+		return EFP_RESULT_INCORRECT_ENUM_VALUE;
+
+	if (opts->enable_pbc) {
+		if ((opts->terms & EFP_TERM_AI_ELEC) ||
+		    (opts->terms & EFP_TERM_AI_POL) ||
+		    (opts->terms & EFP_TERM_AI_DISP) ||
+		    (opts->terms & EFP_TERM_AI_XR) ||
+		    (opts->terms & EFP_TERM_AI_CHTR))
+			return EFP_RESULT_PBC_NOT_SUPPORTED;
+
+		if (!opts->enable_cutoff)
+			return EFP_RESULT_PBC_REQUIRES_CUTOFF;
+	}
+
+	if (opts->enable_cutoff) {
+		if (opts->swf_cutoff < 1.0)
+			return EFP_RESULT_SWF_CUTOFF_TOO_SMALL;
+	}
+
+	return EFP_RESULT_SUCCESS;
+}
+
+static enum efp_result
+check_params_frag(const struct efp_opts *opts, const struct frag *frag)
+{
+	if (opts->terms & EFP_TERM_ELEC) {
+		if (!frag->multipole_pts)
+			return EFP_RESULT_PARAMETERS_MISSING;
+
+		if (opts->elec_damp == EFP_ELEC_DAMP_SCREEN && !frag->screen_params)
+			return EFP_RESULT_PARAMETERS_MISSING;
+	}
+	if (opts->terms & EFP_TERM_POL) {
+		if (!frag->polarizable_pts)
+			return EFP_RESULT_PARAMETERS_MISSING;
+	}
+	if (opts->terms & EFP_TERM_DISP) {
+		if (!frag->dynamic_polarizable_pts)
+			return EFP_RESULT_PARAMETERS_MISSING;
+
+		if (opts->disp_damp == EFP_DISP_DAMP_OVERLAP &&
+		    frag->n_lmo != frag->n_dynamic_polarizable_pts)
+			return EFP_RESULT_PARAMETERS_MISSING;
+	}
+	if (opts->terms & EFP_TERM_XR) {
+		if (!frag->xr_shells ||
+		    !frag->xr_fock_mat ||
+		    !frag->xr_wf ||
+		    !frag->lmo_centroids)
+			return EFP_RESULT_PARAMETERS_MISSING;
+	}
+	return EFP_RESULT_SUCCESS;
+}
+
+static enum efp_result
+check_params(struct efp *efp)
+{
+	enum efp_result res;
+
+	for (int i = 0; i < efp->n_frag; i++)
+		if ((res = check_params_frag(&efp->opts, efp->frags + i)))
+			return res;
+
+	return EFP_RESULT_SUCCESS;
+}
+
+static enum efp_result
+setup_disp(struct efp *efp)
+{
+	if ((efp->opts.terms & EFP_TERM_DISP) == 0 ||
+	    (efp->opts.disp_damp != EFP_DISP_DAMP_OVERLAP))
+		return EFP_RESULT_SUCCESS;
+
+	for (int i = 0; i < efp->n_frag; i++) {
+		struct frag *frag = efp->frags + i;
+		size_t size = 0;
+
+		for (int j = i + 1; j < efp->n_frag; j++)
+			size += efp->frags[i].n_lmo * efp->frags[j].n_lmo;
+
+		frag->overlap_int = malloc(size * sizeof(double));
+		if (!frag->overlap_int)
+			return EFP_RESULT_NO_MEMORY;
+
+		frag->overlap_int_deriv = malloc(size * sizeof(six_t));
+		if (!frag->overlap_int_deriv)
+			return EFP_RESULT_NO_MEMORY;
+	}
+
+	return EFP_RESULT_SUCCESS;
+}
+
+static enum efp_result
+setup_xr(struct efp *efp)
+{
+	for (int i = 0; i < efp->n_frag; i++) {
+		struct frag *frag = efp->frags + i;
+
+		for (int a = 0; a < 3; a++) {
+			size_t size = frag->xr_wf_size * frag->n_lmo;
+			frag->xr_wf_deriv[a] = calloc(size, sizeof(double));
+			if (!frag->xr_wf_deriv[a])
+				return EFP_RESULT_NO_MEMORY;
+		}
+	}
+	return EFP_RESULT_SUCCESS;
 }
 
 EFP_EXPORT enum efp_result
@@ -180,94 +585,6 @@ efp_get_point_charge_values(struct efp *efp, double *q)
 
 	for (int i = 0; i < efp->n_ptc; i++)
 		*q++ = efp->point_charges[i].charge;
-
-	return EFP_RESULT_SUCCESS;
-}
-
-static void
-update_fragment(struct frag *frag)
-{
-	/* update atoms */
-	for (int i = 0; i < frag->n_atoms; i++)
-		move_pt(CVEC(frag->x), &frag->rotmat, CVEC(frag->lib->atoms[i].x),
-				VEC(frag->atoms[i].x));
-
-	efp_update_elec(frag);
-	efp_update_pol(frag);
-	efp_update_disp(frag);
-	efp_update_xr(frag);
-}
-
-static enum efp_result
-set_coord_xyzabc(struct efp *efp, const double *coord)
-{
-	for (int i = 0; i < efp->n_frag; i++, coord += 6) {
-		struct frag *frag = efp->frags + i;
-
-		frag->x = coord[0];
-		frag->y = coord[1];
-		frag->z = coord[2];
-
-		euler_to_matrix(coord[3], coord[4], coord[5], &frag->rotmat);
-
-		update_fragment(frag);
-	}
-
-	return EFP_RESULT_SUCCESS;
-}
-
-static enum efp_result
-set_coord_points(struct efp *efp, const double *coord)
-{
-	for (int i = 0; i < efp->n_frag; i++, coord += 9) {
-		struct frag *frag = efp->frags + i;
-
-		if (frag->n_atoms < 3)
-			return EFP_RESULT_NEED_THREE_ATOMS;
-
-		double ref[9] = {
-			frag->lib->atoms[0].x, frag->lib->atoms[0].y, frag->lib->atoms[0].z,
-			frag->lib->atoms[1].x, frag->lib->atoms[1].y, frag->lib->atoms[1].z,
-			frag->lib->atoms[2].x, frag->lib->atoms[2].y, frag->lib->atoms[2].z
-		};
-
-		vec_t p1;
-		mat_t rot1, rot2;
-
-		points_to_matrix(coord, &rot1);
-		points_to_matrix(ref, &rot2);
-		rot2 = mat_transpose(&rot2);
-		frag->rotmat = mat_mat(&rot1, &rot2);
-		p1 = mat_vec(&frag->rotmat, VEC(frag->lib->atoms[0].x));
-
-		/* center of mass */
-		frag->x = coord[0] - p1.x;
-		frag->y = coord[1] - p1.y;
-		frag->z = coord[2] - p1.z;
-
-		update_fragment(frag);
-	}
-
-	return EFP_RESULT_SUCCESS;
-}
-
-static enum efp_result
-set_coord_rotmat(struct efp *efp, const double *coord)
-{
-	for (int i = 0; i < efp->n_frag; i++, coord += 12) {
-		struct frag *frag = efp->frags + i;
-
-		if (!check_rotation_matrix((const mat_t *)(coord + 3)))
-			return EFP_RESULT_INVALID_ROTATION_MATRIX;
-
-		frag->x = coord[0];
-		frag->y = coord[1];
-		frag->z = coord[2];
-
-		memcpy(&frag->rotmat, coord + 3, sizeof(mat_t));
-
-		update_fragment(frag);
-	}
 
 	return EFP_RESULT_SUCCESS;
 }
@@ -579,36 +896,6 @@ efp_get_induced_dipole_conj_values(struct efp *efp, double *dip)
 	return EFP_RESULT_SUCCESS;
 }
 
-static void
-free_frag(struct frag *frag)
-{
-	if (!frag)
-		return;
-
-	free(frag->name);
-	free(frag->atoms);
-	free(frag->multipole_pts);
-	free(frag->polarizable_pts);
-	free(frag->dynamic_polarizable_pts);
-	free(frag->lmo_centroids);
-	free(frag->xr_fock_mat);
-	free(frag->xr_wf);
-	free(frag->screen_params);
-	free(frag->ai_screen_params);
-
-	for (int i = 0; i < 3; i++)
-		free(frag->xr_wf_deriv[i]);
-
-	for (int i = 0; i < frag->n_xr_shells; i++)
-		free(frag->xr_shells[i].coef);
-
-	free(frag->xr_shells);
-	free(frag->overlap_int);
-	free(frag->overlap_int_deriv);
-
-	/* don't do free(frag) here */
-}
-
 EFP_EXPORT void
 efp_shutdown(struct efp *efp)
 {
@@ -627,113 +914,6 @@ efp_shutdown(struct efp *efp)
 	free(efp);
 }
 
-static enum efp_result
-copy_frag(struct frag *dest, const struct frag *src)
-{
-	size_t size;
-	memcpy(dest, src, sizeof(struct frag));
-
-	if (src->name) {
-		dest->name = u_strdup(src->name);
-		if (!dest->name)
-			return EFP_RESULT_NO_MEMORY;
-	}
-	if (src->atoms) {
-		size = src->n_atoms * sizeof(struct efp_atom);
-		dest->atoms = malloc(size);
-		if (!dest->atoms)
-			return EFP_RESULT_NO_MEMORY;
-		memcpy(dest->atoms, src->atoms, size);
-	}
-	if (src->multipole_pts) {
-		size = src->n_multipole_pts * sizeof(struct multipole_pt);
-		dest->multipole_pts = malloc(size);
-		if (!dest->multipole_pts)
-			return EFP_RESULT_NO_MEMORY;
-		memcpy(dest->multipole_pts, src->multipole_pts, size);
-	}
-	if (src->screen_params) {
-		size = src->n_multipole_pts * sizeof(double);
-		dest->screen_params = malloc(size);
-		if (!dest->screen_params)
-			return EFP_RESULT_NO_MEMORY;
-		memcpy(dest->screen_params, src->screen_params, size);
-	}
-	if (src->ai_screen_params) {
-		size = src->n_multipole_pts * sizeof(double);
-		dest->ai_screen_params = malloc(size);
-		if (!dest->ai_screen_params)
-			return EFP_RESULT_NO_MEMORY;
-		memcpy(dest->ai_screen_params, src->ai_screen_params, size);
-	}
-	if (src->polarizable_pts) {
-		size = src->n_polarizable_pts * sizeof(struct polarizable_pt);
-		dest->polarizable_pts = malloc(size);
-		if (!dest->polarizable_pts)
-			return EFP_RESULT_NO_MEMORY;
-		memcpy(dest->polarizable_pts, src->polarizable_pts, size);
-	}
-	if (src->dynamic_polarizable_pts) {
-		size = src->n_dynamic_polarizable_pts *
-				sizeof(struct dynamic_polarizable_pt);
-		dest->dynamic_polarizable_pts = malloc(size);
-		if (!dest->dynamic_polarizable_pts)
-			return EFP_RESULT_NO_MEMORY;
-		memcpy(dest->dynamic_polarizable_pts,
-				src->dynamic_polarizable_pts, size);
-	}
-	if (src->lmo_centroids) {
-		size = src->n_lmo * sizeof(vec_t);
-		dest->lmo_centroids = malloc(size);
-		if (!dest->lmo_centroids)
-			return EFP_RESULT_NO_MEMORY;
-		memcpy(dest->lmo_centroids, src->lmo_centroids, size);
-	}
-	if (src->xr_shells) {
-		size = src->n_xr_shells * sizeof(struct shell);
-		dest->xr_shells = malloc(size);
-		if (!dest->xr_shells)
-			return EFP_RESULT_NO_MEMORY;
-		memcpy(dest->xr_shells, src->xr_shells, size);
-
-		for (int i = 0; i < src->n_xr_shells; i++) {
-			size = (src->xr_shells[i].type == 'L' ? 3 : 2) *
-				src->xr_shells[i].n_funcs * sizeof(double);
-
-			dest->xr_shells[i].coef = malloc(size);
-			if (!dest->xr_shells[i].coef)
-				return EFP_RESULT_NO_MEMORY;
-			memcpy(dest->xr_shells[i].coef,
-					src->xr_shells[i].coef, size);
-		}
-	}
-	if (src->xr_fock_mat) {
-		size = src->n_lmo * (src->n_lmo + 1) / 2 * sizeof(double);
-		dest->xr_fock_mat = malloc(size);
-		if (!dest->xr_fock_mat)
-			return EFP_RESULT_NO_MEMORY;
-		memcpy(dest->xr_fock_mat, src->xr_fock_mat, size);
-	}
-	if (src->xr_wf) {
-		size = src->n_lmo * src->xr_wf_size * sizeof(double);
-		dest->xr_wf = malloc(size);
-		if (!dest->xr_wf)
-			return EFP_RESULT_NO_MEMORY;
-		memcpy(dest->xr_wf, src->xr_wf, size);
-	}
-	return EFP_RESULT_SUCCESS;
-}
-
-static const struct frag *
-find_frag_in_library(struct efp *efp, const char *name)
-{
-	for (int i = 0; i < efp->n_lib; i++)
-		if (!u_strcasecmp(efp->lib[i].name, name))
-			return efp->lib + i;
-
-	return NULL;
-}
-
 EFP_EXPORT void
 efp_opts_default(struct efp_opts *opts)
 {
@@ -744,139 +924,6 @@ efp_opts_default(struct efp_opts *opts)
 
 	opts->terms = EFP_TERM_ELEC | EFP_TERM_POL | EFP_TERM_DISP |
 		EFP_TERM_XR | EFP_TERM_AI_ELEC | EFP_TERM_AI_POL;
-}
-
-static enum efp_result
-check_opts(const struct efp_opts *opts)
-{
-	unsigned terms = opts->terms;
-
-	if (((terms & EFP_TERM_AI_ELEC) && !(terms & EFP_TERM_ELEC)) ||
-	    ((terms & EFP_TERM_AI_POL) && !(terms & EFP_TERM_POL)) ||
-	    ((terms & EFP_TERM_POL) && !(terms & EFP_TERM_ELEC)) ||
-	    ((terms & EFP_TERM_AI_DISP) && !(terms & EFP_TERM_DISP)) ||
-	    ((terms & EFP_TERM_AI_XR) && !(terms & EFP_TERM_XR)) ||
-	    ((terms & EFP_TERM_AI_CHTR) && !(terms & EFP_TERM_CHTR)))
-		return EFP_RESULT_INCONSISTENT_TERMS;
-
-	if (opts->elec_damp != EFP_ELEC_DAMP_SCREEN &&
-	    opts->elec_damp != EFP_ELEC_DAMP_OVERLAP &&
-	    opts->elec_damp != EFP_ELEC_DAMP_OFF)
-		return EFP_RESULT_INCORRECT_ENUM_VALUE;
-
-	if (opts->disp_damp != EFP_DISP_DAMP_OVERLAP &&
-	    opts->disp_damp != EFP_DISP_DAMP_TT &&
-	    opts->disp_damp != EFP_DISP_DAMP_OFF)
-		return EFP_RESULT_INCORRECT_ENUM_VALUE;
-
-	if (opts->pol_damp != EFP_POL_DAMP_TT &&
-	    opts->pol_damp != EFP_POL_DAMP_OFF)
-		return EFP_RESULT_INCORRECT_ENUM_VALUE;
-
-	if (opts->enable_pbc) {
-		if ((opts->terms & EFP_TERM_AI_ELEC) ||
-		    (opts->terms & EFP_TERM_AI_POL) ||
-		    (opts->terms & EFP_TERM_AI_DISP) ||
-		    (opts->terms & EFP_TERM_AI_XR) ||
-		    (opts->terms & EFP_TERM_AI_CHTR))
-			return EFP_RESULT_PBC_NOT_SUPPORTED;
-
-		if (!opts->enable_cutoff)
-			return EFP_RESULT_PBC_REQUIRES_CUTOFF;
-	}
-
-	if (opts->enable_cutoff) {
-		if (opts->swf_cutoff < 1.0)
-			return EFP_RESULT_SWF_CUTOFF_TOO_SMALL;
-	}
-
-	return EFP_RESULT_SUCCESS;
-}
-
-static enum efp_result
-check_params_frag(const struct efp_opts *opts, const struct frag *frag)
-{
-	if (opts->terms & EFP_TERM_ELEC) {
-		if (!frag->multipole_pts)
-			return EFP_RESULT_PARAMETERS_MISSING;
-
-		if (opts->elec_damp == EFP_ELEC_DAMP_SCREEN && !frag->screen_params)
-			return EFP_RESULT_PARAMETERS_MISSING;
-	}
-	if (opts->terms & EFP_TERM_POL) {
-		if (!frag->polarizable_pts)
-			return EFP_RESULT_PARAMETERS_MISSING;
-	}
-	if (opts->terms & EFP_TERM_DISP) {
-		if (!frag->dynamic_polarizable_pts)
-			return EFP_RESULT_PARAMETERS_MISSING;
-
-		if (opts->disp_damp == EFP_DISP_DAMP_OVERLAP &&
-		    frag->n_lmo != frag->n_dynamic_polarizable_pts)
-			return EFP_RESULT_PARAMETERS_MISSING;
-	}
-	if (opts->terms & EFP_TERM_XR) {
-		if (!frag->xr_shells ||
-		    !frag->xr_fock_mat ||
-		    !frag->xr_wf ||
-		    !frag->lmo_centroids)
-			return EFP_RESULT_PARAMETERS_MISSING;
-	}
-	return EFP_RESULT_SUCCESS;
-}
-
-static enum efp_result
-check_params(struct efp *efp)
-{
-	enum efp_result res;
-
-	for (int i = 0; i < efp->n_frag; i++)
-		if ((res = check_params_frag(&efp->opts, efp->frags + i)))
-			return res;
-
-	return EFP_RESULT_SUCCESS;
-}
-
-static enum efp_result
-setup_disp(struct efp *efp)
-{
-	if ((efp->opts.terms & EFP_TERM_DISP) == 0 ||
-	    (efp->opts.disp_damp != EFP_DISP_DAMP_OVERLAP))
-		return EFP_RESULT_SUCCESS;
-
-	for (int i = 0; i < efp->n_frag; i++) {
-		struct frag *frag = efp->frags + i;
-		size_t size = 0;
-
-		for (int j = i + 1; j < efp->n_frag; j++)
-			size += efp->frags[i].n_lmo * efp->frags[j].n_lmo;
-
-		frag->overlap_int = malloc(size * sizeof(double));
-		if (!frag->overlap_int)
-			return EFP_RESULT_NO_MEMORY;
-
-		frag->overlap_int_deriv = malloc(size * sizeof(six_t));
-		if (!frag->overlap_int_deriv)
-			return EFP_RESULT_NO_MEMORY;
-	}
-
-	return EFP_RESULT_SUCCESS;
-}
-
-static enum efp_result
-setup_xr(struct efp *efp)
-{
-	for (int i = 0; i < efp->n_frag; i++) {
-		struct frag *frag = efp->frags + i;
-
-		for (int a = 0; a < 3; a++) {
-			size_t size = frag->xr_wf_size * frag->n_lmo;
-			frag->xr_wf_deriv[a] = calloc(size, sizeof(double));
-			if (!frag->xr_wf_deriv[a])
-				return EFP_RESULT_NO_MEMORY;
-		}
-	}
-	return EFP_RESULT_SUCCESS;
 }
 
 EFP_EXPORT enum efp_result
@@ -1093,7 +1140,7 @@ EFP_EXPORT const char *
 efp_banner(void)
 {
 	static const char banner[] =
-		"LIBEFP ver. " PACKAGE_VERSION "\n"
+		"LIBEFP ver. " LIBEFP_VERSION_STRING "\n"
 		"Copyright (c) 2012 Ilya Kaliman\n"
 		"See LICENSE file for licensing terms\n"
 		"Project web site: http://www.libefp.org/\n";

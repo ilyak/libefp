@@ -26,8 +26,16 @@
 
 #include <assert.h>
 
-#include "efp_private.h"
-#include "disp.h"
+#include "private.h"
+
+static const double weights[] = {
+	0.72086099022968040154E-02, 0.17697067815034886394E-01,
+	0.30660908596251749739E-01, 0.48381293256249884995E-01,
+	0.74878830420650517080E-01, 0.11806515901361630228E+00,
+	0.19535413832209084204E+00, 0.35055692324483221824E+00,
+	0.71577113554429568336E+00, 0.18140975997632396972E+01,
+	0.69792344511487082324E+01, 0.83248093882965845391E+02
+};
 
 static double
 get_damp_tt(double r)
@@ -89,9 +97,9 @@ disp_tt(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 			g * dr.z * swf->swf
 		};
 
-		add_force(fr_i, CVEC(pt_i->x), &force, NULL);
-		sub_force(fr_j, CVEC(pt_j->x), &force, NULL);
-		add_stress(&swf->dr, &force, &efp->stress);
+		efp_add_force(fr_i, CVEC(pt_i->x), &force, NULL);
+		efp_sub_force(fr_j, CVEC(pt_j->x), &force, NULL);
+		efp_add_stress(&swf->dr, &force, &efp->stress);
 	}
 
 	return energy;
@@ -165,7 +173,7 @@ disp_overlap(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 		vec_atomic_sub(&fr_j->force, &force);
 		vec_atomic_sub(&fr_j->torque, &torque_j);
 
-		add_stress(&swf->dr, &force, &efp->stress);
+		efp_add_stress(&swf->dr, &force, &efp->stress);
 	}
 
 	return energy;
@@ -202,9 +210,9 @@ disp_off(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 			g * dr.z * swf->swf
 		};
 
-		add_force(fr_i, CVEC(pt_i->x), &force, NULL);
-		sub_force(fr_j, CVEC(pt_j->x), &force, NULL);
-		add_stress(&swf->dr, &force, &efp->stress);
+		efp_add_force(fr_i, CVEC(pt_i->x), &force, NULL);
+		efp_sub_force(fr_j, CVEC(pt_j->x), &force, NULL);
+		efp_add_stress(&swf->dr, &force, &efp->stress);
 	}
 
 	return energy;
@@ -225,8 +233,8 @@ point_point_disp(struct efp *efp, int fr_i_idx, int fr_j_idx,
 
 	double sum = 0.0;
 
-	for (size_t k = 0; k < ARRAY_SIZE(disp_weights); k++)
-		sum += disp_weights[k] * pt_i->trace[k] * pt_j->trace[k];
+	for (size_t k = 0; k < ARRAY_SIZE(weights); k++)
+		sum += weights[k] * pt_i->trace[k] * pt_j->trace[k];
 
 	switch (efp->opts.disp_damp) {
 		case EFP_DISP_DAMP_TT:
@@ -253,7 +261,7 @@ frag_frag_disp(struct efp *efp, int frag_i, int frag_j, int overlap_idx)
 	int n_disp_i = fr_i->n_dynamic_polarizable_pts;
 	int n_disp_j = fr_j->n_dynamic_polarizable_pts;
 
-	struct swf swf = make_swf(efp, fr_i, fr_j);
+	struct swf swf = efp_make_swf(efp, fr_i, fr_j);
 
 	for (int ii = 0, idx = overlap_idx; ii < n_disp_i; ii++)
 		for (int jj = 0; jj < n_disp_j; jj++, idx++)
@@ -267,7 +275,7 @@ frag_frag_disp(struct efp *efp, int frag_i, int frag_j, int overlap_idx)
 
 	vec_atomic_add(&fr_i->force, &force);
 	vec_atomic_sub(&fr_j->force, &force);
-	add_stress(&swf.dr, &force, &efp->stress);
+	efp_add_stress(&swf.dr, &force, &efp->stress);
 
 	return energy * swf.swf;
 }
@@ -295,7 +303,7 @@ efp_compute_disp(struct efp *efp)
 #endif
 	for (int i = 0; i < efp->n_frag; i++) {
 		for (int j = i + 1, idx = 0; j < efp->n_frag; j++) {
-			if (!skip_frag_pair(efp, i, j))
+			if (!efp_skip_frag_pair(efp, i, j))
 				energy += frag_frag_disp(efp, i, j, idx);
 
 			idx += efp->frags[i].n_lmo * efp->frags[j].n_lmo;
@@ -315,6 +323,6 @@ efp_update_disp(struct frag *frag)
 		struct dynamic_polarizable_pt *pt_out =
 					frag->dynamic_polarizable_pts + i;
 
-		move_pt(CVEC(frag->x), &frag->rotmat, CVEC(pt_in->x), VEC(pt_out->x));
+		efp_move_pt(CVEC(frag->x), &frag->rotmat, CVEC(pt_in->x), VEC(pt_out->x));
 	}
 }

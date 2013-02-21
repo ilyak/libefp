@@ -27,9 +27,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../common/cblas.h"
-
-#include "efp_private.h"
+#include "cblas.h"
+#include "private.h"
 
 #define INTEGRAL_THRESHOLD 1.0e-7
 
@@ -112,7 +111,7 @@ charge_penetration_grad(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 	vec_atomic_sub(&fr_j->force, &force);
 	vec_atomic_sub(&fr_j->torque, &torque_j);
 
-	add_stress(&swf->dr, &force, &efp->stress);
+	efp_add_stress(&swf->dr, &force, &efp->stress);
 }
 
 static void
@@ -438,7 +437,7 @@ lmo_lmo_xr_grad(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 	vec_atomic_sub(&fr_j->force, &force);
 	vec_atomic_sub(&fr_j->torque, &torque_j);
 
-	add_stress(&swf->dr, &force, &efp->stress);
+	efp_add_stress(&swf->dr, &force, &efp->stress);
 }
 
 static double
@@ -546,7 +545,7 @@ frag_frag_xr(struct efp *efp, int frag_i, int frag_j, int overlap_idx,
 	double lmo_s[fr_i->n_lmo * fr_j->n_lmo];
 	double lmo_t[fr_i->n_lmo * fr_j->n_lmo];
 
-	struct swf swf = make_swf(efp, fr_i, fr_j);
+	struct swf swf = efp_make_swf(efp, fr_i, fr_j);
 	struct shell shells_j[fr_j->n_xr_shells];
 
 	for (int j = 0; j < fr_j->n_xr_shells; j++) {
@@ -676,7 +675,7 @@ frag_frag_xr(struct efp *efp, int frag_i, int frag_j, int overlap_idx,
 
 	vec_atomic_add(&fr_i->force, &force);
 	vec_atomic_sub(&fr_j->force, &force);
-	add_stress(&swf.dr, &force, &efp->stress);
+	efp_add_stress(&swf.dr, &force, &efp->stress);
 
 	free(s), free(ds), free(lmo_ds);
 	free(t), free(dt), free(lmo_dt);
@@ -704,7 +703,7 @@ efp_compute_xr(struct efp *efp)
 		for (int j = i + 1, idx = 0; j < efp->n_frag; j++) {
 			int n_lmo_ij = efp->frags[i].n_lmo * efp->frags[j].n_lmo;
 
-			if (!skip_frag_pair(efp, i, j)) {
+			if (!efp_skip_frag_pair(efp, i, j)) {
 				double exr_out, ecp_out;
 
 				frag_frag_xr(efp, i, j, idx, &exr_out, &ecp_out);
@@ -776,7 +775,7 @@ rotate_func_d(const mat_t *rotmat, const double *in, double *out)
 		}
 	}
 
-	rotate_t2(rotmat, full_in, full_out);
+	efp_rotate_t2(rotmat, full_in, full_out);
 
 	for (int a = 0; a < 3; a++) {
 		for (int b = 0; b < 3; b++) {
@@ -810,7 +809,7 @@ rotate_func_f(const mat_t *rotmat, const double *in, double *out)
 					full_in[full_idx] *= norm2;
 			}
 
-	rotate_t3(rotmat, full_in, full_out);
+	efp_rotate_t3(rotmat, full_in, full_out);
 
 	for (int a = 0; a < 3; a++)
 		for (int b = 0; b < 3; b++)
@@ -936,12 +935,12 @@ efp_update_xr(struct frag *frag)
 
 	/* update LMO centroids */
 	for (int i = 0; i < frag->n_lmo; i++)
-		move_pt(CVEC(frag->x), rotmat, frag->lib->lmo_centroids + i,
+		efp_move_pt(CVEC(frag->x), rotmat, frag->lib->lmo_centroids + i,
 				frag->lmo_centroids + i);
 
 	/* update shells */
 	for (int i = 0; i < frag->n_xr_shells; i++)
-		move_pt(CVEC(frag->x), rotmat, CVEC(frag->lib->xr_shells[i].x),
+		efp_move_pt(CVEC(frag->x), rotmat, CVEC(frag->lib->xr_shells[i].x),
 				VEC(frag->xr_shells[i].x));
 
 	/* rotate wavefunction */

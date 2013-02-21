@@ -24,8 +24,8 @@
  * SUCH DAMAGE.
  */
 
-#include "efp_private.h"
 #include "elec.h"
+#include "private.h"
 
 #define POL_SCF_TOL 1.0e-10
 #define POL_SCF_MAX_ITER 80
@@ -117,11 +117,11 @@ compute_elec_field_pt(struct efp *efp, int frag_idx, int pt_idx)
 	pt->elec_field_wf = vec_zero;
 
 	for (int i = 0; i < efp->n_frag; i++) {
-		if (i == frag_idx || skip_frag_pair(efp, i, frag_idx))
+		if (i == frag_idx || efp_skip_frag_pair(efp, i, frag_idx))
 			continue;
 
 		struct frag *fr_i = efp->frags + i;
-		struct swf swf = make_swf(efp, fr_i, frag);
+		struct swf swf = efp_make_swf(efp, fr_i, frag);
 
 		/* field due to nuclei */
 		for (int j = 0; j < fr_i->n_atoms; j++) {
@@ -245,11 +245,11 @@ get_induced_dipole_field(struct efp *efp, int frag_idx,
 	*field_conj = vec_zero;
 
 	for (int j = 0; j < efp->n_frag; j++) {
-		if (j == frag_idx || skip_frag_pair(efp, frag_idx, j))
+		if (j == frag_idx || efp_skip_frag_pair(efp, frag_idx, j))
 			continue;
 
 		struct frag *fr_j = efp->frags + j;
-		struct swf swf = make_swf(efp, fr_i, fr_j);
+		struct swf swf = efp_make_swf(efp, fr_i, fr_j);
 
 		for (int jj = 0; jj < fr_j->n_polarizable_pts; jj++) {
 			struct polarizable_pt *pt_j =
@@ -414,11 +414,11 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 	};
 
 	for (int j = 0; j < efp->n_frag; j++) {
-		if (j == frag_idx || skip_frag_pair(efp, frag_idx, j))
+		if (j == frag_idx || efp_skip_frag_pair(efp, frag_idx, j))
 			continue;
 
 		struct frag *fr_j = efp->frags + j;
-		struct swf swf = make_swf(efp, fr_i, fr_j);
+		struct swf swf = efp_make_swf(efp, fr_i, fr_j);
 
 		/* energy without switching applied */
 		double energy = 0.0;
@@ -444,7 +444,7 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 
 			vec_t force, add_i, add_j;
 
-			double e = -charge_dipole_energy(at_j->znuc, &dipole_i, &dr);
+			double e = -efp_charge_dipole_energy(at_j->znuc, &dipole_i, &dr);
 
 			efp_charge_dipole_grad(at_j->znuc, &dipole_i, &dr,
 					       &force, &add_j, &add_i);
@@ -462,9 +462,9 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 			vec_scale(&add_i, swf.swf);
 			vec_scale(&add_j, swf.swf);
 
-			add_force(fr_i, CVEC(pt_i->x), &force, &add_i);
-			sub_force(fr_j, CVEC(at_j->x), &force, &add_j);
-			add_stress(&swf.dr, &force, &efp->stress);
+			efp_add_force(fr_i, CVEC(pt_i->x), &force, &add_i);
+			efp_sub_force(fr_j, CVEC(at_j->x), &force, &add_j);
+			efp_add_stress(&swf.dr, &force, &efp->stress);
 
 			energy += p1 * e;
 		}
@@ -494,7 +494,7 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 			vec_t force = vec_zero, add_i = vec_zero, add_j = vec_zero;
 
 			/* induced dipole - charge */
-			e -= charge_dipole_energy(pt_j->monopole, &dipole_i, &dr);
+			e -= efp_charge_dipole_energy(pt_j->monopole, &dipole_i, &dr);
 
 			efp_charge_dipole_grad(pt_j->monopole, &dipole_i, &dr,
 					       &force_, &add_j_, &add_i_);
@@ -502,7 +502,7 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 			add_3(&force, &force_, &add_i, &add_i_, &add_j, &add_j_);
 
 			/* induced dipole - dipole */
-			e += dipole_dipole_energy(&dipole_i, &pt_j->dipole, &dr);
+			e += efp_dipole_dipole_energy(&dipole_i, &pt_j->dipole, &dr);
 
 			efp_dipole_dipole_grad(&dipole_i, &pt_j->dipole, &dr,
 					       &force_, &add_i_, &add_j_);
@@ -510,7 +510,7 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 			add_3(&force, &force_, &add_i, &add_i_, &add_j, &add_j_);
 
 			/* induced dipole - quadrupole */
-			e += dipole_quadrupole_energy(&dipole_i, pt_j->quadrupole, &dr);
+			e += efp_dipole_quadrupole_energy(&dipole_i, pt_j->quadrupole, &dr);
 
 			efp_dipole_quadrupole_grad(&dipole_i, pt_j->quadrupole, &dr,
 						   &force_, &add_i_, &add_j_);
@@ -530,9 +530,9 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 			vec_scale(&add_i, swf.swf);
 			vec_scale(&add_j, swf.swf);
 
-			add_force(fr_i, CVEC(pt_i->x), &force, &add_i);
-			sub_force(fr_j, CVEC(pt_j->x), &force, &add_j);
-			add_stress(&swf.dr, &force, &efp->stress);
+			efp_add_force(fr_i, CVEC(pt_i->x), &force, &add_i);
+			efp_sub_force(fr_j, CVEC(pt_j->x), &force, &add_j);
+			efp_add_stress(&swf.dr, &force, &efp->stress);
 
 			energy += p1 * e;
 		}
@@ -564,7 +564,7 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 
 			vec_t force, add_i, add_j;
 
-			double e = dipole_dipole_energy(&half_dipole_i,
+			double e = efp_dipole_dipole_energy(&half_dipole_i,
 						&pt_j->induced_dipole_conj, &dr);
 
 			efp_dipole_dipole_grad(&half_dipole_i, &pt_j->induced_dipole_conj,
@@ -583,9 +583,9 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 			vec_scale(&add_i, swf.swf);
 			vec_scale(&add_j, swf.swf);
 
-			add_force(fr_i, CVEC(pt_i->x), &force, &add_i);
-			sub_force(fr_j, CVEC(pt_j->x), &force, &add_j);
-			add_stress(&swf.dr, &force, &efp->stress);
+			efp_add_force(fr_i, CVEC(pt_i->x), &force, &add_i);
+			efp_sub_force(fr_j, CVEC(pt_j->x), &force, &add_j);
+			efp_add_stress(&swf.dr, &force, &efp->stress);
 
 			energy += p1 * e;
 		}
@@ -598,7 +598,7 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 
 		vec_atomic_add(&fr_i->force, &force);
 		vec_atomic_sub(&fr_j->force, &force);
-		add_stress(&swf.dr, &force, &efp->stress);
+		efp_add_stress(&swf.dr, &force, &efp->stress);
 	}
 
 	/* induced dipole - ab initio nuclei */
@@ -614,7 +614,7 @@ compute_grad_point(struct efp *efp, int frag_idx, int pt_idx)
 			vec_negate(&add_i);
 
 			vec_atomic_add(&at_j->grad, &force);
-			sub_force(fr_i, CVEC(pt_i->x), &force, &add_i);
+			efp_sub_force(fr_i, CVEC(pt_i->x), &force, &add_i);
 		}
 	}
 }
@@ -651,13 +651,13 @@ void
 efp_update_pol(struct frag *frag)
 {
 	for (int i = 0; i < frag->n_polarizable_pts; i++) {
-		move_pt(CVEC(frag->x), &frag->rotmat,
+		efp_move_pt(CVEC(frag->x), &frag->rotmat,
 			CVEC(frag->lib->polarizable_pts[i].x),
 			VEC(frag->polarizable_pts[i].x));
 
 		const mat_t *in = &frag->lib->polarizable_pts[i].tensor;
 		mat_t *out = &frag->polarizable_pts[i].tensor;
 
-		rotate_t2(&frag->rotmat, (const double *)in, (double *)out);
+		efp_rotate_t2(&frag->rotmat, (const double *)in, (double *)out);
 	}
 }

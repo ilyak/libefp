@@ -266,4 +266,42 @@ mat_inv(const mat_t *mat)
 	return out;
 }
 
+static inline void
+euler_to_matrix(double a, double b, double c, mat_t *out)
+{
+	double sina = sin(a), cosa = cos(a);
+	double sinb = sin(b), cosb = cos(b);
+	double sinc = sin(c), cosc = cos(c);
+
+	out->xx =  cosa * cosc - sina * cosb * sinc;
+	out->xy = -cosa * sinc - sina * cosb * cosc;
+	out->xz =  sinb * sina;
+	out->yx =  sina * cosc + cosa * cosb * sinc;
+	out->yy = -sina * sinc + cosa * cosb * cosc;
+	out->yz = -sinb * cosa;
+	out->zx =  sinb * sinc;
+	out->zy =  sinb * cosc;
+	out->zz =  cosb;
+}
+
+static inline void
+matrix_to_euler(const mat_t *rotmat, double *ea, double *eb, double *ec)
+{
+	double a, b, c, sinb;
+
+	b = acos(rotmat->zz);
+	sinb = sqrt(1.0 - rotmat->zz * rotmat->zz);
+
+	if (fabs(sinb) < 1.0e-7) {
+		a = atan2(-rotmat->xy, rotmat->xx);
+		c = 0.0;
+	}
+	else {
+		a = atan2(rotmat->xz, -rotmat->yz);
+		c = atan2(rotmat->zx, rotmat->zy);
+	}
+
+	*ea = a, *eb = b, *ec = c;
+}
+
 #endif /* LIBEFP_MATH_UTIL_H */

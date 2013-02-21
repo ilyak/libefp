@@ -27,6 +27,28 @@
 #include "elec.h"
 
 static double
+octupole_sum(const double *oct, const vec_t *dr)
+{
+	/* order in which octupoles are stored */
+	enum { xxx = 0, yyy, zzz, xxy, xxz, xyy, yyz, xzz, yzz, xyz };
+
+	double sum = 0.0;
+
+	sum += oct[xxx] * dr->x * dr->x * dr->x;
+	sum += oct[yyy] * dr->y * dr->y * dr->y;
+	sum += oct[zzz] * dr->z * dr->z * dr->z;
+	sum += oct[xxy] * dr->x * dr->x * dr->y * 3.0;
+	sum += oct[xxz] * dr->x * dr->x * dr->z * 3.0;
+	sum += oct[xyy] * dr->x * dr->y * dr->y * 3.0;
+	sum += oct[yyz] * dr->y * dr->y * dr->z * 3.0;
+	sum += oct[xzz] * dr->x * dr->z * dr->z * 3.0;
+	sum += oct[yzz] * dr->y * dr->z * dr->z * 3.0;
+	sum += oct[xyz] * dr->x * dr->y * dr->z * 6.0;
+
+	return sum;
+}
+
+static double
 octupole_sum_xyz(const double *oct, const vec_t *dr, int axis)
 {
 	const double *pdr = (const double *)dr;
@@ -45,7 +67,7 @@ octupole_sum_xyz(const double *oct, const vec_t *dr, int axis)
 }
 
 double
-charge_charge_energy(double q1, double q2, const vec_t *dr)
+efp_charge_charge_energy(double q1, double q2, const vec_t *dr)
 {
 	double r = vec_len(dr);
 
@@ -53,7 +75,7 @@ charge_charge_energy(double q1, double q2, const vec_t *dr)
 }
 
 double
-charge_dipole_energy(double q1, const vec_t *d2, const vec_t *dr)
+efp_charge_dipole_energy(double q1, const vec_t *d2, const vec_t *dr)
 {
 	double r = vec_len(dr);
 	double r3 = r * r * r;
@@ -62,7 +84,7 @@ charge_dipole_energy(double q1, const vec_t *d2, const vec_t *dr)
 }
 
 double
-charge_quadrupole_energy(double q1, const double *quad2, const vec_t *dr)
+efp_charge_quadrupole_energy(double q1, const double *quad2, const vec_t *dr)
 {
 	double r = vec_len(dr);
 	double r2 = r * r;
@@ -72,7 +94,7 @@ charge_quadrupole_energy(double q1, const double *quad2, const vec_t *dr)
 }
 
 double
-charge_octupole_energy(double q1, const double *oct2, const vec_t *dr)
+efp_charge_octupole_energy(double q1, const double *oct2, const vec_t *dr)
 {
 	double r = vec_len(dr);
 	double r2 = r * r;
@@ -82,7 +104,7 @@ charge_octupole_energy(double q1, const double *oct2, const vec_t *dr)
 }
 
 double
-dipole_dipole_energy(const vec_t *d1, const vec_t *d2, const vec_t *dr)
+efp_dipole_dipole_energy(const vec_t *d1, const vec_t *d2, const vec_t *dr)
 {
 	double r = vec_len(dr);
 	double r2 = r * r;
@@ -96,7 +118,7 @@ dipole_dipole_energy(const vec_t *d1, const vec_t *d2, const vec_t *dr)
 }
 
 double
-dipole_quadrupole_energy(const vec_t *d1, const double *quad2, const vec_t *dr)
+efp_dipole_quadrupole_energy(const vec_t *d1, const double *quad2, const vec_t *dr)
 {
 	double r = vec_len(dr);
 	double r2 = r * r;
@@ -117,7 +139,7 @@ dipole_quadrupole_energy(const vec_t *d1, const double *quad2, const vec_t *dr)
 }
 
 double
-quadrupole_quadrupole_energy(const double *quad1, const double *quad2, const vec_t *dr)
+efp_quadrupole_quadrupole_energy(const double *quad1, const double *quad2, const vec_t *dr)
 {
 	double r = vec_len(dr);
 	double r2 = r * r;

@@ -35,6 +35,9 @@
 extern "C" {
 #endif
 
+/** Version string. */
+#define LIBEFP_VERSION_STRING "0.9.8-beta"
+
 /** Result of an operation. */
 enum efp_result {
 	/** Operation was successful. */

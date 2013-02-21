@@ -24,7 +24,7 @@
  * SUCH DAMAGE.
  */
 
-#include "../../common/util.h"
+#include <math_util.h>
 
 #include "clapack.h"
 #include "common.h"

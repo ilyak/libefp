@@ -1,5 +1,5 @@
-#ifndef LIBEFP_PHYS_CONST_H
-#define LIBEFP_PHYS_CONST_H
+#ifndef EFPMD_PHYS_H
+#define EFPMD_PHYS_H
 
 /* Bohr radius in angstroms */
 #define BOHR_RADIUS 0.52917721092
@@ -22,4 +22,4 @@
 /* Fine structure constant */
 #define FINE_CONST 7.297352569824e-3
 
-#endif /* LIBEFP_PHYS_CONST_H */
+#endif /* EFPMD_PHYS_H */

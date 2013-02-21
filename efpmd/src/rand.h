@@ -24,12 +24,12 @@
  * SUCH DAMAGE.
  */
 
-#ifndef LIBEFP_RAND_H
-#define LIBEFP_RAND_H
+#ifndef EFPMD_RAND_H
+#define EFPMD_RAND_H
 
 void rand_init(void);
 double rand_uniform_1(void);
 double rand_uniform_2(void);
 double rand_normal(void);
 
-#endif /* LIBEFP_RAND_H */
+#endif /* EFPMD_RAND_H */

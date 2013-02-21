@@ -24,12 +24,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef LIBEFP_EFP_PRIVATE_H
-#define LIBEFP_EFP_PRIVATE_H
-
-#include "../common/compat.h"
-#include "../common/math_util.h"
-#include "../common/util.h"
+#ifndef LIBEFP_PRIVATE_H
+#define LIBEFP_PRIVATE_H
 
 #include "efp.h"
 #include "int.h"
@@ -44,7 +40,7 @@
 
 struct frag {
 	/* fragment name */
-	char *name;
+	char name[32];
 
 	/* fragment center of mass */
 	double x, y, z;
@@ -190,10 +186,13 @@ struct efp {
 	unsigned magic;
 };
 
-int skip_frag_pair(struct efp *, int, int);
-struct swf make_swf(struct efp *, const struct frag *, const struct frag *);
-void add_stress(const vec_t *, const vec_t *, mat_t *);
-void add_force(struct frag *, const vec_t *, const vec_t *, const vec_t *);
-void sub_force(struct frag *, const vec_t *, const vec_t *, const vec_t *);
+int efp_skip_frag_pair(struct efp *, int, int);
+struct swf efp_make_swf(struct efp *, const struct frag *, const struct frag *);
+void efp_add_stress(const vec_t *, const vec_t *, mat_t *);
+void efp_add_force(struct frag *, const vec_t *, const vec_t *, const vec_t *);
+void efp_sub_force(struct frag *, const vec_t *, const vec_t *, const vec_t *);
+void efp_move_pt(const vec_t *, const mat_t *, const vec_t *, vec_t *);
+void efp_rotate_t2(const mat_t *, const double *, double *);
+void efp_rotate_t3(const mat_t *, const double *, double *);
 
-#endif /* LIBEFP_EFP_PRIVATE_H */
+#endif /* LIBEFP_PRIVATE_H */

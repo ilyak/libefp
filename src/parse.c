@@ -28,10 +28,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
-#include "efp_private.h"
-
-#define streq(a, b) (strcmp((a), (b)) == 0)
+#include "private.h"
 
 struct stream {
 	char *buffer;
@@ -146,19 +145,32 @@ tok_end(struct stream *stream)
 }
 
 static int
-tok_label(struct stream *stream, char **val)
+skip_label(struct stream *stream)
 {
 	skip_space(stream);
-	size_t len = 0;
 
-	while (stream->ptr[len] && !isspace(stream->ptr[len]))
-		len++;
+	if (!*stream->ptr)
+		return 0;
 
-	if (val)
-		*val = u_strndup(stream->ptr, len);
+	while (*stream->ptr && !isspace(*stream->ptr))
+		stream->ptr++;
 
-	stream->ptr += len;
 	return 1;
+}
+
+static int
+tok_label(struct stream *stream, size_t size, char *val)
+{
+	skip_space(stream);
+
+	if (!*stream->ptr)
+		return 0;
+
+	while (*stream->ptr && !isspace(*stream->ptr) && --size)
+		*val++ = *stream->ptr++;
+
+	*val = '\0';
+	return size > 0;
 }
 
 static int
@@ -212,24 +224,15 @@ parse_coordinates(struct efp *efp, struct stream *stream)
 			return EFP_RESULT_SUCCESS;
 		}
 
-		char *label;
 		struct efp_atom atom;
 
-		if (!tok_label(stream, &label) ||
+		if (!tok_label(stream, sizeof(atom.label), atom.label) ||
 		    !tok_double(stream, &atom.x) ||
 		    !tok_double(stream, &atom.y) ||
 		    !tok_double(stream, &atom.z) ||
 		    !tok_double(stream, &atom.mass) ||
 		    !tok_double(stream, &atom.znuc))
 			return EFP_RESULT_SYNTAX_ERROR;
-
-		if (strlen(label) >= ARRAY_SIZE(atom.label)) {
-			free(label);
-			return EFP_RESULT_SYNTAX_ERROR;
-		}
-
-		strcpy(atom.label, label);
-		free(label);
 
 		if (!eq(atom.mass, 0.0)) {
 			frag->n_atoms++;
@@ -269,7 +272,7 @@ parse_monopoles(struct efp *efp, struct stream *stream)
 	next_line(stream);
 
 	for (int i = 0; i < frag->n_multipole_pts; i++) {
-		if (!tok_label(stream, NULL) ||
+		if (!skip_label(stream) ||
 		    !tok_double(stream, &frag->multipole_pts[i].monopole) ||
 		    !tok_double(stream, NULL))
 			return EFP_RESULT_SYNTAX_ERROR;
@@ -293,7 +296,7 @@ parse_dipoles(struct efp *efp, struct stream *stream)
 	next_line(stream);
 
 	for (int i = 0; i < frag->n_multipole_pts; i++) {
-		if (!tok_label(stream, NULL) ||
+		if (!skip_label(stream) ||
 		    !tok_double(stream, &frag->multipole_pts[i].dipole.x) ||
 		    !tok_double(stream, &frag->multipole_pts[i].dipole.y) ||
 		    !tok_double(stream, &frag->multipole_pts[i].dipole.z))
@@ -318,7 +321,7 @@ parse_quadrupoles(struct efp *efp, struct stream *stream)
 	next_line(stream);
 
 	for (int i = 0; i < frag->n_multipole_pts; i++) {
-		if (!tok_label(stream, NULL))
+		if (!skip_label(stream))
 			return EFP_RESULT_SYNTAX_ERROR;
 
 		double *q = frag->multipole_pts[i].quadrupole;
@@ -347,7 +350,7 @@ parse_octupoles(struct efp *efp, struct stream *stream)
 	next_line(stream);
 
 	for (int i = 0; i < frag->n_multipole_pts; i++) {
-		if (!tok_label(stream, NULL))
+		if (!skip_label(stream))
 			return EFP_RESULT_SYNTAX_ERROR;
 
 		double *o = frag->multipole_pts[i].octupole;
@@ -646,7 +649,7 @@ parse_lmo_centroids(struct efp *efp, struct stream *stream)
 	for (int i = 0; i < frag->n_lmo; i++) {
 		vec_t *ct = frag->lmo_centroids + i;
 
-		if (!tok_label(stream, NULL) ||
+		if (!skip_label(stream) ||
 		    !tok_double(stream, &ct->x) ||
 		    !tok_double(stream, &ct->y) ||
 		    !tok_double(stream, &ct->z))
@@ -721,7 +724,7 @@ parse_screen(struct efp *efp, struct stream *stream)
 	next_line(stream);
 
 	for (int i = 0; i < frag->n_multipole_pts; i++) {
-		if (!tok_label(stream, NULL) ||
+		if (!skip_label(stream) ||
 		    !tok_double(stream, NULL) ||
 		    !tok_double(stream, scr + i))
 			return EFP_RESULT_SYNTAX_ERROR;
@@ -810,7 +813,9 @@ parse_file(struct efp *efp, struct stream *stream)
 		struct frag *frag = get_last_frag(efp);
 		memset(frag, 0, sizeof(struct frag));
 
-		tok_label(stream, &frag->name);
+		if (!tok_label(stream, sizeof(frag->name), frag->name))
+			return EFP_RESULT_SYNTAX_ERROR;
+
 		next_line(stream);
 		next_line(stream);
 
@@ -863,7 +868,7 @@ efp_read_potential(struct efp *efp, const char *files)
 	/* check for duplicate fragments */
 	for (int i = 0; i < efp->n_lib; i++)
 		for (int j = i + 1; j < efp->n_lib; j++)
-			if (streq(efp->lib[i].name, efp->lib[j].name))
+			if (strcasecmp(efp->lib[i].name, efp->lib[j].name) == 0)
 				return EFP_RESULT_DUPLICATE_PARAMETERS;
 
 	/* because of realloc we can't do this earlier */

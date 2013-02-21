@@ -87,7 +87,7 @@ static void skip_space(struct stream *stream)
 static bool parse_string(char **str, void *out)
 {
 	size_t len = 0;
-	char *ptr = *str, *start;
+	char *ptr = *str, *start, *outstr;
 
 	if (!ptr)
 		return false;
@@ -95,7 +95,7 @@ static bool parse_string(char **str, void *out)
 	while (*ptr && isspace(*ptr))
 		ptr++;
 
-	if (*ptr == '\0')
+	if (!*ptr)
 		return false;
 
 	if (*ptr == '"') {
@@ -116,11 +116,17 @@ static bool parse_string(char **str, void *out)
 			ptr++, len++;
 	}
 
-	if (*(char **)out)
-		free(*(char **)out);
+	outstr = *(char **)out;
 
-	*(char **)out = u_strndup(start, len);
+	if (outstr)
+		free(outstr);
+
+	outstr = xmalloc(len + 1);
+	memcpy(outstr, start, len);
+	outstr[len] = '\0';
+
 	*str = ptr;
+	*(char **)out = outstr;
 
 	return true;
 }
@@ -180,7 +186,7 @@ static bool parse_enum(char **str, void *out, const char *names, const void *val
 		while (ptr[len] && ptr[len] != '\n')
 			len++;
 
-		if (strneq(*str, ptr, len)) {
+		if (strncasecmp(*str, ptr, len) == 0) {
 			memcpy(out, values_ptr, data_size);
 			*str += len;
 			return true;
@@ -321,7 +327,7 @@ static bool parse_terms(char **str, void *out)
 
 	while (*ptr) {
 		for (size_t i = 0; i < ARRAY_SIZE(list); i++) {
-			if (strneq(list[i].name, ptr, strlen(list[i].name))) {
+			if (strncasecmp(list[i].name, ptr, strlen(list[i].name)) == 0) {
 				ptr += strlen(list[i].name);
 				terms |= list[i].value;
 				goto next;
@@ -389,7 +395,7 @@ static void parse_field(struct stream *stream, struct config *config)
 		const char *name = config_list[i].name;
 		size_t offset = config_list[i].member_offset;
 
-		if (strneq(name, stream->ptr, strlen(name))) {
+		if (strncasecmp(name, stream->ptr, strlen(name)) == 0) {
 			if (!isspace(stream->ptr[strlen(name)]))
 				continue;
 
@@ -450,7 +456,7 @@ static void parse_frag(struct stream *stream, enum efp_coord_type coord_type,
 
 	skip_space(stream);
 
-	if (strneq(stream->ptr, "velocity", strlen("velocity"))) {
+	if (strncasecmp(stream->ptr, "velocity", strlen("velocity")) == 0) {
 		next_line(stream);
 
 		for (int i = 0; i < 6; i++)
@@ -501,7 +507,7 @@ struct config *parse_config(const char *path)
 		if (!*stream.ptr)
 			goto next;
 
-		if (strneq(stream.ptr, "fragment", strlen("fragment"))) {
+		if (strncasecmp(stream.ptr, "fragment", strlen("fragment")) == 0) {
 			stream.ptr += strlen("fragment");
 
 			config->n_frags++;
