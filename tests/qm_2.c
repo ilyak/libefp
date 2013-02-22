@@ -27,10 +27,10 @@
 #include "test_common.h"
 
 static const char files[] =
-	ABS_TOP_SRCDIR "/fraglib/ch3oh.efp\n"
-	ABS_TOP_SRCDIR "/fraglib/dmso.efp\n"
-	ABS_TOP_SRCDIR "/fraglib/dcm.efp\n"
-	ABS_TOP_SRCDIR "/fraglib/acetone.efp";
+	"./fraglib/ch3oh.efp\n"
+	"./fraglib/dmso.efp\n"
+	"./fraglib/dcm.efp\n"
+	"./fraglib/acetone.efp";
 
 static const char names[] =
 	"CH3OH_L\n"

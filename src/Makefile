@@ -1,15 +1,8 @@
-MYCFLAGS= -Wall -Wextra -Werror
+TOP= ..
 
-CC= gcc
-CFLAGS= -std=c99 -g $(MYCFLAGS)
-LDFLAGS=
-LIBS=
+include $(TOP)/config.inc
 
-AR= ar rcu
-RANLIB= ranlib
-RM= rm -f
-CTAGS= ctags
-TAGS= tags
+CFLAGS= $(MYCFLAGS)
 
 LIBEFP_A= libefp.a
 ALL_C= disp.c efp.c elec.c elec_terms.c int.c parse.c pol.c swf.c util.c xr.c
@@ -31,14 +24,3 @@ depend:
 	@$(CC) $(CFLAGS) -MM $(ALL_C)
 
 .PHONY: all clean depend
-
-disp.o: disp.c private.h efp.h int.h math_util.h swf.h terms.h
-efp.o: efp.c elec.h math_util.h private.h efp.h int.h swf.h terms.h
-elec.o: elec.c elec.h math_util.h private.h efp.h int.h swf.h terms.h
-elec_terms.o: elec_terms.c elec.h math_util.h
-int.o: int.c int.h math_util.h int_shift.h
-parse.o: parse.c private.h efp.h int.h math_util.h swf.h terms.h
-pol.o: pol.c elec.h math_util.h private.h efp.h int.h swf.h terms.h
-swf.o: swf.c swf.h math_util.h
-util.o: util.c private.h efp.h int.h math_util.h swf.h terms.h
-xr.o: xr.c cblas.h private.h efp.h int.h math_util.h swf.h terms.h

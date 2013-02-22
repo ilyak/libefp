@@ -25,9 +25,9 @@
  */
 
 static const char files[] =
-	ABS_TOP_SRCDIR "/fraglib/h2o.efp\n"
-	ABS_TOP_SRCDIR "/fraglib/nh3.efp\n"
-	ABS_TOP_SRCDIR "/fraglib/ch3oh.efp";
+	"./fraglib/h2o.efp\n"
+	"./fraglib/nh3.efp\n"
+	"./fraglib/ch3oh.efp";
 
 static const char names[] =
 	"H2O_L\n"

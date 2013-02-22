@@ -1,7 +1,7 @@
 static const char files[] =
-	ABS_TOP_SRCDIR "/fraglib/ch3oh.efp\n"
-	ABS_TOP_SRCDIR "/fraglib/h2o.efp\n"
-	ABS_TOP_SRCDIR "/fraglib/nh3.efp";
+	"./fraglib/ch3oh.efp\n"
+	"./fraglib/h2o.efp\n"
+	"./fraglib/nh3.efp";
 
 static const char names[] =
 	"H2O_L\n"

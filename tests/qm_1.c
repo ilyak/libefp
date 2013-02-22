@@ -27,9 +27,9 @@
 #include "test_common.h"
 
 static const char files[] =
-	ABS_TOP_SRCDIR "/fraglib/h2o.efp\n"
-	ABS_TOP_SRCDIR "/fraglib/c6h6.efp\n"
-	ABS_TOP_SRCDIR "/fraglib/nh3.efp";
+	"./fraglib/h2o.efp\n"
+	"./fraglib/c6h6.efp\n"
+	"./fraglib/nh3.efp";
 
 static const char names[] =
 	"H2O_L\n"

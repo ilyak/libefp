@@ -1,5 +1,7 @@
 V= 0.9.8-beta
 
+include config.inc
+
 all: efpmd tests
 
 efpmd: libefp
@@ -19,7 +21,17 @@ tags clean:
 check: tests
 	@./tests/test
 
+install: all
+	install -d $(PREFIX)/bin
+	install -d $(PREFIX)/include
+	install -d $(PREFIX)/lib
+	install -d $(PREFIX)/share/libefp/fraglib
+	install -m 0755 efpmd/src/efpmd $(PREFIX)/bin
+	install -m 0644 src/efp.h $(PREFIX)/include
+	install -m 0644 src/libefp.a $(PREFIX)/lib
+	install -m 0644 fraglib/* $(PREFIX)/share/libefp/fraglib
+
 dist:
 	git archive --format=tar.gz --prefix=libefp-$V/ -o libefp-$V.tar.gz HEAD
 
-.PHONY: all efpmd tests libefp tags clean check dist
+.PHONY: all efpmd tests libefp tags clean check install dist

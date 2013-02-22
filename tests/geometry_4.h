@@ -25,18 +25,18 @@
  */
 
 static const char files[] =
-	ABS_TOP_SRCDIR "/fraglib/acetone.efp\n"
-	ABS_TOP_SRCDIR "/fraglib/c2h5oh.efp\n"
-	ABS_TOP_SRCDIR "/fraglib/c6h6.efp\n"
-	ABS_TOP_SRCDIR "/fraglib/ccl4.efp\n"
-	ABS_TOP_SRCDIR "/fraglib/ch3oh.efp\n"
-	ABS_TOP_SRCDIR "/fraglib/ch4.efp\n"
-	ABS_TOP_SRCDIR "/fraglib/cl2.efp\n"
-	ABS_TOP_SRCDIR "/fraglib/dcm.efp\n"
-	ABS_TOP_SRCDIR "/fraglib/dmso.efp\n"
-	ABS_TOP_SRCDIR "/fraglib/h2.efp\n"
-	ABS_TOP_SRCDIR "/fraglib/h2o.efp\n"
-	ABS_TOP_SRCDIR "/fraglib/nh3.efp";
+	"./fraglib/acetone.efp\n"
+	"./fraglib/c2h5oh.efp\n"
+	"./fraglib/c6h6.efp\n"
+	"./fraglib/ccl4.efp\n"
+	"./fraglib/ch3oh.efp\n"
+	"./fraglib/ch4.efp\n"
+	"./fraglib/cl2.efp\n"
+	"./fraglib/dcm.efp\n"
+	"./fraglib/dmso.efp\n"
+	"./fraglib/h2.efp\n"
+	"./fraglib/h2o.efp\n"
+	"./fraglib/nh3.efp";
 
 static const char names[] =
 	"ACETONE_L\n"

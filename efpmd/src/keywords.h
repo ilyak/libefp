@@ -7,7 +7,7 @@
 { "enable_cutoff",   "false",            parse_bool,      NULL,           offsetof(struct config, enable_cutoff)      },
 { "swf_cutoff",      "10.0",             parse_double,    NULL,           offsetof(struct config, swf_cutoff)         },
 { "max_steps",       "100",              parse_int,       int_gt_zero,    offsetof(struct config, max_steps)          },
-{ "fraglib_path",    EFP_DATA_DIR,       parse_string,    NULL,           offsetof(struct config, fraglib_path)       },
+{ "fraglib_path",    FRAGLIB_PATH,       parse_string,    NULL,           offsetof(struct config, fraglib_path)       },
 { "userlib_path",    ".",                parse_string,    NULL,           offsetof(struct config, userlib_path)       },
 { "enable_pbc",      "false",            parse_bool,      NULL,           offsetof(struct config, enable_pbc)         },
 { "periodic_box",    "30.0 30.0 30.0",   parse_vec,       NULL,           offsetof(struct config, box)                },
