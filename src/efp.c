@@ -25,7 +25,6 @@
  */
 
 #include <stdlib.h>
-#include <strings.h>
 
 #include "elec.h"
 #include "private.h"
@@ -303,7 +302,7 @@ static const struct frag *
 find_frag_in_library(struct efp *efp, const char *name)
 {
 	for (int i = 0; i < efp->n_lib; i++)
-		if (strcasecmp(efp->lib[i].name, name) == 0)
+		if (efp_strcasecmp(efp->lib[i].name, name) == 0)
 			return efp->lib + i;
 
 	return NULL;

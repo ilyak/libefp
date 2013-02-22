@@ -24,6 +24,8 @@
  * SUCH DAMAGE.
  */
 
+#include <ctype.h>
+
 #include "private.h"
 
 int efp_skip_frag_pair(struct efp *efp, int fr_i_idx, int fr_j_idx)
@@ -165,4 +167,27 @@ void efp_rotate_t3(const mat_t *rotmat, const double *in, double *out)
 					mat_get(rotmat, a2, a1) *
 					mat_get(rotmat, b2, b1) *
 					mat_get(rotmat, c2, c1);
+}
+
+int efp_strcasecmp(const char *s1, const char *s2)
+{
+	while (tolower(*s1) == tolower(*s2++))
+		if (*s1++ == '\0')
+			return 0;
+
+	return tolower(*s1) - tolower(*--s2);
+}
+
+int efp_strncasecmp(const char *s1, const char *s2, size_t n)
+{
+	if (n != 0) {
+		do {
+			if (tolower(*s1) != tolower(*s2++))
+				return tolower(*s1) - tolower(*--s2);
+
+			if (*s1++ == '\0')
+				break;
+		} while (--n != 0);
+	}
+	return 0;
 }

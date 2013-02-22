@@ -32,7 +32,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
 
 #include "cfg.h"
 #include "phys.h"
@@ -59,5 +58,8 @@ void print_gradient(struct efp *);
 void print_fragment(const char *, const double *, const double *);
 void print_vector(int, const double *);
 void print_matrix(int, int, const double *);
+
+int efp_strcasecmp(const char *, const char *); /* from libefp */
+int efp_strncasecmp(const char *, const char *, size_t); /* from libefp */
 
 #endif /* EFPMD_COMMON_H */

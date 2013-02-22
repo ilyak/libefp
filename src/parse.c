@@ -28,7 +28,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
 
 #include "private.h"
 
@@ -868,7 +867,7 @@ efp_read_potential(struct efp *efp, const char *files)
 	/* check for duplicate fragments */
 	for (int i = 0; i < efp->n_lib; i++)
 		for (int j = i + 1; j < efp->n_lib; j++)
-			if (strcasecmp(efp->lib[i].name, efp->lib[j].name) == 0)
+			if (efp_strcasecmp(efp->lib[i].name, efp->lib[j].name) == 0)
 				return EFP_RESULT_DUPLICATE_PARAMETERS;
 
 	/* because of realloc we can't do this earlier */

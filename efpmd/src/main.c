@@ -56,7 +56,7 @@ static int string_compare(const void *a, const void *b)
 	const char *s1 = *(const char *const *)a;
 	const char *s2 = *(const char *const *)b;
 
-	return strcasecmp(s1, s2);
+	return efp_strcasecmp(s1, s2);
 }
 
 static char *make_name_list(const struct config *config)
@@ -98,7 +98,7 @@ static char *make_potential_file_list(const struct config *config)
 	int n_unique = 1;
 
 	for (int i = 1; i < config->n_frags; i++) {
-		if (strcasecmp(unique[i - 1], unique[i]) != 0) {
+		if (efp_strcasecmp(unique[i - 1], unique[i]) != 0) {
 			unique[n_unique] = unique[i];
 			n_unique++;
 		}
@@ -110,7 +110,7 @@ static char *make_potential_file_list(const struct config *config)
 		const char *name = unique[i];
 		size_t n = strlen(name);
 
-		if (n > 2 && strcasecmp(name + n - 2, "_l") == 0)
+		if (n > 2 && efp_strcasecmp(name + n - 2, "_l") == 0)
 			len += strlen(config->fraglib_path) + n + 4;
 		else
 			len += strlen(config->userlib_path) + n + 6;
@@ -122,7 +122,7 @@ static char *make_potential_file_list(const struct config *config)
 		const char *name = unique[i];
 		size_t n = strlen(name);
 
-		if (n > 2 && strcasecmp(name + n - 2, "_l") == 0) {
+		if (n > 2 && efp_strcasecmp(name + n - 2, "_l") == 0) {
 			strcat(strcpy(ptr, config->fraglib_path), "/");
 			strcat(strncat(ptr, name, n - 2), ".efp");
 			ptr += strlen(config->fraglib_path) + n + 3;
