@@ -2,7 +2,7 @@ V= 0.9.8-beta
 
 include config.inc
 
-all: efpmd tests
+all: efpmd
 
 efpmd: libefp
 	cd efpmd/src && $(MAKE)
