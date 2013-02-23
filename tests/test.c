@@ -37,24 +37,6 @@ static void lib_error(const char *title, enum efp_result res)
 	fail("%s:\n    %s\n", title, efp_result_to_string(res));
 }
 
-static void torque_to_deriv(int n_frag, const double *x, double *gx)
-{
-	for (int i = 0; i < n_frag; i++, x += 6, gx += 6) {
-		double tx = gx[3];
-		double ty = gx[4];
-		double tz = gx[5];
-
-		double sina = sin(x[3]);
-		double cosa = cos(x[3]);
-		double sinb = sin(x[4]);
-		double cosb = cos(x[4]);
-
-		gx[3] = tz;
-		gx[4] = cosa * tx + sina * ty;
-		gx[5] = sinb * sina * tx - sinb * cosa * ty + cosb * tz;
-	}
-}
-
 static void test_qm_numerical_grad(struct efp *efp, const double *grad)
 {
 	int n_ptc;
@@ -231,7 +213,12 @@ void run_test(const struct test_data *test_data)
 	if ((res = efp_get_coordinates(efp, n_frag, xyzabc)))
 		lib_error("efp_get_coordinates", res);
 
-	torque_to_deriv(n_frag, xyzabc, frag_grad);
+	for (int i = 0; i < n_frag; i++) {
+		const double *euler = xyzabc + 6 * i + 3;
+		double *gradptr = frag_grad + 6 * i + 3;
+
+		efp_torque_to_derivative(euler, gradptr, gradptr);
+	}
 
 	if (do_qm) {
 		int n_ptc;

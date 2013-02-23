@@ -36,7 +36,13 @@ static void compute_gradient(struct efp *efp, int n_frags, const double *xyzabc,
 	check_fail(efp_set_coordinates(efp, EFP_COORD_TYPE_XYZABC, xyzabc));
 	check_fail(efp_compute(efp, 1));
 	check_fail(efp_get_gradient(efp, n_frags, grad));
-	torque_to_deriv(n_frags, xyzabc, grad);
+
+	for (int i = 0; i < n_frags; i++) {
+		const double *euler = xyzabc + 6 * i + 3;
+		double *gradptr = grad + 6 * i + 3;
+
+		efp_torque_to_derivative(euler, gradptr, gradptr);
+	}
 }
 
 static void show_progress(int disp, int total, const char *dir)
@@ -61,7 +67,13 @@ static void compute_hessian(struct efp *efp, const struct config *config, double
 
 	if (!config->hess_central) {
 		check_fail(efp_get_gradient(efp, n_frags, grad_b));
-		torque_to_deriv(n_frags, xyzabc, grad_b);
+
+		for (int i = 0; i < n_frags; i++) {
+			const double *euler = xyzabc + 6 * i + 3;
+			double *gradptr = grad_b + 6 * i + 3;
+
+			efp_torque_to_derivative(euler, gradptr, gradptr);
+		}
 	}
 
 	for (int i = 0; i < n_coord; i++) {

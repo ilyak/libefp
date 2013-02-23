@@ -1135,6 +1135,23 @@ efp_get_frag_atoms(struct efp *efp, int frag_idx,
 	return EFP_RESULT_SUCCESS;
 }
 
+EFP_EXPORT void
+efp_torque_to_derivative(const double *euler, const double *torque, double *deriv)
+{
+	double tx = torque[0];
+	double ty = torque[1];
+	double tz = torque[2];
+
+	double sina = sin(euler[0]);
+	double cosa = cos(euler[0]);
+	double sinb = sin(euler[1]);
+	double cosb = cos(euler[1]);
+
+	deriv[0] = tz;
+	deriv[1] = cosa * tx + sina * ty;
+	deriv[2] = sinb * sina * tx - sinb * cosa * ty + cosb * tz;
+}
+
 EFP_EXPORT const char *
 efp_banner(void)
 {

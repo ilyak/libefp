@@ -704,6 +704,20 @@ enum efp_result efp_get_frag_atoms(struct efp *efp,
 				   struct efp_atom *atoms);
 
 /**
+ * Convert rigid body torque to derivatives of energy by Euler angles.
+ *
+ * \param[in] euler Array of 3 elements containing the values of Euler angles
+ * for the current orientation of the rigid body.
+ *
+ * \param[in] torque Array of 3 elements containing torque components.
+ *
+ * \param[out] deriv Array of 3 elements where derivatives of energy by
+ * Euler angles will be stored. This can point to the same memory location as
+ * the \p torque argument.
+ */
+void efp_torque_to_derivative(const double *euler, const double *torque, double *deriv);
+
+/**
  * Release all resources used by this \a efp.
  *
  * \param[in] efp The efp structure to be released.

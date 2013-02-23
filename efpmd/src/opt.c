@@ -45,7 +45,13 @@ static double compute_efp(int n, const double *x, double *gx, void *data)
 	check_fail(efp_get_energy(efp, &energy));
 
 	check_fail(efp_get_gradient(efp, n_frags, gx));
-	torque_to_deriv(n_frags, x, gx);
+
+	for (int i = 0; i < n_frags; i++) {
+		const double *euler = x + 6 * i + 3;
+		double *gradptr = gx + 6 * i + 3;
+
+		efp_torque_to_derivative(euler, gradptr, gradptr);
+	}
 
 	return energy.total;
 }

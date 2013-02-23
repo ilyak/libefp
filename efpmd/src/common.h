@@ -50,8 +50,6 @@ void *xmalloc(size_t);
 void *xcalloc(size_t, size_t);
 void *xrealloc(void *, size_t);
 
-void torque_to_deriv(int, const double *, double *);
-
 void print_geometry(struct efp *);
 void print_energy(struct efp *);
 void print_gradient(struct efp *);
