@@ -10,6 +10,9 @@ LAPACK= -lalapack -lcblas -lf77blas -latlas
 # install prefix
 PREFIX= /usr/local
 
+# fragment library path
+FRAGLIB= $(PREFIX)/share/libefp/fraglib
+
 # additional C flags
 MYCFLAGS= -std=c99 -g -O2 -fopenmp -Wall -Wextra
 

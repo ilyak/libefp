@@ -2,7 +2,7 @@ TOP= ../..
 
 include $(TOP)/config.inc
 
-CFLAGS= -I$(TOP)/src -DFRAGLIB_PATH="\"$(PREFIX)/share/libefp/fraglib\"" $(MYCFLAGS)
+CFLAGS= -I$(TOP)/src -DFRAGLIB_PATH="\"$(FRAGLIB)\"" $(MYCFLAGS)
 FFLAGS= $(MYFFLAGS)
 LDFLAGS= -L$(TOP)/src $(MYLDFLAGS)
 LIBS= $(LAPACK) -lefp -lm
