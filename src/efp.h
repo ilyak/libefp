@@ -29,6 +29,8 @@
 
 /** \file efp.h
  * Public libefp interface.
+ *
+ * A note on units: masses are in AMU, everything else is in atomic units.
  */
 
 #ifdef __cplusplus
