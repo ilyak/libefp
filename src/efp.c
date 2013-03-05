@@ -758,6 +758,47 @@ efp_compute(struct efp *efp, int do_gradient)
 }
 
 EFP_EXPORT enum efp_result
+efp_get_frag_charge(struct efp *efp, int frag_idx, double *charge)
+{
+	if (!initialized(efp))
+		return EFP_RESULT_NOT_INITIALIZED;
+
+	if (frag_idx < 0 || frag_idx >= efp->n_frag)
+		return EFP_RESULT_INDEX_OUT_OF_RANGE;
+
+	if (!charge)
+		return EFP_RESULT_INVALID_ARGUMENT;
+
+	struct frag *frag = efp->frags + frag_idx;
+	*charge = 0.0;
+
+	for (int i = 0; i < frag->n_atoms; i++)
+		*charge += frag->atoms[i].znuc;
+
+	for (int i = 0; i < frag->n_multipole_pts; i++)
+		*charge += frag->multipole_pts[i].monopole;
+
+	return EFP_RESULT_SUCCESS;
+}
+
+EFP_EXPORT enum efp_result
+efp_get_frag_multiplicity(struct efp *efp, int frag_idx, int *mult)
+{
+	if (!initialized(efp))
+		return EFP_RESULT_NOT_INITIALIZED;
+
+	if (frag_idx < 0 || frag_idx >= efp->n_frag)
+		return EFP_RESULT_INDEX_OUT_OF_RANGE;
+
+	if (!mult)
+		return EFP_RESULT_INVALID_ARGUMENT;
+
+	*mult = efp->frags[frag_idx].multiplicity;
+
+	return EFP_RESULT_SUCCESS;
+}
+
+EFP_EXPORT enum efp_result
 efp_get_multipole_count(struct efp *efp, int *n_mult)
 {
 	if (!initialized(efp))

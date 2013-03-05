@@ -525,6 +525,34 @@ enum efp_result efp_get_wavefunction_dependent_energy(
 enum efp_result efp_compute(struct efp *efp, int do_gradient);
 
 /**
+ * Get total charge of a fragment.
+ *
+ * \param[in] efp The efp structure.
+ *
+ * \param[in] frag_idx Index of a fragment. Must be a value between zero and
+ * the total number of fragments minus one.
+ *
+ * \param[out] charge Total charge of a fragment.
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_get_frag_charge(struct efp *efp, int frag_idx, double *charge);
+
+/**
+ * Get spin multiplicity of a fragment.
+ *
+ * \param[in] efp The efp structure.
+ *
+ * \param[in] frag_idx Index of a fragment. Must be a value between zero and
+ * the total number of fragments minus one.
+ *
+ * \param[out] mult Spin multiplicity of a fragment.
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_get_frag_multiplicity(struct efp *efp, int frag_idx, int *mult);
+
+/**
  * Get total number of multipoles from EFP electrostatics.
  *
  * \param[in] efp The efp structure.
