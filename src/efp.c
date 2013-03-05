@@ -659,6 +659,7 @@ efp_get_coordinates(struct efp *efp, int n_frags, double *xyzabc)
 		*xyzabc++ = b;
 		*xyzabc++ = c;
 	}
+
 	return EFP_RESULT_SUCCESS;
 }
 
