@@ -437,7 +437,7 @@ enum efp_result efp_set_coordinates(struct efp *efp,
  *
  * If \p coord_type is \a EFP_COORD_TYPE_XYZABC then the \p coord array should
  * contain \a x \a y \a z components of the center of mass position and three
- * Euler rotation angles representing orientation of a fragment. The \coord
+ * Euler rotation angles representing orientation of a fragment. The \p coord
  * array must contain a total of 6 elements.
  *
  * If \p coord_type is \a EFP_COORD_TYPE_POINTS then the \p coord array should
@@ -445,12 +445,12 @@ enum efp_result efp_set_coordinates(struct efp *efp,
  * fragment are made to coincide. The vector connecting points 1 and 2 is
  * aligned with the corresponding vector connecting fragment atoms. The plane
  * defined by points 1, 2, and 3 is made to coincide with the corresponding
- * fragment plane. The \coord array must contain a total of 9 elements.
+ * fragment plane. The \p coord array must contain a total of 9 elements.
  *
  * If \p coord_type is \a EFP_COORD_TYPE_ROTMAT then the \p coord array should
  * contain \a x \a y \a z components of the center of mass position and nine
  * elements of the rotation matrix representing orientation of a fragment. The
- * \coord array must contain a total of 12 elements.
+ * \p coord array must contain a total of 12 elements.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
