@@ -56,7 +56,7 @@ static int string_compare(const void *a, const void *b)
 	const char *s1 = *(const char *const *)a;
 	const char *s2 = *(const char *const *)b;
 
-	return efp_strcasecmp(s1, s2);
+	return strcmp(s1, s2);
 }
 
 static bool is_lib(const char *name)
@@ -79,10 +79,10 @@ static void add_potentials(struct efp *efp, const struct config *config)
 	for (i = 0; i < config->n_frags; i++)
 		uniq[i] = config->frags[i].name;
 
-	qsort(uniq, config->n_frags, sizeof(char *), string_compare);
+	qsort(uniq, config->n_frags, sizeof(const char *), string_compare);
 
 	for (i = 1, n_uniq = 1; i < config->n_frags; i++)
-		if (efp_strcasecmp(uniq[i - 1], uniq[i]) != 0)
+		if (strcmp(uniq[i - 1], uniq[i]) != 0)
 			uniq[n_uniq++] = uniq[i];
 
 	for (i = 0; i < n_uniq; i++) {
