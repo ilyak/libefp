@@ -24,6 +24,7 @@
  * SUCH DAMAGE.
  */
 
+#include <assert.h>
 #include <stdlib.h>
 
 #include "elec.h"
@@ -993,8 +994,7 @@ efp_get_opts(struct efp *efp, struct efp_opts *opts)
 EFP_EXPORT void
 efp_opts_default(struct efp_opts *opts)
 {
-	if (!opts)
-		return;
+	assert(opts);
 
 	memset(opts, 0, sizeof(struct efp_opts));
 
@@ -1202,6 +1202,10 @@ efp_get_frag_atoms(struct efp *efp, int frag_idx,
 EFP_EXPORT void
 efp_torque_to_derivative(const double *euler, const double *torque, double *deriv)
 {
+	assert(euler);
+	assert(torque);
+	assert(deriv);
+
 	double tx = torque[0];
 	double ty = torque[1];
 	double tz = torque[2];
