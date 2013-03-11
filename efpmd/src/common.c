@@ -108,7 +108,7 @@ void print_geometry(struct efp *efp)
 			double y = atoms[a].y * BOHR_RADIUS;
 			double z = atoms[a].z * BOHR_RADIUS;
 
-			printf("%s %12.6lf %12.6lf %12.6lf\n", atoms[a].label, x, y, z);
+			printf("%-16s %12.6lf %12.6lf %12.6lf\n", atoms[a].label, x, y, z);
 		}
 	}
 
