@@ -25,64 +25,9 @@
  */
 
 #include <ctype.h>
-#include <stddef.h>
+#include <stream.h>
 
 #include "common.h"
-
-struct stream {
-	char *buffer;
-	char *ptr;
-	FILE *in;
-};
-
-static char *read_line(FILE *in)
-{
-	int size = 128;
-	int i = 0;
-	char *buffer = xmalloc(size);
-
-	for(;;) {
-		int ch = getc(in);
-
-		switch(ch) {
-		case EOF:
-			if (i == 0) {
-				free(buffer);
-				return NULL;
-			}
-			/* fall through */
-		case '\n':
-			if (i == size)
-				buffer = xrealloc(buffer, size + 1);
-			buffer[i] = '\0';
-			return buffer;
-		default:
-			buffer[i++] = ch;
-
-			if (i == size) {
-				size *= 2;
-				buffer = xrealloc(buffer, size);
-			}
-		}
-	}
-	return NULL;
-}
-
-static void next_line(struct stream *stream)
-{
-	if (stream->buffer)
-		free(stream->buffer);
-
-	stream->buffer = read_line(stream->in);
-	stream->ptr = stream->buffer;
-}
-
-static void skip_space(struct stream *stream)
-{
-	if (stream->ptr)
-		while (*stream->ptr && isspace(*stream->ptr))
-			stream->ptr++;
-}
 
 static bool parse_string(char **str, void *out)
 {
@@ -391,49 +336,49 @@ static void convert_units(struct config *config)
 
 static void parse_field(struct stream *stream, struct config *config)
 {
+	const char *start = efp_stream_get_ptr(stream);
+
 	for (size_t i = 0; i < ARRAY_SIZE(config_list); i++) {
 		const char *name = config_list[i].name;
-		size_t offset = config_list[i].member_offset;
 
-		if (efp_strncasecmp(name, stream->ptr, strlen(name)) == 0) {
-			if (!isspace(stream->ptr[strlen(name)]))
+		if (efp_strncasecmp(name, start, strlen(name)) == 0) {
+			if (!isspace(start[strlen(name)]))
 				continue;
 
-			stream->ptr += strlen(name);
-			skip_space(stream);
-
-			if (!config_list[i].parse_fn(&stream->ptr, (char *)config + offset))
-				error("INCORRECT VALUE FOR KEYWORD '%s'", name);
-
+			size_t offset = config_list[i].member_offset;
 			bool (*check_fn)(void *) = config_list[i].check_fn;
+			const char *ptr = start + strlen(name);
+
+			while (*ptr && isspace(*ptr))
+				ptr++;
+
+			if (!config_list[i].parse_fn((char **)&ptr, (char *)config + offset))
+				error("INCORRECT VALUE FOR KEYWORD '%s'", name);
 
 			if (check_fn && !check_fn((char *)config + offset))
 				error("VALUE IS OUT OF RANGE FOR KEYWORD '%s'", name);
 
+			efp_stream_advance(stream, ptr - start);
 			return;
 		}
 	}
 
-	int len = 0;
-
-	while (stream->ptr[len] && !isspace(stream->ptr[len]))
-		len++;
-
-	error("UNKNOWN KEYWORD '%.*s'", len, stream->ptr);
+	efp_stream_skip_nonspace(stream);
+	error("UNKNOWN KEYWORD '%.*s'", efp_stream_get_ptr(stream) - start, start);
 }
 
 static void parse_frag(struct stream *stream, enum efp_coord_type coord_type,
 				struct frag *frag)
 {
-	memset(frag, 0, sizeof(struct frag));
+	const char *ptr = efp_stream_get_ptr(stream);
 
-	if (!parse_string(&stream->ptr, &frag->name))
+	if (!parse_string((char **)&ptr, &frag->name))
 		error("UNABLE TO READ FRAGMENT NAME");
 
 	for (char *p = frag->name; *p; p++)
 		*p = tolower(*p);
 
-	next_line(stream);
+	efp_stream_next_line(stream);
 
 	int n_rows = 0, n_cols = 0;
 
@@ -445,25 +390,26 @@ static void parse_frag(struct stream *stream, enum efp_coord_type coord_type,
 
 	for (int i = 0, idx = 0; i < n_rows; i++) {
 		for (int j = 0; j < n_cols; j++, idx++)
-			if (!parse_double(&stream->ptr, frag->coord + idx))
+			if (!efp_stream_parse_double(stream, frag->coord + idx))
 				error("INCORRECT FRAGMENT COORDINATES FORMAT");
 
-		next_line(stream);
+		efp_stream_next_line(stream);
 	}
 
-	if (!stream->ptr)
+	efp_stream_skip_space(stream);
+
+	if (efp_stream_eol(stream))
 		return;
 
-	skip_space(stream);
-
-	if (efp_strncasecmp(stream->ptr, "velocity", strlen("velocity")) == 0) {
-		next_line(stream);
+	if (efp_strncasecmp(efp_stream_get_ptr(stream), "velocity",
+			strlen("velocity")) == 0) {
+		efp_stream_next_line(stream);
 
 		for (int i = 0; i < 6; i++)
-			if (!parse_double(&stream->ptr, frag->vel + i))
+			if (!efp_stream_parse_double(stream, frag->vel + i))
 				error("INCORRECT FRAGMENT VELOCITIES FORMAT");
 
-		next_line(stream);
+		efp_stream_next_line(stream);
 	}
 }
 
@@ -484,50 +430,47 @@ static void set_config_defaults(struct config *config)
 
 struct config *parse_config(const char *path)
 {
+	struct stream *stream;
 	struct config *config = xmalloc(sizeof(struct config));
 	set_config_defaults(config);
 
-	struct stream stream = {
-		.buffer = NULL,
-		.ptr = NULL,
-		.in = fopen(path, "r")
-	};
-
-	if (!stream.in)
+	if ((stream = efp_stream_open(path)) == NULL)
 		error("UNABLE TO OPEN INPUT FILE");
 
-	next_line(&stream);
+	efp_stream_next_line(stream);
 
-	while (stream.buffer) {
-		if (*stream.ptr == '#')
+	while (!efp_stream_eof(stream)) {
+		if (efp_stream_current_char(stream) == '#')
 			goto next;
 
-		skip_space(&stream);
+		efp_stream_skip_space(stream);
 
-		if (!*stream.ptr)
+		if (efp_stream_eol(stream))
 			goto next;
 
-		if (efp_strncasecmp(stream.ptr, "fragment", strlen("fragment")) == 0) {
-			stream.ptr += strlen("fragment");
+		if (efp_strncasecmp(efp_stream_get_ptr(stream), "fragment",
+				strlen("fragment")) == 0) {
+			efp_stream_advance(stream, strlen("fragment"));
 
 			config->n_frags++;
 			config->frags = xrealloc(config->frags,
 				config->n_frags * sizeof(struct frag));
 
 			struct frag *frag = config->frags + config->n_frags - 1;
-			parse_frag(&stream, config->coord_type, frag);
+			memset(frag, 0, sizeof(struct frag));
+			parse_frag(stream, config->coord_type, frag);
 
 			continue;
 		}
 		else {
-			parse_field(&stream, config);
-			skip_space(&stream);
+			parse_field(stream, config);
+			efp_stream_skip_space(stream);
 
-			if (*stream.ptr)
+			if (!efp_stream_eol(stream))
 				error("ONLY ONE OPTION PER LINE IS ALLOWED");
 		}
 next:
-		next_line(&stream);
+		efp_stream_next_line(stream);
 	}
 
 	if (config->n_frags < 1)
@@ -540,9 +483,7 @@ next:
 		config->enable_cutoff = true;
 
 	convert_units(config);
-
-	fclose(stream.in);
-	free(stream.buffer);
+	efp_stream_close(stream);
 
 	return config;
 }
