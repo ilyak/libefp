@@ -69,13 +69,15 @@ static void parse_frag(struct stream *stream, enum efp_coord_type coord_type,
 
 	efp_stream_next_line(stream);
 
-	int n_rows = 0, n_cols = 0;
+	int n_rows = (int []) {
+		[EFP_COORD_TYPE_XYZABC] = 1,
+		[EFP_COORD_TYPE_POINTS] = 3,
+		[EFP_COORD_TYPE_ROTMAT] = 4 }[coord_type];
 
-	switch (coord_type) {
-		case EFP_COORD_TYPE_XYZABC: n_rows = 1; n_cols = 6; break;
-		case EFP_COORD_TYPE_POINTS: n_rows = 3; n_cols = 3; break;
-		case EFP_COORD_TYPE_ROTMAT: n_rows = 4; n_cols = 3; break;
-	}
+	int n_cols = (int []) {
+		[EFP_COORD_TYPE_XYZABC] = 6,
+		[EFP_COORD_TYPE_POINTS] = 3,
+		[EFP_COORD_TYPE_ROTMAT] = 3 }[coord_type];
 
 	for (int i = 0, idx = 0; i < n_rows; i++) {
 		for (int j = 0; j < n_cols; j++, idx++)

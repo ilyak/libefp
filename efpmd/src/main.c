@@ -265,13 +265,10 @@ static void convert_units(struct cfg *cfg, struct sys *sys)
 	cfg_set_double(cfg, "hess_step_dist",
 		cfg_get_double(cfg, "hess_step_dist") / BOHR_RADIUS);
 
-	int n_convert = 0;
-
-	switch (cfg_get_enum(cfg, "coord")) {
-		case EFP_COORD_TYPE_XYZABC: n_convert = 3; break;
-		case EFP_COORD_TYPE_POINTS: n_convert = 9; break;
-		case EFP_COORD_TYPE_ROTMAT: n_convert = 3; break;
-	};
+	int n_convert = (int []) {
+		[EFP_COORD_TYPE_XYZABC] = 3,
+		[EFP_COORD_TYPE_POINTS] = 9,
+		[EFP_COORD_TYPE_ROTMAT] = 3 }[cfg_get_enum(cfg, "coord")];
 
 	for (int i = 0; i < sys->n_frags; i++)
 		for (int j = 0; j < n_convert; j++)
