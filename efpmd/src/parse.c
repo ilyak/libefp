@@ -64,7 +64,7 @@ static void parse_frag(struct stream *stream, enum efp_coord_type coord_type,
 	frag->name = xmalloc(len + 1);
 
 	for (size_t i = 0; i < len; i++)
-		frag->name[i] = tolower(*ptr++);
+		frag->name[i] = (char)tolower(*ptr++);
 	frag->name[len] = '\0';
 
 	efp_stream_next_line(stream);

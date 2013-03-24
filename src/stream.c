@@ -79,7 +79,7 @@ static char *read_line(FILE *in, char split)
 			return buffer;
 
 		default:
-			buffer[i++] = ch;
+			buffer[i++] = (char)ch;
 
 			if (i == size) {
 				size *= 2;
@@ -168,7 +168,7 @@ int efp_stream_parse_int(struct stream *stream, int *out)
 	assert(stream);
 
 	char *endptr;
-	int x = strtol(stream->ptr, &endptr, 10);
+	int x = (int)strtol(stream->ptr, &endptr, 10);
 
 	if (endptr == stream->ptr)
 		return 0;

@@ -153,10 +153,7 @@ static char *xstrtostr(const char *str, const char **endptr)
 static const struct esv *xstrtoenum(const char *str, const char **endptr,
 					const struct esv *esv)
 {
-	size_t len;
-
-	if (endptr)
-		*endptr = str;
+	size_t len = 0;
 
 	while (esv) {
 		len = strlen(esv->str);
@@ -165,11 +162,9 @@ static const struct esv *xstrtoenum(const char *str, const char **endptr,
 			if (str[len] == '\0' || isspace(str[len]))
 				break;
 
+		len = 0;
 		esv = esv->next;
 	}
-
-	if (!esv)
-		return NULL;
 
 	if (endptr)
 		*endptr = str + len;
@@ -476,7 +471,7 @@ bool cfg_parse_line(struct cfg *cfg, const char *line)
 
 	switch (node->type) {
 	case NODE_TYPE_INT:
-		xdata.xint = strtol(line, (char **)&endptr, 10);
+		xdata.xint = (int)strtol(line, (char **)&endptr, 10);
 		break;
 	case NODE_TYPE_DOUBLE:
 		xdata.xdouble = strtod(line, (char **)&endptr);

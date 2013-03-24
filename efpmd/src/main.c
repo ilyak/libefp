@@ -163,9 +163,9 @@ static void add_potentials(struct efp *efp, const struct cfg *cfg, const struct 
 		const char *prefix = is_lib(name) ?
 			cfg_get_string(cfg, "fraglib_path") :
 			cfg_get_string(cfg, "userlib_path");
-		int len = is_lib(name) ? strlen(name) - 2 : strlen(name);
+		size_t len = is_lib(name) ? strlen(name) - 2 : strlen(name);
 
-		snprintf(path, sizeof(path), "%s/%.*s.efp", prefix, len, name);
+		snprintf(path, sizeof(path), "%s/%.*s.efp", prefix, (int)len, name);
 		check_fail(efp_add_potential(efp, path));
 	}
 }
