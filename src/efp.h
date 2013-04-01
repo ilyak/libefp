@@ -80,8 +80,6 @@ enum efp_result {
 	EFP_RESULT_POL_NOT_CONVERGED,
 	/** Certain EFP parameters are missing. */
 	EFP_RESULT_PARAMETERS_MISSING,
-	/** Incorrect enumeration value. */
-	EFP_RESULT_INCORRECT_ENUM_VALUE,
 	/** Invalid rotation matrix specified. */
 	EFP_RESULT_INVALID_ROTATION_MATRIX,
 	/** Index is out of range. */

@@ -157,20 +157,6 @@ set_coord_rotmat(struct frag *frag, const double *coord)
 	return EFP_RESULT_SUCCESS;
 }
 
-static size_t
-get_coord_count(enum efp_coord_type coord_type)
-{
-	switch (coord_type) {
-		case EFP_COORD_TYPE_XYZABC:
-			return 6;
-		case EFP_COORD_TYPE_POINTS:
-			return 9;
-		case EFP_COORD_TYPE_ROTMAT:
-			return 12;
-	}
-	return 0;
-}
-
 static void
 free_frag(struct frag *frag)
 {
@@ -304,20 +290,6 @@ check_opts(const struct efp_opts *opts)
 	    ((terms & EFP_TERM_AI_XR) && !(terms & EFP_TERM_XR)) ||
 	    ((terms & EFP_TERM_AI_CHTR) && !(terms & EFP_TERM_CHTR)))
 		return EFP_RESULT_INCONSISTENT_TERMS;
-
-	if (opts->elec_damp != EFP_ELEC_DAMP_SCREEN &&
-	    opts->elec_damp != EFP_ELEC_DAMP_OVERLAP &&
-	    opts->elec_damp != EFP_ELEC_DAMP_OFF)
-		return EFP_RESULT_INCORRECT_ENUM_VALUE;
-
-	if (opts->disp_damp != EFP_DISP_DAMP_OVERLAP &&
-	    opts->disp_damp != EFP_DISP_DAMP_TT &&
-	    opts->disp_damp != EFP_DISP_DAMP_OFF)
-		return EFP_RESULT_INCORRECT_ENUM_VALUE;
-
-	if (opts->pol_damp != EFP_POL_DAMP_TT &&
-	    opts->pol_damp != EFP_POL_DAMP_OFF)
-		return EFP_RESULT_INCORRECT_ENUM_VALUE;
 
 	if (opts->enable_pbc) {
 		if ((opts->terms & EFP_TERM_AI_ELEC) ||
@@ -564,14 +536,14 @@ EFP_EXPORT enum efp_result
 efp_set_coordinates(struct efp *efp, enum efp_coord_type coord_type,
 			const double *coord)
 {
-	size_t stride;
 	enum efp_result res;
+	size_t stride = (size_t []) {
+		[EFP_COORD_TYPE_XYZABC] = 6,
+		[EFP_COORD_TYPE_POINTS] = 9,
+		[EFP_COORD_TYPE_ROTMAT] = 12 }[coord_type];
 
 	if (!efp)
 		return EFP_RESULT_NOT_INITIALIZED;
-
-	if ((stride = get_coord_count(coord_type)) == 0)
-		return EFP_RESULT_INCORRECT_ENUM_VALUE;
 
 	for (int i = 0; i < efp->n_frag; i++, coord += stride)
 		if ((res = efp_set_frag_coordinates(efp, i, coord_type, coord)))
@@ -602,7 +574,7 @@ efp_set_frag_coordinates(struct efp *efp, int frag_idx,
 			return set_coord_rotmat(efp->frags + frag_idx, coord);
 	}
 
-	return EFP_RESULT_INCORRECT_ENUM_VALUE;
+	assert(0);
 }
 
 EFP_EXPORT enum efp_result
@@ -1271,8 +1243,6 @@ return "fragment must contain at least three atoms";
 return "polarization SCF did not converge";
 	case EFP_RESULT_PARAMETERS_MISSING:
 return "required EFP fragment parameters are missing";
-	case EFP_RESULT_INCORRECT_ENUM_VALUE:
-return "incorrect enumeration value";
 	case EFP_RESULT_INVALID_ROTATION_MATRIX:
 return "invalid rotation matrix specified";
 	case EFP_RESULT_INDEX_OUT_OF_RANGE:
@@ -1284,5 +1254,5 @@ return "unsupported SCREEN group found in EFP data";
 	case EFP_RESULT_INCONSISTENT_TERMS:
 return "inconsistent EFP energy terms selected";
 	}
-return "unknown result";
+	assert(0);
 }
