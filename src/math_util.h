@@ -64,9 +64,15 @@ eq(double a, double b)
 }
 
 static inline double
-vec_get(const vec_t *vec, int idx)
+vec_get(const vec_t *vec, size_t idx)
 {
 	return ((const double *)vec)[idx];
+}
+
+static inline void
+vec_set(vec_t *vec, size_t idx, double val)
+{
+	((double *)vec)[idx] = val;
 }
 
 static inline void
@@ -184,13 +190,22 @@ vec_dist(const vec_t *a, const vec_t *b)
 }
 
 static inline double
-mat_get(const mat_t *mat, int a1, int a2)
+vec_angle(const vec_t *a, const vec_t *b)
+{
+	double dot = vec_dot(a, b);
+	vec_t cross = vec_cross(a, b);
+
+	return atan2(vec_len(&cross), dot);
+}
+
+static inline double
+mat_get(const mat_t *mat, size_t a1, size_t a2)
 {
 	return ((const double *)mat)[3 * a1 + a2];
 }
 
 static inline void
-mat_set(mat_t *mat, int a1, int a2, double val)
+mat_set(mat_t *mat, size_t a1, size_t a2, double val)
 {
 	((double *)mat)[3 * a1 + a2] = val;
 }
