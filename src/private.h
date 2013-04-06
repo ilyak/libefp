@@ -28,6 +28,7 @@
 #define LIBEFP_PRIVATE_H
 
 #include "efp.h"
+#include "ff.h"
 #include "int.h"
 #include "swf.h"
 #include "terms.h"
@@ -134,6 +135,9 @@ struct frag {
 
 	/* derivatives of overlap integrals */
 	six_t *overlap_int_deriv;
+
+	/* offset in array of ff atoms */
+	size_t ff_offset;
 };
 
 struct efp {
@@ -178,6 +182,9 @@ struct efp {
 
 	/* EFP energy terms */
 	struct efp_energy energy;
+
+	/* force field for covalent links */
+	struct ff *ff;
 };
 
 int efp_skip_frag_pair(struct efp *, int, int);

@@ -38,7 +38,7 @@ extern "C" {
 #endif
 
 /** Version string. */
-#define LIBEFP_VERSION_STRING "0.9.9-beta"
+#define LIBEFP_VERSION_STRING "1.9.0-beta"
 
 /** Result of an operation. */
 enum efp_result {
@@ -86,6 +86,12 @@ enum efp_result {
 	EFP_RESULT_INDEX_OUT_OF_RANGE,
 	/** Wrong array length. */
 	EFP_RESULT_INVALID_ARRAY_SIZE,
+	/** Unknown force field atom type. */
+	EFP_RESULT_UNKNOWN_FF_TYPE,
+	/** Covalent fragment-fragment links are not enabled. */
+	EFP_RESULT_LINKS_ARE_NOT_ENABLED,
+	/** Unknown atom name. */
+	EFP_RESULT_UNKNOWN_ATOM,
 	/** Unsupported SCREEN group in EFP parameters file. */
 	EFP_RESULT_UNSUPPORTED_SCREEN,
 	/**
@@ -176,6 +182,9 @@ struct efp_opts {
 	/** Enable fragment-fragment interaction cutoff if nonzero. */
 	int enable_cutoff;
 
+	/** Enable fragment-fragment covalent links. */
+	int enable_links;
+
 	/** Cutoff distance for fragment-fragment interactions. */
 	double swf_cutoff;
 };
@@ -203,6 +212,9 @@ struct efp_energy {
 	/**
 	 * EFP/EFP exchange-repulsion energy. */
 	double exchange_repulsion;
+	/**
+	 * Energy of covalent interactions between the fragments. */
+	double covalent;
 	/**
 	 * Sum of all the above energy terms. */
 	double total;
@@ -307,6 +319,20 @@ enum efp_result efp_add_potential(struct efp *efp, const char *path);
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
 enum efp_result efp_add_fragment(struct efp *efp, const char *name);
+
+/**
+ * XXX
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_load_forcefield(struct efp *efp, const char *path);
+
+/**
+ * XXX
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_load_topology(struct efp *efp, const char *path);
 
 /**
  * Set the callback function which computes electric field from electrons

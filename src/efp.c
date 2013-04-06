@@ -25,10 +25,192 @@
  */
 
 #include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "elec.h"
 #include "private.h"
+#include "stream.h"
+
+static enum efp_result
+ff_to_efp(enum ff_res res)
+{
+	switch (res) {
+		case FF_OK:
+			return EFP_RESULT_SUCCESS;
+		case FF_FILE_NOT_FOUND:
+			return EFP_RESULT_FILE_NOT_FOUND;
+		case FF_BAD_FORMAT:
+			return EFP_RESULT_SYNTAX_ERROR;
+		case FF_STRING_TOO_LONG:
+			return EFP_RESULT_SYNTAX_ERROR;
+		case FF_NO_PARAMETERS:
+			return EFP_RESULT_UNKNOWN_FF_TYPE;
+	};
+	assert(0);
+}
+
+static int
+find_link_index(const struct frag *frag, const char *name)
+{
+	for (size_t i = 0, idx = 0; i < frag->n_atoms; i++) {
+		if (frag->atoms[i].label[0] == '*') {
+			if (strcmp(frag->atoms[i].label, name) == 0)
+				return (int)idx;
+			idx++;
+		}
+	}
+
+	return -1;
+}
+
+static void
+update_ff_atoms(struct ff *ff, const struct frag *frag)
+{
+	vec_t pos;
+
+	for (size_t i = 0, k = 0; i < frag->n_atoms; i++) {
+		const struct efp_atom *atom = frag->atoms + i;
+
+		if (atom->label[0] == '*') {
+			pos.x = atom->x;
+			pos.y = atom->y;
+			pos.z = atom->z;
+			efp_ff_set_atom_pos(ff, frag->ff_offset + k, pos);
+			k++;
+		}
+	}
+}
+
+static void
+add_ff_gradient(struct frag *frag, const vec_t *ff_grad)
+{
+	for (size_t i = 0, k = 0; i < frag->n_atoms; i++) {
+		const struct efp_atom *atom = frag->atoms + i;
+
+		if (atom->label[0] == '*') {
+			efp_add_force(frag, CVEC(atom->x), ff_grad + k, NULL);
+			k++;
+		}
+	}
+}
+
+static enum efp_result
+init_ff(struct efp *efp)
+{
+	enum ff_res ff_res;
+
+	for (size_t i = 0, n_ff_cur = 0; i < efp->n_frag; i++) {
+		struct frag *frag = efp->frags + i;
+		frag->ff_offset = n_ff_cur;
+		n_ff_cur = 0;
+
+		for (size_t j = 0; j < frag->n_atoms; j++) {
+			const struct efp_atom *at = frag->atoms + j;
+
+			if (at->label[0] == '*') {
+				char name[32];
+				memset(name, 0, sizeof(name));
+
+				char *dst = name;
+				const char *src = at->label + 3;
+
+				while (*src && *src != '_')
+					*dst++ = *src++;
+
+				if ((ff_res = efp_ff_add_atom(efp->ff, name)))
+					return ff_to_efp(ff_res);
+
+				n_ff_cur++;
+			}
+		}
+
+		for (size_t j = 0, k = 0; j < frag->n_atoms; j++) {
+			const struct efp_atom *at = frag->atoms + j;
+
+			if (at->label[0] == '*') {
+				const char *ptr = strchr(at->label, '_');
+
+				if (ptr) {
+					size_t idx = (size_t)strtol(ptr + 1, NULL, 10);
+
+					if (idx >= n_ff_cur)
+						return EFP_RESULT_INDEX_OUT_OF_RANGE;
+
+					if ((ff_res = efp_ff_add_bond(efp->ff,
+							frag->ff_offset + k,
+							frag->ff_offset + idx)))
+						return ff_to_efp(ff_res);
+				}
+
+				k++;
+			}
+		}
+
+		n_ff_cur += frag->ff_offset;
+	}
+
+	return EFP_RESULT_SUCCESS;
+}
+
+static enum efp_result
+parse_topology_record(struct efp *efp, const char *str)
+{
+	enum ff_res ff_res;
+	size_t idx1, idx2;
+	char name1[32], name2[32];
+
+	if (sscanf(str, "%zu %zu %32s %32s", &idx1, &idx2, name1, name2) < 4)
+		return EFP_RESULT_SYNTAX_ERROR;
+
+	idx1--, idx2--;
+
+	if (idx1 >= efp->n_frag || idx2 >= efp->n_frag)
+		return EFP_RESULT_INDEX_OUT_OF_RANGE;
+
+	const struct frag *frag1 = efp->frags + idx1;
+	const struct frag *frag2 = efp->frags + idx2;
+
+	int link1 = find_link_index(frag1, name1);
+	int link2 = find_link_index(frag2, name2);
+
+	if (link1 == -1 || link2 == -1)
+		return EFP_RESULT_UNKNOWN_ATOM;
+
+	if ((ff_res = efp_ff_add_bond(efp->ff, frag1->ff_offset + link1,
+				frag2->ff_offset + link2)))
+		return ff_to_efp(ff_res);
+
+	/* XXX */
+	/*efp_bvec_set(efp->links_bvec, idx1 * efp->n_frags + idx2);*/
+	/*efp_bvec_set(efp->links_bvec, idx2 * efp->n_frags + idx1);*/
+
+	return EFP_RESULT_SUCCESS;
+}
+
+static enum efp_result
+parse_topology(struct efp *efp, const char *path)
+{
+	struct stream *stream;
+	enum efp_result res = EFP_RESULT_SUCCESS;
+
+	if ((stream = efp_stream_open(path)) == NULL)
+		return EFP_RESULT_FILE_NOT_FOUND;
+
+	while (!efp_stream_eof(stream)) {
+		efp_stream_next_line(stream);
+		efp_stream_skip_space(stream);
+
+		if (efp_stream_eol(stream))
+			continue;
+
+		if ((res = parse_topology_record(efp, efp_stream_get_ptr(stream))))
+			break;
+	}
+
+	efp_stream_close(stream);
+	return res;
+}
 
 static int
 check_rotation_matrix(const mat_t *rotmat)
@@ -556,6 +738,8 @@ EFP_EXPORT enum efp_result
 efp_set_frag_coordinates(struct efp *efp, int frag_idx,
 	enum efp_coord_type coord_type, const double *coord)
 {
+	enum efp_result res;
+
 	if (!efp)
 		return EFP_RESULT_NOT_INITIALIZED;
 
@@ -565,16 +749,27 @@ efp_set_frag_coordinates(struct efp *efp, int frag_idx,
 	if (!coord)
 		return EFP_RESULT_INVALID_ARGUMENT;
 
+	struct frag *frag = efp->frags + frag_idx;
+
 	switch (coord_type) {
 		case EFP_COORD_TYPE_XYZABC:
-			return set_coord_xyzabc(efp->frags + frag_idx, coord);
+			if ((res = set_coord_xyzabc(frag, coord)))
+				return res;
+			break;
 		case EFP_COORD_TYPE_POINTS:
-			return set_coord_points(efp->frags + frag_idx, coord);
+			if ((res = set_coord_points(frag, coord)))
+				return res;
+			break;
 		case EFP_COORD_TYPE_ROTMAT:
-			return set_coord_rotmat(efp->frags + frag_idx, coord);
+			if ((res = set_coord_rotmat(frag, coord)))
+				return res;
+			break;
 	}
 
-	assert(0);
+	if (efp->opts.enable_links)
+		update_ff_atoms(efp->ff, frag);
+
+	return EFP_RESULT_SUCCESS;
 }
 
 EFP_EXPORT enum efp_result
@@ -678,6 +873,7 @@ efp_compute(struct efp *efp, int do_gradient)
 
 	efp->do_gradient = do_gradient;
 	efp->stress = mat_zero;
+	memset(&efp->energy, 0, sizeof(struct efp_energy));
 
 	if ((res = check_params(efp)))
 		return res;
@@ -697,12 +893,27 @@ efp_compute(struct efp *efp, int do_gradient)
 		if ((res = term_list[i](efp)))
 			return res;
 
+	if (efp->opts.enable_links) {
+		size_t n_ff_atoms = efp_ff_get_atom_count(efp->ff);
+		vec_t ff_grad[n_ff_atoms];
+
+		efp->energy.covalent = efp_ff_compute(efp->ff, ff_grad);
+
+		if (do_gradient) {
+			for (size_t i = 0; i < efp->n_frag; i++) {
+				struct frag *frag = efp->frags + i;
+				add_ff_gradient(frag, ff_grad + frag->ff_offset);
+			}
+		}
+	}
+
 	efp->energy.total = efp->energy.electrostatic +
 			    efp->energy.charge_penetration +
 			    efp->energy.electrostatic_point_charges +
 			    efp->energy.polarization +
 			    efp->energy.dispersion +
-			    efp->energy.exchange_repulsion;
+			    efp->energy.exchange_repulsion +
+			    efp->energy.covalent;
 
 	return EFP_RESULT_SUCCESS;
 }
@@ -927,6 +1138,7 @@ efp_shutdown(struct efp *efp)
 	free(efp->frags);
 	free(efp->lib);
 	free(efp->point_charges);
+	efp_ff_free(efp->ff);
 	free(efp);
 }
 
@@ -1012,6 +1224,56 @@ efp_add_fragment(struct efp *efp, const char *name)
 	return EFP_RESULT_SUCCESS;
 }
 
+EFP_EXPORT enum efp_result
+efp_load_forcefield(struct efp *efp, const char *path)
+{
+	enum ff_res ff_res;
+
+	if (!efp)
+		return EFP_RESULT_NOT_INITIALIZED;
+
+	if (!path)
+		return EFP_RESULT_INVALID_ARGUMENT;
+
+	if (!efp->opts.enable_links)
+		return EFP_RESULT_LINKS_ARE_NOT_ENABLED;
+
+	if ((ff_res = efp_ff_parse(efp->ff, path)))
+		return ff_to_efp(ff_res);
+
+	return EFP_RESULT_SUCCESS;
+}
+
+EFP_EXPORT enum efp_result
+efp_load_topology(struct efp *efp, const char *path)
+{
+	enum ff_res ff_res;
+	enum efp_result res;
+
+	if (!efp)
+		return EFP_RESULT_NOT_INITIALIZED;
+
+	if (!path)
+		return EFP_RESULT_INVALID_ARGUMENT;
+
+	if (!efp->opts.enable_links)
+		return EFP_RESULT_LINKS_ARE_NOT_ENABLED;
+
+	if ((res = init_ff(efp)))
+		return res;
+
+	if ((res = parse_topology(efp, path)))
+		return res;
+
+	if ((ff_res = efp_ff_auto_angles(efp->ff)))
+		return ff_to_efp(ff_res);
+
+	if ((ff_res = efp_ff_auto_torsions(efp->ff)))
+		return ff_to_efp(ff_res);
+
+	return EFP_RESULT_SUCCESS;
+}
+
 EFP_EXPORT struct efp *
 efp_create(void)
 {
@@ -1019,6 +1281,13 @@ efp_create(void)
 
 	if (!efp)
 		return NULL;
+
+	efp->ff = efp_ff_create();
+
+	if (!efp->ff) {
+		free(efp);
+		return NULL;
+	}
 
 	efp_opts_default(&efp->opts);
 
@@ -1249,6 +1518,12 @@ return "invalid rotation matrix specified";
 return "index is out of range";
 	case EFP_RESULT_INVALID_ARRAY_SIZE:
 return "invalid array size";
+	case EFP_RESULT_UNKNOWN_FF_TYPE:
+return "unknown force field atom type";
+	case EFP_RESULT_LINKS_ARE_NOT_ENABLED:
+return "covalent fragment-fragment links are not enabled";
+	case EFP_RESULT_UNKNOWN_ATOM:
+return "unknown atom name";
 	case EFP_RESULT_UNSUPPORTED_SCREEN:
 return "unsupported SCREEN group found in EFP data";
 	case EFP_RESULT_INCONSISTENT_TERMS:
