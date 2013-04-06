@@ -1,0 +1,416 @@
+bond     C   C         310.0      1.525
+bond     C   OS        450.0      1.323
+bond     C   H4        367.0      1.080
+bond     C   H5        367.0      1.080
+bond     CA  OH        450.0      1.364
+bond     CM  OS        480.0      1.240
+bond     Cl  CT        232.0      1.766
+bond     Br  CT        159.0      1.944
+bond     I   CT        148.0      2.166
+bond     F   CA        386.0      1.359
+bond     Cl  CA        193.0      1.727
+bond     I   CA        171.0      2.075
+bond     Br  CA        172.0      1.890
+bond     OW  HW        553.0      0.957
+bond     HW  HW        553.0      1.514
+bond     C   CA        469.0      1.409
+bond     C   CB        447.0      1.419
+bond     C   CM        410.0      1.444
+bond     C   CT        317.0      1.522
+bond     C   N*        424.0      1.383
+bond     C   NA        418.0      1.388
+bond     C   NC        457.0      1.358
+bond     C   O         570.0      1.229
+bond     C   O2        656.0      1.250
+bond     C   OH        450.0      1.364
+bond     CA  CA        469.0      1.400
+bond     CA  CB        469.0      1.404
+bond     CA  CM        427.0      1.433
+bond     CA  CT        317.0      1.510
+bond     CA  HA        367.0      1.080
+bond     CA  H4        367.0      1.080
+bond     CA  N2        481.0      1.340
+bond     CA  NA        427.0      1.381
+bond     CA  NC        483.0      1.339
+bond     CB  CB        520.0      1.370
+bond     CB  N*        436.0      1.374
+bond     CB  NB        414.0      1.391
+bond     CB  NC        461.0      1.354
+bond     CK  H5        367.0      1.080
+bond     CK  N*        440.0      1.371
+bond     CK  NB        529.0      1.304
+bond     CM  CM        549.0      1.350
+bond     CM  CT        317.0      1.510
+bond     CM  HA        367.0      1.080
+bond     CM  H4        367.0      1.080
+bond     CM  H5        367.0      1.080
+bond     CM  N*        448.0      1.365
+bond     CQ  H5        367.0      1.080
+bond     CQ  NC        502.0      1.324
+bond     CT  CT        310.0      1.526
+bond     CT  HC        340.0      1.090
+bond     CT  H1        340.0      1.090
+bond     CT  H2        340.0      1.090
+bond     CT  H3        340.0      1.090
+bond     CT  HP        340.0      1.090
+bond     CT  N*        337.0      1.475
+bond     CT  N2        337.0      1.463
+bond     CT  OH        320.0      1.410
+bond     CT  OS        320.0      1.410
+bond     H   N2        434.0      1.010
+bond     H   N*        434.0      1.010
+bond     H   NA        434.0      1.010
+bond     HO  OH        553.0      0.960
+bond     HO  OS        553.0      0.960
+bond     O2  P         525.0      1.480
+bond     OH  P         230.0      1.610
+bond     OS  P         230.0      1.610
+bond     C*  HC        367.0      1.080
+bond     C   N         490.0      1.335
+bond     C*  CB        388.0      1.459
+bond     C*  CT        317.0      1.495
+bond     C*  CW        546.0      1.352
+bond     CA  CN        469.0      1.400
+bond     CB  CN        447.0      1.419
+bond     CC  CT        317.0      1.504
+bond     CC  CV        512.0      1.375
+bond     CC  CW        518.0      1.371
+bond     CC  NA        422.0      1.385
+bond     CC  NB        410.0      1.394
+bond     CN  NA        428.0      1.380
+bond     CR  H5        367.0      1.080
+bond     CR  NA        477.0      1.343
+bond     CR  NB        488.0      1.335
+bond     CT  N         337.0      1.449
+bond     CT  N3        367.0      1.471
+bond     CT  S         227.0      1.810
+bond     CT  SH        237.0      1.810
+bond     CV  H4        367.0      1.080
+bond     CV  NB        410.0      1.394
+bond     CW  H4        367.0      1.080
+bond     CW  NA        427.0      1.381
+bond     H   N         434.0      1.010
+bond     H   N3        434.0      1.010
+bond     HS  SH        274.0      1.336
+bond     S   S         166.0      2.038
+bond     CT  F         367.0      1.380
+
+angle    HW  OW  HW    100.0    104.520
+angle    C   C   O      80.0    120.000
+angle    C   C   OH     80.0    120.000
+angle    CT  C   CT     63.0    117.000
+angle    CT  C   OS     80.0    115.000
+angle    O   C   OS     80.0    125.000
+angle    H4  C   C      50.0    120.000
+angle    H4  C   CM     50.0    115.000
+angle    H4  C   CT     50.0    115.000
+angle    H4  C   O      50.0    120.000
+angle    H4  C   OH     50.0    120.000
+angle    H5  C   N      50.0    120.000
+angle    H5  C   O      50.0    119.000
+angle    H5  C   OH     50.0    107.000
+angle    H5  C   OS     50.0    107.000
+angle    CA  CA  OH     70.0    120.000
+angle    CA  OH  HO     50.0    113.000
+angle    F   CA  CA     70.0    121.000
+angle    Cl  CA  CA     70.0    118.800
+angle    Br  CA  CA     70.0    118.800
+angle    I   CA  CA     70.0    118.800
+angle    CM  CM  OS     80.0    125.000
+angle    H4  CM  OS     50.0    113.000
+angle    HA  CM  HA     35.0    120.000
+angle    HA  CM  CT     50.0    120.000
+angle    H1  CT  CM     50.0    109.500
+angle    HC  CT  CM     50.0    109.500
+angle    C   CT  OS     60.0    109.500
+angle    CM  CT  CT     63.0    111.000
+angle    CM  CT  OS     50.0    109.500
+angle    CT  CT  CA     63.0    114.000
+angle    OS  CT  OS     60.0    101.000
+angle    F   CT  CT     50.0    109.000
+angle    F   CT  H2     50.0    109.500
+angle    Cl  CT  CT     50.0    108.500
+angle    Cl  CT  H1     50.0    108.500
+angle    Br  CT  CT     50.0    108.000
+angle    Br  CT  H1     50.0    106.500
+angle    I   CT  CT     50.0    106.000
+angle    CB  C   NA     70.0    111.300
+angle    CB  C   O      80.0    128.800
+angle    CM  C   NA     70.0    114.100
+angle    CM  C   O      80.0    125.300
+angle    CT  C   O      80.0    120.400
+angle    CT  C   O2     70.0    117.000
+angle    CT  C   OH     80.0    110.000
+angle    N*  C   NA     70.0    115.400
+angle    N*  C   NC     70.0    118.600
+angle    N*  C   O      80.0    120.900
+angle    NA  C   O      80.0    120.600
+angle    NC  C   O      80.0    122.500
+angle    CT  C   N      70.0    116.600
+angle    N   C   O      80.0    122.900
+angle    O   C   O      80.0    126.000
+angle    O2  C   O2     80.0    126.000
+angle    O   C   OH     80.0    120.000
+angle    CA  C   CA     63.0    120.000
+angle    CA  C   OH     70.0    120.000
+angle    C   CA  CA     63.0    120.000
+angle    CA  CA  CA     63.0    120.000
+angle    CA  CA  CB     63.0    120.000
+angle    CA  CA  CT     70.0    120.000
+angle    CA  CA  HA     50.0    120.000
+angle    CA  CA  H4     50.0    120.000
+angle    CB  CA  HA     50.0    120.000
+angle    CB  CA  H4     50.0    120.000
+angle    CB  CA  N2     70.0    123.500
+angle    CB  CA  NC     70.0    117.300
+angle    CM  CA  N2     70.0    120.100
+angle    CM  CA  NC     70.0    121.500
+angle    N2  CA  NA     70.0    116.000
+angle    N2  CA  NC     70.0    119.300
+angle    NA  CA  NC     70.0    123.300
+angle    C   CA  HA     50.0    120.000
+angle    N2  CA  N2     70.0    120.000
+angle    CN  CA  HA     50.0    120.000
+angle    CA  CA  CN     63.0    120.000
+angle    C   CB  CB     63.0    119.200
+angle    C   CB  NB     70.0    130.000
+angle    CA  CB  CB     63.0    117.300
+angle    CA  CB  NB     70.0    132.400
+angle    CB  CB  N*     70.0    106.200
+angle    CB  CB  NB     70.0    110.400
+angle    CB  CB  NC     70.0    127.700
+angle    N*  CB  NC     70.0    126.200
+angle    C*  CB  CA     63.0    134.900
+angle    C*  CB  CN     63.0    108.800
+angle    CA  CB  CN     63.0    116.200
+angle    H5  CK  N*     50.0    123.050
+angle    H5  CK  NB     50.0    123.050
+angle    N*  CK  NB     70.0    113.900
+angle    C   CM  CM     63.0    120.700
+angle    C   CM  CT     70.0    119.700
+angle    C   CM  HA     50.0    119.700
+angle    C   CM  H4     50.0    119.700
+angle    CA  CM  CM     63.0    117.000
+angle    CA  CM  HA     50.0    123.300
+angle    CA  CM  H4     50.0    123.300
+angle    CM  CM  CT     70.0    119.700
+angle    CM  CM  HA     50.0    119.700
+angle    CM  CM  H4     50.0    119.700
+angle    CM  CM  N*     70.0    121.200
+angle    H4  CM  N*     50.0    119.100
+angle    H5  CQ  NC     50.0    115.450
+angle    NC  CQ  NC     70.0    129.100
+angle    CM  CT  HC     50.0    109.500
+angle    CT  CT  CT     40.0    109.500
+angle    CT  CT  HC     50.0    109.500
+angle    CT  CT  H1     50.0    109.500
+angle    CT  CT  H2     50.0    109.500
+angle    CT  CT  HP     50.0    109.500
+angle    CT  CT  N*     50.0    109.500
+angle    CT  CT  OH     50.0    109.500
+angle    CT  CT  OS     50.0    109.500
+angle    HC  CT  HC     35.0    109.500
+angle    H1  CT  H1     35.0    109.500
+angle    HP  CT  HP     35.0    109.500
+angle    H2  CT  N*     50.0    109.500
+angle    H1  CT  N*     50.0    109.500
+angle    H1  CT  OH     50.0    109.500
+angle    H1  CT  OS     50.0    109.500
+angle    H2  CT  OS     50.0    109.500
+angle    N*  CT  OS     50.0    109.500
+angle    H1  CT  N      50.0    109.500
+angle    C   CT  H1     50.0    109.500
+angle    C   CT  HP     50.0    109.500
+angle    H1  CT  S      50.0    109.500
+angle    H1  CT  SH     50.0    109.500
+angle    CT  CT  S      50.0    114.700
+angle    CT  CT  SH     50.0    108.600
+angle    H2  CT  H2     35.0    109.500
+angle    H1  CT  N2     50.0    109.500
+angle    HP  CT  N3     50.0    109.500
+angle    CA  CT  CT     63.0    114.000
+angle    C   CT  HC     50.0    109.500
+angle    C   CT  N      63.0    110.100
+angle    CT  CT  N2     80.0    111.200
+angle    CT  CT  N      80.0    109.700
+angle    C   CT  CT     63.0    111.100
+angle    CA  CT  HC     50.0    109.500
+angle    CT  CT  N3     80.0    111.200
+angle    CC  CT  CT     63.0    113.100
+angle    CC  CT  HC     50.0    109.500
+angle    C   CT  N3     80.0    111.200
+angle    C*  CT  CT     63.0    115.600
+angle    C*  CT  HC     50.0    109.500
+angle    CT  CC  NA     70.0    120.000
+angle    CT  CC  CV     70.0    120.000
+angle    CT  CC  NB     70.0    120.000
+angle    CV  CC  NA     70.0    120.000
+angle    CW  CC  NA     70.0    120.000
+angle    CW  CC  NB     70.0    120.000
+angle    CT  CC  CW     70.0    120.000
+angle    H5  CR  NA     50.0    120.000
+angle    H5  CR  NB     50.0    120.000
+angle    NA  CR  NA     70.0    120.000
+angle    NA  CR  NB     70.0    120.000
+angle    CC  CV  H4     50.0    120.000
+angle    CC  CV  NB     70.0    120.000
+angle    H4  CV  NB     50.0    120.000
+angle    CC  CW  H4     50.0    120.000
+angle    CC  CW  NA     70.0    120.000
+angle    H4  CW  NA     50.0    120.000
+angle    C*  CW  H4     50.0    120.000
+angle    C*  CW  NA     70.0    108.700
+angle    CT  C*  CW     70.0    125.000
+angle    CB  C*  CT     70.0    128.600
+angle    CB  C*  CW     63.0    106.400
+angle    CA  CN  NA     70.0    132.800
+angle    CB  CN  NA     70.0    104.400
+angle    CA  CN  CB     63.0    122.700
+angle    C   N   CT     50.0    121.900
+angle    C   N   H      50.0    120.000
+angle    CT  N   H      50.0    118.040
+angle    CT  N   CT     50.0    118.000
+angle    H   N   H      35.0    120.000
+angle    C   N*  CM     70.0    121.600
+angle    C   N*  CT     70.0    117.600
+angle    C   N*  H      50.0    119.200
+angle    CB  N*  CK     70.0    105.400
+angle    CB  N*  CT     70.0    125.800
+angle    CB  N*  H      50.0    125.800
+angle    CK  N*  CT     70.0    128.800
+angle    CK  N*  H      50.0    128.800
+angle    CM  N*  CT     70.0    121.200
+angle    CM  N*  H      50.0    121.200
+angle    CA  N2  H      50.0    120.000
+angle    H   N2  H      35.0    120.000
+angle    CT  N2  H      50.0    118.400
+angle    CA  N2  CT     50.0    123.200
+angle    CT  N3  H      50.0    109.500
+angle    CT  N3  CT     50.0    109.500
+angle    H   N3  H      35.0    109.500
+angle    C   NA  C      70.0    126.400
+angle    C   NA  CA     70.0    125.200
+angle    C   NA  H      50.0    116.800
+angle    CA  NA  H      50.0    118.000
+angle    CC  NA  CR     70.0    120.000
+angle    CC  NA  H      50.0    120.000
+angle    CR  NA  CW     70.0    120.000
+angle    CR  NA  H      50.0    120.000
+angle    CW  NA  H      50.0    120.000
+angle    CN  NA  CW     70.0    111.600
+angle    CN  NA  H      50.0    123.100
+angle    CB  NB  CK     70.0    103.800
+angle    CC  NB  CR     70.0    117.000
+angle    CR  NB  CV     70.0    117.000
+angle    C   NC  CA     70.0    120.500
+angle    CA  NC  CB     70.0    112.200
+angle    CA  NC  CQ     70.0    118.600
+angle    CB  NC  CQ     70.0    111.000
+angle    C   OH  HO     50.0    113.000
+angle    CT  OH  HO     55.0    108.500
+angle    HO  OH  P      45.0    108.500
+angle    CT  OS  CT     60.0    109.500
+angle    CT  OS  P     100.0    120.500
+angle    P   OS  P     100.0    120.500
+angle    O2  P   OH     45.0    108.230
+angle    O2  P   O2    140.0    119.900
+angle    O2  P   OS    100.0    108.230
+angle    OH  P   OS     45.0    102.600
+angle    OS  P   OS     45.0    102.600
+angle    CT  S   CT     62.0     98.900
+angle    CT  S   S      68.0    103.700
+angle    CT  SH  HS     43.0     96.000
+angle    HS  SH  HS     35.0     92.070
+angle    F   CT  F      77.0    109.100
+angle    F   CT  H1     50.0    109.500
+angle    N   C   N      70.0    120.000
+
+torsion  CT  CT  OS  CT   0.383     0.0   3    0.100   180.0   2
+torsion  C   N   CT  C    0.850   180.0   2    0.800     0.0   1
+torsion  N   CT  C   N    1.700   180.0   1    2.000   180.0   2
+torsion  CT  CT  N   C    0.500   180.0   4    0.150   180.0   3    0.530     0.0   1
+torsion  CT  CT  C   N    0.100     0.0   4    0.070     0.0   2
+torsion  H   N   C   O    2.500   180.0   2    2.000     0.0   1
+torsion  CT  S   S   CT   3.500     0.0   2    0.600     0.0   3
+torsion  OS  CT  CT  OS   0.144     0.0   3    1.175     0.0   2
+torsion  OS  CT  CT  OH   0.144     0.0   3    1.175     0.0   2
+torsion  OH  CT  CT  OH   0.144     0.0   3    1.175     0.0   2
+torsion  OH  P   OS  CT   0.250     0.0   3    1.200     0.0   2
+torsion  OS  P   OS  CT   0.250     0.0   3    1.200     0.0   2
+torsion  OS  CT  N*  CK   2.500     0.0   1
+torsion  OS  CT  N*  CM   2.500     0.0   1
+torsion  H1  CT  C   O    0.800     0.0   1    0.080   180.0   3
+torsion  HC  CT  C   O    0.800     0.0   1    0.080   180.0   3
+torsion  HC  CT  CT  HC   0.150     0.0   3
+torsion  HC  CT  CT  CT   0.160     0.0   3
+torsion  HC  CT  CM  CM   0.380   180.0   3    1.150     0.0   1
+torsion  HO  OH  CT  CT   0.160     0.0   3    0.250     0.0   1
+torsion  HO  OH  C   O    2.300   180.0   2    1.900     0.0   1
+torsion  CM  CM  C   O    2.175   180.0   2    0.300     0.0   3
+torsion  CT  CM  CM  CT   6.650   180.0   2    1.900   180.0   1
+torsion  CT  CT  CT  CT   0.180     0.0   3    0.250   180.0   2    0.200   180.0   1
+torsion  CT  CT  OS  C    0.383     0.0   3    0.800   180.0   1
+torsion  CT  OS  CT  OS   0.100     0.0   3    0.850   180.0   2    1.350   180.0   1
+torsion  O   C   OS  CT   2.700   180.0   2    1.400   180.0   1
+torsion  F   CT  CT  F    1.200   180.0   1
+torsion  Cl  CT  CT  Cl   0.450   180.0   1
+torsion  H1  CT  CT  OS   0.250     0.0   1
+torsion  H1  CT  CT  OH   0.250     0.0   1
+torsion  H1  CT  CT  F    0.190     0.0   1
+torsion  H1  CT  CT  Cl   0.250     0.0   1
+torsion  H1  CT  CT  Br   0.550     0.0   1
+torsion  HC  CT  CT  OS   0.250     0.0   1
+torsion  HC  CT  CT  OH   0.250     0.0   1
+torsion  HC  CT  CT  F    0.190     0.0   1
+torsion  HC  CT  CT  Cl   0.250     0.0   1
+torsion  HC  CT  CT  Br   0.550     0.0   1
+torsion  CT  OS  CT  N*   0.383     0.0   3    0.650     0.0   2
+torsion  X   C   C   X    3.625   180.0   2
+torsion  X   C   O   X    2.800   180.0   2
+torsion  X   C   OS  X    2.700   180.0   2
+torsion  X   CA  OH  X    0.900   180.0   2
+torsion  X   CM  OS  X    1.050   180.0   2
+torsion  X   C   CA  X    3.625   180.0   2
+torsion  X   C   CB  X    3.000   180.0   2
+torsion  X   C   CM  X    2.175   180.0   2
+torsion  X   C   N*  X    1.450   180.0   2
+torsion  X   C   NA  X    1.350   180.0   2
+torsion  X   C   NC  X    4.000   180.0   2
+torsion  X   C   OH  X    2.300   180.0   2
+torsion  X   CA  CA  X    3.625   180.0   2
+torsion  X   CA  CB  X    3.500   180.0   2
+torsion  X   CA  CM  X    2.550   180.0   2
+torsion  X   CA  N2  X    2.400   180.0   2
+torsion  X   CA  NA  X    1.500   180.0   2
+torsion  X   CA  NC  X    4.800   180.0   2
+torsion  X   CB  CB  X    5.450   180.0   2
+torsion  X   CB  N*  X    1.650   180.0   2
+torsion  X   CB  NB  X    2.550   180.0   2
+torsion  X   CB  NC  X    4.150   180.0   2
+torsion  X   CK  N*  X    1.700   180.0   2
+torsion  X   CK  NB  X   10.000   180.0   2
+torsion  X   CM  CM  X    6.650   180.0   2
+torsion  X   CM  N*  X    1.850   180.0   2
+torsion  X   CQ  NC  X    6.800   180.0   2
+torsion  X   CT  CT  X    0.156     0.0   3
+torsion  X   CT  OH  X    0.167     0.0   3
+torsion  X   CT  OS  X    0.383     0.0   3
+torsion  X   OH  P   X    0.250     0.0   3
+torsion  X   OS  P   X    0.250     0.0   3
+torsion  X   C   N   X    2.500   180.0   2
+torsion  X   CT  N3  X    0.156     0.0   3
+torsion  X   CT  S   X    0.333     0.0   3
+torsion  X   CT  SH  X    0.250     0.0   3
+torsion  X   C*  CB  X    1.675   180.0   2
+torsion  X   C*  CW  X    6.525   180.0   2
+torsion  X   CA  CN  X    3.625   180.0   2
+torsion  X   CB  CN  X    3.000   180.0   2
+torsion  X   CC  CV  X    5.150   180.0   2
+torsion  X   CC  CW  X    5.375   180.0   2
+torsion  X   CC  NA  X    1.400   180.0   2
+torsion  X   CC  NB  X    2.400   180.0   2
+torsion  X   CN  NA  X    1.525   180.0   2
+torsion  X   CR  NA  X    2.325   180.0   2
+torsion  X   CR  NB  X    5.000   180.0   2
+torsion  X   CV  NB  X    2.400   180.0   2
+torsion  X   CW  NA  X    1.500   180.0   2
