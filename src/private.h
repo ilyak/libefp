@@ -27,6 +27,7 @@
 #ifndef LIBEFP_PRIVATE_H
 #define LIBEFP_PRIVATE_H
 
+#include "bvec.h"
 #include "efp.h"
 #include "ff.h"
 #include "int.h"
@@ -185,6 +186,9 @@ struct efp {
 
 	/* force field for covalent links */
 	struct ff *ff;
+
+	/* bit matrix of covalent links between fragments */
+	struct bvec *links_bvec;
 };
 
 int efp_skip_frag_pair(struct efp *, int, int);

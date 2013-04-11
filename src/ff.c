@@ -34,8 +34,8 @@
 #include "ff.h"
 
 #define DEG2RAD (PI / 180.0)
-#define KCALMOL2AU 1.0 /* XXX */
-#define ANG2BOHR 1.0 /* XXX */
+#define KCALMOL2AU (1.0 / 627.50947)
+#define ANG2BOHR (1.0 / 0.52917721092)
 
 struct ff {
 	size_t n_atoms;
@@ -702,6 +702,10 @@ void efp_ff_set_atom_pos(struct ff *ff, size_t idx, vec_t pos)
 	assert(ff);
 	assert(idx < ff->n_atoms);
 
+	pos.x /= ANG2BOHR;
+	pos.y /= ANG2BOHR;
+	pos.z /= ANG2BOHR;
+
 	ff->atoms[idx].pos = pos;
 }
 
@@ -710,7 +714,13 @@ vec_t efp_ff_get_atom_pos(const struct ff *ff, size_t idx)
 	assert(ff);
 	assert(idx < ff->n_atoms);
 
-	return ff->atoms[idx].pos;
+	vec_t pos = {
+		ff->atoms[idx].pos.x * ANG2BOHR,
+		ff->atoms[idx].pos.y * ANG2BOHR,
+		ff->atoms[idx].pos.z * ANG2BOHR
+	};
+
+	return pos;
 }
 
 double efp_ff_compute(const struct ff *ff, vec_t *grad)

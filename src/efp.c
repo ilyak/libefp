@@ -132,7 +132,7 @@ init_ff(struct efp *efp)
 				const char *ptr = strchr(at->label, '_');
 
 				if (ptr) {
-					size_t idx = (size_t)strtol(ptr + 1, NULL, 10);
+					size_t idx = (size_t)strtol(ptr + 1, NULL, 10) - 1;
 
 					if (idx >= n_ff_cur)
 						return EFP_RESULT_INDEX_OUT_OF_RANGE;
@@ -163,7 +163,8 @@ parse_topology_record(struct efp *efp, const char *str)
 	if (sscanf(str, "%zu %zu %32s %32s", &idx1, &idx2, name1, name2) < 4)
 		return EFP_RESULT_SYNTAX_ERROR;
 
-	idx1--, idx2--;
+	if (--idx1 == --idx2)
+		return EFP_RESULT_SYNTAX_ERROR;
 
 	if (idx1 >= efp->n_frag || idx2 >= efp->n_frag)
 		return EFP_RESULT_INDEX_OUT_OF_RANGE;
@@ -181,9 +182,8 @@ parse_topology_record(struct efp *efp, const char *str)
 				frag2->ff_offset + link2)))
 		return ff_to_efp(ff_res);
 
-	/* XXX */
-	/*efp_bvec_set(efp->links_bvec, idx1 * efp->n_frags + idx2);*/
-	/*efp_bvec_set(efp->links_bvec, idx2 * efp->n_frags + idx1);*/
+	efp_bvec_set(efp->links_bvec, idx1 * efp->n_frag + idx2);
+	efp_bvec_set(efp->links_bvec, idx2 * efp->n_frag + idx1);
 
 	return EFP_RESULT_SUCCESS;
 }
@@ -479,6 +479,9 @@ check_opts(const struct efp_opts *opts)
 		    (opts->terms & EFP_TERM_AI_DISP) ||
 		    (opts->terms & EFP_TERM_AI_XR) ||
 		    (opts->terms & EFP_TERM_AI_CHTR))
+			return EFP_RESULT_PBC_NOT_SUPPORTED;
+
+		if (opts->enable_links)
 			return EFP_RESULT_PBC_NOT_SUPPORTED;
 
 		if (!opts->enable_cutoff)
@@ -1139,6 +1142,7 @@ efp_shutdown(struct efp *efp)
 	free(efp->lib);
 	free(efp->point_charges);
 	efp_ff_free(efp->ff);
+	efp_bvec_free(efp->links_bvec);
 	free(efp);
 }
 
@@ -1258,6 +1262,9 @@ efp_load_topology(struct efp *efp, const char *path)
 
 	if (!efp->opts.enable_links)
 		return EFP_RESULT_LINKS_ARE_NOT_ENABLED;
+
+	if ((efp->links_bvec = efp_bvec_create(efp->n_frag * efp->n_frag)) == NULL)
+		return EFP_RESULT_NO_MEMORY;
 
 	if ((res = init_ff(efp)))
 		return res;
