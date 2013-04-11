@@ -321,14 +321,22 @@ enum efp_result efp_add_potential(struct efp *efp, const char *path);
 enum efp_result efp_add_fragment(struct efp *efp, const char *name);
 
 /**
- * XXX
+ * Load force field data from file.
+ *
+ * \param[in] efp The efp structure.
+ *
+ * \param[in] path Path to the force field data file.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
 enum efp_result efp_load_forcefield(struct efp *efp, const char *path);
 
 /**
- * XXX
+ * Load topology of a system from file.
+ *
+ * \param[in] efp The efp structure.
+ *
+ * \param[in] path Path to the topology file.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
