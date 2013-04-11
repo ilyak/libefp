@@ -124,6 +124,7 @@ void print_energy(struct efp *efp)
 	printf("%30s %16.10lf\n", "POLARIZATION ENERGY", energy.polarization);
 	printf("%30s %16.10lf\n", "DISPERSION ENERGY", energy.dispersion);
 	printf("%30s %16.10lf\n", "EXCHANGE REPULSION ENERGY", energy.exchange_repulsion);
+	printf("%30s %16.10lf\n", "FORCE FIELD ENERGY", energy.covalent);
 	printf("\n");
 	printf("%30s %16.10lf\n", "TOTAL ENERGY", energy.total);
 	printf("\n\n");

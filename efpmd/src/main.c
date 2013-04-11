@@ -80,6 +80,9 @@ static struct cfg *make_cfg(void)
 		(int []) { EFP_POL_DAMP_TT,
 			   EFP_POL_DAMP_OFF });
 
+	cfg_add_bool(cfg, "enable_links", false);
+	cfg_add_string(cfg, "forcefield", FRAGLIB_PATH "/amber99.ff");
+	cfg_add_string(cfg, "topology", "top.etp");
 	cfg_add_bool(cfg, "enable_cutoff", false);
 	cfg_add_double(cfg, "swf_cutoff", 10.0);
 	cfg_add_int(cfg, "max_steps", 100);
@@ -210,7 +213,8 @@ static struct efp *init_sim(const struct cfg *cfg, const struct sys *sys)
 		.pol_damp = cfg_get_enum(cfg, "pol_damp"),
 		.enable_pbc = cfg_get_bool(cfg, "enable_pbc"),
 		.enable_cutoff = cfg_get_bool(cfg, "enable_cutoff"),
-		.swf_cutoff = cfg_get_double(cfg, "swf_cutoff")
+		.swf_cutoff = cfg_get_double(cfg, "swf_cutoff"),
+		.enable_links = cfg_get_bool(cfg, "enable_links")
 	};
 
 	enum efp_coord_type coord = cfg_get_enum(cfg, "coord");
@@ -222,15 +226,21 @@ static struct efp *init_sim(const struct cfg *cfg, const struct sys *sys)
 	check_fail(efp_set_opts(efp, &opts));
 	add_potentials(efp, cfg, sys);
 
-	for (int i = 0; i < sys->n_frags; i++) {
+	for (int i = 0; i < sys->n_frags; i++)
 		check_fail(efp_add_fragment(efp, sys->frags[i].name));
-		check_fail(efp_set_frag_coordinates(efp, i, coord, sys->frags[i].coord));
-	}
 
-	if (cfg_get_bool(cfg, "enable_pbc")) {
+	if (opts.enable_pbc) {
 		vec_t box = box_from_str(cfg_get_string(cfg, "periodic_box"));
 		check_fail(efp_set_periodic_box(efp, box.x, box.y, box.z));
 	}
+
+	if (opts.enable_links) {
+		check_fail(efp_load_forcefield(efp, cfg_get_string(cfg, "forcefield")));
+		check_fail(efp_load_topology(efp, cfg_get_string(cfg, "topology")));
+	}
+
+	for (int i = 0; i < sys->n_frags; i++)
+		check_fail(efp_set_frag_coordinates(efp, i, coord, sys->frags[i].coord));
 
 	return efp;
 }
