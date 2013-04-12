@@ -62,7 +62,7 @@ get_screen_damping_grad(double r_ij, double pi, double pj)
 
 static double
 atom_mult_energy(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
-		 int atom_i_idx, int pt_j_idx, const struct swf *swf)
+		 size_t atom_i_idx, size_t pt_j_idx, const struct swf *swf)
 {
 	struct efp_atom *at_i = fr_i->atoms + atom_i_idx;
 	struct multipole_pt *pt_j = fr_j->multipole_pts + pt_j_idx;
@@ -98,7 +98,7 @@ atom_mult_energy(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 
 static void
 atom_mult_grad(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
-	       int atom_i_idx, int pt_j_idx, const struct swf *swf)
+	       size_t atom_i_idx, size_t pt_j_idx, const struct swf *swf)
 {
 	struct efp_atom *at_i = fr_i->atoms + atom_i_idx;
 	struct multipole_pt *pt_j = fr_j->multipole_pts + pt_j_idx;
@@ -154,8 +154,8 @@ atom_mult_grad(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 }
 
 static double
-mult_mult_energy(struct efp *efp, int fr_i_idx, int fr_j_idx,
-		 int pt_i_idx, int pt_j_idx, const struct swf *swf)
+mult_mult_energy(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
+		 size_t pt_i_idx, size_t pt_j_idx, const struct swf *swf)
 {
 	struct frag *fr_i = efp->frags + fr_i_idx;
 	struct frag *fr_j = efp->frags + fr_j_idx;
@@ -215,8 +215,8 @@ mult_mult_energy(struct efp *efp, int fr_i_idx, int fr_j_idx,
 }
 
 static void
-mult_mult_grad(struct efp *efp, int fr_i_idx, int fr_j_idx,
-	       int pt_i_idx, int pt_j_idx, const struct swf *swf)
+mult_mult_grad(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
+	       size_t pt_i_idx, size_t pt_j_idx, const struct swf *swf)
 {
 	struct frag *fr_i = efp->frags + fr_i_idx;
 	struct frag *fr_j = efp->frags + fr_j_idx;
@@ -318,7 +318,7 @@ mult_mult_grad(struct efp *efp, int fr_i_idx, int fr_j_idx,
 }
 
 static double
-frag_frag_elec(struct efp *efp, int fr_i_idx, int fr_j_idx)
+frag_frag_elec(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx)
 {
 	struct frag *fr_i = efp->frags + fr_i_idx;
 	struct frag *fr_j = efp->frags + fr_j_idx;
@@ -327,8 +327,8 @@ frag_frag_elec(struct efp *efp, int fr_i_idx, int fr_j_idx)
 	struct swf swf = efp_make_swf(efp, fr_i, fr_j);
 
 	/* nuclei - nuclei */
-	for (int ii = 0; ii < fr_i->n_atoms; ii++) {
-		for (int jj = 0; jj < fr_j->n_atoms; jj++) {
+	for (size_t ii = 0; ii < fr_i->n_atoms; ii++) {
+		for (size_t jj = 0; jj < fr_j->n_atoms; jj++) {
 			struct efp_atom *at_i = fr_i->atoms + ii;
 			struct efp_atom *at_j = fr_j->atoms + jj;
 
@@ -354,8 +354,8 @@ frag_frag_elec(struct efp *efp, int fr_i_idx, int fr_j_idx)
 	}
 
 	/* nuclei - mult points */
-	for (int ii = 0; ii < fr_i->n_atoms; ii++) {
-		for (int jj = 0; jj < fr_j->n_multipole_pts; jj++) {
+	for (size_t ii = 0; ii < fr_i->n_atoms; ii++) {
+		for (size_t jj = 0; jj < fr_j->n_multipole_pts; jj++) {
 			energy += atom_mult_energy(efp, fr_i, fr_j, ii, jj, &swf);
 
 			if (efp->do_gradient)
@@ -364,8 +364,8 @@ frag_frag_elec(struct efp *efp, int fr_i_idx, int fr_j_idx)
 	}
 
 	/* mult points - nuclei */
-	for (int jj = 0; jj < fr_j->n_atoms; jj++) {
-		for (int ii = 0; ii < fr_i->n_multipole_pts; ii++) {
+	for (size_t jj = 0; jj < fr_j->n_atoms; jj++) {
+		for (size_t ii = 0; ii < fr_i->n_multipole_pts; ii++) {
 			struct swf swf2 = {
 				.swf = swf.swf,
 				.dswf = { -swf.dswf.x, -swf.dswf.y, -swf.dswf.z },
@@ -381,8 +381,8 @@ frag_frag_elec(struct efp *efp, int fr_i_idx, int fr_j_idx)
 	}
 
 	/* mult points - mult points */
-	for (int ii = 0; ii < fr_i->n_multipole_pts; ii++) {
-		for (int jj = 0; jj < fr_j->n_multipole_pts; jj++) {
+	for (size_t ii = 0; ii < fr_i->n_multipole_pts; ii++) {
+		for (size_t jj = 0; jj < fr_j->n_multipole_pts; jj++) {
 			energy += mult_mult_energy(efp, fr_i_idx, fr_j_idx, ii, jj, &swf);
 
 			if (efp->do_gradient)
@@ -414,8 +414,8 @@ efp_compute_elec(struct efp *efp)
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 4) reduction(+:energy)
 #endif
-	for (int i = 0; i < efp->n_frag; i++)
-		for (int j = i + 1; j < efp->n_frag; j++)
+	for (size_t i = 0; i < efp->n_frag; i++)
+		for (size_t j = i + 1; j < efp->n_frag; j++)
 			if (!efp_skip_frag_pair(efp, i, j))
 				energy += frag_frag_elec(efp, i, j);
 
@@ -428,14 +428,14 @@ rotate_quadrupole(const mat_t *rotmat, const double *in, double *out)
 {
 	double full_in[9], full_out[9];
 
-	for (int a = 0; a < 3; a++)
-		for (int b = 0; b < 3; b++)
+	for (size_t a = 0; a < 3; a++)
+		for (size_t b = 0; b < 3; b++)
 			full_in[a * 3 + b] = in[quad_idx(a, b)];
 
 	efp_rotate_t2(rotmat, full_in, full_out);
 
-	for (int a = 0; a < 3; a++)
-		for (int b = 0; b < 3; b++)
+	for (size_t a = 0; a < 3; a++)
+		for (size_t b = 0; b < 3; b++)
 			out[quad_idx(a, b)] = full_out[a * 3 + b];
 }
 
@@ -444,19 +444,19 @@ rotate_octupole(const mat_t *rotmat, const double *in, double *out)
 {
 	double full_in[27], full_out[27];
 
-	for (int a = 0; a < 3; a++)
-		for (int b = 0; b < 3; b++)
-			for (int c = 0; c < 3; c++) {
-				int idx = 9 * a + 3 * b + c;
+	for (size_t a = 0; a < 3; a++)
+		for (size_t b = 0; b < 3; b++)
+			for (size_t c = 0; c < 3; c++) {
+				size_t idx = 9 * a + 3 * b + c;
 				full_in[idx] = in[oct_idx(a, b, c)];
 			}
 
 	efp_rotate_t3(rotmat, full_in, full_out);
 
-	for (int a = 0; a < 3; a++)
-		for (int b = 0; b < 3; b++)
-			for (int c = 0; c < 3; c++) {
-				int idx = 9 * a + 3 * b + c;
+	for (size_t a = 0; a < 3; a++)
+		for (size_t b = 0; b < 3; b++)
+			for (size_t c = 0; c < 3; c++) {
+				size_t idx = 9 * a + 3 * b + c;
 				out[oct_idx(a, b, c)] = full_out[idx];
 			}
 }
@@ -464,7 +464,7 @@ rotate_octupole(const mat_t *rotmat, const double *in, double *out)
 void
 efp_update_elec(struct frag *frag)
 {
-	for (int i = 0; i < frag->n_multipole_pts; i++) {
+	for (size_t i = 0; i < frag->n_multipole_pts; i++) {
 		const struct multipole_pt *in = frag->lib->multipole_pts + i;
 		struct multipole_pt *out = frag->multipole_pts + i;
 
@@ -521,13 +521,13 @@ efp_update_elec(struct frag *frag)
 }
 
 static double
-compute_ai_elec_frag(struct efp *efp, int frag_idx)
+compute_ai_elec_frag(struct efp *efp, size_t frag_idx)
 {
 	double energy = 0.0;
 	struct frag *fr_i = efp->frags + frag_idx;
 
-	for (int i = 0; i < fr_i->n_atoms; i++) {
-		for (int j = 0; j < efp->n_ptc; j++) {
+	for (size_t i = 0; i < fr_i->n_atoms; i++) {
+		for (size_t j = 0; j < efp->n_ptc; j++) {
 			struct efp_atom *at_i = fr_i->atoms + i;
 			struct point_charge *at_j = efp->point_charges + j;
 			vec_t dr = vec_sub(CVEC(at_i->x), CVEC(at_j->x));
@@ -535,8 +535,8 @@ compute_ai_elec_frag(struct efp *efp, int frag_idx)
 			energy += efp_charge_charge_energy(at_i->znuc, at_j->charge, &dr);
 		}
 	}
-	for (int i = 0; i < fr_i->n_multipole_pts; i++) {
-		for (int j = 0; j < efp->n_ptc; j++) {
+	for (size_t i = 0; i < fr_i->n_multipole_pts; i++) {
+		for (size_t j = 0; j < efp->n_ptc; j++) {
 			struct multipole_pt *pt_i = fr_i->multipole_pts + i;
 			struct point_charge *at_j = efp->point_charges + j;
 
@@ -563,15 +563,15 @@ compute_ai_elec_frag(struct efp *efp, int frag_idx)
 }
 
 static void
-compute_ai_elec_frag_grad(struct efp *efp, int frag_idx)
+compute_ai_elec_frag_grad(struct efp *efp, size_t frag_idx)
 {
 	struct frag *fr_j = efp->frags + frag_idx;
 
-	for (int i = 0; i < efp->n_ptc; i++) {
+	for (size_t i = 0; i < efp->n_ptc; i++) {
 		struct point_charge *at_i = efp->point_charges + i;
 
 		/* ab initio atom - fragment atoms */
-		for (int k = 0; k < fr_j->n_atoms; k++) {
+		for (size_t k = 0; k < fr_j->n_atoms; k++) {
 			struct efp_atom *at_j = fr_j->atoms + k;
 
 			vec_t force, add_i, add_j;
@@ -585,7 +585,7 @@ compute_ai_elec_frag_grad(struct efp *efp, int frag_idx)
 		}
 
 		/* ab initio atom - fragment multipoles */
-		for (int k = 0; k < fr_j->n_multipole_pts; k++) {
+		for (size_t k = 0; k < fr_j->n_multipole_pts; k++) {
 			struct multipole_pt *pt_j = fr_j->multipole_pts + k;
 
 			vec_t force_, add_i_, add_j_;
@@ -630,7 +630,7 @@ efp_compute_ai_elec(struct efp *efp)
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 4) reduction(+:energy)
 #endif
-	for (int i = 0; i < efp->n_frag; i++) {
+	for (size_t i = 0; i < efp->n_frag; i++) {
 		energy += compute_ai_elec_frag(efp, i);
 
 		if (efp->do_gradient)

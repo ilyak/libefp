@@ -32,8 +32,8 @@
 
 #define INTEGRAL_THRESHOLD 1.0e-7
 
-static inline int
-fock_idx(int i, int j)
+static inline size_t
+fock_idx(size_t i, size_t j)
 {
 	return i < j ?
 		j * (j + 1) / 2 + i :
@@ -63,7 +63,7 @@ charge_penetration_energy(double s_ij, double r_ij)
 
 static void
 charge_penetration_grad(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
-			int lmo_i_idx, int lmo_j_idx, double s_ij, const six_t ds_ij,
+			size_t lmo_i_idx, size_t lmo_j_idx, double s_ij, const six_t ds_ij,
 			const struct swf *swf)
 {
 	if (fabs(s_ij) < INTEGRAL_THRESHOLD)
@@ -115,24 +115,26 @@ charge_penetration_grad(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 }
 
 static void
-transform_integrals(int n_lmo_i, int n_lmo_j,
-		    int wf_size_i, int wf_size_j,
+transform_integrals(size_t n_lmo_i, size_t n_lmo_j,
+		    size_t wf_size_i, size_t wf_size_j,
 		    const double *wf_i, const double *wf_j,
 		    const double *s, double *lmo_s)
 {
 	double tmp[n_lmo_i * wf_size_j];
 
 	cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-		n_lmo_i, wf_size_j, wf_size_i, 1.0, wf_i, wf_size_i,
-		s, wf_size_j, 0.0, tmp, wf_size_j);
+		(int)n_lmo_i, (int)wf_size_j, (int)wf_size_i, 1.0, wf_i,
+		(int)wf_size_i, s, (int)wf_size_j, 0.0, tmp, (int)wf_size_j);
 	cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
-		n_lmo_i, n_lmo_j, wf_size_j, 1.0, tmp, wf_size_j,
-		wf_j, wf_size_j, 0.0, lmo_s, n_lmo_j);
+		(int)n_lmo_i, (int)n_lmo_j, (int)wf_size_j, 1.0, tmp,
+		(int)wf_size_j, wf_j, (int)wf_size_j, 0.0, lmo_s, (int)n_lmo_j);
 }
 
 static void
-transform_integral_derivatives(int n_lmo_i, int n_lmo_j, int wf_size_i, int wf_size_j,
-	const double *wf_i, const double *wf_j, const six_t *ds, six_t *lmo_ds)
+transform_integral_derivatives(size_t n_lmo_i, size_t n_lmo_j,
+			       size_t wf_size_i, size_t wf_size_j,
+			       const double *wf_i, const double *wf_j,
+			       const six_t *ds, six_t *lmo_ds)
 {
 	six_t tmp[n_lmo_i * wf_size_j];
 	const six_t *p_ds;
@@ -140,12 +142,12 @@ transform_integral_derivatives(int n_lmo_i, int n_lmo_j, int wf_size_i, int wf_s
 
 	p_tmp = tmp;
 
-	for (int i = 0; i < n_lmo_i; i++) {
-		for (int j = 0; j < wf_size_j; j++, p_tmp++) {
+	for (size_t i = 0; i < n_lmo_i; i++) {
+		for (size_t j = 0; j < wf_size_j; j++, p_tmp++) {
 			six_t sum = six_zero;
 			p_ds = ds + j;
 
-			for (int k = 0; k < wf_size_i; k++, p_ds += wf_size_j) {
+			for (size_t k = 0; k < wf_size_i; k++, p_ds += wf_size_j) {
 				double w = wf_i[wf_size_i * i + k];
 
 				sum.x += p_ds->x * w;
@@ -162,12 +164,12 @@ transform_integral_derivatives(int n_lmo_i, int n_lmo_j, int wf_size_i, int wf_s
 
 	p_lmo_ds = lmo_ds;
 
-	for (int i = 0; i < n_lmo_i; i++) {
-		for (int j = 0; j < n_lmo_j; j++, p_lmo_ds++) {
+	for (size_t i = 0; i < n_lmo_i; i++) {
+		for (size_t j = 0; j < n_lmo_j; j++, p_lmo_ds++) {
 			six_t sum = six_zero;
 			p_tmp = tmp + i * wf_size_j;
 
-			for (int k = 0; k < wf_size_j; k++, p_tmp++) {
+			for (size_t k = 0; k < wf_size_j; k++, p_tmp++) {
 				double w = wf_j[wf_size_j * j + k];
 
 				sum.x += p_tmp->x * w;
@@ -184,11 +186,11 @@ transform_integral_derivatives(int n_lmo_i, int n_lmo_j, int wf_size_i, int wf_s
 }
 
 static void
-add_six_vec(int el, int size, const double *vec, six_t *six)
+add_six_vec(size_t el, size_t size, const double *vec, six_t *six)
 {
 	double *ptr = (double *)six + el;
 
-	for (int i = 0; i < size; i++, vec++, ptr += 6)
+	for (size_t i = 0; i < size; i++, vec++, ptr += 6)
 		*ptr += *vec;
 }
 
@@ -204,10 +206,10 @@ add_six_vec(int el, int size, const double *vec, six_t *six)
  */
 static void
 lmo_lmo_xr_grad(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
-		int i, int j, const double *lmo_s, const double *lmo_t,
+		size_t i, size_t j, const double *lmo_s, const double *lmo_t,
 		const six_t *lmo_ds, const six_t *lmo_dt, const struct swf *swf)
 {
-	int ij = i * fr_j->n_lmo + j;
+	size_t ij = i * fr_j->n_lmo + j;
 
 	const vec_t *ct_i = fr_i->lmo_centroids + i;
 	const vec_t *ct_j = fr_j->lmo_centroids + j;
@@ -252,7 +254,7 @@ lmo_lmo_xr_grad(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 	double fij = 0.0, fji = 0.0;
 	six_t dfij = six_zero, dfji = six_zero;
 
-	for (int k = 0; k < fr_i->n_lmo; k++) {
+	for (size_t k = 0; k < fr_i->n_lmo; k++) {
 		double fe = fr_i->xr_fock_mat[fock_idx(i, k)];
 		const six_t *ds = lmo_ds + k * fr_j->n_lmo + j;
 
@@ -266,7 +268,7 @@ lmo_lmo_xr_grad(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 		dfij.c += fe * ds->c;
 	}
 
-	for (int l = 0; l < fr_j->n_lmo; l++) {
+	for (size_t l = 0; l < fr_j->n_lmo; l++) {
 		double fe = fr_j->xr_fock_mat[fock_idx(j, l)];
 		const six_t *ds = lmo_ds + i * fr_j->n_lmo + l;
 
@@ -294,7 +296,7 @@ lmo_lmo_xr_grad(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 	double vib = 0.0, vja = 0.0;
 	six_t dvib = six_zero, dvja = six_zero;
 
-	for (int l = 0; l < fr_j->n_atoms; l++) {
+	for (size_t l = 0; l < fr_j->n_atoms; l++) {
 		struct efp_atom *at_j = fr_j->atoms + l;
 
 		vec_t dr_a = {
@@ -320,7 +322,7 @@ lmo_lmo_xr_grad(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 				 dr_a.y * (ct_i->x - fr_i->x));
 	}
 
-	for (int l = 0; l < fr_j->n_lmo; l++) {
+	for (size_t l = 0; l < fr_j->n_lmo; l++) {
 		vec_t *ct_jj = fr_j->lmo_centroids + l;
 
 		vec_t dr_a = {
@@ -346,7 +348,7 @@ lmo_lmo_xr_grad(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 				 dr_a.y * (ct_i->x - fr_i->x));
 	}
 
-	for (int k = 0; k < fr_i->n_atoms; k++) {
+	for (size_t k = 0; k < fr_i->n_atoms; k++) {
 		struct efp_atom *at_i = fr_i->atoms + k;
 
 		vec_t dr_a = {
@@ -372,7 +374,7 @@ lmo_lmo_xr_grad(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 				 dr_a.y * (at_i->x - fr_i->x));
 	}
 
-	for (int k = 0; k < fr_i->n_lmo; k++) {
+	for (size_t k = 0; k < fr_i->n_lmo; k++) {
 		vec_t *ct_ii = fr_i->lmo_centroids + k;
 
 		vec_t dr_a = {
@@ -441,7 +443,7 @@ lmo_lmo_xr_grad(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 }
 
 static double
-lmo_lmo_xr_energy(struct frag *fr_i, struct frag *fr_j, int i, int j,
+lmo_lmo_xr_energy(struct frag *fr_i, struct frag *fr_j, size_t i, size_t j,
 		  const double *lmo_s, const double *lmo_t, const struct swf *swf)
 {
 	double s_ij = lmo_s[i * fr_j->n_lmo + j];
@@ -464,18 +466,18 @@ lmo_lmo_xr_energy(struct frag *fr_i, struct frag *fr_j, int i, int j,
 		exr += -2.0 * sqrt(-2.0 * log(fabs(s_ij)) / PI) * s_ij * s_ij / r_ij;
 
 	/* xr - second part */
-	for (int k = 0; k < fr_i->n_lmo; k++) {
+	for (size_t k = 0; k < fr_i->n_lmo; k++) {
 		exr -= s_ij * lmo_s[k * fr_j->n_lmo + j] *
 				fr_i->xr_fock_mat[fock_idx(i, k)];
 	}
-	for (int l = 0; l < fr_j->n_lmo; l++) {
+	for (size_t l = 0; l < fr_j->n_lmo; l++) {
 		exr -= s_ij * lmo_s[i * fr_j->n_lmo + l] *
 				fr_j->xr_fock_mat[fock_idx(j, l)];
 	}
 	exr += 2.0 * s_ij * t_ij;
 
 	/* xr - third part */
-	for (int jj = 0; jj < fr_j->n_atoms; jj++) {
+	for (size_t jj = 0; jj < fr_j->n_atoms; jj++) {
 		struct efp_atom *at_j = fr_j->atoms + jj;
 
 		vec_t dr_a = {
@@ -488,7 +490,7 @@ lmo_lmo_xr_energy(struct frag *fr_i, struct frag *fr_j, int i, int j,
 
 		exr -= s_ij * s_ij * valence(at_j->znuc) / r;
 	}
-	for (int jj = 0; jj < fr_j->n_lmo; jj++) {
+	for (size_t jj = 0; jj < fr_j->n_lmo; jj++) {
 		const vec_t *ct_jj = fr_j->lmo_centroids + jj;
 
 		vec_t dr_a = {
@@ -501,7 +503,7 @@ lmo_lmo_xr_energy(struct frag *fr_i, struct frag *fr_j, int i, int j,
 
 		exr += 2.0 * s_ij * s_ij / r;
 	}
-	for (int ii = 0; ii < fr_i->n_atoms; ii++) {
+	for (size_t ii = 0; ii < fr_i->n_atoms; ii++) {
 		struct efp_atom *at_i = fr_i->atoms + ii;
 
 		vec_t dr_a = {
@@ -514,7 +516,7 @@ lmo_lmo_xr_energy(struct frag *fr_i, struct frag *fr_j, int i, int j,
 
 		exr -= s_ij * s_ij * valence(at_i->znuc) / r;
 	}
-	for (int ii = 0; ii < fr_i->n_lmo; ii++) {
+	for (size_t ii = 0; ii < fr_i->n_lmo; ii++) {
 		const vec_t *ct_ii = fr_i->lmo_centroids + ii;
 
 		vec_t dr_a = {
@@ -533,7 +535,7 @@ lmo_lmo_xr_energy(struct frag *fr_i, struct frag *fr_j, int i, int j,
 }
 
 static void
-frag_frag_xr(struct efp *efp, int frag_i, int frag_j, int overlap_idx,
+frag_frag_xr(struct efp *efp, size_t frag_i, size_t frag_j, size_t overlap_idx,
 	     double *exr_out, double *ecp_out)
 {
 	struct frag *fr_i = efp->frags + frag_i;
@@ -548,7 +550,7 @@ frag_frag_xr(struct efp *efp, int frag_i, int frag_j, int overlap_idx,
 	struct swf swf = efp_make_swf(efp, fr_i, fr_j);
 	struct shell shells_j[fr_j->n_xr_shells];
 
-	for (int j = 0; j < fr_j->n_xr_shells; j++) {
+	for (size_t j = 0; j < fr_j->n_xr_shells; j++) {
 		shells_j[j] = fr_j->xr_shells[j];
 
 		shells_j[j].x -= swf.cell.x;
@@ -572,8 +574,8 @@ frag_frag_xr(struct efp *efp, int frag_i, int frag_j, int overlap_idx,
 	double exr = 0.0;
 	double ecp = 0.0;
 
-	for (int i = 0, idx = 0; i < fr_i->n_lmo; i++) {
-		for (int j = 0; j < fr_j->n_lmo; j++, idx++) {
+	for (size_t i = 0, idx = 0; i < fr_i->n_lmo; i++) {
+		for (size_t j = 0; j < fr_j->n_lmo; j++, idx++) {
 			double s_ij = lmo_s[i * fr_j->n_lmo + j];
 
 			vec_t dr = {
@@ -634,7 +636,7 @@ frag_frag_xr(struct efp *efp, int frag_i, int frag_j, int overlap_idx,
 
 	double lmo_tmp[fr_i->n_lmo * fr_j->n_lmo];
 
-	for (int a = 0; a < 3; a++) {
+	for (size_t a = 0; a < 3; a++) {
 		transform_integrals(fr_i->n_lmo, fr_j->n_lmo,
 				    fr_i->xr_wf_size, fr_j->xr_wf_size,
 				    fr_i->xr_wf_deriv[a], fr_j->xr_wf,
@@ -648,9 +650,9 @@ frag_frag_xr(struct efp *efp, int frag_i, int frag_j, int overlap_idx,
 		add_six_vec(3 + a, fr_i->n_lmo * fr_j->n_lmo, lmo_tmp, lmo_dt);
 	}
 
-	for (int i = 0, idx = 0; i < fr_i->n_lmo; i++) {
-		for (int j = 0; j < fr_j->n_lmo; j++, idx++) {
-			int ij = i * fr_j->n_lmo + j;
+	for (size_t i = 0, idx = 0; i < fr_i->n_lmo; i++) {
+		for (size_t j = 0; j < fr_j->n_lmo; j++, idx++) {
+			size_t ij = i * fr_j->n_lmo + j;
 
 			if ((efp->opts.terms & EFP_TERM_DISP) &&
 			    (efp->opts.disp_damp == EFP_DISP_DAMP_OVERLAP))
@@ -699,9 +701,9 @@ efp_compute_xr(struct efp *efp)
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 4) reduction(+:exr,ecp)
 #endif
-	for (int i = 0; i < efp->n_frag; i++) {
-		for (int j = i + 1, idx = 0; j < efp->n_frag; j++) {
-			int n_lmo_ij = efp->frags[i].n_lmo * efp->frags[j].n_lmo;
+	for (size_t i = 0; i < efp->n_frag; i++) {
+		for (size_t j = i + 1, idx = 0; j < efp->n_frag; j++) {
+			size_t n_lmo_ij = efp->frags[i].n_lmo * efp->frags[j].n_lmo;
 
 			if (!efp_skip_frag_pair(efp, i, j)) {
 				double exr_out, ecp_out;
@@ -732,26 +734,26 @@ efp_compute_xr(struct efp *efp)
 	return EFP_RESULT_SUCCESS;
 }
 
-static inline int
-func_d_idx(int a, int b)
+static inline size_t
+func_d_idx(size_t a, size_t b)
 {
 	/* order in which GAMESS stores D functions */
 	enum { xx = 0, yy, zz, xy, xz, yz };
 
-	static const int idx[] = {
+	static const size_t idx[] = {
 		xx, xy, xz, xy, yy, yz, xz, yz, zz
 	};
 
 	return idx[3 * a + b];
 }
 
-static inline int
-func_f_idx(int a, int b, int c)
+static inline size_t
+func_f_idx(size_t a, size_t b, size_t c)
 {
 	/* order in which GAMESS stores F functions */
 	enum { xxx = 0, yyy, zzz, xxy, xxz, xyy, yyz, xzz, yzz, xyz };
 
-	static const int idx[] = {
+	static const size_t idx[] = {
 		xxx, xxy, xxz, xxy, xyy, xyz, xxz, xyz, xzz,
 		xxy, xyy, xyz, xyy, yyy, yyz, xyz, yyz, yzz,
 		xxz, xyz, xzz, xyz, yyz, yzz, xzz, yzz, zzz
@@ -767,8 +769,8 @@ rotate_func_d(const mat_t *rotmat, const double *in, double *out)
 
 	double full_in[9], full_out[9];
 
-	for (int a = 0; a < 3; a++) {
-		for (int b = 0; b < 3; b++) {
+	for (size_t a = 0; a < 3; a++) {
+		for (size_t b = 0; b < 3; b++) {
 			full_in[3 * a + b] = in[func_d_idx(a, b)];
 			if (a != b)
 				full_in[3 * a + b] *= norm;
@@ -777,8 +779,8 @@ rotate_func_d(const mat_t *rotmat, const double *in, double *out)
 
 	efp_rotate_t2(rotmat, full_in, full_out);
 
-	for (int a = 0; a < 3; a++) {
-		for (int b = 0; b < 3; b++) {
+	for (size_t a = 0; a < 3; a++) {
+		for (size_t b = 0; b < 3; b++) {
 			if (a != b)
 				full_out[3 * a + b] /= norm;
 			out[func_d_idx(a, b)] = full_out[3 * a + b];
@@ -794,11 +796,11 @@ rotate_func_f(const mat_t *rotmat, const double *in, double *out)
 
 	double full_in[27], full_out[27];
 
-	for (int a = 0; a < 3; a++)
-		for (int b = 0; b < 3; b++)
-			for (int c = 0; c < 3; c++) {
-				int full_idx = 9 * a + 3 * b + c;
-				int in_idx = func_f_idx(a, b, c);
+	for (size_t a = 0; a < 3; a++)
+		for (size_t b = 0; b < 3; b++)
+			for (size_t c = 0; c < 3; c++) {
+				size_t full_idx = 9 * a + 3 * b + c;
+				size_t in_idx = func_f_idx(a, b, c);
 
 				full_in[full_idx] = in[in_idx];
 
@@ -811,11 +813,11 @@ rotate_func_f(const mat_t *rotmat, const double *in, double *out)
 
 	efp_rotate_t3(rotmat, full_in, full_out);
 
-	for (int a = 0; a < 3; a++)
-		for (int b = 0; b < 3; b++)
-			for (int c = 0; c < 3; c++) {
-				int full_idx = 9 * a + 3 * b + c;
-				int out_idx = func_f_idx(a, b, c);
+	for (size_t a = 0; a < 3; a++)
+		for (size_t b = 0; b < 3; b++)
+			for (size_t c = 0; c < 3; c++) {
+				size_t full_idx = 9 * a + 3 * b + c;
+				size_t out_idx = func_f_idx(a, b, c);
 
 				if (a != b || a != c)
 					full_out[full_idx] /= norm1;
@@ -828,7 +830,7 @@ rotate_func_f(const mat_t *rotmat, const double *in, double *out)
 }
 
 static void
-coef_deriv_p(int axis, const double *coef, double *der)
+coef_deriv_p(size_t axis, const double *coef, double *der)
 {
 	switch (axis) {
 	case 0:
@@ -850,7 +852,7 @@ coef_deriv_p(int axis, const double *coef, double *der)
 }
 
 static void
-coef_deriv_d(int axis, const double *coef, double *der)
+coef_deriv_d(size_t axis, const double *coef, double *der)
 {
 	const double sqrt3 = sqrt(3.0);
 
@@ -883,7 +885,7 @@ coef_deriv_d(int axis, const double *coef, double *der)
 }
 
 static void
-coef_deriv_f(int axis, const double *coef, double *der)
+coef_deriv_f(size_t axis, const double *coef, double *der)
 {
 	const double sqrt3 = sqrt(3.0);
 	const double sqrt5 = sqrt(5.0);
@@ -934,26 +936,26 @@ efp_update_xr(struct frag *frag)
 	const mat_t *rotmat = &frag->rotmat;
 
 	/* update LMO centroids */
-	for (int i = 0; i < frag->n_lmo; i++)
+	for (size_t i = 0; i < frag->n_lmo; i++)
 		efp_move_pt(CVEC(frag->x), rotmat, frag->lib->lmo_centroids + i,
 				frag->lmo_centroids + i);
 
 	/* update shells */
-	for (int i = 0; i < frag->n_xr_shells; i++)
+	for (size_t i = 0; i < frag->n_xr_shells; i++)
 		efp_move_pt(CVEC(frag->x), rotmat, CVEC(frag->lib->xr_shells[i].x),
 				VEC(frag->xr_shells[i].x));
 
 	/* rotate wavefunction */
-	for (int k = 0; k < frag->n_lmo; k++) {
+	for (size_t k = 0; k < frag->n_lmo; k++) {
 		double *deriv[3];
 
-		for (int a = 0; a < 3; a++)
+		for (size_t a = 0; a < 3; a++)
 			deriv[a] = frag->xr_wf_deriv[a] + k * frag->xr_wf_size;
 
 		const double *in = frag->lib->xr_wf + k * frag->xr_wf_size;
 		double *out = frag->xr_wf + k * frag->xr_wf_size;
 
-		for (int i = 0, func = 0; i < frag->n_xr_shells; i++) {
+		for (size_t i = 0, func = 0; i < frag->n_xr_shells; i++) {
 			switch (frag->xr_shells[i].type) {
 			case 'S':
 				func++;
@@ -968,7 +970,7 @@ efp_update_xr(struct frag *frag)
 				out[func + 1] = r.y;
 				out[func + 2] = r.z;
 
-				for (int a = 0; a < 3; a++)
+				for (size_t a = 0; a < 3; a++)
 					coef_deriv_p(a, out + func, deriv[a] + func);
 
 				func += 3;
@@ -977,7 +979,7 @@ efp_update_xr(struct frag *frag)
 			case 'D':
 				rotate_func_d(rotmat, in + func, out + func);
 
-				for (int a = 0; a < 3; a++)
+				for (size_t a = 0; a < 3; a++)
 					coef_deriv_d(a, out + func, deriv[a] + func);
 
 				func += 6;
@@ -985,7 +987,7 @@ efp_update_xr(struct frag *frag)
 			case 'F':
 				rotate_func_f(rotmat, in + func, out + func);
 
-				for (int a = 0; a < 3; a++)
+				for (size_t a = 0; a < 3; a++)
 					coef_deriv_f(a, out + func, deriv[a] + func);
 
 				func += 10;

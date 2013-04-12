@@ -273,9 +273,9 @@ static void init_ft(int count_i, char type_j, double *ft)
 	assert(0);
 }
 
-void efp_st_int(int n_shells_i, const struct shell *shells_i,
-		int n_shells_j, const struct shell *shells_j,
-		int stride, double *s, double *t)
+void efp_st_int(size_t n_shells_i, const struct shell *shells_i,
+		size_t n_shells_j, const struct shell *shells_j,
+		size_t stride, double *s, double *t)
 {
 	double xin[90];
 	double yin[90];
@@ -427,9 +427,9 @@ void efp_st_int(int n_shells_i, const struct shell *shells_i,
 	}
 }
 
-void efp_st_int_deriv(int n_shells_i, const struct shell *shells_i,
-		      int n_shells_j, const struct shell *shells_j,
-		      const vec_t *com_i, int size_i, int size_j,
+void efp_st_int_deriv(size_t n_shells_i, const struct shell *shells_i,
+		      size_t n_shells_j, const struct shell *shells_j,
+		      const vec_t *com_i, size_t size_i, size_t size_j,
 		      six_t *ds, six_t *dt)
 {
 	static const int shift_x[] = { 0, 1, 0, 0, 2, 0, 0, 1, 1, 0,

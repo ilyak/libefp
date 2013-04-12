@@ -270,7 +270,7 @@ static void
 update_fragment(struct frag *frag)
 {
 	/* update atoms */
-	for (int i = 0; i < frag->n_atoms; i++)
+	for (size_t i = 0; i < frag->n_atoms; i++)
 		efp_move_pt(CVEC(frag->x), &frag->rotmat,
 			CVEC(frag->lib->atoms[i].x), VEC(frag->atoms[i].x));
 
@@ -355,10 +355,10 @@ free_frag(struct frag *frag)
 	free(frag->screen_params);
 	free(frag->ai_screen_params);
 
-	for (int i = 0; i < 3; i++)
+	for (size_t i = 0; i < 3; i++)
 		free(frag->xr_wf_deriv[i]);
 
-	for (int i = 0; i < frag->n_xr_shells; i++)
+	for (size_t i = 0; i < frag->n_xr_shells; i++)
 		free(frag->xr_shells[i].coef);
 
 	free(frag->xr_shells);
@@ -432,7 +432,7 @@ copy_frag(struct frag *dest, const struct frag *src)
 			return EFP_RESULT_NO_MEMORY;
 		memcpy(dest->xr_shells, src->xr_shells, size);
 
-		for (int i = 0; i < src->n_xr_shells; i++) {
+		for (size_t i = 0; i < src->n_xr_shells; i++) {
 			size = (src->xr_shells[i].type == 'L' ? 3 : 2) *
 				src->xr_shells[i].n_funcs * sizeof(double);
 
@@ -533,7 +533,7 @@ check_params(struct efp *efp)
 {
 	enum efp_result res;
 
-	for (int i = 0; i < efp->n_frag; i++)
+	for (size_t i = 0; i < efp->n_frag; i++)
 		if ((res = check_frag_params(&efp->opts, efp->frags + i)))
 			return res;
 
@@ -547,11 +547,11 @@ setup_disp(struct efp *efp)
 	    (efp->opts.disp_damp != EFP_DISP_DAMP_OVERLAP))
 		return EFP_RESULT_SUCCESS;
 
-	for (int i = 0; i < efp->n_frag; i++) {
+	for (size_t i = 0; i < efp->n_frag; i++) {
 		struct frag *frag = efp->frags + i;
 		size_t size = 0;
 
-		for (int j = i + 1; j < efp->n_frag; j++)
+		for (size_t j = i + 1; j < efp->n_frag; j++)
 			size += efp->frags[i].n_lmo * efp->frags[j].n_lmo;
 
 		frag->overlap_int = realloc(frag->overlap_int,
@@ -598,7 +598,7 @@ efp_get_gradient(struct efp *efp, int n_frags, double *grad)
 	if (n_frags != efp->n_frag)
 		return EFP_RESULT_INVALID_ARRAY_SIZE;
 
-	for (int i = 0; i < efp->n_frag; i++, grad += 6) {
+	for (size_t i = 0; i < efp->n_frag; i++, grad += 6) {
 		memcpy(grad, &efp->frags[i].force, sizeof(vec_t));
 		memcpy(grad + 3, &efp->frags[i].torque, sizeof(vec_t));
 	}
@@ -618,7 +618,7 @@ efp_get_point_charge_gradient(struct efp *efp, double *grad)
 	if (!efp->do_gradient)
 		return EFP_RESULT_GRADIENT_NOT_REQUESTED;
 
-	for (int i = 0; i < efp->n_ptc; i++) {
+	for (size_t i = 0; i < efp->n_ptc; i++) {
 		*grad++ = efp->point_charges[i].grad.x;
 		*grad++ = efp->point_charges[i].grad.y;
 		*grad++ = efp->point_charges[i].grad.z;
@@ -669,7 +669,7 @@ efp_set_point_charges(struct efp *efp, int n_ptc,
 	if (!efp->point_charges)
 		return EFP_RESULT_NO_MEMORY;
 
-	for (int i = 0; i < efp->n_ptc; i++) {
+	for (size_t i = 0; i < efp->n_ptc; i++) {
 		struct point_charge *ptc = efp->point_charges + i;
 
 		ptc->x = *xyz++;
@@ -691,7 +691,7 @@ efp_get_point_charge_coordinates(struct efp *efp, double *xyz)
 	if (!xyz)
 		return EFP_RESULT_INVALID_ARGUMENT;
 
-	for (int i = 0; i < efp->n_ptc; i++) {
+	for (size_t i = 0; i < efp->n_ptc; i++) {
 		struct point_charge *ptc = efp->point_charges + i;
 
 		*xyz++ = ptc->x;
@@ -711,7 +711,7 @@ efp_get_point_charge_values(struct efp *efp, double *q)
 	if (!q)
 		return EFP_RESULT_INVALID_ARGUMENT;
 
-	for (int i = 0; i < efp->n_ptc; i++)
+	for (size_t i = 0; i < efp->n_ptc; i++)
 		*q++ = efp->point_charges[i].charge;
 
 	return EFP_RESULT_SUCCESS;
@@ -730,7 +730,7 @@ efp_set_coordinates(struct efp *efp, enum efp_coord_type coord_type,
 	if (!efp)
 		return EFP_RESULT_NOT_INITIALIZED;
 
-	for (int i = 0; i < efp->n_frag; i++, coord += stride)
+	for (size_t i = 0; i < efp->n_frag; i++, coord += stride)
 		if ((res = efp_set_frag_coordinates(efp, i, coord_type, coord)))
 			return res;
 
@@ -787,7 +787,7 @@ efp_get_coordinates(struct efp *efp, int n_frags, double *xyzabc)
 	if (n_frags != efp->n_frag)
 		return EFP_RESULT_INVALID_ARRAY_SIZE;
 
-	for (int i = 0; i < efp->n_frag; i++) {
+	for (size_t i = 0; i < efp->n_frag; i++) {
 		struct frag *frag = efp->frags + i;
 
 		double a, b, c;
@@ -884,12 +884,12 @@ efp_compute(struct efp *efp, int do_gradient)
 	if ((res = setup_disp(efp)))
 		return res;
 
-	for (int i = 0; i < efp->n_frag; i++) {
+	for (size_t i = 0; i < efp->n_frag; i++) {
 		efp->frags[i].force = vec_zero;
 		efp->frags[i].torque = vec_zero;
 	}
 
-	for (int i = 0; i < efp->n_ptc; i++)
+	for (size_t i = 0; i < efp->n_ptc; i++)
 		efp->point_charges[i].grad = vec_zero;
 
 	for (size_t i = 0; i < ARRAY_SIZE(term_list); i++)
@@ -936,10 +936,10 @@ efp_get_frag_charge(struct efp *efp, int frag_idx, double *charge)
 	struct frag *frag = efp->frags + frag_idx;
 	*charge = 0.0;
 
-	for (int i = 0; i < frag->n_atoms; i++)
+	for (size_t i = 0; i < frag->n_atoms; i++)
 		*charge += frag->atoms[i].znuc;
 
-	for (int i = 0; i < frag->n_multipole_pts; i++)
+	for (size_t i = 0; i < frag->n_multipole_pts; i++)
 		*charge += frag->multipole_pts[i].monopole;
 
 	return EFP_RESULT_SUCCESS;
@@ -971,9 +971,9 @@ efp_get_multipole_count(struct efp *efp, int *n_mult)
 	if (!n_mult)
 		return EFP_RESULT_INVALID_ARGUMENT;
 
-	int sum = 0;
+	size_t sum = 0;
 
-	for (int i = 0; i < efp->n_frag; i++)
+	for (size_t i = 0; i < efp->n_frag; i++)
 		sum += efp->frags[i].n_multipole_pts;
 
 	*n_mult = sum;
@@ -989,10 +989,10 @@ efp_get_multipole_coordinates(struct efp *efp, double *xyz)
 	if (!xyz)
 		return EFP_RESULT_INVALID_ARGUMENT;
 
-	for (int i = 0; i < efp->n_frag; i++) {
+	for (size_t i = 0; i < efp->n_frag; i++) {
 		struct frag *frag = efp->frags + i;
 
-		for (int j = 0; j < frag->n_multipole_pts; j++) {
+		for (size_t j = 0; j < frag->n_multipole_pts; j++) {
 			*xyz++ = frag->multipole_pts[j].x;
 			*xyz++ = frag->multipole_pts[j].y;
 			*xyz++ = frag->multipole_pts[j].z;
@@ -1011,10 +1011,10 @@ efp_get_multipole_values(struct efp *efp, double *mult)
 	if (!mult)
 		return EFP_RESULT_INVALID_ARGUMENT;
 
-	for (int i = 0; i < efp->n_frag; i++) {
+	for (size_t i = 0; i < efp->n_frag; i++) {
 		struct frag *frag = efp->frags + i;
 
-		for (int j = 0; j < frag->n_multipole_pts; j++) {
+		for (size_t j = 0; j < frag->n_multipole_pts; j++) {
 			struct multipole_pt *pt = frag->multipole_pts + j;
 
 			*mult++ = pt->monopole;
@@ -1023,10 +1023,10 @@ efp_get_multipole_values(struct efp *efp, double *mult)
 			*mult++ = pt->dipole.y;
 			*mult++ = pt->dipole.z;
 
-			for (int t = 0; t < 6; t++)
+			for (size_t t = 0; t < 6; t++)
 				*mult++ = pt->quadrupole[t];
 
-			for (int t = 0; t < 10; t++)
+			for (size_t t = 0; t < 10; t++)
 				*mult++ = pt->octupole[t];
 		}
 	}
@@ -1043,9 +1043,9 @@ efp_get_induced_dipole_count(struct efp *efp, int *n_dip)
 	if (!n_dip)
 		return EFP_RESULT_INVALID_ARGUMENT;
 
-	int sum = 0;
+	size_t sum = 0;
 
-	for (int i = 0; i < efp->n_frag; i++)
+	for (size_t i = 0; i < efp->n_frag; i++)
 		sum += efp->frags[i].n_polarizable_pts;
 
 	*n_dip = sum;
@@ -1061,10 +1061,10 @@ efp_get_induced_dipole_coordinates(struct efp *efp, double *xyz)
 	if (!xyz)
 		return EFP_RESULT_INVALID_ARGUMENT;
 
-	for (int i = 0; i < efp->n_frag; i++) {
+	for (size_t i = 0; i < efp->n_frag; i++) {
 		struct frag *frag = efp->frags + i;
 
-		for (int j = 0; j < frag->n_polarizable_pts; j++) {
+		for (size_t j = 0; j < frag->n_polarizable_pts; j++) {
 			struct polarizable_pt *pt = frag->polarizable_pts + j;
 
 			*xyz++ = pt->x;
@@ -1085,10 +1085,10 @@ efp_get_induced_dipole_values(struct efp *efp, double *dip)
 	if (!dip)
 		return EFP_RESULT_INVALID_ARGUMENT;
 
-	for (int i = 0; i < efp->n_frag; i++) {
+	for (size_t i = 0; i < efp->n_frag; i++) {
 		struct frag *frag = efp->frags + i;
 
-		for (int j = 0; j < frag->n_polarizable_pts; j++) {
+		for (size_t j = 0; j < frag->n_polarizable_pts; j++) {
 			struct polarizable_pt *pt = frag->polarizable_pts + j;
 
 			*dip++ = pt->induced_dipole.x;
@@ -1109,10 +1109,10 @@ efp_get_induced_dipole_conj_values(struct efp *efp, double *dip)
 	if (!dip)
 		return EFP_RESULT_INVALID_ARGUMENT;
 
-	for (int i = 0; i < efp->n_frag; i++) {
+	for (size_t i = 0; i < efp->n_frag; i++) {
 		struct frag *frag = efp->frags + i;
 
-		for (int j = 0; j < frag->n_polarizable_pts; j++) {
+		for (size_t j = 0; j < frag->n_polarizable_pts; j++) {
 			struct polarizable_pt *pt = frag->polarizable_pts + j;
 
 			*dip++ = pt->induced_dipole_conj.x;
@@ -1130,10 +1130,10 @@ efp_shutdown(struct efp *efp)
 	if (!efp)
 		return;
 
-	for (int i = 0; i < efp->n_frag; i++)
+	for (size_t i = 0; i < efp->n_frag; i++)
 		free_frag(efp->frags + i);
 
-	for (int i = 0; i < efp->n_lib; i++) {
+	for (size_t i = 0; i < efp->n_lib; i++) {
 		free_frag(efp->lib[i]);
 		free(efp->lib[i]);
 	}
@@ -1216,7 +1216,7 @@ efp_add_fragment(struct efp *efp, const char *name)
 	if ((res = copy_frag(frag, lib)))
 		return res;
 
-	for (int a = 0; a < 3; a++) {
+	for (size_t a = 0; a < 3; a++) {
 		size_t size = frag->xr_wf_size * frag->n_lmo;
 
 		frag->xr_wf_deriv[a] = malloc(size * sizeof(double));
@@ -1370,7 +1370,7 @@ efp_get_frag_mass(struct efp *efp, int frag_idx, double *mass_out)
 	const struct frag *frag = efp->frags + frag_idx;
 	double mass = 0.0;
 
-	for (int i = 0; i < frag->n_atoms; i++)
+	for (size_t i = 0; i < frag->n_atoms; i++)
 		mass += frag->atoms[i].mass;
 
 	*mass_out = mass;
@@ -1394,7 +1394,7 @@ efp_get_frag_inertia(struct efp *efp, int frag_idx, double *inertia_out)
 	const struct frag *frag = efp->frags[frag_idx].lib;
 	vec_t inertia = vec_zero;
 
-	for (int i = 0; i < frag->n_atoms; i++) {
+	for (size_t i = 0; i < frag->n_atoms; i++) {
 		const struct efp_atom *atom = frag->atoms + i;
 
 		inertia.x += atom->mass * (atom->y * atom->y + atom->z * atom->z);

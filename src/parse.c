@@ -91,20 +91,36 @@ tok_label(struct stream *stream, size_t size, char *val)
 
 	const char *start = efp_stream_get_ptr(stream);
 	efp_stream_skip_nonspace(stream);
-	size_t len = efp_stream_get_ptr(stream) - start;
+	const char *end = efp_stream_get_ptr(stream);
+	memset(val, 0, size);
 
-	if (len >= size)
-		return 0;
+	for (size_t i = 0; start < end && i < size - 1; i++)
+		*val++ = *start++;
 
-	strncpy(val, start, len);
-	val[len] = '\0';
-	return 1;
+	return start == end;
 }
 
 static int
 tok_int(struct stream *stream, int *val)
 {
 	return efp_stream_parse_int(stream, val);
+}
+
+static int
+tok_uint(struct stream *stream, size_t *val)
+{
+	int x;
+
+	if (!tok_int(stream, &x))
+		return 0;
+
+	if (x < 0)
+		return 0;
+
+	if (val)
+		*val = (size_t)x;
+
+	return 1;
 }
 
 static int
@@ -175,7 +191,7 @@ parse_monopoles(struct efp *efp, struct stream *stream)
 
 	efp_stream_next_line(stream);
 
-	for (int i = 0; i < frag->n_multipole_pts; i++) {
+	for (size_t i = 0; i < frag->n_multipole_pts; i++) {
 		if (!skip_label(stream) ||
 		    !tok_double(stream, &frag->multipole_pts[i].monopole) ||
 		    !tok_double(stream, NULL))
@@ -199,7 +215,7 @@ parse_dipoles(struct efp *efp, struct stream *stream)
 
 	efp_stream_next_line(stream);
 
-	for (int i = 0; i < frag->n_multipole_pts; i++) {
+	for (size_t i = 0; i < frag->n_multipole_pts; i++) {
 		if (!skip_label(stream) ||
 		    !tok_double(stream, &frag->multipole_pts[i].dipole.x) ||
 		    !tok_double(stream, &frag->multipole_pts[i].dipole.y) ||
@@ -224,13 +240,13 @@ parse_quadrupoles(struct efp *efp, struct stream *stream)
 
 	efp_stream_next_line(stream);
 
-	for (int i = 0; i < frag->n_multipole_pts; i++) {
+	for (size_t i = 0; i < frag->n_multipole_pts; i++) {
 		if (!skip_label(stream))
 			return EFP_RESULT_SYNTAX_ERROR;
 
 		double *q = frag->multipole_pts[i].quadrupole;
 
-		for (int j = 0; j < 6; j++)
+		for (size_t j = 0; j < 6; j++)
 			if (!tok_double(stream, q + j))
 				return EFP_RESULT_SYNTAX_ERROR;
 
@@ -253,13 +269,13 @@ parse_octupoles(struct efp *efp, struct stream *stream)
 
 	efp_stream_next_line(stream);
 
-	for (int i = 0; i < frag->n_multipole_pts; i++) {
+	for (size_t i = 0; i < frag->n_multipole_pts; i++) {
 		if (!skip_label(stream))
 			return EFP_RESULT_SYNTAX_ERROR;
 
 		double *o = frag->multipole_pts[i].octupole;
 
-		for (int j = 0; j < 10; j++)
+		for (size_t j = 0; j < 10; j++)
 			if (!tok_double(stream, o + j))
 				return EFP_RESULT_SYNTAX_ERROR;
 
@@ -304,7 +320,7 @@ parse_polarizable_pts(struct efp *efp, struct stream *stream)
 		efp_stream_next_line(stream);
 		double m[9];
 
-		for (int i = 0; i < 9; i++)
+		for (size_t i = 0; i < 9; i++)
 			if (!tok_double(stream, m + i))
 				return EFP_RESULT_SYNTAX_ERROR;
 
@@ -355,7 +371,7 @@ parse_dynamic_polarizable_pts(struct efp *efp, struct stream *stream)
 		efp_stream_next_line(stream);
 		double m[9];
 
-		for (int j = 0; j < 9; j++)
+		for (size_t j = 0; j < 9; j++)
 			if (!tok_double(stream, m + j))
 				return EFP_RESULT_SYNTAX_ERROR;
 
@@ -373,8 +389,8 @@ parse_dynamic_polarizable_pts(struct efp *efp, struct stream *stream)
 	if (efp_stream_eof(stream))
 		return EFP_RESULT_SYNTAX_ERROR;
 
-	for (int w = 1; w < 12; w++) {
-		for (int i = 0; i < frag->n_dynamic_polarizable_pts; i++) {
+	for (size_t w = 1; w < 12; w++) {
+		for (size_t i = 0; i < frag->n_dynamic_polarizable_pts; i++) {
 			struct dynamic_polarizable_pt *pt =
 				frag->dynamic_polarizable_pts + i;
 
@@ -389,7 +405,7 @@ parse_dynamic_polarizable_pts(struct efp *efp, struct stream *stream)
 			efp_stream_next_line(stream);
 			double m[9];
 
-			for (int j = 0; j < 9; j++)
+			for (size_t j = 0; j < 9; j++)
 				if (!tok_double(stream, m + j))
 					return EFP_RESULT_SYNTAX_ERROR;
 
@@ -448,7 +464,7 @@ shell:
 		if (!strchr("SLPDF", shell->type))
 			return EFP_RESULT_SYNTAX_ERROR;
 
-		if (!tok_int(stream, &shell->n_funcs))
+		if (!tok_uint(stream, &shell->n_funcs))
 			return EFP_RESULT_SYNTAX_ERROR;
 
 		efp_stream_next_line(stream);
@@ -458,7 +474,7 @@ shell:
 
 		double *ptr = shell->coef;
 
-		for (int i = 0; i < shell->n_funcs; i++) {
+		for (size_t i = 0; i < shell->n_funcs; i++) {
 			if (!tok_int(stream, NULL) ||
 			    !tok_double(stream, ptr++) ||
 			    !tok_double(stream, ptr++))
@@ -497,8 +513,8 @@ parse_projection_wf(struct efp *efp, struct stream *stream)
 {
 	struct frag *frag = get_last_frag(efp);
 
-	if (!tok_int(stream, &frag->n_lmo) ||
-	    !tok_int(stream, &frag->xr_wf_size))
+	if (!tok_uint(stream, &frag->n_lmo) ||
+	    !tok_uint(stream, &frag->xr_wf_size))
 		return EFP_RESULT_SYNTAX_ERROR;
 
 	frag->xr_wf = malloc(frag->n_lmo * frag->xr_wf_size * sizeof(double));
@@ -508,12 +524,12 @@ parse_projection_wf(struct efp *efp, struct stream *stream)
 	efp_stream_next_line(stream);
 	double *ptr = frag->xr_wf;
 
-	for (int j = 0; j < frag->n_lmo; j++) {
-		for (int i = 0; i < frag->xr_wf_size / 5; i++) {
+	for (size_t j = 0; j < frag->n_lmo; j++) {
+		for (size_t i = 0; i < frag->xr_wf_size / 5; i++) {
 			if (!efp_stream_advance(stream, 5))
 				return EFP_RESULT_SYNTAX_ERROR;
 
-			for (int k = 0; k < 5; k++)
+			for (size_t k = 0; k < 5; k++)
 				if (!tok_double(stream, ptr++))
 					return EFP_RESULT_SYNTAX_ERROR;
 
@@ -526,7 +542,7 @@ parse_projection_wf(struct efp *efp, struct stream *stream)
 		if (!efp_stream_advance(stream, 5))
 			return EFP_RESULT_SYNTAX_ERROR;
 
-		for (int k = 0; k < frag->xr_wf_size % 5; k++)
+		for (size_t k = 0; k < frag->xr_wf_size % 5; k++)
 			if (!tok_double(stream, ptr++))
 				return EFP_RESULT_SYNTAX_ERROR;
 
@@ -542,12 +558,12 @@ parse_fock_mat(struct efp *efp, struct stream *stream)
 	struct frag *frag = get_last_frag(efp);
 	efp_stream_next_line(stream);
 
-	int size = frag->n_lmo * (frag->n_lmo + 1) / 2;
+	size_t size = frag->n_lmo * (frag->n_lmo + 1) / 2;
 	frag->xr_fock_mat = malloc(size * sizeof(double));
 	if (!frag->xr_fock_mat)
 		return EFP_RESULT_NO_MEMORY;
 
-	for (int i = 0; i < size; i++)
+	for (size_t i = 0; i < size; i++)
 		if (!tok_double(stream, frag->xr_fock_mat + i))
 			return EFP_RESULT_SYNTAX_ERROR;
 
@@ -565,7 +581,7 @@ parse_lmo_centroids(struct efp *efp, struct stream *stream)
 	if (!frag->lmo_centroids)
 		return EFP_RESULT_NO_MEMORY;
 
-	for (int i = 0; i < frag->n_lmo; i++) {
+	for (size_t i = 0; i < frag->n_lmo; i++) {
 		vec_t *ct = frag->lmo_centroids + i;
 
 		if (!skip_label(stream) ||
@@ -588,16 +604,16 @@ parse_canonvec(struct efp *efp, struct stream *stream)
 {
 	(void)efp;
 
-	int wf_size;
+	size_t wf_size;
 
-	if (!tok_int(stream, NULL) ||
-	    !tok_int(stream, &wf_size))
+	if (!tok_uint(stream, NULL) ||
+	    !tok_uint(stream, &wf_size))
 		return EFP_RESULT_SYNTAX_ERROR;
 
 	efp_stream_next_line(stream);
 
-	for (int j = 0; j < wf_size; j++) {
-		for (int i = 0; i <= (wf_size - 1) / 5; i++) {
+	for (size_t j = 0; j < wf_size; j++) {
+		for (size_t i = 0; i <= (wf_size - 1) / 5; i++) {
 			efp_stream_next_line(stream);
 		}
 	}
@@ -648,7 +664,7 @@ parse_screen(struct efp *efp, struct stream *stream)
 
 	efp_stream_next_line(stream);
 
-	for (int i = 0; i < frag->n_multipole_pts; i++) {
+	for (size_t i = 0; i < frag->n_multipole_pts; i++) {
 		if (!skip_label(stream) ||
 		    !tok_double(stream, NULL) ||
 		    !tok_double(stream, scr + i))

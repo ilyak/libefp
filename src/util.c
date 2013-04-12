@@ -28,7 +28,7 @@
 
 #include "private.h"
 
-int efp_skip_frag_pair(struct efp *efp, int fr_i_idx, int fr_j_idx)
+int efp_skip_frag_pair(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx)
 {
 	if (efp->opts.enable_links) {
 		size_t idx = fr_i_idx * efp->n_frag + fr_j_idx;
@@ -93,7 +93,7 @@ struct swf efp_make_swf(struct efp *efp, const struct frag *fr_i, const struct f
 
 const struct frag *efp_find_lib(struct efp *efp, const char *name)
 {
-	for (int i = 0; i < efp->n_lib; i++)
+	for (size_t i = 0; i < efp->n_lib; i++)
 		if (efp_strcasecmp(efp->lib[i]->name, name) == 0)
 			return efp->lib[i];
 
@@ -156,13 +156,13 @@ void efp_move_pt(const vec_t *com, const mat_t *rotmat, const vec_t *pos_int, ve
 
 void efp_rotate_t2(const mat_t *rotmat, const double *in, double *out)
 {
-	for (int i = 0; i < 3 * 3; i++)
+	for (size_t i = 0; i < 3 * 3; i++)
 		out[i] = 0.0;
 
-	for (int a1 = 0; a1 < 3; a1++)
-	for (int b1 = 0; b1 < 3; b1++)
-		for (int a2 = 0; a2 < 3; a2++)
-		for (int b2 = 0; b2 < 3; b2++)
+	for (size_t a1 = 0; a1 < 3; a1++)
+	for (size_t b1 = 0; b1 < 3; b1++)
+		for (size_t a2 = 0; a2 < 3; a2++)
+		for (size_t b2 = 0; b2 < 3; b2++)
 			out[a2 * 3 + b2] += in[a1 * 3 + b1] *
 					mat_get(rotmat, a2, a1) *
 					mat_get(rotmat, b2, b1);
@@ -170,15 +170,15 @@ void efp_rotate_t2(const mat_t *rotmat, const double *in, double *out)
 
 void efp_rotate_t3(const mat_t *rotmat, const double *in, double *out)
 {
-	for (int i = 0; i < 3 * 3 * 3; i++)
+	for (size_t i = 0; i < 3 * 3 * 3; i++)
 		out[i] = 0.0;
 
-	for (int a1 = 0; a1 < 3; a1++)
-	for (int b1 = 0; b1 < 3; b1++)
-	for (int c1 = 0; c1 < 3; c1++)
-		for (int a2 = 0; a2 < 3; a2++)
-		for (int b2 = 0; b2 < 3; b2++)
-		for (int c2 = 0; c2 < 3; c2++)
+	for (size_t a1 = 0; a1 < 3; a1++)
+	for (size_t b1 = 0; b1 < 3; b1++)
+	for (size_t c1 = 0; c1 < 3; c1++)
+		for (size_t a2 = 0; a2 < 3; a2++)
+		for (size_t b2 = 0; b2 < 3; b2++)
+		for (size_t c2 = 0; c2 < 3; c2++)
 			out[a2 * 9 + b2 * 3 + c2] += in[a1 * 9 + b1 * 3 + c1] *
 					mat_get(rotmat, a2, a1) *
 					mat_get(rotmat, b2, b1) *

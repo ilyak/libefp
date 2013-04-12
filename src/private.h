@@ -57,7 +57,7 @@ struct frag {
 	vec_t torque;
 
 	/* number of atoms in this fragment */
-	int n_atoms;
+	size_t n_atoms;
 
 	/* fragment atoms */
 	struct efp_atom *atoms;
@@ -72,7 +72,7 @@ struct frag {
 	} *multipole_pts;
 
 	/* number of distributed multipole points */
-	int n_multipole_pts;
+	size_t n_multipole_pts;
 
 	/* electrostatic screening parameters */
 	double *screen_params;
@@ -93,7 +93,7 @@ struct frag {
 	} *polarizable_pts;
 
 	/* number of distributed polarizability points */
-	int n_polarizable_pts;
+	size_t n_polarizable_pts;
 
 	/* dynamic polarizability points */
 	struct dynamic_polarizable_pt {
@@ -102,10 +102,10 @@ struct frag {
 	} *dynamic_polarizable_pts;
 
 	/* number of dynamic polarizability points */
-	int n_dynamic_polarizable_pts;
+	size_t n_dynamic_polarizable_pts;
 
 	/* number of localized molecular orbitals */
-	int n_lmo;
+	size_t n_lmo;
 
 	/* localized molecular orbital centroids */
 	vec_t *lmo_centroids;
@@ -114,7 +114,7 @@ struct frag {
 	int multiplicity;
 
 	/* number of exchange repulsion basis shells */
-	int n_xr_shells;
+	size_t n_xr_shells;
 
 	/* exchange repulsion basis shells */
 	struct shell *xr_shells;
@@ -123,7 +123,7 @@ struct frag {
 	double *xr_fock_mat;
 
 	/* exchange repulsion wavefunction size */
-	int xr_wf_size;
+	size_t xr_wf_size;
 
 	/* exchange repulsion wavefunction, size = n_lmo * xr_wf_size */
 	double *xr_wf;
@@ -143,13 +143,13 @@ struct frag {
 
 struct efp {
 	/* number of fragments */
-	int n_frag;
+	size_t n_frag;
 
 	/* array of fragments */
 	struct frag *frags;
 
 	/* number of fragments in the library */
-	int n_lib;
+	size_t n_lib;
 
 	/* array with the library of fragment initial parameters */
 	struct frag **lib;
@@ -173,7 +173,7 @@ struct efp {
 	mat_t stress;
 
 	/* number of point charges */
-	int n_ptc;
+	size_t n_ptc;
 
 	struct point_charge {
 		double x, y, z;
@@ -191,7 +191,7 @@ struct efp {
 	struct bvec *links_bvec;
 };
 
-int efp_skip_frag_pair(struct efp *, int, int);
+int efp_skip_frag_pair(struct efp *, size_t, size_t);
 struct swf efp_make_swf(struct efp *, const struct frag *, const struct frag *);
 const struct frag *efp_find_lib(struct efp *, const char *);
 void efp_add_stress(const vec_t *, const vec_t *, mat_t *);

@@ -32,25 +32,25 @@
 struct shell {
 	char type;       /* shell type - S,L,P,D,F */
 	double x, y, z;  /* coordinates of a corresponding atom */
-	int n_funcs;     /* number of functions */
+	size_t n_funcs;  /* number of functions */
 	double *coef;    /* function coefficients */
 };
 
-void efp_st_int(int n_shells_i,
+void efp_st_int(size_t n_shells_i,
 		const struct shell *shells_i,
-		int n_shells_j,
+		size_t n_shells_j,
 		const struct shell *shells_j,
-		int stride,
+		size_t stride,
 		double *s,
 		double *t);
 
-void efp_st_int_deriv(int n_shells_i,
+void efp_st_int_deriv(size_t n_shells_i,
 		      const struct shell *shells_i,
-		      int n_shells_j,
+		      size_t n_shells_j,
 		      const struct shell *shells_j,
 		      const vec_t *com_i,
-		      int size_i,
-		      int size_j,
+		      size_t size_i,
+		      size_t size_j,
 		      six_t *ds,
 		      six_t *dt);
 

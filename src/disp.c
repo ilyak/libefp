@@ -67,7 +67,7 @@ get_damp_tt_grad(double r)
 
 static double
 disp_tt(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
-	int pt_i_idx, int pt_j_idx, double sum, const struct swf *swf)
+	size_t pt_i_idx, size_t pt_j_idx, double sum, const struct swf *swf)
 {
 	const struct dynamic_polarizable_pt *pt_i =
 				fr_i->dynamic_polarizable_pts + pt_i_idx;
@@ -107,7 +107,7 @@ disp_tt(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 
 static double
 disp_overlap(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
-	     int pt_i_idx, int pt_j_idx, int overlap_idx, double sum,
+	     size_t pt_i_idx, size_t pt_j_idx, size_t overlap_idx, double sum,
 	     const struct swf *swf)
 {
 	const struct dynamic_polarizable_pt *pt_i =
@@ -181,7 +181,7 @@ disp_overlap(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 
 static double
 disp_off(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
-	 int pt_i_idx, int pt_j_idx, double sum, const struct swf *swf)
+	 size_t pt_i_idx, size_t pt_j_idx, double sum, const struct swf *swf)
 {
 	const struct dynamic_polarizable_pt *pt_i =
 				fr_i->dynamic_polarizable_pts + pt_i_idx;
@@ -219,8 +219,8 @@ disp_off(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 }
 
 static double
-point_point_disp(struct efp *efp, int fr_i_idx, int fr_j_idx,
-		 int pt_i_idx, int pt_j_idx, int overlap_idx,
+point_point_disp(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
+		 size_t pt_i_idx, size_t pt_j_idx, size_t overlap_idx,
 		 const struct swf *swf)
 {
 	struct frag *fr_i = efp->frags + fr_i_idx;
@@ -251,20 +251,20 @@ point_point_disp(struct efp *efp, int fr_i_idx, int fr_j_idx,
 }
 
 static double
-frag_frag_disp(struct efp *efp, int frag_i, int frag_j, int overlap_idx)
+frag_frag_disp(struct efp *efp, size_t frag_i, size_t frag_j, size_t overlap_idx)
 {
 	double energy = 0.0;
 
 	struct frag *fr_i = efp->frags + frag_i;
 	struct frag *fr_j = efp->frags + frag_j;
 
-	int n_disp_i = fr_i->n_dynamic_polarizable_pts;
-	int n_disp_j = fr_j->n_dynamic_polarizable_pts;
+	size_t n_disp_i = fr_i->n_dynamic_polarizable_pts;
+	size_t n_disp_j = fr_j->n_dynamic_polarizable_pts;
 
 	struct swf swf = efp_make_swf(efp, fr_i, fr_j);
 
-	for (int ii = 0, idx = overlap_idx; ii < n_disp_i; ii++)
-		for (int jj = 0; jj < n_disp_j; jj++, idx++)
+	for (size_t ii = 0, idx = overlap_idx; ii < n_disp_i; ii++)
+		for (size_t jj = 0; jj < n_disp_j; jj++, idx++)
 			energy += point_point_disp(efp, frag_i, frag_j, ii, jj, idx, &swf);
 
 	vec_t force = {
@@ -301,8 +301,8 @@ efp_compute_disp(struct efp *efp)
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 4) reduction(+:energy)
 #endif
-	for (int i = 0; i < efp->n_frag; i++) {
-		for (int j = i + 1, idx = 0; j < efp->n_frag; j++) {
+	for (size_t i = 0; i < efp->n_frag; i++) {
+		for (size_t j = i + 1, idx = 0; j < efp->n_frag; j++) {
 			if (!efp_skip_frag_pair(efp, i, j))
 				energy += frag_frag_disp(efp, i, j, idx);
 
@@ -317,7 +317,7 @@ efp_compute_disp(struct efp *efp)
 void
 efp_update_disp(struct frag *frag)
 {
-	for (int i = 0; i < frag->n_dynamic_polarizable_pts; i++) {
+	for (size_t i = 0; i < frag->n_dynamic_polarizable_pts; i++) {
 		const struct dynamic_polarizable_pt *pt_in =
 					frag->lib->dynamic_polarizable_pts + i;
 		struct dynamic_polarizable_pt *pt_out =
