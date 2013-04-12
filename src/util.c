@@ -27,6 +27,7 @@
 #include <ctype.h>
 
 #include "private.h"
+#include "util.h"
 
 int efp_skip_frag_pair(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx)
 {

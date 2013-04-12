@@ -33,6 +33,7 @@
 #include "int.h"
 #include "swf.h"
 #include "terms.h"
+#include "util.h"
 
 #define EFP_EXPORT __attribute__((visibility("default")))
 #define ARRAY_SIZE(arr) (sizeof(arr)/sizeof(arr[0]))
@@ -190,17 +191,5 @@ struct efp {
 	/* bit matrix of covalent links between fragments */
 	struct bvec *links_bvec;
 };
-
-int efp_skip_frag_pair(struct efp *, size_t, size_t);
-struct swf efp_make_swf(struct efp *, const struct frag *, const struct frag *);
-const struct frag *efp_find_lib(struct efp *, const char *);
-void efp_add_stress(const vec_t *, const vec_t *, mat_t *);
-void efp_add_force(struct frag *, const vec_t *, const vec_t *, const vec_t *);
-void efp_sub_force(struct frag *, const vec_t *, const vec_t *, const vec_t *);
-void efp_move_pt(const vec_t *, const mat_t *, const vec_t *, vec_t *);
-void efp_rotate_t2(const mat_t *, const double *, double *);
-void efp_rotate_t3(const mat_t *, const double *, double *);
-int efp_strcasecmp(const char *, const char *);
-int efp_strncasecmp(const char *, const char *, size_t);
 
 #endif /* LIBEFP_PRIVATE_H */
