@@ -1,26 +1,26 @@
 # C compiler
-CC= gcc
+CC= clang
 
 # Fortran compiler
-FC= gfortran
+FC= gfortran47
 
 # lapack libraries
-LAPACK= -lalapack -lcblas -lf77blas -latlas
+LAPACK= -lalapack -lcblas -lf77blas -latlas -lgfortran
 
 # install prefix
-PREFIX= /usr/local
+PREFIX= /home/ilya/libefp
 
 # fragment library path
-FRAGLIB= $(PREFIX)/share/libefp/fraglib
+FRAGLIB= $(PREFIX)/libefp/fraglib
 
 # additional C flags
-MYCFLAGS= -std=c99 -g -O2 -fopenmp -Wall -Wextra
+MYCFLAGS= -std=c99 -g -Weverything -Wno-sign-conversion -Wno-padded -Wno-format-nonliteral -Wno-disabled-macro-expansion -Wno-gnu -I/usr/local/include
 
 # additional Fortran flags
-MYFFLAGS= -O2 -fopenmp
+MYFFLAGS= -g
 
 # additional linker flags
-MYLDFLAGS=
+MYLDFLAGS= -L/usr/local/lib -L/usr/local/lib/gcc47
 
 # ar command
 AR= ar rcu
