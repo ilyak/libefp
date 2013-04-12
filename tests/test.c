@@ -39,7 +39,7 @@ static void lib_error(const char *title, enum efp_result res)
 
 static void test_qm_numerical_grad(struct efp *efp, const double *grad)
 {
-	int n_ptc;
+	size_t n_ptc;
 	enum efp_result res;
 
 	if ((res = efp_get_point_charge_count(efp, &n_ptc)))
@@ -53,10 +53,10 @@ static void test_qm_numerical_grad(struct efp *efp, const double *grad)
 	if ((res = efp_get_point_charge_values(efp, znuc)))
 		lib_error("efp_get_point_charge_values", res);
 
-	for (int i = 0; i < n_ptc; i++) {
+	for (size_t i = 0; i < n_ptc; i++) {
 		double grad_num[3];
 
-		for (int j = 0; j < 3; j++) {
+		for (size_t j = 0; j < 3; j++) {
 			double coord = xyz[3 * i + j];
 
 			struct efp_energy e1;
@@ -83,7 +83,7 @@ static void test_qm_numerical_grad(struct efp *efp, const double *grad)
 			grad_num[j] = (e2.total - e1.total) / (2.0 * NUM_GRAD_DELTA);
 		}
 
-		for (int j = 0; j < 3; j++)
+		for (size_t j = 0; j < 3; j++)
 			fail_unless(fabs(grad_num[j] - grad[3 * i + j]) < FAIL_TOL);
 	}
 
@@ -93,16 +93,16 @@ static void test_qm_numerical_grad(struct efp *efp, const double *grad)
 
 static void test_frag_numerical_grad(struct efp *efp, double *xyzabc, const double *grad)
 {
-	int n_frag;
+	size_t n_frag;
 	enum efp_result res;
 
 	if ((res = efp_get_frag_count(efp, &n_frag)))
 		lib_error("efp_get_frag_count", res);
 
-	for (int i = 0; i < n_frag; i++) {
+	for (size_t i = 0; i < n_frag; i++) {
 		double grad_num[6];
 
-		for (int j = 0; j < 6; j++) {
+		for (size_t j = 0; j < 6; j++) {
 			double coord = xyzabc[6 * i + j];
 
 			struct efp_energy e1;
@@ -129,7 +129,7 @@ static void test_frag_numerical_grad(struct efp *efp, double *xyzabc, const doub
 			grad_num[j] = (e2.total - e1.total) / (2.0 * NUM_GRAD_DELTA);
 		}
 
-		for (int j = 0; j < 6; j++)
+		for (size_t j = 0; j < 6; j++)
 			fail_unless(fabs(grad_num[j] - grad[6 * i + j]) < FAIL_TOL);
 	}
 
@@ -148,11 +148,11 @@ void run_test(const struct test_data *test_data)
 	if ((res = efp_set_opts(efp, &test_data->opts)))
 		lib_error("efp_set_opts", res);
 
-	for (int i = 0; test_data->files[i]; i++)
+	for (size_t i = 0; test_data->files[i]; i++)
 		if ((res = efp_add_potential(efp, test_data->files[i])))
 			lib_error("efp_add_potential", res);
 
-	for (int i = 0; test_data->names[i]; i++)
+	for (size_t i = 0; test_data->names[i]; i++)
 		if ((res = efp_add_fragment(efp, test_data->names[i])))
 			lib_error("efp_add_fragment", res);
 
@@ -212,7 +212,7 @@ void run_test(const struct test_data *test_data)
 
 	fail_unless(fabs(energy.total - test_data->ref_energy) < FAIL_TOL);
 
-	int n_frag;
+	size_t n_frag;
 	if ((res = efp_get_frag_count(efp, &n_frag)))
 		lib_error("efp_get_frag_count", res);
 
@@ -224,7 +224,7 @@ void run_test(const struct test_data *test_data)
 	if ((res = efp_get_coordinates(efp, n_frag, xyzabc)))
 		lib_error("efp_get_coordinates", res);
 
-	for (int i = 0; i < n_frag; i++) {
+	for (size_t i = 0; i < n_frag; i++) {
 		const double *euler = xyzabc + 6 * i + 3;
 		double *gradptr = frag_grad + 6 * i + 3;
 
@@ -232,7 +232,7 @@ void run_test(const struct test_data *test_data)
 	}
 
 	if (do_qm) {
-		int n_ptc;
+		size_t n_ptc;
 		if ((res = efp_get_point_charge_count(efp, &n_ptc)))
 			lib_error("efp_get_point_charge_count", res);
 

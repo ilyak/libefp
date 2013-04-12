@@ -29,11 +29,11 @@
 
 void sim_opt(struct efp *, const struct cfg *, const struct sys *);
 
-static double compute_efp(int n, const double *x, double *gx, void *data)
+static double compute_efp(size_t n, const double *x, double *gx, void *data)
 {
 	struct efp *efp = (struct efp *)data;
 
-	int n_frags;
+	size_t n_frags;
 	check_fail(efp_get_frag_count(efp, &n_frags));
 
 	assert(n == 6 * n_frags);
@@ -46,7 +46,7 @@ static double compute_efp(int n, const double *x, double *gx, void *data)
 
 	check_fail(efp_get_gradient(efp, n_frags, gx));
 
-	for (int i = 0; i < n_frags; i++) {
+	for (size_t i = 0; i < n_frags; i++) {
 		const double *euler = x + 6 * i + 3;
 		double *gradptr = gx + 6 * i + 3;
 
@@ -58,7 +58,7 @@ static double compute_efp(int n, const double *x, double *gx, void *data)
 
 static void print_restart(struct efp *efp)
 {
-	int n_frags;
+	size_t n_frags;
 	check_fail(efp_get_frag_count(efp, &n_frags));
 
 	double coord[6 * n_frags];
@@ -66,7 +66,7 @@ static void print_restart(struct efp *efp)
 
 	printf("    RESTART DATA\n\n");
 
-	for (int i = 0; i < n_frags; i++) {
+	for (size_t i = 0; i < n_frags; i++) {
 		char name[64];
 		check_fail(efp_get_frag_name(efp, i, sizeof(name), name));
 
@@ -85,12 +85,12 @@ static int check_conv(double rms_grad, double max_grad, double opt_tol)
 	return max_grad < opt_tol && rms_grad < opt_tol / 3.0;
 }
 
-static void get_grad_info(int n_coord, const double *grad, double *rms_grad_out,
+static void get_grad_info(size_t n_coord, const double *grad, double *rms_grad_out,
 				double *max_grad_out)
 {
 	double rms_grad = 0.0, max_grad = 0.0;
 
-	for (int i = 0; i < n_coord; i++) {
+	for (size_t i = 0; i < n_coord; i++) {
 		rms_grad += grad[i] * grad[i];
 
 		if (fabs(grad[i]) > max_grad)
@@ -124,7 +124,7 @@ void sim_opt(struct efp *efp, const struct cfg *cfg, const struct sys *sys)
 
 	printf("ENERGY MINIMIZATION JOB\n\n\n");
 
-	int n_frags, n_coord;
+	size_t n_frags, n_coord;
 	double rms_grad, max_grad;
 
 	check_fail(efp_get_frag_count(efp, &n_frags));

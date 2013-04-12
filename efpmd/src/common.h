@@ -64,7 +64,7 @@ struct frag {
 };
 
 struct sys {
-	int n_frags;
+	size_t n_frags;
 	struct frag *frags;
 };
 
@@ -79,8 +79,8 @@ void print_geometry(struct efp *);
 void print_energy(struct efp *);
 void print_gradient(struct efp *);
 void print_fragment(const char *, const double *, const double *);
-void print_vector(int, const double *);
-void print_matrix(int, int, const double *);
+void print_vector(size_t, const double *);
+void print_matrix(size_t, size_t, const double *);
 
 void check_fail(enum efp_result);
 struct sys *parse_input(struct cfg *, const char *);

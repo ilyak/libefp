@@ -32,8 +32,8 @@
 #include "optimizer.h"
 
 struct opt_state {
-	int n;
-	int m;
+	size_t n;
+	size_t m;
 	double *x;
 	double *l;
 	double *u;
@@ -60,8 +60,11 @@ void setulb_(int *, int *, double *, double *, double *, int *,
 
 static void call_routine(struct opt_state *state)
 {
-	setulb_(&state->n,
-		&state->m,
+	int n = (int)state->n;
+	int m = (int)state->m;
+
+	setulb_(&n,
+		&m,
 		 state->x,
 		 state->l,
 		 state->u,
@@ -80,10 +83,8 @@ static void call_routine(struct opt_state *state)
 		 state->dsave);
 }
 
-struct opt_state *opt_create(int n)
+struct opt_state *opt_create(size_t n)
 {
-	assert(n > 0);
-
 	struct opt_state *state = calloc(1, sizeof(struct opt_state));
 	assert(state);
 
@@ -104,7 +105,7 @@ struct opt_state *opt_create(int n)
 	state->u = calloc(n, sizeof(double));
 	assert(state->u);
 
-	int wa_size = 5 * n + (2 * n + 11 * state->m + 8) * state->m;
+	size_t wa_size = 5 * n + (2 * n + 11 * state->m + 8) * state->m;
 	state->wa = calloc(wa_size, sizeof(double));
 	assert(state->wa);
 
@@ -116,7 +117,7 @@ struct opt_state *opt_create(int n)
 	return state;
 }
 
-enum opt_result opt_init(struct opt_state *state, int n, const double *x)
+enum opt_result opt_init(struct opt_state *state, size_t n, const double *x)
 {
 	assert(state);
 	assert(n == state->n);
@@ -156,7 +157,7 @@ void opt_set_user_data(struct opt_state *state, void *data)
 	state->data = data;
 }
 
-void opt_set_bound(struct opt_state *state, int n, const int *nbd,
+void opt_set_bound(struct opt_state *state, size_t n, const int *nbd,
 		const double *l, const double *u)
 {
 	assert(state);
@@ -195,7 +196,7 @@ double opt_get_fx(struct opt_state *state)
 	return state->f;
 }
 
-void opt_get_x(struct opt_state *state, int size, double *out)
+void opt_get_x(struct opt_state *state, size_t size, double *out)
 {
 	assert(state);
 	assert(size >= state->n);
@@ -204,7 +205,7 @@ void opt_get_x(struct opt_state *state, int size, double *out)
 	memcpy(out, state->x, state->n * sizeof(double));
 }
 
-void opt_get_gx(struct opt_state *state, int size, double *out)
+void opt_get_gx(struct opt_state *state, size_t size, double *out)
 {
 	assert(state);
 	assert(size >= state->n);

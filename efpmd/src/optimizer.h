@@ -27,6 +27,8 @@
 #ifndef EFPMD_OPTIMIZER_H
 #define EFPMD_OPTIMIZER_H
 
+#include <stddef.h>
+
 enum opt_result {
 	OPT_RESULT_SUCCESS = 0,
 	OPT_RESULT_ERROR
@@ -34,17 +36,17 @@ enum opt_result {
 
 struct opt_state;
 
-typedef double (*opt_func_t)(int, const double *, double *, void *);
+typedef double (*opt_func_t)(size_t, const double *, double *, void *);
 
-struct opt_state *opt_create(int);
-enum opt_result opt_init(struct opt_state *, int, const double *);
+struct opt_state *opt_create(size_t);
+enum opt_result opt_init(struct opt_state *, size_t, const double *);
 void opt_set_func(struct opt_state *, opt_func_t);
 void opt_set_user_data(struct opt_state *, void *);
-void opt_set_bound(struct opt_state *, int, const int *, const double *, const double *);
+void opt_set_bound(struct opt_state *, size_t, const int *, const double *, const double *);
 enum opt_result opt_step(struct opt_state *);
 double opt_get_fx(struct opt_state *);
-void opt_get_x(struct opt_state *, int, double *);
-void opt_get_gx(struct opt_state *, int, double *);
+void opt_get_x(struct opt_state *, size_t, double *);
+void opt_get_gx(struct opt_state *, size_t, double *);
 void opt_shutdown(struct opt_state *);
 
 #endif /* EFPMD_OPTIMIZER_H */

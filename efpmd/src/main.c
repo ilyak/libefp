@@ -148,7 +148,7 @@ static bool is_lib(const char *name)
 
 static void add_potentials(struct efp *efp, const struct cfg *cfg, const struct sys *sys)
 {
-	int i, n_uniq;
+	size_t i, n_uniq;
 	const char *uniq[sys->n_frags];
 	char path[512];
 
@@ -226,7 +226,7 @@ static struct efp *init_sim(const struct cfg *cfg, const struct sys *sys)
 	check_fail(efp_set_opts(efp, &opts));
 	add_potentials(efp, cfg, sys);
 
-	for (int i = 0; i < sys->n_frags; i++)
+	for (size_t i = 0; i < sys->n_frags; i++)
 		check_fail(efp_add_fragment(efp, sys->frags[i].name));
 
 	if (opts.enable_pbc) {
@@ -239,7 +239,7 @@ static struct efp *init_sim(const struct cfg *cfg, const struct sys *sys)
 		check_fail(efp_load_topology(efp, cfg_get_string(cfg, "topology")));
 	}
 
-	for (int i = 0; i < sys->n_frags; i++)
+	for (size_t i = 0; i < sys->n_frags; i++)
 		check_fail(efp_set_frag_coordinates(efp, i, coord, sys->frags[i].coord));
 
 	return efp;
@@ -275,19 +275,19 @@ static void convert_units(struct cfg *cfg, struct sys *sys)
 	cfg_set_double(cfg, "hess_step_dist",
 		cfg_get_double(cfg, "hess_step_dist") / BOHR_RADIUS);
 
-	int n_convert = (int []) {
+	size_t n_convert = (size_t []) {
 		[EFP_COORD_TYPE_XYZABC] = 3,
 		[EFP_COORD_TYPE_POINTS] = 9,
 		[EFP_COORD_TYPE_ROTMAT] = 3 }[cfg_get_enum(cfg, "coord")];
 
-	for (int i = 0; i < sys->n_frags; i++)
-		for (int j = 0; j < n_convert; j++)
+	for (size_t i = 0; i < sys->n_frags; i++)
+		for (size_t j = 0; j < n_convert; j++)
 			sys->frags[i].coord[j] /= BOHR_RADIUS;
 }
 
 static void sys_free(struct sys *sys)
 {
-	for (int i = 0; i < sys->n_frags; i++)
+	for (size_t i = 0; i < sys->n_frags; i++)
 		free(sys->frags[i].name);
 
 	free(sys->frags);

@@ -295,7 +295,7 @@ void cfg_add_enum(struct cfg *cfg, const char *name, int def,
 		const char *nxt = strchr(keys, '\n');
 		assert(nxt);
 
-		esv->str = xstrndup(keys, nxt - keys);
+		esv->str = xstrndup(keys, (size_t)(nxt - keys));
 		esv->val = *vals++;
 		esv->next = node->esv;
 		node->esv = esv;

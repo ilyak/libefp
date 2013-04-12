@@ -41,7 +41,7 @@ static const double qm_xyz[] = {
 	BOHR( 5.0), BOHR( 8.0), BOHR( 8.0)
 };
 
-static enum efp_result get_electron_density_field(int n_pt,
+static enum efp_result get_electron_density_field(size_t n_pt,
 		const double *xyz, double *field, void *user_data)
 {
 	(void)xyz;

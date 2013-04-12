@@ -89,19 +89,19 @@ void *xrealloc(void *ptr, size_t size)
 
 void print_geometry(struct efp *efp)
 {
-	int n_frags;
+	size_t n_frags;
 	check_fail(efp_get_frag_count(efp, &n_frags));
 
 	printf("    GEOMETRY (ANGSTROMS)\n\n");
 
-	for (int i = 0; i < n_frags; i++) {
-		int n_atoms;
+	for (size_t i = 0; i < n_frags; i++) {
+		size_t n_atoms;
 		check_fail(efp_get_frag_atom_count(efp, i, &n_atoms));
 
 		struct efp_atom atoms[n_atoms];
 		check_fail(efp_get_frag_atoms(efp, i, n_atoms, atoms));
 
-		for (int a = 0; a < n_atoms; a++) {
+		for (size_t a = 0; a < n_atoms; a++) {
 			double x = atoms[a].x * BOHR_RADIUS;
 			double y = atoms[a].y * BOHR_RADIUS;
 			double z = atoms[a].z * BOHR_RADIUS;
@@ -132,25 +132,25 @@ void print_energy(struct efp *efp)
 
 void print_gradient(struct efp *efp)
 {
-	int n_frags;
+	size_t n_frags;
 	check_fail(efp_get_frag_count(efp, &n_frags));
 
 	double grad[6 * n_frags];
 	check_fail(efp_get_gradient(efp, n_frags, grad));
 
-	for (int i = 0; i < n_frags; i++) {
+	for (size_t i = 0; i < n_frags; i++) {
 		char name[64];
 		check_fail(efp_get_frag_name(efp, i, sizeof(name), name));
 
-		printf("    GRADIENT ON FRAGMENT %d (%s)\n", i + 1, name);
+		printf("    GRADIENT ON FRAGMENT %zu (%s)\n", i + 1, name);
 		printf("\nFORCE  ");
 
-		for (int j = 0; j < 3; j++)
+		for (size_t j = 0; j < 3; j++)
 			printf(" %16.8E", grad[6 * i + j]);
 
 		printf("\nTORQUE ");
 
-		for (int j = 3; j < 6; j++)
+		for (size_t j = 3; j < 6; j++)
 			printf(" %16.8E", grad[6 * i + j]);
 
 		printf("\n\n");
@@ -163,29 +163,29 @@ void print_fragment(const char *name, const double *xyzabc, const double *vel)
 {
 	printf("fragment %s\n", name);
 
-	for (int i = 0; i < 6; i++)
+	for (size_t i = 0; i < 6; i++)
 		printf(" %14.6e", xyzabc[i]);
 
 	if (vel) {
 		printf("\nvelocity\n");
 
-		for (int i = 0; i < 6; i++)
+		for (size_t i = 0; i < 6; i++)
 			printf(" %14.6e", vel[i]);
 	}
 
 	printf("\n\n");
 }
 
-void print_vector(int len, const double *vec)
+void print_vector(size_t len, const double *vec)
 {
-	static const int CPS = 4;
+	static const size_t CPS = 4;
 
-	for (int i = 0; i < len; i += CPS) {
-		int left = len - i > CPS ? CPS : len - i;
+	for (size_t i = 0; i < len; i += CPS) {
+		size_t left = len - i > CPS ? CPS : len - i;
 
-		printf("%8d  ", i + 1);
+		printf("%8zu  ", i + 1);
 
-		for (int ii = 0; ii < left; ii++)
+		for (size_t ii = 0; ii < left; ii++)
 			printf("%16.8E", vec[i + ii]);
 
 		printf("\n");
@@ -194,24 +194,24 @@ void print_vector(int len, const double *vec)
 	printf("\n");
 }
 
-void print_matrix(int rows, int cols, const double *mat)
+void print_matrix(size_t rows, size_t cols, const double *mat)
 {
-	static const int CPS = 4;
+	static const size_t CPS = 4;
 
-	for (int j = 0; j < cols; j += CPS) {
-		int left = cols - j > CPS ? CPS : cols - j;
+	for (size_t j = 0; j < cols; j += CPS) {
+		size_t left = cols - j > CPS ? CPS : cols - j;
 
 		printf("    ");
 
-		for (int jj = 0; jj < left; jj++)
-			printf("%16d", j + jj + 1);
+		for (size_t jj = 0; jj < left; jj++)
+			printf("%16zu", j + jj + 1);
 
 		printf("\n\n");
 
-		for (int i = 0; i < rows; i++) {
-			printf("%8d  ", i + 1);
+		for (size_t i = 0; i < rows; i++) {
+			printf("%8zu  ", i + 1);
 
-			for (int jj = 0; jj < left; jj++)
+			for (size_t jj = 0; jj < left; jj++)
 				printf("%16.8E", mat[i * cols + j + jj]);
 
 			printf("\n");
