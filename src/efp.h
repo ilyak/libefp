@@ -27,6 +27,8 @@
 #ifndef LIBEFP_EFP_H
 #define LIBEFP_EFP_H
 
+#include <stddef.h>
+
 /** \file efp.h
  * Public libefp interface.
  *
@@ -250,7 +252,7 @@ struct efp_atom {
  *         otherwise.
  */
 typedef enum efp_result (*efp_electron_density_field_fn)(
-				int n_pt,
+				size_t n_pt,
 				const double *xyz,
 				double *field,
 				void *user_data);
@@ -388,7 +390,7 @@ enum efp_result efp_set_electron_density_field_user_data(
  */
 enum efp_result efp_set_point_charges(
 			struct efp *efp,
-			int n_ptc,
+			size_t n_ptc,
 			const double *q,
 			const double *xyz);
 
@@ -402,7 +404,7 @@ enum efp_result efp_set_point_charges(
  */
 enum efp_result efp_get_point_charge_count(
 			struct efp *efp,
-			int *n_ptc);
+			size_t *n_ptc);
 
 /**
  * Get values of currently set point charges.
@@ -516,7 +518,7 @@ enum efp_result efp_set_coordinates(struct efp *efp,
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
 enum efp_result efp_set_frag_coordinates(struct efp *efp,
-					 int frag_idx,
+					 size_t frag_idx,
 					 enum efp_coord_type coord_type,
 					 const double *coord);
 
@@ -533,7 +535,7 @@ enum efp_result efp_set_frag_coordinates(struct efp *efp,
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_coordinates(struct efp *efp, int n_frags, double *xyzabc);
+enum efp_result efp_get_coordinates(struct efp *efp, size_t n_frags, double *xyzabc);
 
 /**
  * Setup periodic box size.
@@ -597,7 +599,7 @@ enum efp_result efp_compute(struct efp *efp, int do_gradient);
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_frag_charge(struct efp *efp, int frag_idx, double *charge);
+enum efp_result efp_get_frag_charge(struct efp *efp, size_t frag_idx, double *charge);
 
 /**
  * Get spin multiplicity of a fragment.
@@ -611,7 +613,7 @@ enum efp_result efp_get_frag_charge(struct efp *efp, int frag_idx, double *charg
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_frag_multiplicity(struct efp *efp, int frag_idx, int *mult);
+enum efp_result efp_get_frag_multiplicity(struct efp *efp, size_t frag_idx, int *mult);
 
 /**
  * Get total number of multipoles from EFP electrostatics.
@@ -621,7 +623,7 @@ enum efp_result efp_get_frag_multiplicity(struct efp *efp, int frag_idx, int *mu
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_multipole_count(struct efp *efp, int *n_mult);
+enum efp_result efp_get_multipole_count(struct efp *efp, size_t *n_mult);
 
 /**
  * Get coordinates of electrostatics multipoles.
@@ -670,7 +672,7 @@ enum efp_result efp_get_multipole_values(struct efp *efp, double *mult);
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_induced_dipole_count(struct efp *efp, int *n_dip);
+enum efp_result efp_get_induced_dipole_count(struct efp *efp, size_t *n_dip);
 
 /**
  * Get coordinates of induced dipoles.
@@ -732,7 +734,7 @@ enum efp_result efp_get_energy(struct efp *efp, struct efp_energy *energy);
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_gradient(struct efp *efp, int n_frags, double *grad);
+enum efp_result efp_get_gradient(struct efp *efp, size_t n_frags, double *grad);
 
 /**
  * Get the number of fragments in this computation.
@@ -742,7 +744,7 @@ enum efp_result efp_get_gradient(struct efp *efp, int n_frags, double *grad);
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_frag_count(struct efp *efp, int *n_frag);
+enum efp_result efp_get_frag_count(struct efp *efp, size_t *n_frag);
 
 /**
  * Get the name of the specified effective fragment.
@@ -759,8 +761,8 @@ enum efp_result efp_get_frag_count(struct efp *efp, int *n_frag);
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
 enum efp_result efp_get_frag_name(struct efp *efp,
-				  int frag_idx,
-				  int size,
+				  size_t frag_idx,
+				  size_t size,
 				  char *frag_name);
 
 /**
@@ -776,7 +778,7 @@ enum efp_result efp_get_frag_name(struct efp *efp,
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
 enum efp_result efp_get_frag_mass(struct efp *efp,
-				  int frag_idx,
+				  size_t frag_idx,
 				  double *mass_out);
 
 /**
@@ -793,7 +795,7 @@ enum efp_result efp_get_frag_mass(struct efp *efp,
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
 enum efp_result efp_get_frag_inertia(struct efp *efp,
-				     int frag_idx,
+				     size_t frag_idx,
 				     double *inertia_out);
 
 /**
@@ -809,8 +811,8 @@ enum efp_result efp_get_frag_inertia(struct efp *efp,
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
 enum efp_result efp_get_frag_atom_count(struct efp *efp,
-					int frag_idx,
-					int *n_atoms);
+					size_t frag_idx,
+					size_t *n_atoms);
 
 /**
  * Get atoms comprising the specified fragment.
@@ -828,8 +830,8 @@ enum efp_result efp_get_frag_atom_count(struct efp *efp,
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
 enum efp_result efp_get_frag_atoms(struct efp *efp,
-				   int frag_idx,
-				   int size,
+				   size_t frag_idx,
+				   size_t size,
 				   struct efp_atom *atoms);
 
 /**

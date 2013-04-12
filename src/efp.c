@@ -51,17 +51,22 @@ ff_to_efp(enum ff_res res)
 }
 
 static int
-find_link_index(const struct frag *frag, const char *name)
+find_link_index(const struct frag *frag, const char *name, size_t *idx)
 {
-	for (size_t i = 0, idx = 0; i < frag->n_atoms; i++) {
-		if (frag->atoms[i].label[0] == '*') {
-			if (strcmp(frag->atoms[i].label, name) == 0)
-				return (int)idx;
-			idx++;
-		}
-	}
+	assert(frag);
+	assert(name);
+	assert(idx);
 
-	return -1;
+	for (size_t i = 0, k = 0; i < frag->n_atoms; i++)
+		if (frag->atoms[i].label[0] == '*') {
+			if (strcmp(frag->atoms[i].label, name) == 0) {
+				*idx = k;
+				return 1;
+			}
+			k++;
+		}
+
+	return 0;
 }
 
 static void
@@ -157,25 +162,23 @@ static enum efp_result
 parse_topology_record(struct efp *efp, const char *str)
 {
 	enum ff_res ff_res;
-	size_t idx1, idx2;
+	size_t idx1, link1, idx2, link2;
 	char name1[32], name2[32];
 
 	if (sscanf(str, "%zu %zu %32s %32s", &idx1, &idx2, name1, name2) < 4)
 		return EFP_RESULT_SYNTAX_ERROR;
 
-	if (--idx1 == --idx2)
+	if (idx1 == idx2)
 		return EFP_RESULT_SYNTAX_ERROR;
 
-	if (idx1 >= efp->n_frag || idx2 >= efp->n_frag)
+	if (--idx1 >= efp->n_frag || --idx2 >= efp->n_frag)
 		return EFP_RESULT_INDEX_OUT_OF_RANGE;
 
 	const struct frag *frag1 = efp->frags + idx1;
 	const struct frag *frag2 = efp->frags + idx2;
 
-	int link1 = find_link_index(frag1, name1);
-	int link2 = find_link_index(frag2, name2);
-
-	if (link1 == -1 || link2 == -1)
+	if (!find_link_index(frag1, name1, &link1) ||
+	    !find_link_index(frag2, name2, &link2))
 		return EFP_RESULT_UNKNOWN_ATOM;
 
 	if ((ff_res = efp_ff_add_bond(efp->ff, frag1->ff_offset + link1,
@@ -584,7 +587,7 @@ efp_get_energy(struct efp *efp, struct efp_energy *energy)
 }
 
 EFP_EXPORT enum efp_result
-efp_get_gradient(struct efp *efp, int n_frags, double *grad)
+efp_get_gradient(struct efp *efp, size_t n_frags, double *grad)
 {
 	if (!efp)
 		return EFP_RESULT_NOT_INITIALIZED;
@@ -628,7 +631,7 @@ efp_get_point_charge_gradient(struct efp *efp, double *grad)
 }
 
 EFP_EXPORT enum efp_result
-efp_get_point_charge_count(struct efp *efp, int *n_ptc)
+efp_get_point_charge_count(struct efp *efp, size_t *n_ptc)
 {
 	if (!efp)
 		return EFP_RESULT_NOT_INITIALIZED;
@@ -641,14 +644,11 @@ efp_get_point_charge_count(struct efp *efp, int *n_ptc)
 }
 
 EFP_EXPORT enum efp_result
-efp_set_point_charges(struct efp *efp, int n_ptc,
+efp_set_point_charges(struct efp *efp, size_t n_ptc,
 			const double *q, const double *xyz)
 {
 	if (!efp)
 		return EFP_RESULT_NOT_INITIALIZED;
-
-	if (n_ptc < 0)
-		return EFP_RESULT_INVALID_ARGUMENT;
 
 	if (n_ptc == 0) {
 		free(efp->point_charges);
@@ -738,7 +738,7 @@ efp_set_coordinates(struct efp *efp, enum efp_coord_type coord_type,
 }
 
 EFP_EXPORT enum efp_result
-efp_set_frag_coordinates(struct efp *efp, int frag_idx,
+efp_set_frag_coordinates(struct efp *efp, size_t frag_idx,
 	enum efp_coord_type coord_type, const double *coord)
 {
 	enum efp_result res;
@@ -746,7 +746,7 @@ efp_set_frag_coordinates(struct efp *efp, int frag_idx,
 	if (!efp)
 		return EFP_RESULT_NOT_INITIALIZED;
 
-	if (frag_idx < 0 || frag_idx >= efp->n_frag)
+	if (frag_idx >= efp->n_frag)
 		return EFP_RESULT_INDEX_OUT_OF_RANGE;
 
 	if (!coord)
@@ -776,7 +776,7 @@ efp_set_frag_coordinates(struct efp *efp, int frag_idx,
 }
 
 EFP_EXPORT enum efp_result
-efp_get_coordinates(struct efp *efp, int n_frags, double *xyzabc)
+efp_get_coordinates(struct efp *efp, size_t n_frags, double *xyzabc)
 {
 	if (!efp)
 		return EFP_RESULT_NOT_INITIALIZED;
@@ -922,12 +922,12 @@ efp_compute(struct efp *efp, int do_gradient)
 }
 
 EFP_EXPORT enum efp_result
-efp_get_frag_charge(struct efp *efp, int frag_idx, double *charge)
+efp_get_frag_charge(struct efp *efp, size_t frag_idx, double *charge)
 {
 	if (!efp)
 		return EFP_RESULT_NOT_INITIALIZED;
 
-	if (frag_idx < 0 || frag_idx >= efp->n_frag)
+	if (frag_idx >= efp->n_frag)
 		return EFP_RESULT_INDEX_OUT_OF_RANGE;
 
 	if (!charge)
@@ -946,12 +946,12 @@ efp_get_frag_charge(struct efp *efp, int frag_idx, double *charge)
 }
 
 EFP_EXPORT enum efp_result
-efp_get_frag_multiplicity(struct efp *efp, int frag_idx, int *mult)
+efp_get_frag_multiplicity(struct efp *efp, size_t frag_idx, int *mult)
 {
 	if (!efp)
 		return EFP_RESULT_NOT_INITIALIZED;
 
-	if (frag_idx < 0 || frag_idx >= efp->n_frag)
+	if (frag_idx >= efp->n_frag)
 		return EFP_RESULT_INDEX_OUT_OF_RANGE;
 
 	if (!mult)
@@ -963,7 +963,7 @@ efp_get_frag_multiplicity(struct efp *efp, int frag_idx, int *mult)
 }
 
 EFP_EXPORT enum efp_result
-efp_get_multipole_count(struct efp *efp, int *n_mult)
+efp_get_multipole_count(struct efp *efp, size_t *n_mult)
 {
 	if (!efp)
 		return EFP_RESULT_NOT_INITIALIZED;
@@ -1035,7 +1035,7 @@ efp_get_multipole_values(struct efp *efp, double *mult)
 }
 
 EFP_EXPORT enum efp_result
-efp_get_induced_dipole_count(struct efp *efp, int *n_dip)
+efp_get_induced_dipole_count(struct efp *efp, size_t *n_dip)
 {
 	if (!efp)
 		return EFP_RESULT_NOT_INITIALIZED;
@@ -1324,7 +1324,7 @@ efp_set_electron_density_field_user_data(struct efp *efp, void *user_data)
 }
 
 EFP_EXPORT enum efp_result
-efp_get_frag_count(struct efp *efp, int *n_frag)
+efp_get_frag_count(struct efp *efp, size_t *n_frag)
 {
 	if (!efp)
 		return EFP_RESULT_NOT_INITIALIZED;
@@ -1337,7 +1337,7 @@ efp_get_frag_count(struct efp *efp, int *n_frag)
 }
 
 EFP_EXPORT enum efp_result
-efp_get_frag_name(struct efp *efp, int frag_idx, int size, char *frag_name)
+efp_get_frag_name(struct efp *efp, size_t frag_idx, size_t size, char *frag_name)
 {
 	if (!efp)
 		return EFP_RESULT_NOT_INITIALIZED;
@@ -1345,7 +1345,7 @@ efp_get_frag_name(struct efp *efp, int frag_idx, int size, char *frag_name)
 	if (!frag_name)
 		return EFP_RESULT_INVALID_ARGUMENT;
 
-	if (frag_idx < 0 || frag_idx >= efp->n_frag)
+	if (frag_idx >= efp->n_frag)
 		return EFP_RESULT_INDEX_OUT_OF_RANGE;
 
 	if ((unsigned)size <= strlen(efp->frags[frag_idx].name))
@@ -1356,7 +1356,7 @@ efp_get_frag_name(struct efp *efp, int frag_idx, int size, char *frag_name)
 }
 
 EFP_EXPORT enum efp_result
-efp_get_frag_mass(struct efp *efp, int frag_idx, double *mass_out)
+efp_get_frag_mass(struct efp *efp, size_t frag_idx, double *mass_out)
 {
 	if (!efp)
 		return EFP_RESULT_NOT_INITIALIZED;
@@ -1364,7 +1364,7 @@ efp_get_frag_mass(struct efp *efp, int frag_idx, double *mass_out)
 	if (!mass_out)
 		return EFP_RESULT_INVALID_ARGUMENT;
 
-	if (frag_idx < 0 || frag_idx >= efp->n_frag)
+	if (frag_idx >= efp->n_frag)
 		return EFP_RESULT_INDEX_OUT_OF_RANGE;
 
 	const struct frag *frag = efp->frags + frag_idx;
@@ -1378,7 +1378,7 @@ efp_get_frag_mass(struct efp *efp, int frag_idx, double *mass_out)
 }
 
 EFP_EXPORT enum efp_result
-efp_get_frag_inertia(struct efp *efp, int frag_idx, double *inertia_out)
+efp_get_frag_inertia(struct efp *efp, size_t frag_idx, double *inertia_out)
 {
 	if (!efp)
 		return EFP_RESULT_NOT_INITIALIZED;
@@ -1386,7 +1386,7 @@ efp_get_frag_inertia(struct efp *efp, int frag_idx, double *inertia_out)
 	if (!inertia_out)
 		return EFP_RESULT_INVALID_ARGUMENT;
 
-	if (frag_idx < 0 || frag_idx >= efp->n_frag)
+	if (frag_idx >= efp->n_frag)
 		return EFP_RESULT_INDEX_OUT_OF_RANGE;
 
 	/* center of mass is in origin and axes are principal axes of inertia */
@@ -1410,7 +1410,7 @@ efp_get_frag_inertia(struct efp *efp, int frag_idx, double *inertia_out)
 }
 
 EFP_EXPORT enum efp_result
-efp_get_frag_atom_count(struct efp *efp, int frag_idx, int *n_atoms)
+efp_get_frag_atom_count(struct efp *efp, size_t frag_idx, size_t *n_atoms)
 {
 	if (!efp)
 		return EFP_RESULT_NOT_INITIALIZED;
@@ -1418,7 +1418,7 @@ efp_get_frag_atom_count(struct efp *efp, int frag_idx, int *n_atoms)
 	if (!n_atoms)
 		return EFP_RESULT_INVALID_ARGUMENT;
 
-	if (frag_idx < 0 || frag_idx >= efp->n_frag)
+	if (frag_idx >= efp->n_frag)
 		return EFP_RESULT_INDEX_OUT_OF_RANGE;
 
 	*n_atoms = efp->frags[frag_idx].n_atoms;
@@ -1426,8 +1426,8 @@ efp_get_frag_atom_count(struct efp *efp, int frag_idx, int *n_atoms)
 }
 
 EFP_EXPORT enum efp_result
-efp_get_frag_atoms(struct efp *efp, int frag_idx,
-		   int size, struct efp_atom *atoms)
+efp_get_frag_atoms(struct efp *efp, size_t frag_idx,
+		   size_t size, struct efp_atom *atoms)
 {
 	if (!efp)
 		return EFP_RESULT_NOT_INITIALIZED;
@@ -1435,7 +1435,7 @@ efp_get_frag_atoms(struct efp *efp, int frag_idx,
 	if (!atoms)
 		return EFP_RESULT_INVALID_ARGUMENT;
 
-	if (frag_idx < 0 || frag_idx >= efp->n_frag)
+	if (frag_idx >= efp->n_frag)
 		return EFP_RESULT_INDEX_OUT_OF_RANGE;
 
 	struct frag *frag = efp->frags + frag_idx;
