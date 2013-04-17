@@ -125,7 +125,7 @@ disp_overlap(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 	double r2 = r * r;
 	double r6 = r2 * r2 * r2;
 
-	double s_ij = fr_i->overlap_int[overlap_idx];
+	double s_ij = efp->overlap_int[fr_i->overlap_offset + overlap_idx];
 	double ln_s = 0.0;
 	double damp = 1.0;
 
@@ -137,7 +137,7 @@ disp_overlap(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 	double energy = -4.0 / 3.0 * sum * damp / r6;
 
 	if (efp->do_gradient) {
-		six_t ds_ij = fr_i->overlap_int_deriv[overlap_idx];
+		six_t ds_ij = efp->overlap_int_deriv[fr_i->overlap_offset + overlap_idx];
 		vec_t force, torque_i, torque_j;
 
 		double t1 = -8.0 * sum / r6 / r2 * damp;
@@ -298,10 +298,13 @@ efp_compute_disp(struct efp *efp)
 
 	double energy = 0.0;
 
+	size_t start_idx, end_idx;
+	efp_get_frag_interval(efp->n_frag, &start_idx, &end_idx);
+
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 4) reduction(+:energy)
 #endif
-	for (size_t i = 0; i < efp->n_frag; i++) {
+	for (size_t i = start_idx; i < end_idx; i++) {
 		for (size_t j = i + 1, idx = 0; j < efp->n_frag; j++) {
 			if (!efp_skip_frag_pair(efp, i, j))
 				energy += frag_frag_disp(efp, i, j, idx);
@@ -309,6 +312,10 @@ efp_compute_disp(struct efp *efp)
 			idx += efp->frags[i].n_lmo * efp->frags[j].n_lmo;
 		}
 	}
+
+#ifdef WITH_MPI
+	MPI_Allreduce(MPI_IN_PLACE, &energy, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+#endif
 
 	efp->energy.dispersion = energy;
 	return EFP_RESULT_SUCCESS;

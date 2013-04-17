@@ -365,8 +365,6 @@ free_frag(struct frag *frag)
 		free(frag->xr_shells[i].coef);
 
 	free(frag->xr_shells);
-	free(frag->overlap_int);
-	free(frag->overlap_int_deriv);
 
 	/* don't do free(frag) here */
 }
@@ -546,29 +544,35 @@ check_params(struct efp *efp)
 static enum efp_result
 setup_disp(struct efp *efp)
 {
+	efp->n_overlap = 0;
+
 	if ((efp->opts.terms & EFP_TERM_DISP) == 0 ||
-	    (efp->opts.disp_damp != EFP_DISP_DAMP_OVERLAP))
+	    (efp->opts.disp_damp != EFP_DISP_DAMP_OVERLAP)) {
+		free(efp->overlap_int);
+		free(efp->overlap_int_deriv);
+		efp->overlap_int = NULL;
+		efp->overlap_int_deriv = NULL;
 		return EFP_RESULT_SUCCESS;
+	}
 
 	for (size_t i = 0; i < efp->n_frag; i++) {
-		struct frag *frag = efp->frags + i;
-		size_t size = 0;
+		efp->frags[i].overlap_offset = efp->n_overlap;
 
 		for (size_t j = i + 1; j < efp->n_frag; j++)
-			size += efp->frags[i].n_lmo * efp->frags[j].n_lmo;
-
-		frag->overlap_int = realloc(frag->overlap_int,
-				size * sizeof(double));
-
-		if (size && !frag->overlap_int)
-			return EFP_RESULT_NO_MEMORY;
-
-		frag->overlap_int_deriv = realloc(frag->overlap_int_deriv,
-				size * sizeof(six_t));
-
-		if (size && !frag->overlap_int_deriv)
-			return EFP_RESULT_NO_MEMORY;
+			efp->n_overlap += efp->frags[i].n_lmo * efp->frags[j].n_lmo;
 	}
+
+	efp->overlap_int = realloc(efp->overlap_int,
+			efp->n_overlap * sizeof(double));
+
+	if (efp->overlap_int == NULL)
+		return EFP_RESULT_NO_MEMORY;
+
+	efp->overlap_int_deriv = realloc(efp->overlap_int_deriv,
+			efp->n_overlap * sizeof(six_t));
+
+	if (efp->overlap_int_deriv == NULL)
+		return EFP_RESULT_NO_MEMORY;
 
 	return EFP_RESULT_SUCCESS;
 }
@@ -875,14 +879,21 @@ efp_compute(struct efp *efp, int do_gradient)
 		return EFP_RESULT_NOT_INITIALIZED;
 
 	efp->do_gradient = do_gradient;
-	efp->stress = mat_zero;
-	memset(&efp->energy, 0, sizeof(struct efp_energy));
 
 	if ((res = check_params(efp)))
 		return res;
 
 	if ((res = setup_disp(efp)))
 		return res;
+
+	efp->stress = mat_zero;
+	memset(&efp->energy, 0, sizeof(struct efp_energy));
+
+	if (efp->overlap_int)
+		memset(efp->overlap_int, 0, sizeof(double) * efp->n_overlap);
+
+	if (efp->overlap_int_deriv)
+		memset(efp->overlap_int_deriv, 0, sizeof(six_t) * efp->n_overlap);
 
 	for (size_t i = 0; i < efp->n_frag; i++) {
 		efp->frags[i].force = vec_zero;
@@ -895,6 +906,36 @@ efp_compute(struct efp *efp, int do_gradient)
 	for (size_t i = 0; i < ARRAY_SIZE(term_list); i++)
 		if ((res = term_list[i](efp)))
 			return res;
+
+#ifdef WITH_MPI
+	vec_t grad_f[2 * efp->n_frag];
+
+	for (size_t i = 0; i < efp->n_frag; i++) {
+		grad_f[i] = efp->frags[i].force;
+		grad_f[efp->n_frag + i] = efp->frags[i].torque;
+	}
+
+	MPI_Allreduce(MPI_IN_PLACE, grad_f, 6 * (int)efp->n_frag, MPI_DOUBLE,
+			MPI_SUM, MPI_COMM_WORLD);
+
+	for (size_t i = 0; i < efp->n_frag; i++) {
+		efp->frags[i].force = grad_f[i];
+		efp->frags[i].torque = grad_f[efp->n_frag + i];
+	}
+
+	vec_t grad_p[efp->n_ptc];
+
+	for (size_t i = 0; i < efp->n_ptc; i++)
+		grad_p[i] = efp->point_charges[i].grad;
+
+	MPI_Allreduce(MPI_IN_PLACE, grad_p, 3 * (int)efp->n_ptc, MPI_DOUBLE,
+			MPI_SUM, MPI_COMM_WORLD);
+
+	for (size_t i = 0; i < efp->n_ptc; i++)
+		efp->point_charges[i].grad = grad_p[i];
+
+	MPI_Allreduce(MPI_IN_PLACE, &efp->stress, 9, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+#endif
 
 	if (efp->opts.enable_links) {
 		size_t n_ff_atoms = efp_ff_get_atom_count(efp->ff);

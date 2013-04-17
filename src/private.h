@@ -27,6 +27,10 @@
 #ifndef LIBEFP_PRIVATE_H
 #define LIBEFP_PRIVATE_H
 
+#ifdef WITH_MPI
+#include <mpi.h>
+#endif
+
 #include "bvec.h"
 #include "efp.h"
 #include "ff.h"
@@ -132,11 +136,8 @@ struct frag {
 	/* rotational derivatives of MO coefficients */
 	double *xr_wf_deriv[3];
 
-	/* overlap integrals; used for overlap-based dispersion damping */
-	double *overlap_int;
-
-	/* derivatives of overlap integrals */
-	six_t *overlap_int_deriv;
+	/* offset of overlap integrals for this fragment */
+	size_t overlap_offset;
 
 	/* offset in array of ff atoms */
 	size_t ff_offset;
@@ -181,6 +182,15 @@ struct efp {
 		double charge;
 		vec_t grad;
 	} *point_charges;
+
+	/* total number of overlap integrals */
+	size_t n_overlap;
+
+	/* overlap integrals; used for overlap-based dispersion damping */
+	double *overlap_int;
+
+	/* derivatives of overlap integrals */
+	six_t *overlap_int_deriv;
 
 	/* EFP energy terms */
 	struct efp_energy energy;

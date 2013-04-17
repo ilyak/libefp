@@ -622,10 +622,13 @@ compute_grad_point(struct efp *efp, size_t frag_idx, size_t pt_idx)
 static void
 compute_grad(struct efp *efp)
 {
+	size_t start_idx, end_idx;
+	efp_get_frag_interval(efp->n_frag, &start_idx, &end_idx);
+
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 4)
 #endif
-	for (size_t i = 0; i < efp->n_frag; i++)
+	for (size_t i = start_idx; i < end_idx; i++)
 		for (size_t j = 0; j < efp->frags[i].n_polarizable_pts; j++)
 			compute_grad_point(efp, i, j);
 }

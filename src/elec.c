@@ -411,13 +411,20 @@ efp_compute_elec(struct efp *efp)
 
 	double energy = 0.0;
 
+	size_t start_idx, end_idx;
+	efp_get_frag_interval(efp->n_frag, &start_idx, &end_idx);
+
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 4) reduction(+:energy)
 #endif
-	for (size_t i = 0; i < efp->n_frag; i++)
+	for (size_t i = start_idx; i < end_idx; i++)
 		for (size_t j = i + 1; j < efp->n_frag; j++)
 			if (!efp_skip_frag_pair(efp, i, j))
 				energy += frag_frag_elec(efp, i, j);
+
+#ifdef WITH_MPI
+	MPI_Allreduce(MPI_IN_PLACE, &energy, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+#endif
 
 	efp->energy.electrostatic = energy;
 	return EFP_RESULT_SUCCESS;
@@ -627,15 +634,22 @@ efp_compute_ai_elec(struct efp *efp)
 
 	double energy = 0.0;
 
+	size_t start_idx, end_idx;
+	efp_get_frag_interval(efp->n_frag, &start_idx, &end_idx);
+
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 4) reduction(+:energy)
 #endif
-	for (size_t i = 0; i < efp->n_frag; i++) {
+	for (size_t i = start_idx; i < end_idx; i++) {
 		energy += compute_ai_elec_frag(efp, i);
 
 		if (efp->do_gradient)
 			compute_ai_elec_frag_grad(efp, i);
 	}
+
+#ifdef WITH_MPI
+	MPI_Allreduce(MPI_IN_PLACE, &energy, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+#endif
 
 	efp->energy.electrostatic_point_charges = energy;
 	return EFP_RESULT_SUCCESS;

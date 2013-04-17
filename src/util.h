@@ -43,5 +43,6 @@ void efp_rotate_t2(const mat_t *, const double *, double *);
 void efp_rotate_t3(const mat_t *, const double *, double *);
 int efp_strcasecmp(const char *, const char *);
 int efp_strncasecmp(const char *, const char *, size_t);
+void efp_get_frag_interval(size_t, size_t *, size_t *);
 
 #endif /* LIBEFP_UTIL_H */

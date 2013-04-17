@@ -208,3 +208,49 @@ int efp_strncasecmp(const char *s1, const char *s2, size_t n)
 	}
 	return 0;
 }
+
+void efp_get_frag_interval(size_t n_frags, size_t *start, size_t *end)
+{
+#ifdef WITH_MPI
+	size_t total = n_frags * (n_frags - 1) / 2;
+	int rank, size;
+
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+	if (rank == 0) {
+		*start = 0;
+	}
+	else {
+		ssize_t n = total * rank / size;
+
+		for (size_t i = 0; i < n_frags; i++) {
+			n -= n_frags - 1 - i;
+
+			if (n <= 0) {
+				*start = i;
+				break;
+			}
+		}
+	}
+
+	if (rank == size - 1) {
+		*end = n_frags;
+	}
+	else {
+		ssize_t n = total * (rank + 1) / size;
+
+		for (size_t i = 0; i < n_frags; i++) {
+			n -= n_frags - 1 - i;
+
+			if (n <= 0) {
+				*end = i;
+				break;
+			}
+		}
+	}
+#else
+	*start = 0;
+	*end = n_frags;
+#endif
+}
