@@ -27,6 +27,10 @@
 #include <math.h>
 #include <stdlib.h>
 
+#ifdef WITH_MPI
+#include <mpi.h>
+#endif
+
 #include "test_common.h"
 
 #define FAIL_TOL 5.0e-6
@@ -288,20 +292,29 @@ static void add_tcases(Suite *s)
 	suite_add_tcase(s, tcase_xr_3());
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
+	(void)argc;
+	(void)argv;
+
+#ifdef WITH_MPI
+	MPI_Init(&argc, &argv);
+#endif
 	Suite *s = suite_create("libefp test suite");
 
 	add_tcases(s);
 
 	SRunner *sr = srunner_create(s);
 
-	srunner_set_fork_status(sr, CK_FORK);
+	srunner_set_fork_status(sr, CK_NOFORK);
 	srunner_run_all(sr, CK_NORMAL);
 
 	int n_failed = srunner_ntests_failed(sr);
 
 	srunner_free(sr);
 
+#ifdef WITH_MPI
+	MPI_Finalize();
+#endif
 	return n_failed == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
 }
