@@ -222,7 +222,7 @@ void efp_get_frag_interval(size_t n_frags, size_t *start, size_t *end)
 		*start = 0;
 	}
 	else {
-		ssize_t n = total * rank / size;
+		int n = (int)total * rank / size;
 
 		for (size_t i = 0; i < n_frags; i++) {
 			n -= n_frags - 1 - i;
@@ -238,7 +238,7 @@ void efp_get_frag_interval(size_t n_frags, size_t *start, size_t *end)
 		*end = n_frags;
 	}
 	else {
-		ssize_t n = total * (rank + 1) / size;
+		int n = (int)total * (rank + 1) / size;
 
 		for (size_t i = 0; i < n_frags; i++) {
 			n -= n_frags - 1 - i;
