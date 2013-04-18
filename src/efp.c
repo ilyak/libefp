@@ -568,11 +568,13 @@ setup_disp(struct efp *efp)
 	if (efp->overlap_int == NULL)
 		return EFP_RESULT_NO_MEMORY;
 
-	efp->overlap_int_deriv = realloc(efp->overlap_int_deriv,
-			efp->n_overlap * sizeof(six_t));
+	if (efp->do_gradient) {
+		efp->overlap_int_deriv = realloc(efp->overlap_int_deriv,
+				efp->n_overlap * sizeof(six_t));
 
-	if (efp->overlap_int_deriv == NULL)
-		return EFP_RESULT_NO_MEMORY;
+		if (efp->overlap_int_deriv == NULL)
+			return EFP_RESULT_NO_MEMORY;
+	}
 
 	return EFP_RESULT_SUCCESS;
 }

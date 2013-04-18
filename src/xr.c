@@ -724,12 +724,16 @@ efp_compute_xr(struct efp *efp)
 	}
 
 #ifdef WITH_MPI
-	MPI_Allreduce(MPI_IN_PLACE, efp->overlap_int, (int)efp->n_overlap,
-			MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-	MPI_Allreduce(MPI_IN_PLACE, efp->overlap_int_deriv, 6 * (int)efp->n_overlap,
-			MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 	MPI_Allreduce(MPI_IN_PLACE, &exr, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 	MPI_Allreduce(MPI_IN_PLACE, &ecp, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+	if (efp->overlap_int)
+		MPI_Allreduce(MPI_IN_PLACE, efp->overlap_int, (int)efp->n_overlap,
+				MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+	if (efp->overlap_int_deriv)
+		MPI_Allreduce(MPI_IN_PLACE, efp->overlap_int_deriv, 6 * (int)efp->n_overlap,
+				MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 #endif
 
 	efp->energy.exchange_repulsion = exr;
