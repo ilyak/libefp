@@ -64,7 +64,7 @@ static void print_restart(struct efp *efp)
 	double coord[6 * n_frags];
 	check_fail(efp_get_coordinates(efp, n_frags, coord));
 
-	printf("    RESTART DATA\n\n");
+	msg("    RESTART DATA\n\n");
 
 	for (size_t i = 0; i < n_frags; i++) {
 		char name[64];
@@ -77,7 +77,7 @@ static void print_restart(struct efp *efp)
 		print_fragment(name, coord + 6 * i, NULL);
 	}
 
-	printf("\n");
+	msg("\n");
 }
 
 static int check_conv(double rms_grad, double max_grad, double opt_tol)
@@ -110,10 +110,10 @@ static void print_status(struct efp *efp, double e_diff, double rms_grad,
 	print_restart(efp);
 	print_energy(efp);
 
-	printf("%30s %16.10lf\n", "ENERGY CHANGE", e_diff);
-	printf("%30s %16.10lf\n", "RMS GRADIENT", rms_grad);
-	printf("%30s %16.10lf\n", "MAXIMUM GRADIENT", max_grad);
-	printf("\n\n");
+	msg("%30s %16.10lf\n", "ENERGY CHANGE", e_diff);
+	msg("%30s %16.10lf\n", "RMS GRADIENT", rms_grad);
+	msg("%30s %16.10lf\n", "MAXIMUM GRADIENT", max_grad);
+	msg("\n\n");
 
 	fflush(stdout);
 }
@@ -122,7 +122,7 @@ void sim_opt(struct efp *efp, const struct cfg *cfg, const struct sys *sys)
 {
 	(void)sys;
 
-	printf("ENERGY MINIMIZATION JOB\n\n\n");
+	msg("ENERGY MINIMIZATION JOB\n\n\n");
 
 	size_t n_frags, n_coord;
 	double rms_grad, max_grad;
@@ -147,7 +147,7 @@ void sim_opt(struct efp *efp, const struct cfg *cfg, const struct sys *sys)
 	opt_get_gx(state, n_coord, grad);
 	get_grad_info(n_coord, grad, &rms_grad, &max_grad);
 
-	printf("    INITIAL STATE\n\n");
+	msg("    INITIAL STATE\n\n");
 	print_status(efp, 0.0, rms_grad, max_grad);
 
 	for (int step = 1; step <= cfg_get_int(cfg, "max_steps"); step++) {
@@ -159,13 +159,13 @@ void sim_opt(struct efp *efp, const struct cfg *cfg, const struct sys *sys)
 		get_grad_info(n_coord, grad, &rms_grad, &max_grad);
 
 		if (check_conv(rms_grad, max_grad, cfg_get_double(cfg, "opt_tol"))) {
-			printf("    FINAL STATE\n\n");
+			msg("    FINAL STATE\n\n");
 			print_status(efp, e_new - e_old, rms_grad, max_grad);
-			printf("OPTIMIZATION CONVERGED\n");
+			msg("OPTIMIZATION CONVERGED\n");
 			break;
 		}
 
-		printf("    STATE AFTER %d STEPS\n\n", step);
+		msg("    STATE AFTER %d STEPS\n\n", step);
 		print_status(efp, e_new - e_old, rms_grad, max_grad);
 
 		e_old = e_new;
@@ -173,5 +173,5 @@ void sim_opt(struct efp *efp, const struct cfg *cfg, const struct sys *sys)
 
 	opt_shutdown(state);
 
-	printf("ENERGY MINIMIZATION JOB COMPLETED SUCCESSFULLY\n");
+	msg("ENERGY MINIMIZATION JOB COMPLETED SUCCESSFULLY\n");
 }

@@ -33,11 +33,11 @@ void sim_sp(struct efp *efp, const struct cfg *cfg, const struct sys *sys)
 	(void)cfg;
 	(void)sys;
 
-	printf("SINGLE POINT ENERGY JOB\n\n\n");
+	msg("SINGLE POINT ENERGY JOB\n\n\n");
 
 	print_geometry(efp);
 	check_fail(efp_compute(efp, 0));
 	print_energy(efp);
 
-	printf("SINGLE POINT ENERGY JOB COMPLETED SUCCESSFULLY\n");
+	msg("SINGLE POINT ENERGY JOB COMPLETED SUCCESSFULLY\n");
 }

@@ -33,12 +33,12 @@ void sim_grad(struct efp *efp, const struct cfg *cfg, const struct sys *sys)
 	(void)cfg;
 	(void)sys;
 
-	printf("ENERGY GRADIENT JOB\n\n\n");
+	msg("ENERGY GRADIENT JOB\n\n\n");
 
 	print_geometry(efp);
 	check_fail(efp_compute(efp, 1));
 	print_energy(efp);
 	print_gradient(efp);
 
-	printf("ENERGY GRADIENT JOB COMPLETED SUCCESSFULLY\n");
+	msg("ENERGY GRADIENT JOB COMPLETED SUCCESSFULLY\n");
 }

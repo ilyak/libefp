@@ -48,7 +48,7 @@ static void compute_gradient(struct efp *efp, size_t n_frags,
 
 static void show_progress(size_t disp, size_t total, const char *dir)
 {
-	printf("COMPUTING DISPLACEMENT %4zu OF %zu (%s)\n", disp, total, dir);
+	msg("COMPUTING DISPLACEMENT %4zu OF %zu (%s)\n", disp, total, dir);
 	fflush(stdout);
 }
 
@@ -118,7 +118,7 @@ static void compute_hessian(struct efp *efp, const struct cfg *cfg, double *hess
 	free(grad_f);
 	free(grad_b);
 
-	printf("\n\n");
+	msg("\n\n");
 }
 
 static void get_inertia_factor(const double *inertia, const mat_t *rotmat,
@@ -271,14 +271,14 @@ static void print_mode(size_t mode, double eigen)
 	/* convert to cm-1 */
 	eigen = FINE_CONST / 2.0 / PI / BOHR_RADIUS / sqrt(AMU_TO_AU) * 1.0e8 * eigen;
 
-	printf("    MODE %4zu    FREQUENCY %10.3lf cm-1\n\n", mode, eigen);
+	msg("    MODE %4zu    FREQUENCY %10.3lf cm-1\n\n", mode, eigen);
 }
 
 void sim_hess(struct efp *efp, const struct cfg *cfg, const struct sys *sys)
 {
 	(void)sys;
 
-	printf("HESSIAN JOB\n\n\n");
+	msg("HESSIAN JOB\n\n\n");
 
 	print_geometry(efp);
 	check_fail(efp_compute(efp, 1));
@@ -294,16 +294,16 @@ void sim_hess(struct efp *efp, const struct cfg *cfg, const struct sys *sys)
 	hess = xmalloc(n_coord * n_coord * sizeof(double));
 	compute_hessian(efp, cfg, hess);
 
-	printf("    HESSIAN MATRIX\n\n");
+	msg("    HESSIAN MATRIX\n\n");
 	print_matrix(n_coord, n_coord, hess);
 
 	mass_hess = xmalloc(n_coord * n_coord * sizeof(double));
 	mass_weight_hessian(efp, hess, mass_hess);
 
-	printf("    MASS-WEIGHTED HESSIAN MATRIX\n\n");
+	msg("    MASS-WEIGHTED HESSIAN MATRIX\n\n");
 	print_matrix(n_coord, n_coord, mass_hess);
 
-	printf("    NORMAL MODE ANALYSIS\n\n");
+	msg("    NORMAL MODE ANALYSIS\n\n");
 
 	eigen = xmalloc(n_coord * sizeof(double));
 
@@ -319,5 +319,5 @@ void sim_hess(struct efp *efp, const struct cfg *cfg, const struct sys *sys)
 	free(mass_hess);
 	free(eigen);
 
-	printf("HESSIAN JOB COMPLETED SUCCESSFULLY\n");
+	msg("HESSIAN JOB COMPLETED SUCCESSFULLY\n");
 }

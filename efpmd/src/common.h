@@ -34,10 +34,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef WITH_MPI
+#include <mpi.h>
+#endif
+
 #include <efp.h>
 #include <math_util.h>
 
 #include "cfg.h"
+#include "msg.h"
 #include "phys.h"
 
 #define NORETURN __attribute__((noreturn))

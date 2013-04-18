@@ -26,11 +26,19 @@
 
 #include "common.h"
 
+typedef void (*sim_fn_t)(struct efp *, const struct cfg *, const struct sys *);
+
 void sim_sp(struct efp *, const struct cfg *, const struct sys *);
 void sim_grad(struct efp *, const struct cfg *, const struct sys *);
 void sim_hess(struct efp *, const struct cfg *, const struct sys *);
 void sim_opt(struct efp *, const struct cfg *, const struct sys *);
 void sim_md(struct efp *, const struct cfg *, const struct sys *);
+
+#define USAGE_STRING \
+	"usage: efpmd [-d | -v | -h | input]\n" \
+	"  -d  print the list of all keywords and their default values\n" \
+	"  -v  print package version\n" \
+	"  -h  print this help message\n"
 
 static struct cfg *make_cfg(void)
 {
@@ -114,21 +122,21 @@ static struct cfg *make_cfg(void)
 	return cfg;
 }
 
-static void run_sim(struct efp *efp, const struct cfg *cfg, const struct sys *sys)
+static sim_fn_t get_sim_fn(enum run_type run_type)
 {
-	(void (*[])(struct efp *, const struct cfg *, const struct sys *)) {
-		[RUN_TYPE_SP] = sim_sp,
-		[RUN_TYPE_GRAD] = sim_grad,
-		[RUN_TYPE_HESS] = sim_hess,
-		[RUN_TYPE_OPT] = sim_opt,
-		[RUN_TYPE_MD] = sim_md }[cfg_get_enum(cfg, "run_type")](efp, cfg, sys);
-}
-
-static void print_banner(void)
-{
-	printf("EFPMD ver. " LIBEFP_VERSION_STRING "\n");
-	printf("Copyright (c) 2012-2013 Ilya Kaliman\n\n");
-	printf("%s", efp_banner());
+	switch (run_type) {
+	case RUN_TYPE_SP:
+		return sim_sp;
+	case RUN_TYPE_GRAD:
+		return sim_grad;
+	case RUN_TYPE_HESS:
+		return sim_hess;
+	case RUN_TYPE_OPT:
+		return sim_opt;
+	case RUN_TYPE_MD:
+		return sim_md;
+	}
+	assert(0);
 }
 
 static int string_compare(const void *a, const void *b)
@@ -245,19 +253,26 @@ static struct efp *init_sim(const struct cfg *cfg, const struct sys *sys)
 	return efp;
 }
 
-static void print_defaults(void)
+static void print_banner(void)
 {
-	struct cfg *cfg = make_cfg();
-	cfg_print(cfg, stdout);
-	cfg_free(cfg);
+	msg("EFPMD ver. " LIBEFP_VERSION_STRING "\n");
+	msg("Copyright (c) 2012-2013 Ilya Kaliman\n\n");
+	msg("%s", efp_banner());
 }
 
-static void print_usage(void)
+static void print_config(struct cfg *cfg)
 {
-	puts("usage: efpmd [-d | -v | -h | input]");
-	puts("  -d  print the list of all keywords and their default values");
-	puts("  -v  print package version");
-	puts("  -h  print this help message");
+#ifdef WITH_MPI
+	int rank;
+
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+	if (rank == 0) {
+		cfg_print(cfg, stdout);
+	}
+#else
+	cfg_print(cfg, stdout);
+#endif
 }
 
 static void convert_units(struct cfg *cfg, struct sys *sys)
@@ -296,42 +311,47 @@ static void sys_free(struct sys *sys)
 
 int main(int argc, char **argv)
 {
-	struct cfg *cfg;
-	struct efp *efp;
-	struct sys *sys;
+#ifdef WITH_MPI
+	MPI_Init(&argc, &argv);
+#endif
+	struct cfg *cfg = make_cfg();
 
 	if (argc < 2) {
-		print_usage();
-		return EXIT_FAILURE;
+		msg(USAGE_STRING);
+		goto exit;
 	}
 
 	if (argv[1][0] == '-') {
 		switch (argv[1][1]) {
-		case 'd':
-			print_defaults();
-			return EXIT_FAILURE;
 		case 'v':
 			print_banner();
-			return EXIT_FAILURE;
+			goto exit;
+		case 'd':
+			print_config(cfg);
+			goto exit;
 		default:
-			print_usage();
-			return EXIT_FAILURE;
+			msg(USAGE_STRING);
+			goto exit;
 		}
 	}
 
 	print_banner();
-	printf("\n");
-	cfg = make_cfg();
-	sys = parse_input(cfg, argv[1]);
-	printf("SIMULATION SETTINGS\n\n");
-	cfg_print(cfg, stdout);
-	printf("\n\n");
+	msg("\n");
+	struct sys *sys = parse_input(cfg, argv[1]);
+	msg("SIMULATION SETTINGS\n\n");
+	print_config(cfg);
+	msg("\n\n");
 	convert_units(cfg, sys);
-	efp = init_sim(cfg, sys);
-	run_sim(efp, cfg, sys);
+	struct efp *efp = init_sim(cfg, sys);
+	sim_fn_t sim_fn = get_sim_fn(cfg_get_enum(cfg, "run_type"));
+	sim_fn(efp, cfg, sys);
 	efp_shutdown(efp);
 	sys_free(sys);
+exit:
 	cfg_free(cfg);
 
+#ifdef WITH_MPI
+	MPI_Finalize();
+#endif
 	return EXIT_SUCCESS;
 }

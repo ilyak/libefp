@@ -549,7 +549,7 @@ static void update_step_nvt(struct md *md)
 			break;
 
 		if (iter == MAX_ITER)
-			printf("WARNING: NVT UPDATE DID NOT CONVERGE\n\n");
+			msg("WARNING: NVT UPDATE DID NOT CONVERGE\n\n");
 	}
 
 	data->chi_dt += 0.5 * dt * data->chi;
@@ -639,7 +639,7 @@ static void update_step_npt(struct md *md)
 			break;
 
 		if (iter == MAX_ITER)
-			printf("WARNING: NPT UPDATE DID NOT CONVERGE\n\n");
+			msg("WARNING: NPT UPDATE DID NOT CONVERGE\n\n");
 	}
 
 	vec_scale(&md->box, exp(dt * data->eta));
@@ -692,7 +692,7 @@ static void update_step_npt(struct md *md)
 			break;
 
 		if (iter == MAX_ITER)
-			printf("WARNING: NPT UPDATE DID NOT CONVERGE\n\n");
+			msg("WARNING: NPT UPDATE DID NOT CONVERGE\n\n");
 	}
 
 	data->chi_dt += 0.5 * dt * data->chi;
@@ -704,14 +704,14 @@ static void print_info(const struct md *md)
 	double invariant = md->get_invariant(md);
 	double temperature = get_temperature(md);
 
-	printf("%30s %16.10lf\n", "POTENTIAL ENERGY", energy);
-	printf("%30s %16.10lf\n", "INVARIANT", invariant);
-	printf("%30s %16.10lf\n", "TEMPERATURE", temperature);
+	msg("%30s %16.10lf\n", "POTENTIAL ENERGY", energy);
+	msg("%30s %16.10lf\n", "INVARIANT", invariant);
+	msg("%30s %16.10lf\n", "TEMPERATURE", temperature);
 
 	if (cfg_get_enum(md->cfg, "ensemble") == ENSEMBLE_TYPE_NPT) {
 		double pressure = get_pressure(md) / BAR_TO_AU;
 
-		printf("%30s %16.10lf\n", "PRESSURE", pressure);
+		msg("%30s %16.10lf\n", "PRESSURE", pressure);
 	}
 
 	if (cfg_get_bool(md->cfg, "enable_pbc")) {
@@ -719,15 +719,15 @@ static void print_info(const struct md *md)
 		double y = md->box.y * BOHR_RADIUS;
 		double z = md->box.z * BOHR_RADIUS;
 
-		printf("%30s %9.3lf %9.3lf %9.3lf\n", "PERIODIC BOX SIZE", x, y, z);
+		msg("%30s %9.3lf %9.3lf %9.3lf\n", "PERIODIC BOX SIZE", x, y, z);
 	}
 
-	printf("\n\n");
+	msg("\n\n");
 }
 
 static void print_restart(const struct md *md)
 {
-	printf("    RESTART DATA\n\n");
+	msg("    RESTART DATA\n\n");
 
 	for (size_t i = 0; i < md->n_bodies; i++) {
 		struct body *body = md->bodies + i;
@@ -751,7 +751,7 @@ static void print_restart(const struct md *md)
 		print_fragment(name, xyzabc, vel);
 	}
 
-	printf("\n");
+	msg("\n");
 }
 
 static struct md *md_create(struct efp *efp, const struct cfg *cfg, const struct sys *sys)
@@ -864,7 +864,7 @@ static void md_shutdown(struct md *md)
 
 void sim_md(struct efp *efp, const struct cfg *cfg, const struct sys *sys)
 {
-	printf("MOLECULAR DYNAMICS JOB\n\n\n");
+	msg("MOLECULAR DYNAMICS JOB\n\n\n");
 
 	struct md *md = md_create(efp, cfg, sys);
 
@@ -874,19 +874,19 @@ void sim_md(struct efp *efp, const struct cfg *cfg, const struct sys *sys)
 	remove_system_drift(md);
 	compute_forces(md);
 
-	printf("    INITIAL STATE\n\n");
+	msg("    INITIAL STATE\n\n");
 	print_status(md);
 
 	for (int i = 1; i <= cfg_get_int(cfg, "max_steps"); i++) {
 		md->update_step(md);
 
 		if (i % cfg_get_int(cfg, "print_step") == 0) {
-			printf("    STATE AFTER %d STEPS\n\n", i);
+			msg("    STATE AFTER %d STEPS\n\n", i);
 			print_status(md);
 		}
 	}
 
 	md_shutdown(md);
 
-	printf("MOLECULAR DYNAMICS JOB COMPLETED SUCCESSFULLY\n");
+	msg("MOLECULAR DYNAMICS JOB COMPLETED SUCCESSFULLY\n");
 }
