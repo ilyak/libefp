@@ -1260,7 +1260,7 @@ efp_add_fragment(struct efp *efp, const char *name)
 	for (size_t a = 0; a < 3; a++) {
 		size_t size = frag->xr_wf_size * frag->n_lmo;
 
-		frag->xr_wf_deriv[a] = malloc(size * sizeof(double));
+		frag->xr_wf_deriv[a] = calloc(size, sizeof(double));
 
 		if (!frag->xr_wf_deriv[a])
 			return EFP_RESULT_NO_MEMORY;
