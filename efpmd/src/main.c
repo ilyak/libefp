@@ -237,6 +237,8 @@ static struct efp *init_sim(const struct cfg *cfg, const struct sys *sys)
 	for (size_t i = 0; i < sys->n_frags; i++)
 		check_fail(efp_add_fragment(efp, sys->frags[i].name));
 
+	check_fail(efp_prepare(efp));
+
 	if (opts.enable_pbc) {
 		vec_t box = box_from_str(cfg_get_string(cfg, "periodic_box"));
 		check_fail(efp_set_periodic_box(efp, box.x, box.y, box.z));

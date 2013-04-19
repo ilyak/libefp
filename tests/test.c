@@ -160,6 +160,9 @@ void run_test(const struct test_data *test_data)
 		if ((res = efp_add_fragment(efp, test_data->names[i])))
 			lib_error("efp_add_fragment", res);
 
+	if ((res = efp_prepare(efp)))
+		lib_error("efp_prepare", res);
+
 	if ((res = efp_set_electron_density_field_fn(efp,
 			test_data->electron_density_field_fn)))
 		lib_error("efp_set_electron_density_field_fn", res);
