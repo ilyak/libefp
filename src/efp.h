@@ -562,6 +562,11 @@ enum efp_result efp_set_periodic_box(struct efp *efp, double x, double y, double
 enum efp_result efp_get_stress_tensor(struct efp *efp, double *stress);
 
 /**
+ * XXX
+ */
+enum efp_result efp_prepare(struct efp *efp);
+
+/**
  * Update wave function dependent energy terms.
  *
  * This function must be called during \a ab \a initio SCF.

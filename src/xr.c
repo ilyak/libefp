@@ -685,6 +685,14 @@ frag_frag_xr(struct efp *efp, size_t frag_i, size_t frag_j, size_t overlap_idx,
 	free(t), free(dt), free(lmo_dt);
 }
 
+#ifdef WITH_MPI
+static size_t
+overlap_offset(struct efp *efp, size_t idx)
+{
+	return idx < efp->n_frag ? efp->frags[idx].overlap_offset : efp->n_overlap;
+}
+#endif
+
 enum efp_result
 efp_compute_xr(struct efp *efp)
 {
@@ -700,13 +708,14 @@ efp_compute_xr(struct efp *efp)
 	double exr = 0.0;
 	double ecp = 0.0;
 
-	size_t start_idx, end_idx;
-	efp_get_frag_interval(efp->n_frag, &start_idx, &end_idx);
-
+	int rank = 0;
+#ifdef WITH_MPI
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 4) reduction(+:exr,ecp)
 #endif
-	for (size_t i = start_idx; i < end_idx; i++) {
+	for (size_t i = efp->mpi_offset_2[rank]; i < efp->mpi_offset_2[rank + 1]; i++) {
 		for (size_t j = i + 1, idx = 0; j < efp->n_frag; j++) {
 			size_t n_lmo_ij = efp->frags[i].n_lmo * efp->frags[j].n_lmo;
 
@@ -724,18 +733,32 @@ efp_compute_xr(struct efp *efp)
 	}
 
 #ifdef WITH_MPI
+	int size;
+	MPI_Comm_size(MPI_COMM_WORLD, &size);
+
 	MPI_Allreduce(MPI_IN_PLACE, &exr, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 	MPI_Allreduce(MPI_IN_PLACE, &ecp, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
-	if (efp->overlap_int)
-		MPI_Allreduce(MPI_IN_PLACE, efp->overlap_int, (int)efp->n_overlap,
-				MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	if (efp->overlap_int) {
+		for (int i = 0; i < size; i++) {
+			size_t off1 = overlap_offset(efp, efp->mpi_offset_2[i]);
+			size_t off2 = overlap_offset(efp, efp->mpi_offset_2[i + 1]);
 
-	if (efp->overlap_int_deriv)
-		MPI_Allreduce(MPI_IN_PLACE, efp->overlap_int_deriv, 6 * (int)efp->n_overlap,
-				MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+			MPI_Bcast(efp->overlap_int + off1,
+				(int)(off2 - off1), MPI_DOUBLE, i, MPI_COMM_WORLD);
+		}
+	}
+
+	if (efp->overlap_int_deriv) {
+		for (int i = 0; i < size; i++) {
+			size_t off1 = overlap_offset(efp, efp->mpi_offset_2[i]);
+			size_t off2 = overlap_offset(efp, efp->mpi_offset_2[i + 1]);
+
+			MPI_Bcast(efp->overlap_int_deriv + off1,
+				(int)(off2 - off1) * 6, MPI_DOUBLE, i, MPI_COMM_WORLD);
+		}
+	}
 #endif
-
 	efp->energy.exchange_repulsion = exr;
 	efp->energy.charge_penetration = ecp;
 

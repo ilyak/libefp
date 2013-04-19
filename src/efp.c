@@ -579,6 +579,42 @@ setup_disp(struct efp *efp)
 	return EFP_RESULT_SUCCESS;
 }
 
+static void
+init_mpi_offsets(struct efp *efp)
+{
+#ifdef WITH_MPI
+	int size;
+	MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+	efp->mpi_offset_1 = realloc(efp->mpi_offset_1, (size + 1) * sizeof(size_t));
+	efp->mpi_offset_2 = realloc(efp->mpi_offset_2, (size + 1) * sizeof(size_t));
+
+	/* offset_1 */
+	for (int i = 0; i <= size; i++)
+		efp->mpi_offset_1[i] = i * efp->n_frag / size;
+
+	/* offset_2 */
+	size_t total = efp->n_frag * (efp->n_frag - 1) / 2;
+
+	for (int i = 0; i <= size; i++)
+		efp->mpi_offset_2[i] = efp->n_frag;
+
+	for (size_t f = 0, n = 0, r = 0; f < efp->n_frag; f++) {
+		n += efp->n_frag - f - 1;
+
+		if (n > total * r / size)
+			efp->mpi_offset_2[r++] = f;
+	}
+#else
+	efp->mpi_offset_1 = realloc(efp->mpi_offset_1, 2 * sizeof(size_t));
+	efp->mpi_offset_1[0] = 0;
+	efp->mpi_offset_1[1] = efp->n_frag;
+	efp->mpi_offset_2 = realloc(efp->mpi_offset_2, 2 * sizeof(size_t));
+	efp->mpi_offset_2[0] = 0;
+	efp->mpi_offset_2[1] = efp->n_frag;
+#endif
+}
+
 EFP_EXPORT enum efp_result
 efp_get_energy(struct efp *efp, struct efp_energy *energy)
 {
@@ -841,6 +877,23 @@ efp_get_stress_tensor(struct efp *efp, double *stress)
 		return EFP_RESULT_GRADIENT_NOT_REQUESTED;
 
 	*(mat_t *)stress = efp->stress;
+
+	return EFP_RESULT_SUCCESS;
+}
+
+EFP_EXPORT enum efp_result
+efp_prepare(struct efp *efp)
+{
+	if (!efp)
+		return EFP_RESULT_NOT_INITIALIZED;
+
+	init_mpi_offsets(efp);
+	efp->n_polarizable_pts = 0;
+
+	for (size_t i = 0; i < efp->n_frag; i++) {
+		efp->frags[i].polarizable_offset = efp->n_polarizable_pts;
+		efp->n_polarizable_pts += efp->frags[i].n_polarizable_pts;
+	}
 
 	return EFP_RESULT_SUCCESS;
 }
@@ -1184,6 +1237,8 @@ efp_shutdown(struct efp *efp)
 	free(efp->frags);
 	free(efp->lib);
 	free(efp->point_charges);
+	free(efp->mpi_offset_1);
+	free(efp->mpi_offset_2);
 	efp_ff_free(efp->ff);
 	efp_bvec_free(efp->links_bvec);
 	free(efp);

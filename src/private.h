@@ -139,6 +139,9 @@ struct frag {
 	/* offset of overlap integrals for this fragment */
 	size_t overlap_offset;
 
+	/* offset of polarizable points for this fragment */
+	size_t polarizable_offset;
+
 	/* offset in array of ff atoms */
 	size_t ff_offset;
 };
@@ -183,6 +186,9 @@ struct efp {
 		vec_t grad;
 	} *point_charges;
 
+	/* total number of polarizable points */
+	size_t n_polarizable_pts;
+
 	/* total number of overlap integrals */
 	size_t n_overlap;
 
@@ -200,6 +206,12 @@ struct efp {
 
 	/* bit matrix of covalent links between fragments */
 	struct bvec *links_bvec;
+
+	/* fragment offsets for each mpi process; single loop */
+	size_t *mpi_offset_1;
+
+	/* fragment offsets for each mpi process; double loop */
+	size_t *mpi_offset_2;
 };
 
 #endif /* LIBEFP_PRIVATE_H */
