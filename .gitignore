@@ -5,6 +5,7 @@
 *.la
 *.lo
 *.o
+*.out
 *.po
 *.so
 .*.swp
@@ -13,7 +14,4 @@
 .deps/
 .libs/
 tags
-
 /efpmd/src/efpmd
-/efpmd/tools/rdf/rdf
-/tests/test
