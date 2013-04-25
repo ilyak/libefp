@@ -60,8 +60,6 @@ enum efp_result {
 	EFP_RESULT_UNKNOWN_FRAGMENT,
 	/** EFP parameters contain duplicate fragments. */
 	EFP_RESULT_DUPLICATE_PARAMETERS,
-	/** Required callback function was not set. */
-	EFP_RESULT_CALLBACK_NOT_SET,
 	/** Call to callback function failed. */
 	EFP_RESULT_CALLBACK_FAILED,
 	/** Gradient computation was not requested. */
@@ -562,7 +560,13 @@ enum efp_result efp_set_periodic_box(struct efp *efp, double x, double y, double
 enum efp_result efp_get_stress_tensor(struct efp *efp, double *stress);
 
 /**
- * XXX
+ * Prepare the calculation.
+ *
+ * New fragments must not be added after a call to this function.
+ *
+ * \param[in] efp The efp structure.
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
 enum efp_result efp_prepare(struct efp *efp);
 

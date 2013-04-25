@@ -176,8 +176,14 @@ add_electron_density_field(struct efp *efp)
 	vec_t xyz[efp->n_polarizable_pts];
 	vec_t field[efp->n_polarizable_pts];
 
-	if (!efp->get_electron_density_field)
-		return EFP_RESULT_CALLBACK_NOT_SET;
+	if (!efp->get_electron_density_field) {
+		/* assume no electrons */
+		for (size_t i = 0; i < efp->n_frag; i++)
+			for (size_t j = 0; j < efp->frags[i].n_polarizable_pts; j++)
+				efp->frags[i].polarizable_pts[j].elec_field_wf = vec_zero;
+
+		return EFP_RESULT_SUCCESS;
+	}
 
 	for (size_t i = 0, idx = 0; i < efp->n_frag; i++) {
 		struct frag *frag = efp->frags + i;

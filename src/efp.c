@@ -1597,8 +1597,6 @@ return "syntax error in potential data";
 return "unknown EFP fragment type";
 	case EFP_RESULT_DUPLICATE_PARAMETERS:
 return "fragment parameters contain fragments with the same name";
-	case EFP_RESULT_CALLBACK_NOT_SET:
-return "required callback function is not set";
 	case EFP_RESULT_CALLBACK_FAILED:
 return "callback function failed";
 	case EFP_RESULT_GRADIENT_NOT_REQUESTED:
