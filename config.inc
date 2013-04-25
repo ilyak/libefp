@@ -14,7 +14,7 @@ PREFIX= /home/ilya/libefp
 FRAGLIB= $(PREFIX)/libefp/fraglib
 
 # additional C flags
-MYCFLAGS= -DWITH_MPI -std=c99 -g -Weverything -Wno-vla -Wno-sign-conversion -Wno-padded -Wno-format-nonliteral -Wno-disabled-macro-expansion -Wno-cast-align -Wno-gnu -I/usr/local/include -I/usr/local/mpi/openmpi/include
+MYCFLAGS= -DWITH_MPI -std=c99 -g -Weverything -Wno-vla -Wno-sign-conversion -Wno-padded -Wno-format-nonliteral -Wno-disabled-macro-expansion -Wno-cast-align -I/usr/local/include -I/usr/local/mpi/openmpi/include
 
 # additional Fortran flags
 MYFFLAGS= -g
