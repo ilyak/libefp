@@ -77,6 +77,25 @@ static void print_restart(struct efp *efp)
 		print_fragment(name, coord + 6 * i, NULL);
 	}
 
+	size_t n_charges;
+	check_fail(efp_get_point_charge_count(efp, &n_charges));
+
+	if (n_charges > 0) {
+		double q[n_charges];
+		check_fail(efp_get_point_charge_values(efp, q));
+
+		double xyz[3 * n_charges];
+		check_fail(efp_get_point_charge_coordinates(efp, xyz));
+
+		for (size_t i = 0; i < n_charges; i++) {
+			double x = xyz[3 * i + 0] * BOHR_RADIUS;
+			double y = xyz[3 * i + 1] * BOHR_RADIUS;
+			double z = xyz[3 * i + 2] * BOHR_RADIUS;
+
+			print_charge(q[i], x, y, z);
+		}
+	}
+
 	msg("\n");
 }
 
@@ -132,7 +151,7 @@ void sim_opt(struct efp *efp, const struct cfg *cfg, const struct sys *sys)
 
 	struct opt_state *state = opt_create(n_coord);
 	if (!state)
-		error("UNABLE TO CREATE AN OPTIMIZER");
+		error("unable to create an optimizer");
 
 	opt_set_func(state, compute_efp);
 	opt_set_user_data(state, efp);
@@ -141,7 +160,7 @@ void sim_opt(struct efp *efp, const struct cfg *cfg, const struct sys *sys)
 	check_fail(efp_get_coordinates(efp, n_frags, coord));
 
 	if (opt_init(state, n_coord, coord))
-		error("UNABLE TO INITIALIZE AN OPTIMIZER");
+		error("unable to initialize an optimizer");
 
 	double e_old = opt_get_fx(state);
 	opt_get_gx(state, n_coord, grad);
@@ -152,7 +171,7 @@ void sim_opt(struct efp *efp, const struct cfg *cfg, const struct sys *sys)
 
 	for (int step = 1; step <= cfg_get_int(cfg, "max_steps"); step++) {
 		if (opt_step(state))
-			error("UNABLE TO MAKE AN OPTIMIZATION STEP");
+			error("unable to make an optimization step");
 
 		double e_new = opt_get_fx(state);
 		opt_get_gx(state, n_coord, grad);

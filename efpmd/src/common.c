@@ -66,7 +66,7 @@ void *xmalloc(size_t size)
 	void *mem = malloc(size);
 
 	if (!mem)
-		error("NO MEMORY");
+		error("no memory");
 
 	return mem;
 }
@@ -76,7 +76,7 @@ void *xcalloc(size_t n, size_t size)
 	void *mem = calloc(n, size);
 
 	if (!mem)
-		error("NO MEMORY");
+		error("no memory");
 
 	return mem;
 }
@@ -86,9 +86,14 @@ void *xrealloc(void *ptr, size_t size)
 	void *mem = realloc(ptr, size);
 
 	if (!mem)
-		error("NO MEMORY");
+		error("no memory");
 
 	return mem;
+}
+
+void print_vec(const double *vec)
+{
+	msg("%16.8E %16.8E %16.8E", vec[0], vec[1], vec[2]);
 }
 
 void print_geometry(struct efp *efp)
@@ -114,6 +119,24 @@ void print_geometry(struct efp *efp)
 		}
 	}
 
+	size_t n_charges;
+	check_fail(efp_get_point_charge_count(efp, &n_charges));
+
+	if (n_charges > 0) {
+		double xyz[3 * n_charges];
+		check_fail(efp_get_point_charge_coordinates(efp, xyz));
+
+		for (size_t i = 0; i < n_charges; i++) {
+			char label[32];
+			double x = xyz[3 * i + 0] * BOHR_RADIUS;
+			double y = xyz[3 * i + 1] * BOHR_RADIUS;
+			double z = xyz[3 * i + 2] * BOHR_RADIUS;
+
+			snprintf(label, sizeof(label), "Q%04zu", i + 1);
+			msg("%-16s %12.6lf %12.6lf %12.6lf\n", label, x, y, z);
+		}
+	}
+
 	msg("\n\n");
 }
 
@@ -124,10 +147,11 @@ void print_energy(struct efp *efp)
 
 	msg("    ENERGY COMPONENTS (ATOMIC UNITS)\n\n");
 	msg("%30s %16.10lf\n", "ELECTROSTATIC ENERGY", energy.electrostatic);
-	msg("%30s %16.10lf\n", "CHARGE PENETRATION ENERGY", energy.charge_penetration);
 	msg("%30s %16.10lf\n", "POLARIZATION ENERGY", energy.polarization);
 	msg("%30s %16.10lf\n", "DISPERSION ENERGY", energy.dispersion);
 	msg("%30s %16.10lf\n", "EXCHANGE REPULSION ENERGY", energy.exchange_repulsion);
+	msg("%30s %16.10lf\n", "POINT CHARGES ENERGY", energy.electrostatic_point_charges);
+	msg("%30s %16.10lf\n", "CHARGE PENETRATION ENERGY", energy.charge_penetration);
 	msg("%30s %16.10lf\n", "FORCE FIELD ENERGY", energy.covalent);
 	msg("\n");
 	msg("%30s %16.10lf\n", "TOTAL ENERGY", energy.total);
@@ -148,16 +172,25 @@ void print_gradient(struct efp *efp)
 
 		msg("    GRADIENT ON FRAGMENT %zu (%s)\n", i + 1, name);
 		msg("\nFORCE  ");
-
-		for (size_t j = 0; j < 3; j++)
-			msg(" %16.8E", grad[6 * i + j]);
-
+		print_vec(grad + 6 * i);
 		msg("\nTORQUE ");
-
-		for (size_t j = 3; j < 6; j++)
-			msg(" %16.8E", grad[6 * i + j]);
-
+		print_vec(grad + 6 * i + 3);
 		msg("\n\n");
+	}
+
+	size_t n_charges;
+	check_fail(efp_get_point_charge_count(efp, &n_charges));
+
+	if (n_charges > 0) {
+		double cgrad[3 * n_charges];
+		check_fail(efp_get_point_charge_gradient(efp, cgrad));
+		msg("    GRADIENT ON POINT CHARGES\n\n");
+
+		for (size_t i = 0; i < n_charges; i++) {
+			msg("Q%04zu  ", i + 1);
+			print_vec(cgrad + 3 * i);
+			msg("\n");
+		}
 	}
 
 	msg("\n");
@@ -178,6 +211,11 @@ void print_fragment(const char *name, const double *xyzabc, const double *vel)
 	}
 
 	msg("\n\n");
+}
+
+void print_charge(double q, double x, double y, double z)
+{
+	msg("charge %10.3g %14.6e %14.6e %14.6e\n", q, x, y, z);
 }
 
 void print_vector(size_t len, const double *vec)

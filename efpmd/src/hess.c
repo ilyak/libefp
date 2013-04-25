@@ -80,8 +80,8 @@ static void compute_hessian(struct efp *efp, const struct cfg *cfg, double *hess
 
 	for (size_t i = 0; i < n_coord; i++) {
 		double save = xyzabc[i];
-		double step = i % 6 < 3 ? cfg_get_double(cfg, "hess_step_dist") :
-				cfg_get_double(cfg, "hess_step_angle");
+		double step = i % 6 < 3 ? cfg_get_double(cfg, "num_step_dist") :
+				cfg_get_double(cfg, "num_step_angle");
 
 		show_progress(i + 1, n_coord, "FORWARD");
 		xyzabc[i] = save + step;
@@ -308,7 +308,7 @@ void sim_hess(struct efp *efp, const struct cfg *cfg, const struct sys *sys)
 	eigen = xmalloc(n_coord * sizeof(double));
 
 	if (c_dsyev('V', 'U', (int)n_coord, mass_hess, (int)n_coord, eigen))
-		error("UNABLE TO DIAGONALIZE MASS-WEIGHTED HESSIAN MATRIX");
+		error("unable to diagonalize mass-weighted hessian matrix");
 
 	for (size_t i = 0; i < n_coord; i++) {
 		print_mode(i + 1, eigen[i]);

@@ -33,6 +33,7 @@ void sim_grad(struct efp *, const struct cfg *, const struct sys *);
 void sim_hess(struct efp *, const struct cfg *, const struct sys *);
 void sim_opt(struct efp *, const struct cfg *, const struct sys *);
 void sim_md(struct efp *, const struct cfg *, const struct sys *);
+void sim_gtest(struct efp *, const struct cfg *, const struct sys *);
 
 #define USAGE_STRING \
 	"usage: efpmd [-d | -v | -h | input]\n" \
@@ -49,12 +50,14 @@ static struct cfg *make_cfg(void)
 		"grad\n"
 		"hess\n"
 		"opt\n"
-		"md\n",
+		"md\n"
+		"gtest\n",
 		(int []) { RUN_TYPE_SP,
 			   RUN_TYPE_GRAD,
 			   RUN_TYPE_HESS,
 			   RUN_TYPE_OPT,
-			   RUN_TYPE_MD });
+			   RUN_TYPE_MD,
+			   RUN_TYPE_GTEST });
 
 	cfg_add_enum(cfg, "coord", EFP_COORD_TYPE_XYZABC,
 		"xyzabc\n"
@@ -99,9 +102,11 @@ static struct cfg *make_cfg(void)
 	cfg_add_bool(cfg, "enable_pbc", false);
 	cfg_add_string(cfg, "periodic_box", "30.0 30.0 30.0");
 	cfg_add_double(cfg, "opt_tol", 1.0e-4);
+	cfg_add_double(cfg, "gtest_tol", 1.0e-6);
+	cfg_add_double(cfg, "ref_energy", 0.0);
 	cfg_add_bool(cfg, "hess_central", false);
-	cfg_add_double(cfg, "hess_step_dist", 0.001);
-	cfg_add_double(cfg, "hess_step_angle", 0.01);
+	cfg_add_double(cfg, "num_step_dist", 0.001);
+	cfg_add_double(cfg, "num_step_angle", 0.01);
 
 	cfg_add_enum(cfg, "ensemble", ENSEMBLE_TYPE_NVE,
 		"nve\n"
@@ -135,6 +140,8 @@ static sim_fn_t get_sim_fn(enum run_type run_type)
 		return sim_opt;
 	case RUN_TYPE_MD:
 		return sim_md;
+	case RUN_TYPE_GTEST:
+		return sim_gtest;
 	}
 	assert(0);
 }
@@ -225,7 +232,7 @@ static struct efp *init_sim(const struct cfg *cfg, const struct sys *sys)
 		.enable_links = cfg_get_bool(cfg, "enable_links")
 	};
 
-	enum efp_coord_type coord = cfg_get_enum(cfg, "coord");
+	enum efp_coord_type coord_type = cfg_get_enum(cfg, "coord");
 	struct efp *efp = efp_create();
 
 	if (!efp)
@@ -249,8 +256,29 @@ static struct efp *init_sim(const struct cfg *cfg, const struct sys *sys)
 		check_fail(efp_load_topology(efp, cfg_get_string(cfg, "topology")));
 	}
 
+	if (sys->n_charges > 0) {
+		double q[sys->n_charges];
+		double pos[3 * sys->n_charges];
+
+		for (size_t i = 0; i < sys->n_charges; i++) {
+			q[i] = sys->charges[i].q;
+			pos[3 * i + 0] = sys->charges[i].pos.x;
+			pos[3 * i + 1] = sys->charges[i].pos.y;
+			pos[3 * i + 2] = sys->charges[i].pos.z;
+		}
+
+		if (opts.terms & EFP_TERM_ELEC)
+			opts.terms |= EFP_TERM_AI_ELEC;
+
+		if (opts.terms & EFP_TERM_POL)
+			opts.terms |= EFP_TERM_AI_POL;
+
+		check_fail(efp_set_opts(efp, &opts));
+		check_fail(efp_set_point_charges(efp, sys->n_charges, q, pos));
+	}
+
 	for (size_t i = 0; i < sys->n_frags; i++)
-		check_fail(efp_set_frag_coordinates(efp, i, coord, sys->frags[i].coord));
+		check_fail(efp_set_frag_coordinates(efp, i, coord_type, sys->frags[i].coord));
 
 	return efp;
 }
@@ -289,8 +317,8 @@ static void convert_units(struct cfg *cfg, struct sys *sys)
 		cfg_get_double(cfg, "pressure") * BAR_TO_AU);
 	cfg_set_double(cfg, "swf_cutoff",
 		cfg_get_double(cfg, "swf_cutoff") / BOHR_RADIUS);
-	cfg_set_double(cfg, "hess_step_dist",
-		cfg_get_double(cfg, "hess_step_dist") / BOHR_RADIUS);
+	cfg_set_double(cfg, "num_step_dist",
+		cfg_get_double(cfg, "num_step_dist") / BOHR_RADIUS);
 
 	size_t n_convert = (size_t []) {
 		[EFP_COORD_TYPE_XYZABC] = 3,
@@ -300,6 +328,9 @@ static void convert_units(struct cfg *cfg, struct sys *sys)
 	for (size_t i = 0; i < sys->n_frags; i++)
 		for (size_t j = 0; j < n_convert; j++)
 			sys->frags[i].coord[j] /= BOHR_RADIUS;
+
+	for (size_t i = 0; i < sys->n_charges; i++)
+		vec_scale(&sys->charges[i].pos, 1.0 / BOHR_RADIUS);
 }
 
 static void sys_free(struct sys *sys)
@@ -308,6 +339,7 @@ static void sys_free(struct sys *sys)
 		free(sys->frags[i].name);
 
 	free(sys->frags);
+	free(sys->charges);
 	free(sys);
 }
 
