@@ -7,19 +7,20 @@ all: efpmd
 efpmd: libefp
 	cd efpmd/src && $(MAKE)
 
-tests: libefp
-	cd tests && $(MAKE)
-
 libefp:
 	cd src && $(MAKE)
 
-tags clean:
+tags:
+	cd src && $(MAKE) $@
+	cd efpmd/src && $(MAKE) $@
+
+clean:
 	cd src && $(MAKE) $@
 	cd efpmd/src && $(MAKE) $@
 	cd tests && $(MAKE) $@
 
-check: tests
-	@./tests/test
+check check-omp check-mpi: efpmd
+	cd tests && $(MAKE) $@
 
 install: all
 	install -d $(PREFIX)/bin
@@ -34,4 +35,4 @@ install: all
 dist:
 	git archive --format=tar.gz --prefix=libefp-$V/ -o libefp-$V.tar.gz HEAD
 
-.PHONY: all efpmd tests libefp tags clean check install dist
+.PHONY: all efpmd libefp tags clean check check-omp check-mpi install dist
