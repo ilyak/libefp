@@ -1,11 +1,33 @@
 #!/bin/sh
 
-for TEST in `basename -s .in *.in`; do
-	$EFPMD $TEST.in > $TEST.out
+OUTPUT_COMPLETED="COMPLETED SUCCESSFULLY"
+OUTPUT_MATCH="DOES NOT MATCH"
 
-	if grep -q "DOES NOT MATCH" $TEST.out; then
-		echo -e "\033[33;31mFAILURE: $TEST\033[0m"
+RED="\033[33;31m"
+GREEN="\033[33;32m"
+NORMAL="\033[0m"
+
+print_success()
+{
+	echo -e "${GREEN}SUCCESS: ${TEST}${NORMAL}"
+}
+
+print_failure()
+{
+	echo -e "${RED}FAILURE: ${TEST}${NORMAL}"
+}
+
+for TEST in *.in; do
+	TEST=`basename ${TEST} .in`
+	${EFPMD} ${TEST}.in > ${TEST}.out
+
+	if grep -q "${OUTPUT_COMPLETED}" ${TEST}.out; then
+		if grep -q "${OUTPUT_MATCH}" ${TEST}.out; then
+			print_failure
+		else
+			print_success
+		fi
 	else
-		echo -e "\033[33;32mSUCCESS: $TEST\033[0m"
+		print_failure
 	fi
 done
