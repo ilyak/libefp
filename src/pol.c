@@ -257,10 +257,7 @@ broadcast(struct efp *efp, vec_t *all)
 static void
 collect(struct efp *efp, vec_t *all, size_t offset)
 {
-	int rank;
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-	for (size_t i = efp->mpi_offset_1[rank]; i < efp->mpi_offset_1[rank + 1]; i++) {
+	for (size_t i = 0; i < efp->n_frag; i++) {
 		struct frag *frag = efp->frags + i;
 
 		for (size_t j = 0; j < frag->n_polarizable_pts; j++) {
