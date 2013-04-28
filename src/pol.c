@@ -221,7 +221,7 @@ spread(struct efp *efp, vec_t *all, size_t offset)
 	int rank;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-	for (size_t i = efp->mpi_offset_1[rank]; i < efp->mpi_offset_1[rank + 1]; i++) {
+	for (size_t i = efp->mpi_offset[rank]; i < efp->mpi_offset[rank + 1]; i++) {
 		const struct frag *frag = efp->frags + i;
 
 		for (size_t j = 0; j < frag->n_polarizable_pts; j++) {
@@ -236,8 +236,7 @@ spread(struct efp *efp, vec_t *all, size_t offset)
 static size_t
 polarizable_offset(struct efp *efp, size_t idx)
 {
-	return idx < efp->n_frag ? efp->frags[idx].polarizable_offset :
-				   efp->n_polarizable_pts;
+	return idx < efp->n_frag ? efp->frags[idx].polarizable_offset : efp->n_polarizable_pts;
 }
 
 static void
@@ -247,8 +246,8 @@ broadcast(struct efp *efp, vec_t *all)
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
 
 	for (int i = 0; i < size; i++) {
-		size_t off1 = polarizable_offset(efp, efp->mpi_offset_1[i]);
-		size_t off2 = polarizable_offset(efp, efp->mpi_offset_1[i + 1]);
+		size_t off1 = polarizable_offset(efp, efp->mpi_offset[i]);
+		size_t off2 = polarizable_offset(efp, efp->mpi_offset[i + 1]);
 
 		MPI_Bcast(all + off1, (int)(off2 - off1) * 3, MPI_DOUBLE, i, MPI_COMM_WORLD);
 	}
@@ -282,7 +281,7 @@ compute_elec_field(struct efp *efp)
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 4)
 #endif
-	for (size_t i = efp->mpi_offset_1[rank]; i < efp->mpi_offset_1[rank + 1]; i++)
+	for (size_t i = efp->mpi_offset[rank]; i < efp->mpi_offset[rank + 1]; i++)
 		for (size_t j = 0; j < efp->frags[i].n_polarizable_pts; j++)
 			compute_elec_field_pt(efp, i, j);
 
@@ -375,7 +374,7 @@ pol_scf_iter(struct efp *efp)
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 4)
 #endif
-	for (size_t i = efp->mpi_offset_1[rank]; i < efp->mpi_offset_1[rank + 1]; i++) {
+	for (size_t i = efp->mpi_offset[rank]; i < efp->mpi_offset[rank + 1]; i++) {
 		struct frag *frag = efp->frags + i;
 
 		for (size_t j = 0; j < frag->n_polarizable_pts; j++) {
@@ -413,7 +412,7 @@ pol_scf_iter(struct efp *efp)
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 4) reduction(+:conv)
 #endif
-	for (size_t i = efp->mpi_offset_1[rank]; i < efp->mpi_offset_1[rank + 1]; i++) {
+	for (size_t i = efp->mpi_offset[rank]; i < efp->mpi_offset[rank + 1]; i++) {
 		struct frag *frag = efp->frags + i;
 
 		for (size_t j = 0; j < frag->n_polarizable_pts; j++) {
@@ -484,7 +483,7 @@ efp_compute_pol_energy(struct efp *efp, double *energy)
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 4) reduction(+:ener)
 #endif
-	for (size_t i = efp->mpi_offset_1[rank]; i < efp->mpi_offset_1[rank + 1]; i++) {
+	for (size_t i = efp->mpi_offset[rank]; i < efp->mpi_offset[rank + 1]; i++) {
 		struct frag *frag = efp->frags + i;
 
 		for (size_t j = 0; j < frag->n_polarizable_pts; j++) {
@@ -732,7 +731,7 @@ compute_grad(struct efp *efp)
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 4)
 #endif
-	for (size_t i = efp->mpi_offset_1[rank]; i < efp->mpi_offset_1[rank + 1]; i++)
+	for (size_t i = efp->mpi_offset[rank]; i < efp->mpi_offset[rank + 1]; i++)
 		for (size_t j = 0; j < efp->frags[i].n_polarizable_pts; j++)
 			compute_grad_point(efp, i, j);
 }

@@ -409,19 +409,22 @@ efp_compute_elec(struct efp *efp)
 	if (!(efp->opts.terms & EFP_TERM_ELEC))
 		return EFP_RESULT_SUCCESS;
 
+	int rank = 0;
 	double energy = 0.0;
 
-	int rank = 0;
 #ifdef WITH_MPI
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 4) reduction(+:energy)
 #endif
-	for (size_t i = efp->mpi_offset_2[rank]; i < efp->mpi_offset_2[rank + 1]; i++)
-		for (size_t j = i + 1; j < efp->n_frag; j++)
-			if (!efp_skip_frag_pair(efp, i, j))
-				energy += frag_frag_elec(efp, i, j);
+	for (size_t i = efp->mpi_offset[rank]; i < efp->mpi_offset[rank + 1]; i++) {
+		size_t cnt = efp_inner_count(i, efp->n_frag);
+
+		for (size_t j = i + 1; j < i + 1 + cnt; j++)
+			if (!efp_skip_frag_pair(efp, i, j % efp->n_frag))
+				energy += frag_frag_elec(efp, i, j % efp->n_frag);
+	}
 
 #ifdef WITH_MPI
 	MPI_Allreduce(MPI_IN_PLACE, &energy, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
@@ -641,7 +644,7 @@ efp_compute_ai_elec(struct efp *efp)
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 4) reduction(+:energy)
 #endif
-	for (size_t i = efp->mpi_offset_1[rank]; i < efp->mpi_offset_1[rank + 1]; i++) {
+	for (size_t i = efp->mpi_offset[rank]; i < efp->mpi_offset[rank + 1]; i++) {
 		energy += compute_ai_elec_frag(efp, i);
 
 		if (efp->do_gradient)

@@ -207,11 +207,8 @@ struct efp {
 	/* bit matrix of covalent links between fragments */
 	struct bvec *links_bvec;
 
-	/* fragment offsets for each mpi process; single loop */
-	size_t *mpi_offset_1;
-
-	/* fragment offsets for each mpi process; double loop */
-	size_t *mpi_offset_2;
+	/* fragment offsets for each mpi process */
+	size_t *mpi_offset;
 };
 
 #endif /* LIBEFP_PRIVATE_H */

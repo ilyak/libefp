@@ -41,6 +41,7 @@ void efp_sub_force(struct frag *, const vec_t *, const vec_t *, const vec_t *);
 void efp_move_pt(const vec_t *, const mat_t *, const vec_t *, vec_t *);
 void efp_rotate_t2(const mat_t *, const double *, double *);
 void efp_rotate_t3(const mat_t *, const double *, double *);
+size_t efp_inner_count(size_t, size_t);
 int efp_strcasecmp(const char *, const char *);
 int efp_strncasecmp(const char *, const char *, size_t);
 

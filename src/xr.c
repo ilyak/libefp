@@ -705,30 +705,30 @@ efp_compute_xr(struct efp *efp)
 	if (!do_xr && !do_cp && !do_dd)
 		return EFP_RESULT_SUCCESS;
 
+	int rank = 0;
 	double exr = 0.0;
 	double ecp = 0.0;
 
-	int rank = 0;
 #ifdef WITH_MPI
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 4) reduction(+:exr,ecp)
 #endif
-	for (size_t i = efp->mpi_offset_2[rank]; i < efp->mpi_offset_2[rank + 1]; i++) {
-		for (size_t j = i + 1, idx = 0; j < efp->n_frag; j++) {
-			size_t n_lmo_ij = efp->frags[i].n_lmo * efp->frags[j].n_lmo;
+	for (size_t i = efp->mpi_offset[rank]; i < efp->mpi_offset[rank + 1]; i++) {
+		size_t cnt = efp_inner_count(i, efp->n_frag);
 
-			if (!efp_skip_frag_pair(efp, i, j)) {
+		for (size_t j = i + 1, idx = 0; j < i + 1 + cnt; j++) {
+			if (!efp_skip_frag_pair(efp, i, j % efp->n_frag)) {
 				double exr_out, ecp_out;
 
-				frag_frag_xr(efp, i, j, idx, &exr_out, &ecp_out);
+				frag_frag_xr(efp, i, j % efp->n_frag, idx, &exr_out, &ecp_out);
 
 				exr += exr_out;
 				ecp += ecp_out;
 			}
 
-			idx += n_lmo_ij;
+			idx += efp->frags[i].n_lmo * efp->frags[j % efp->n_frag].n_lmo;
 		}
 	}
 
@@ -741,8 +741,8 @@ efp_compute_xr(struct efp *efp)
 
 	if (efp->overlap_int) {
 		for (int i = 0; i < size; i++) {
-			size_t off1 = overlap_offset(efp, efp->mpi_offset_2[i]);
-			size_t off2 = overlap_offset(efp, efp->mpi_offset_2[i + 1]);
+			size_t off1 = overlap_offset(efp, efp->mpi_offset[i]);
+			size_t off2 = overlap_offset(efp, efp->mpi_offset[i + 1]);
 
 			MPI_Bcast(efp->overlap_int + off1,
 				(int)(off2 - off1), MPI_DOUBLE, i, MPI_COMM_WORLD);
@@ -751,8 +751,8 @@ efp_compute_xr(struct efp *efp)
 
 	if (efp->overlap_int_deriv) {
 		for (int i = 0; i < size; i++) {
-			size_t off1 = overlap_offset(efp, efp->mpi_offset_2[i]);
-			size_t off2 = overlap_offset(efp, efp->mpi_offset_2[i + 1]);
+			size_t off1 = overlap_offset(efp, efp->mpi_offset[i]);
+			size_t off2 = overlap_offset(efp, efp->mpi_offset[i + 1]);
 
 			MPI_Bcast(efp->overlap_int_deriv + off1,
 				(int)(off2 - off1) * 6, MPI_DOUBLE, i, MPI_COMM_WORLD);

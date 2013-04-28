@@ -556,10 +556,15 @@ setup_disp(struct efp *efp)
 	}
 
 	for (size_t i = 0; i < efp->n_frag; i++) {
+		size_t cnt = efp_inner_count(i, efp->n_frag);
 		efp->frags[i].overlap_offset = efp->n_overlap;
 
-		for (size_t j = i + 1; j < efp->n_frag; j++)
-			efp->n_overlap += efp->frags[i].n_lmo * efp->frags[j].n_lmo;
+		for (size_t j = i + 1; j < i + 1 + cnt; j++) {
+			size_t n_lmo_i = efp->frags[i].n_lmo;
+			size_t n_lmo_j = efp->frags[j % efp->n_frag].n_lmo;
+
+			efp->n_overlap += n_lmo_i * n_lmo_j;
+		}
 	}
 
 	efp->overlap_int = realloc(efp->overlap_int,
@@ -586,32 +591,14 @@ init_mpi_offsets(struct efp *efp)
 	int size;
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-	efp->mpi_offset_1 = realloc(efp->mpi_offset_1, (size + 1) * sizeof(size_t));
-	efp->mpi_offset_2 = realloc(efp->mpi_offset_2, (size + 1) * sizeof(size_t));
-
-	/* offset_1 */
-	for (int i = 0; i <= size; i++)
-		efp->mpi_offset_1[i] = i * efp->n_frag / size;
-
-	/* offset_2 */
-	size_t total = efp->n_frag * (efp->n_frag - 1) / 2;
+	efp->mpi_offset = realloc(efp->mpi_offset, (size + 1) * sizeof(size_t));
 
 	for (int i = 0; i <= size; i++)
-		efp->mpi_offset_2[i] = efp->n_frag;
-
-	for (size_t f = 0, n = 0, r = 0; f < efp->n_frag; f++) {
-		n += efp->n_frag - f - 1;
-
-		if (n > total * r / size)
-			efp->mpi_offset_2[r++] = f;
-	}
+		efp->mpi_offset[i] = i * efp->n_frag / size;
 #else
-	efp->mpi_offset_1 = realloc(efp->mpi_offset_1, 2 * sizeof(size_t));
-	efp->mpi_offset_1[0] = 0;
-	efp->mpi_offset_1[1] = efp->n_frag;
-	efp->mpi_offset_2 = realloc(efp->mpi_offset_2, 2 * sizeof(size_t));
-	efp->mpi_offset_2[0] = 0;
-	efp->mpi_offset_2[1] = efp->n_frag;
+	efp->mpi_offset = realloc(efp->mpi_offset, 2 * sizeof(size_t));
+	efp->mpi_offset[0] = 0;
+	efp->mpi_offset[1] = efp->n_frag;
 #endif
 }
 
@@ -1237,8 +1224,7 @@ efp_shutdown(struct efp *efp)
 	free(efp->frags);
 	free(efp->lib);
 	free(efp->point_charges);
-	free(efp->mpi_offset_1);
-	free(efp->mpi_offset_2);
+	free(efp->mpi_offset);
 	efp_ff_free(efp->ff);
 	efp_bvec_free(efp->links_bvec);
 	free(efp);

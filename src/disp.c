@@ -296,21 +296,23 @@ efp_compute_disp(struct efp *efp)
 	if (!(efp->opts.terms & EFP_TERM_DISP))
 		return EFP_RESULT_SUCCESS;
 
+	int rank = 0;
 	double energy = 0.0;
 
-	int rank = 0;
 #ifdef WITH_MPI
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 4) reduction(+:energy)
 #endif
-	for (size_t i = efp->mpi_offset_2[rank]; i < efp->mpi_offset_2[rank + 1]; i++) {
-		for (size_t j = i + 1, idx = 0; j < efp->n_frag; j++) {
-			if (!efp_skip_frag_pair(efp, i, j))
-				energy += frag_frag_disp(efp, i, j, idx);
+	for (size_t i = efp->mpi_offset[rank]; i < efp->mpi_offset[rank + 1]; i++) {
+		size_t cnt = efp_inner_count(i, efp->n_frag);
 
-			idx += efp->frags[i].n_lmo * efp->frags[j].n_lmo;
+		for (size_t j = i + 1, idx = 0; j < i + 1 + cnt; j++) {
+			if (!efp_skip_frag_pair(efp, i, j % efp->n_frag))
+				energy += frag_frag_disp(efp, i, j % efp->n_frag, idx);
+
+			idx += efp->frags[i].n_lmo * efp->frags[j % efp->n_frag].n_lmo;
 		}
 	}
 

@@ -186,6 +186,11 @@ void efp_rotate_t3(const mat_t *rotmat, const double *in, double *out)
 					mat_get(rotmat, c2, c1);
 }
 
+size_t efp_inner_count(size_t i, size_t n)
+{
+	return (n % 2 ? (n - 1) / 2 : i < n / 2 ? n / 2 : n / 2 - 1);
+}
+
 int efp_strcasecmp(const char *s1, const char *s2)
 {
 	while (tolower(*s1) == tolower(*s2++))
