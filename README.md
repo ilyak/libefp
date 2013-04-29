@@ -28,15 +28,11 @@ To build LIBEFP from source you need the following:
 
 - BLAS/CBLAS library (required when linking with libefp)
 
-If you are going to compile EFPMD program you will need:
+If you are going to compile EFPMD program (needed for tests):
 
 - Fortran 77 compiler
 
 - LAPACK library
-
-If you are going to run the test suite you will need:
-
-- Check library (http://check.sourceforge.net/)
 
 First, edit the `config.inc` file according to your needs. All available
 options are explained with comments. Defaults usually work well but you may
@@ -56,6 +52,8 @@ If you only need the library you can use:
 To run the test suite (optional) issue:
 
 	make check
+	make check-omp    # to test OpenMP parallel code
+	make check-mpi    # to test MPI parallel code
 
 Finally, to install everything issue:
 

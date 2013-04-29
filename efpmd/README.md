@@ -23,7 +23,7 @@ Lines beginning with the `#` symbol are ignored during input parsing.
 
 ##### Type of the simulation
 
-`run_type [sp|grad|hess|opt|md]`
+`run_type [sp|grad|hess|opt|md|gtest]`
 
 `sp` - single point energy calculation.
 
@@ -34,6 +34,8 @@ Lines beginning with the `#` symbol are ignored during input parsing.
 `opt` - geometry optimization.
 
 `md` - molecular dynamics simulation.
+
+`gtest` - compute and compare numerical and analytical gradients.
 
 Default value: `sp`
 
@@ -100,7 +102,25 @@ Default value: `tt`
 
 Default value: `tt`
 
-##### Enable/Disable the cutoff for fragment/fragment interactions
+##### Enable covalent links between fragments
+
+`enable_links [true|false]`
+
+Default value: `false`
+
+##### Path to the molecular mechanics force-field
+
+`forcefield <path>`
+
+Default value: `fraglib/amber99.ff`
+
+##### Path to the topology file
+
+`topology <path>`
+
+Default value: `top.etp`
+
+##### Enable cutoff for fragment/fragment interactions
 
 `enable_cutoff [true|false]`
 
@@ -174,6 +194,26 @@ Unit: Hartree/Bohr
 Optimization will stop when maximum gradient component is less than `opt_tol`
 and RMS gradient is less than one third of `opt_tol`.
 
+### Gradient test related parameters
+
+See also `num_step_dist` and `num_step_angle`.
+
+##### Test tolerance
+
+`gtest_tol <value>`
+
+Default value: `1.0e-6`
+
+Unit: Hartree/Bohr
+
+##### Reference energy value
+
+`ref_energy <value>`
+
+Default value: `0.0`
+
+Unit: Hartree
+
 ### Hessian calculation related parameters
 
 ##### Hessian accuracy
@@ -187,17 +227,17 @@ used for numerical Hessian calculation. Otherwise only forward differences will
 be used. Note that central differences require twice as many gradient
 calculations.
 
-##### Differentiation step length for distances
+##### Numerical differentiation step length for distances
 
-`hess_step_dist <value>`
+`num_step_dist <value>`
 
 Default value: `0.001`
 
 Unit: Angstrom
 
-##### Differentiation step length for angles
+##### Numerical differentiation step length for angles
 
-`hess_step_angle <value>`
+`num_step_angle <value>`
 
 Default value: `0.01`
 
@@ -334,3 +374,10 @@ The numbers are coordinates of three points belonging to a fragment in Angstroms
 
 The numbers are coordinates of the center of mass of a fragment in Angstroms
 and a 3 x 3 rotation matrix.
+
+### Input of point charges
+
+Additionally to fragments a system can contain a set of point charges. They
+can be specified using the following format for each charge:
+
+	charge <q> <x> <y> <z>
