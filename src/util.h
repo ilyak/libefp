@@ -32,8 +32,8 @@
 struct efp;
 struct frag;
 
-int efp_skip_frag_pair(struct efp *, size_t, size_t);
-struct swf efp_make_swf(struct efp *, const struct frag *, const struct frag *);
+int efp_skip_frag_pair(const struct efp *, size_t, size_t);
+struct swf efp_make_swf(const struct efp *, const struct frag *, const struct frag *);
 const struct frag *efp_find_lib(struct efp *, const char *);
 void efp_add_stress(const vec_t *, const vec_t *, mat_t *);
 void efp_add_force(struct frag *, const vec_t *, const vec_t *, const vec_t *);

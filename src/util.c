@@ -29,7 +29,7 @@
 #include "private.h"
 #include "util.h"
 
-int efp_skip_frag_pair(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx)
+int efp_skip_frag_pair(const struct efp *efp, size_t fr_i_idx, size_t fr_j_idx)
 {
 	if (efp->opts.enable_links) {
 		size_t idx = fr_i_idx * efp->n_frag + fr_j_idx;
@@ -58,7 +58,8 @@ int efp_skip_frag_pair(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx)
 	return vec_len_2(&dr) > cutoff2;
 }
 
-struct swf efp_make_swf(struct efp *efp, const struct frag *fr_i, const struct frag *fr_j)
+struct swf efp_make_swf(const struct efp *efp, const struct frag *fr_i,
+				const struct frag *fr_j)
 {
 	struct swf swf = {
 		.swf = 1.0,
