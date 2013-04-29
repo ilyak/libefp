@@ -92,9 +92,7 @@ struct frag {
 		vec_t elec_field;
 		vec_t elec_field_wf;
 		vec_t induced_dipole;
-		vec_t induced_dipole_new;
 		vec_t induced_dipole_conj;
-		vec_t induced_dipole_conj_new;
 	} *polarizable_pts;
 
 	/* number of distributed polarizability points */
