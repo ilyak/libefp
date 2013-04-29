@@ -679,6 +679,91 @@ parse_screen(struct efp *efp, struct stream *stream)
 	return EFP_RESULT_SUCCESS;
 }
 
+static enum efp_result
+parse_ff_types(struct efp *efp, struct stream *stream)
+{
+	struct frag *frag = get_last_frag(efp);
+
+	while (!efp_stream_eof(stream)) {
+		efp_stream_next_line(stream);
+
+		if (tok_stop(stream))
+			return EFP_RESULT_SUCCESS;
+
+		char label[32];
+		struct ff_atom atom;
+
+		if (sscanf(efp_stream_get_ptr(stream), "%32s %32s", label, atom.type) < 2)
+			return EFP_RESULT_SYNTAX_ERROR;
+
+		for (size_t i = 0; i < frag->n_atoms; i++) {
+			if (strcmp(label, frag->atoms[i].label) == 0) {
+				atom.idx = i;
+				break;
+			}
+			if (i == frag->n_atoms - 1)
+				return EFP_RESULT_SYNTAX_ERROR;
+		}
+
+		size_t size = (frag->n_ff_atoms + 1) * sizeof(struct ff_atom);
+
+		if ((frag->ff_atoms = realloc(frag->ff_atoms, size)) == NULL)
+			return EFP_RESULT_NO_MEMORY;
+
+		frag->ff_atoms[frag->n_ff_atoms] = atom;
+		frag->n_ff_atoms++;
+	}
+
+	return EFP_RESULT_SYNTAX_ERROR;
+}
+
+static enum efp_result
+parse_ff_links(struct efp *efp, struct stream *stream)
+{
+	struct frag *frag = get_last_frag(efp);
+
+	while (!efp_stream_eof(stream)) {
+		efp_stream_next_line(stream);
+
+		if (tok_stop(stream))
+			return EFP_RESULT_SUCCESS;
+
+		struct ff_link link;
+		char label1[32], label2[32];
+
+		if (sscanf(efp_stream_get_ptr(stream), "%32s %32s", label1, label2) < 2)
+			return EFP_RESULT_SYNTAX_ERROR;
+
+		for (size_t i = 0; i < frag->n_ff_atoms; i++) {
+			if (strcmp(label1, frag->atoms[frag->ff_atoms[i].idx].label) == 0) {
+				link.idx1 = i;
+				break;
+			}
+			if (i == frag->n_ff_atoms - 1)
+				return EFP_RESULT_SYNTAX_ERROR;
+		}
+
+		for (size_t i = 0; i < frag->n_ff_atoms; i++) {
+			if (strcmp(label2, frag->atoms[frag->ff_atoms[i].idx].label) == 0) {
+				link.idx2 = i;
+				break;
+			}
+			if (i == frag->n_ff_atoms - 1)
+				return EFP_RESULT_SYNTAX_ERROR;
+		}
+
+		size_t size = (frag->n_ff_links + 1) * sizeof(struct ff_link);
+
+		if ((frag->ff_links = realloc(frag->ff_links, size)) == NULL)
+			return EFP_RESULT_NO_MEMORY;
+
+		frag->ff_links[frag->n_ff_links] = link;
+		frag->n_ff_links++;
+	}
+
+	return EFP_RESULT_SYNTAX_ERROR;
+}
+
 typedef enum efp_result (*parse_fn)(struct efp *, struct stream *);
 
 static parse_fn
@@ -702,7 +787,9 @@ get_parse_fn(struct stream *stream)
 		{ "LMO CENTROIDS",              parse_lmo_centroids },
 		{ "CANONVEC",                   parse_canonvec },
 		{ "CANONFOK",                   parse_canonfok },
-		{ "SCREEN",                     parse_screen }
+		{ "SCREEN",                     parse_screen },
+		{ "FFTYPES",                    parse_ff_types },
+		{ "FFLINKS",                    parse_ff_links }
 	};
 
 	for (size_t i = 0; i < ARRAY_SIZE(funcs); i++)

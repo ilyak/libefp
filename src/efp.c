@@ -50,53 +50,24 @@ ff_to_efp(enum ff_res res)
 	assert(0);
 }
 
-static int
-find_link_index(const struct frag *frag, const char *name, size_t *idx)
-{
-	assert(frag);
-	assert(name);
-	assert(idx);
-
-	for (size_t i = 0, k = 0; i < frag->n_atoms; i++)
-		if (frag->atoms[i].label[0] == '*') {
-			if (strcmp(frag->atoms[i].label, name) == 0) {
-				*idx = k;
-				return 1;
-			}
-			k++;
-		}
-
-	return 0;
-}
-
 static void
 update_ff_atoms(struct ff *ff, const struct frag *frag)
 {
-	vec_t pos;
+	for (size_t i = 0; i < frag->n_ff_atoms; i++) {
+		const struct efp_atom *atom = frag->atoms + frag->ff_atoms[i].idx;
+		vec_t pos = { atom->x, atom->y, atom->z };
 
-	for (size_t i = 0, k = 0; i < frag->n_atoms; i++) {
-		const struct efp_atom *atom = frag->atoms + i;
-
-		if (atom->label[0] == '*') {
-			pos.x = atom->x;
-			pos.y = atom->y;
-			pos.z = atom->z;
-			efp_ff_set_atom_pos(ff, frag->ff_offset + k, pos);
-			k++;
-		}
+		efp_ff_set_atom_pos(ff, frag->ff_offset + i, pos);
 	}
 }
 
 static void
 add_ff_gradient(struct frag *frag, const vec_t *ff_grad)
 {
-	for (size_t i = 0, k = 0; i < frag->n_atoms; i++) {
-		const struct efp_atom *atom = frag->atoms + i;
+	for (size_t i = 0; i < frag->n_ff_atoms; i++) {
+		const struct efp_atom *atom = frag->atoms + frag->ff_atoms[i].idx;
 
-		if (atom->label[0] == '*') {
-			efp_add_force(frag, CVEC(atom->x), ff_grad + k, NULL);
-			k++;
-		}
+		efp_add_force(frag, CVEC(atom->x), ff_grad + frag->ff_offset + i, NULL);
 	}
 }
 
@@ -105,54 +76,31 @@ init_ff(struct efp *efp)
 {
 	enum ff_res ff_res;
 
-	for (size_t i = 0, n_ff_cur = 0; i < efp->n_frag; i++) {
+	for (size_t i = 0, offset = 0; i < efp->n_frag; i++) {
 		struct frag *frag = efp->frags + i;
-		frag->ff_offset = n_ff_cur;
-		n_ff_cur = 0;
 
-		for (size_t j = 0; j < frag->n_atoms; j++) {
-			const struct efp_atom *at = frag->atoms + j;
+		for (size_t j = 0; j < frag->n_ff_atoms; j++) {
+			const struct ff_atom *at = frag->ff_atoms + j;
 
-			if (at->label[0] == '*') {
-				char name[32];
-				memset(name, 0, sizeof(name));
-
-				char *dst = name;
-				const char *src = at->label + 3;
-
-				while (*src && *src != '_')
-					*dst++ = *src++;
-
-				if ((ff_res = efp_ff_add_atom(efp->ff, name)))
-					return ff_to_efp(ff_res);
-
-				n_ff_cur++;
-			}
+			if ((ff_res = efp_ff_add_atom(efp->ff, at->type)))
+				return ff_to_efp(ff_res);
 		}
 
-		for (size_t j = 0, k = 0; j < frag->n_atoms; j++) {
-			const struct efp_atom *at = frag->atoms + j;
+		frag->ff_offset = offset;
+		offset += frag->n_ff_atoms;
+	}
 
-			if (at->label[0] == '*') {
-				const char *ptr = strchr(at->label, '_');
+	for (size_t i = 0; i < efp->n_frag; i++) {
+		const struct frag *frag = efp->frags + i;
 
-				if (ptr) {
-					size_t idx = (size_t)strtol(ptr + 1, NULL, 10) - 1;
+		for (size_t j = 0; j < frag->n_ff_links; j++) {
+			const struct ff_link *link = frag->ff_links + j;
 
-					if (idx >= n_ff_cur)
-						return EFP_RESULT_INDEX_OUT_OF_RANGE;
-
-					if ((ff_res = efp_ff_add_bond(efp->ff,
-							frag->ff_offset + k,
-							frag->ff_offset + idx)))
-						return ff_to_efp(ff_res);
-				}
-
-				k++;
-			}
+			if ((ff_res = efp_ff_add_bond(efp->ff,
+					frag->ff_offset + link->idx1,
+					frag->ff_offset + link->idx2)))
+				return ff_to_efp(ff_res);
 		}
-
-		n_ff_cur += frag->ff_offset;
 	}
 
 	return EFP_RESULT_SUCCESS;
@@ -168,17 +116,24 @@ parse_topology_record(struct efp *efp, const char *str)
 	if (sscanf(str, "%zu %zu %32s %32s", &idx1, &idx2, name1, name2) < 4)
 		return EFP_RESULT_SYNTAX_ERROR;
 
-	if (idx1 == idx2)
+	if (--idx1 == --idx2)
 		return EFP_RESULT_SYNTAX_ERROR;
 
-	if (--idx1 >= efp->n_frag || --idx2 >= efp->n_frag)
+	if (idx1 >= efp->n_frag || idx2 >= efp->n_frag)
 		return EFP_RESULT_INDEX_OUT_OF_RANGE;
 
 	const struct frag *frag1 = efp->frags + idx1;
 	const struct frag *frag2 = efp->frags + idx2;
 
-	if (!find_link_index(frag1, name1, &link1) ||
-	    !find_link_index(frag2, name2, &link2))
+	for (link1 = 0; link1 < frag1->n_ff_atoms; link1++)
+		if (strcmp(name1, frag1->atoms[frag1->ff_atoms[link1].idx].label) == 0)
+			break;
+
+	for (link2 = 0; link2 < frag2->n_ff_atoms; link2++)
+		if (strcmp(name2, frag2->atoms[frag2->ff_atoms[link2].idx].label) == 0)
+			break;
+
+	if (link1 == frag1->n_ff_atoms || link2 == frag2->n_ff_atoms)
 		return EFP_RESULT_UNKNOWN_ATOM;
 
 	if ((ff_res = efp_ff_add_bond(efp->ff, frag1->ff_offset + link1,
@@ -365,6 +320,8 @@ free_frag(struct frag *frag)
 		free(frag->xr_shells[i].coef);
 
 	free(frag->xr_shells);
+	free(frag->ff_atoms);
+	free(frag->ff_links);
 
 	/* don't do free(frag) here */
 }
@@ -457,6 +414,20 @@ copy_frag(struct frag *dest, const struct frag *src)
 		if (!dest->xr_wf)
 			return EFP_RESULT_NO_MEMORY;
 		memcpy(dest->xr_wf, src->xr_wf, size);
+	}
+	if (src->ff_atoms) {
+		size = src->n_ff_atoms * sizeof(struct ff_atom);
+		dest->ff_atoms = malloc(size);
+		if (!dest->ff_atoms)
+			return EFP_RESULT_NO_MEMORY;
+		memcpy(dest->ff_atoms, src->ff_atoms, size);
+	}
+	if (src->ff_links) {
+		size = src->n_ff_links * sizeof(struct ff_link);
+		dest->ff_links = malloc(size);
+		if (!dest->ff_links)
+			return EFP_RESULT_NO_MEMORY;
+		memcpy(dest->ff_links, src->ff_links, size);
 	}
 	return EFP_RESULT_SUCCESS;
 }
@@ -986,10 +957,8 @@ efp_compute(struct efp *efp, int do_gradient)
 		efp->energy.covalent = efp_ff_compute(efp->ff, ff_grad);
 
 		if (do_gradient) {
-			for (size_t i = 0; i < efp->n_frag; i++) {
-				struct frag *frag = efp->frags + i;
-				add_ff_gradient(frag, ff_grad + frag->ff_offset);
-			}
+			for (size_t i = 0; i < efp->n_frag; i++)
+				add_ff_gradient(efp->frags + i, ff_grad);
 		}
 	}
 

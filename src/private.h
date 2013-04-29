@@ -140,6 +140,20 @@ struct frag {
 	/* offset of polarizable points for this fragment */
 	size_t polarizable_offset;
 
+	struct ff_atom {
+		char type[32]; /* atom type in force field */
+		size_t idx;    /* index in atoms array */
+	} *ff_atoms;
+
+	size_t n_ff_atoms;
+
+	struct ff_link {
+		size_t idx1;   /* index in ff_atoms array */
+		size_t idx2;   /* index in ff_atoms array */
+	} *ff_links;
+
+	size_t n_ff_links;
+
 	/* offset in array of ff atoms */
 	size_t ff_offset;
 };
