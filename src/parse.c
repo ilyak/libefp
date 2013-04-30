@@ -689,7 +689,7 @@ parse_ff_types(struct frag *frag, struct stream *stream)
 }
 
 static enum efp_result
-parse_ff_links(struct frag *frag, struct stream *stream)
+parse_ff_bonds(struct frag *frag, struct stream *stream)
 {
 	while (!efp_stream_eof(stream)) {
 		efp_stream_next_line(stream);
@@ -758,7 +758,7 @@ get_parse_fn(struct stream *stream)
 		{ "CANONFOK",                   parse_canonfok },
 		{ "SCREEN",                     parse_screen },
 		{ "FFTYPES",                    parse_ff_types },
-		{ "FFLINKS",                    parse_ff_links }
+		{ "FFBONDS",                    parse_ff_bonds }
 	};
 
 	for (size_t i = 0; i < ARRAY_SIZE(funcs); i++)
