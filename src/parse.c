@@ -32,12 +32,6 @@
 #include "stream.h"
 #include "private.h"
 
-static inline struct frag *
-get_last_frag(struct efp *efp)
-{
-	return efp->lib[efp->n_lib - 1];
-}
-
 static int
 tok(struct stream *stream, const char *id)
 {
@@ -130,10 +124,8 @@ tok_double(struct stream *stream, double *val)
 }
 
 static enum efp_result
-parse_coordinates(struct efp *efp, struct stream *stream)
+parse_coordinates(struct frag *frag, struct stream *stream)
 {
-	struct frag *frag = get_last_frag(efp);
-
 	efp_stream_next_line(stream);
 
 	while (!efp_stream_eof(stream)) {
@@ -182,10 +174,8 @@ parse_coordinates(struct efp *efp, struct stream *stream)
 }
 
 static enum efp_result
-parse_monopoles(struct efp *efp, struct stream *stream)
+parse_monopoles(struct frag *frag, struct stream *stream)
 {
-	struct frag *frag = get_last_frag(efp);
-
 	if (!frag->multipole_pts)
 		return EFP_RESULT_SYNTAX_ERROR;
 
@@ -206,10 +196,8 @@ parse_monopoles(struct efp *efp, struct stream *stream)
 }
 
 static enum efp_result
-parse_dipoles(struct efp *efp, struct stream *stream)
+parse_dipoles(struct frag *frag, struct stream *stream)
 {
-	struct frag *frag = get_last_frag(efp);
-
 	if (!frag->multipole_pts)
 		return EFP_RESULT_SYNTAX_ERROR;
 
@@ -231,10 +219,8 @@ parse_dipoles(struct efp *efp, struct stream *stream)
 }
 
 static enum efp_result
-parse_quadrupoles(struct efp *efp, struct stream *stream)
+parse_quadrupoles(struct frag *frag, struct stream *stream)
 {
-	struct frag *frag = get_last_frag(efp);
-
 	if (!frag->multipole_pts)
 		return EFP_RESULT_SYNTAX_ERROR;
 
@@ -260,10 +246,8 @@ parse_quadrupoles(struct efp *efp, struct stream *stream)
 }
 
 static enum efp_result
-parse_octupoles(struct efp *efp, struct stream *stream)
+parse_octupoles(struct frag *frag, struct stream *stream)
 {
-	struct frag *frag = get_last_frag(efp);
-
 	if (!frag->multipole_pts)
 		return EFP_RESULT_SYNTAX_ERROR;
 
@@ -289,9 +273,8 @@ parse_octupoles(struct efp *efp, struct stream *stream)
 }
 
 static enum efp_result
-parse_polarizable_pts(struct efp *efp, struct stream *stream)
+parse_polarizable_pts(struct frag *frag, struct stream *stream)
 {
-	struct frag *frag = get_last_frag(efp);
 	efp_stream_next_line(stream);
 
 	while (!efp_stream_eof(stream)) {
@@ -341,9 +324,8 @@ parse_polarizable_pts(struct efp *efp, struct stream *stream)
 }
 
 static enum efp_result
-parse_dynamic_polarizable_pts(struct efp *efp, struct stream *stream)
+parse_dynamic_polarizable_pts(struct frag *frag, struct stream *stream)
 {
-	struct frag *frag = get_last_frag(efp);
 	efp_stream_next_line(stream);
 
 	while (!efp_stream_eof(stream)) {
@@ -421,9 +403,8 @@ parse_dynamic_polarizable_pts(struct efp *efp, struct stream *stream)
 }
 
 static enum efp_result
-parse_projection_basis(struct efp *efp, struct stream *stream)
+parse_projection_basis(struct frag *frag, struct stream *stream)
 {
-	struct frag *frag = get_last_frag(efp);
 	double x, y, z;
 
 	efp_stream_next_line(stream);
@@ -493,10 +474,8 @@ shell:
 }
 
 static enum efp_result
-parse_multiplicity(struct efp *efp, struct stream *stream)
+parse_multiplicity(struct frag *frag, struct stream *stream)
 {
-	struct frag *frag = get_last_frag(efp);
-
 	if (!tok_int(stream, &frag->multiplicity))
 		return EFP_RESULT_SYNTAX_ERROR;
 
@@ -509,10 +488,8 @@ parse_multiplicity(struct efp *efp, struct stream *stream)
 }
 
 static enum efp_result
-parse_projection_wf(struct efp *efp, struct stream *stream)
+parse_projection_wf(struct frag *frag, struct stream *stream)
 {
-	struct frag *frag = get_last_frag(efp);
-
 	if (!tok_uint(stream, &frag->n_lmo) ||
 	    !tok_uint(stream, &frag->xr_wf_size))
 		return EFP_RESULT_SYNTAX_ERROR;
@@ -553,9 +530,8 @@ parse_projection_wf(struct efp *efp, struct stream *stream)
 }
 
 static enum efp_result
-parse_fock_mat(struct efp *efp, struct stream *stream)
+parse_fock_mat(struct frag *frag, struct stream *stream)
 {
-	struct frag *frag = get_last_frag(efp);
 	efp_stream_next_line(stream);
 
 	size_t size = frag->n_lmo * (frag->n_lmo + 1) / 2;
@@ -572,9 +548,8 @@ parse_fock_mat(struct efp *efp, struct stream *stream)
 }
 
 static enum efp_result
-parse_lmo_centroids(struct efp *efp, struct stream *stream)
+parse_lmo_centroids(struct frag *frag, struct stream *stream)
 {
-	struct frag *frag = get_last_frag(efp);
 	efp_stream_next_line(stream);
 
 	frag->lmo_centroids = malloc(frag->n_lmo * sizeof(vec_t));
@@ -600,9 +575,9 @@ parse_lmo_centroids(struct efp *efp, struct stream *stream)
 }
 
 static enum efp_result
-parse_canonvec(struct efp *efp, struct stream *stream)
+parse_canonvec(struct frag *frag, struct stream *stream)
 {
-	(void)efp;
+	(void)frag;
 
 	size_t wf_size;
 
@@ -622,9 +597,9 @@ parse_canonvec(struct efp *efp, struct stream *stream)
 }
 
 static enum efp_result
-parse_canonfok(struct efp *efp, struct stream *stream)
+parse_canonfok(struct frag *frag, struct stream *stream)
 {
-	(void)efp;
+	(void)frag;
 
 	efp_stream_next_line(stream);
 
@@ -638,10 +613,8 @@ parse_canonfok(struct efp *efp, struct stream *stream)
 }
 
 static enum efp_result
-parse_screen(struct efp *efp, struct stream *stream)
+parse_screen(struct frag *frag, struct stream *stream)
 {
-	struct frag *frag = get_last_frag(efp);
-
 	double *scr = malloc(frag->n_multipole_pts * sizeof(double));
 	if (!scr)
 		return EFP_RESULT_NO_MEMORY;
@@ -680,10 +653,8 @@ parse_screen(struct efp *efp, struct stream *stream)
 }
 
 static enum efp_result
-parse_ff_types(struct efp *efp, struct stream *stream)
+parse_ff_types(struct frag *frag, struct stream *stream)
 {
-	struct frag *frag = get_last_frag(efp);
-
 	while (!efp_stream_eof(stream)) {
 		efp_stream_next_line(stream);
 
@@ -718,10 +689,8 @@ parse_ff_types(struct efp *efp, struct stream *stream)
 }
 
 static enum efp_result
-parse_ff_links(struct efp *efp, struct stream *stream)
+parse_ff_links(struct frag *frag, struct stream *stream)
 {
-	struct frag *frag = get_last_frag(efp);
-
 	while (!efp_stream_eof(stream)) {
 		efp_stream_next_line(stream);
 
@@ -764,7 +733,7 @@ parse_ff_links(struct efp *efp, struct stream *stream)
 	return EFP_RESULT_SYNTAX_ERROR;
 }
 
-typedef enum efp_result (*parse_fn)(struct efp *, struct stream *);
+typedef enum efp_result (*parse_fn)(struct frag *, struct stream *);
 
 static parse_fn
 get_parse_fn(struct stream *stream)
@@ -800,7 +769,7 @@ get_parse_fn(struct stream *stream)
 }
 
 static enum efp_result
-parse_fragment(struct efp *efp, struct stream *stream)
+parse_fragment(struct frag *frag, struct stream *stream)
 {
 	enum efp_result res;
 
@@ -814,7 +783,7 @@ parse_fragment(struct efp *efp, struct stream *stream)
 			return EFP_RESULT_SYNTAX_ERROR;
 		}
 
-		if ((res = fn(efp, stream)))
+		if ((res = fn(frag, stream)))
 			return res;
 	}
 
@@ -856,7 +825,7 @@ parse_file(struct efp *efp, struct stream *stream)
 		efp_stream_next_line(stream);
 		efp_stream_next_line(stream);
 
-		if ((res = parse_fragment(efp, stream)))
+		if ((res = parse_fragment(frag, stream)))
 			return res;
 	}
 
