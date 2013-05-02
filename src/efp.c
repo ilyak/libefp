@@ -1344,7 +1344,7 @@ efp_get_frag_name(struct efp *efp, size_t frag_idx, size_t size, char *frag_name
 	if (frag_idx >= efp->n_frag)
 		return EFP_RESULT_INDEX_OUT_OF_RANGE;
 
-	if ((unsigned)size <= strlen(efp->frags[frag_idx].name))
+	if (size <= strlen(efp->frags[frag_idx].name))
 		return EFP_RESULT_INVALID_ARRAY_SIZE;
 
 	strcpy(frag_name, efp->frags[frag_idx].name);
