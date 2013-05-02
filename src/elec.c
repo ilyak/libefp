@@ -317,8 +317,8 @@ mult_mult_grad(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
 	efp_add_stress(&swf->dr, &force, &efp->stress);
 }
 
-static double
-frag_frag_elec(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx)
+double
+efp_frag_frag_elec(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx)
 {
 	struct frag *fr_i = efp->frags + fr_i_idx;
 	struct frag *fr_j = efp->frags + fr_j_idx;
@@ -401,36 +401,6 @@ frag_frag_elec(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx)
 	efp_add_stress(&swf.dr, &force, &efp->stress);
 
 	return energy * swf.swf;
-}
-
-enum efp_result
-efp_compute_elec(struct efp *efp)
-{
-	if (!(efp->opts.terms & EFP_TERM_ELEC))
-		return EFP_RESULT_SUCCESS;
-
-	int rank = 0;
-	double energy = 0.0;
-
-#ifdef WITH_MPI
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#endif
-#ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic, 4) reduction(+:energy)
-#endif
-	for (size_t i = efp->mpi_offset[rank]; i < efp->mpi_offset[rank + 1]; i++) {
-		size_t cnt = efp_inner_count(i, efp->n_frag);
-
-		for (size_t j = i + 1; j < i + 1 + cnt; j++)
-			if (!efp_skip_frag_pair(efp, i, j % efp->n_frag))
-				energy += frag_frag_elec(efp, i, j % efp->n_frag);
-	}
-
-#ifdef WITH_MPI
-	MPI_Allreduce(MPI_IN_PLACE, &energy, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-#endif
-	efp->energy.electrostatic = energy;
-	return EFP_RESULT_SUCCESS;
 }
 
 static void

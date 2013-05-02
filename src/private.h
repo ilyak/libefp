@@ -134,9 +134,6 @@ struct frag {
 	/* rotational derivatives of MO coefficients */
 	double *xr_wf_deriv[3];
 
-	/* offset of overlap integrals for this fragment */
-	size_t overlap_offset;
-
 	/* offset of polarizable points for this fragment */
 	size_t polarizable_offset;
 
@@ -200,15 +197,6 @@ struct efp {
 
 	/* total number of polarizable points */
 	size_t n_polarizable_pts;
-
-	/* total number of overlap integrals */
-	size_t n_overlap;
-
-	/* overlap integrals; used for overlap-based dispersion damping */
-	double *overlap_int;
-
-	/* derivatives of overlap integrals */
-	six_t *overlap_int_deriv;
 
 	/* EFP energy terms */
 	struct efp_energy energy;

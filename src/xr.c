@@ -534,17 +534,15 @@ lmo_lmo_xr_energy(struct frag *fr_i, struct frag *fr_j, size_t i, size_t j,
 	return 2.0 * exr;
 }
 
-static void
-frag_frag_xr(struct efp *efp, size_t frag_i, size_t frag_j, size_t overlap_idx,
-	     double *exr_out, double *ecp_out)
+void
+efp_frag_frag_xr(struct efp *efp, size_t frag_i, size_t frag_j, double *lmo_s,
+			six_t *lmo_ds, double *exr_out, double *ecp_out)
 {
 	struct frag *fr_i = efp->frags + frag_i;
 	struct frag *fr_j = efp->frags + frag_j;
 
 	double *s = malloc(fr_i->xr_wf_size * fr_j->xr_wf_size * sizeof(double));
 	double *t = malloc(fr_i->xr_wf_size * fr_j->xr_wf_size * sizeof(double));
-
-	double lmo_s[fr_i->n_lmo * fr_j->n_lmo];
 	double lmo_t[fr_i->n_lmo * fr_j->n_lmo];
 
 	struct swf swf = efp_make_swf(efp, fr_i, fr_j);
@@ -589,18 +587,12 @@ frag_frag_xr(struct efp *efp, size_t frag_i, size_t frag_j, size_t overlap_idx,
 
 			double r_ij = vec_len(&dr);
 
-			if ((efp->opts.terms & EFP_TERM_DISP) &&
-			    (efp->opts.disp_damp == EFP_DISP_DAMP_OVERLAP))
-				efp->overlap_int[fr_i->overlap_offset +
-					overlap_idx + idx] = s_ij;
-
 			if ((efp->opts.terms & EFP_TERM_ELEC) &&
 			    (efp->opts.elec_damp == EFP_ELEC_DAMP_OVERLAP))
 				ecp += charge_penetration_energy(s_ij, r_ij);
 
 			if (efp->opts.terms & EFP_TERM_XR)
-				exr += lmo_lmo_xr_energy(fr_i, fr_j, i, j,
-							 lmo_s, lmo_t, &swf);
+				exr += lmo_lmo_xr_energy(fr_i, fr_j, i, j, lmo_s, lmo_t, &swf);
 		}
 	}
 
@@ -617,8 +609,6 @@ frag_frag_xr(struct efp *efp, size_t frag_i, size_t frag_j, size_t overlap_idx,
 
 	six_t *ds = malloc(fr_i->xr_wf_size * fr_j->xr_wf_size * sizeof(six_t));
 	six_t *dt = malloc(fr_i->xr_wf_size * fr_j->xr_wf_size * sizeof(six_t));
-
-	six_t *lmo_ds = malloc(fr_i->n_lmo * fr_j->n_lmo * sizeof(six_t));
 	six_t *lmo_dt = malloc(fr_i->n_lmo * fr_j->n_lmo * sizeof(six_t));
 
 	efp_st_int_deriv(fr_i->n_xr_shells, fr_i->xr_shells,
@@ -655,11 +645,6 @@ frag_frag_xr(struct efp *efp, size_t frag_i, size_t frag_j, size_t overlap_idx,
 		for (size_t j = 0; j < fr_j->n_lmo; j++, idx++) {
 			size_t ij = i * fr_j->n_lmo + j;
 
-			if ((efp->opts.terms & EFP_TERM_DISP) &&
-			    (efp->opts.disp_damp == EFP_DISP_DAMP_OVERLAP))
-				efp->overlap_int_deriv[fr_i->overlap_offset +
-					overlap_idx + idx] = lmo_ds[ij];
-
 			if ((efp->opts.terms & EFP_TERM_ELEC) &&
 			    (efp->opts.elec_damp == EFP_ELEC_DAMP_OVERLAP))
 				charge_penetration_grad(efp, fr_i, fr_j, i, j,
@@ -681,88 +666,7 @@ frag_frag_xr(struct efp *efp, size_t frag_i, size_t frag_j, size_t overlap_idx,
 	vec_atomic_sub(&fr_j->force, &force);
 	efp_add_stress(&swf.dr, &force, &efp->stress);
 
-	free(s), free(ds), free(lmo_ds);
-	free(t), free(dt), free(lmo_dt);
-}
-
-#ifdef WITH_MPI
-static size_t
-overlap_offset(struct efp *efp, size_t idx)
-{
-	return idx < efp->n_frag ? efp->frags[idx].overlap_offset : efp->n_overlap;
-}
-#endif
-
-enum efp_result
-efp_compute_xr(struct efp *efp)
-{
-	int do_xr = (efp->opts.terms & EFP_TERM_XR);
-	int do_cp = (efp->opts.terms & EFP_TERM_ELEC) &&
-		    (efp->opts.elec_damp == EFP_ELEC_DAMP_OVERLAP);
-	int do_dd = (efp->opts.terms & EFP_TERM_DISP) &&
-		    (efp->opts.disp_damp == EFP_DISP_DAMP_OVERLAP);
-
-	if (!do_xr && !do_cp && !do_dd)
-		return EFP_RESULT_SUCCESS;
-
-	int rank = 0;
-	double exr = 0.0;
-	double ecp = 0.0;
-
-#ifdef WITH_MPI
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#endif
-#ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic, 4) reduction(+:exr,ecp)
-#endif
-	for (size_t i = efp->mpi_offset[rank]; i < efp->mpi_offset[rank + 1]; i++) {
-		size_t cnt = efp_inner_count(i, efp->n_frag);
-
-		for (size_t j = i + 1, idx = 0; j < i + 1 + cnt; j++) {
-			if (!efp_skip_frag_pair(efp, i, j % efp->n_frag)) {
-				double exr_out, ecp_out;
-
-				frag_frag_xr(efp, i, j % efp->n_frag, idx, &exr_out, &ecp_out);
-
-				exr += exr_out;
-				ecp += ecp_out;
-			}
-
-			idx += efp->frags[i].n_lmo * efp->frags[j % efp->n_frag].n_lmo;
-		}
-	}
-
-#ifdef WITH_MPI
-	int size;
-	MPI_Comm_size(MPI_COMM_WORLD, &size);
-
-	MPI_Allreduce(MPI_IN_PLACE, &exr, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-	MPI_Allreduce(MPI_IN_PLACE, &ecp, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-
-	if (efp->overlap_int) {
-		for (int i = 0; i < size; i++) {
-			size_t off1 = overlap_offset(efp, efp->mpi_offset[i]);
-			size_t off2 = overlap_offset(efp, efp->mpi_offset[i + 1]);
-
-			MPI_Bcast(efp->overlap_int + off1,
-				(int)(off2 - off1), MPI_DOUBLE, i, MPI_COMM_WORLD);
-		}
-	}
-
-	if (efp->overlap_int_deriv) {
-		for (int i = 0; i < size; i++) {
-			size_t off1 = overlap_offset(efp, efp->mpi_offset[i]);
-			size_t off2 = overlap_offset(efp, efp->mpi_offset[i + 1]);
-
-			MPI_Bcast(efp->overlap_int_deriv + off1,
-				(int)(off2 - off1) * 6, MPI_DOUBLE, i, MPI_COMM_WORLD);
-		}
-	}
-#endif
-	efp->energy.exchange_repulsion = exr;
-	efp->energy.charge_penetration = ecp;
-
-	return EFP_RESULT_SUCCESS;
+	free(s), free(ds), free(t), free(dt), free(lmo_dt);
 }
 
 static inline size_t

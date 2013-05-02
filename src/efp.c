@@ -25,6 +25,7 @@
  */
 
 #include <assert.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -512,49 +513,6 @@ check_params(struct efp *efp)
 	return EFP_RESULT_SUCCESS;
 }
 
-static enum efp_result
-setup_disp(struct efp *efp)
-{
-	efp->n_overlap = 0;
-
-	if ((efp->opts.terms & EFP_TERM_DISP) == 0 ||
-	    (efp->opts.disp_damp != EFP_DISP_DAMP_OVERLAP)) {
-		free(efp->overlap_int);
-		free(efp->overlap_int_deriv);
-		efp->overlap_int = NULL;
-		efp->overlap_int_deriv = NULL;
-		return EFP_RESULT_SUCCESS;
-	}
-
-	for (size_t i = 0; i < efp->n_frag; i++) {
-		size_t cnt = efp_inner_count(i, efp->n_frag);
-		efp->frags[i].overlap_offset = efp->n_overlap;
-
-		for (size_t j = i + 1; j < i + 1 + cnt; j++) {
-			size_t n_lmo_i = efp->frags[i].n_lmo;
-			size_t n_lmo_j = efp->frags[j % efp->n_frag].n_lmo;
-
-			efp->n_overlap += n_lmo_i * n_lmo_j;
-		}
-	}
-
-	efp->overlap_int = realloc(efp->overlap_int,
-			efp->n_overlap * sizeof(double));
-
-	if (efp->overlap_int == NULL)
-		return EFP_RESULT_NO_MEMORY;
-
-	if (efp->do_gradient) {
-		efp->overlap_int_deriv = realloc(efp->overlap_int_deriv,
-				efp->n_overlap * sizeof(six_t));
-
-		if (efp->overlap_int_deriv == NULL)
-			return EFP_RESULT_NO_MEMORY;
-	}
-
-	return EFP_RESULT_SUCCESS;
-}
-
 static void
 init_mpi_offsets(struct efp *efp)
 {
@@ -571,6 +529,86 @@ init_mpi_offsets(struct efp *efp)
 	efp->mpi_offset[0] = 0;
 	efp->mpi_offset[1] = efp->n_frag;
 #endif
+}
+
+static bool
+do_elec(const struct efp_opts *opts)
+{
+	return (opts->terms & EFP_TERM_ELEC);
+}
+
+static bool
+do_disp(const struct efp_opts *opts)
+{
+	return (opts->terms & EFP_TERM_DISP);
+}
+
+static bool
+do_xr(const struct efp_opts *opts)
+{
+	bool xr = (opts->terms & EFP_TERM_XR);
+	bool cp = (opts->terms & EFP_TERM_ELEC) && (opts->elec_damp == EFP_ELEC_DAMP_OVERLAP);
+	bool dd = (opts->terms & EFP_TERM_DISP) && (opts->disp_damp == EFP_DISP_DAMP_OVERLAP);
+
+	return (xr || cp || dd);
+}
+
+static enum efp_result
+compute_elec_disp_xr(struct efp *efp)
+{
+	int rank = 0;
+	double e_elec = 0.0, e_disp = 0.0, e_xr = 0.0, e_cp = 0.0;
+
+#ifdef WITH_MPI
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif
+#ifdef _OPENMP
+#pragma omp parallel for schedule(dynamic, 4) reduction(+:e_elec,e_disp,e_xr,e_cp)
+#endif
+	for (size_t i = efp->mpi_offset[rank]; i < efp->mpi_offset[rank + 1]; i++) {
+		size_t cnt = efp_inner_count(i, efp->n_frag);
+
+		for (size_t j = i + 1; j < i + 1 + cnt; j++) {
+			size_t fr_j = j % efp->n_frag;
+
+			if (!efp_skip_frag_pair(efp, i, fr_j)) {
+				size_t n_lmo_i = efp->frags[i].n_lmo;
+				size_t n_lmo_j = efp->frags[fr_j].n_lmo;
+				double *s = calloc(n_lmo_i * n_lmo_j, sizeof(double));
+				six_t *ds = calloc(n_lmo_i * n_lmo_j, sizeof(six_t));
+
+				if (do_xr(&efp->opts)) {
+					double exr, ecp;
+
+					efp_frag_frag_xr(efp, i, fr_j, s, ds, &exr, &ecp);
+					e_xr += exr;
+					e_cp += ecp;
+				}
+
+				if (do_elec(&efp->opts))
+					e_elec += efp_frag_frag_elec(efp, i, fr_j);
+
+				if (do_disp(&efp->opts))
+					e_disp += efp_frag_frag_disp(efp, i, fr_j, s, ds);
+
+				free(s);
+				free(ds);
+			}
+		}
+	}
+
+#ifdef WITH_MPI
+	MPI_Allreduce(MPI_IN_PLACE, &e_elec, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	MPI_Allreduce(MPI_IN_PLACE, &e_disp, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	MPI_Allreduce(MPI_IN_PLACE, &e_xr, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	MPI_Allreduce(MPI_IN_PLACE, &e_cp, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+#endif
+	efp->energy.electrostatic = e_elec;
+	efp->energy.dispersion = e_disp;
+	efp->energy.exchange_repulsion = e_xr;
+	efp->energy.charge_penetration = e_cp;
+
+	return (EFP_RESULT_SUCCESS);
 }
 
 EFP_EXPORT enum efp_result
@@ -876,16 +914,6 @@ efp_get_wavefunction_dependent_energy(struct efp *efp, double *energy)
 EFP_EXPORT enum efp_result
 efp_compute(struct efp *efp, int do_gradient)
 {
-	typedef enum efp_result (*term_fn)(struct efp *);
-
-	static const term_fn term_list[] = {
-		efp_compute_xr,   /* xr must be first */
-		efp_compute_elec,
-		efp_compute_pol,
-		efp_compute_disp,
-		efp_compute_ai_elec
-	};
-
 	enum efp_result res;
 
 	if (!efp)
@@ -896,17 +924,8 @@ efp_compute(struct efp *efp, int do_gradient)
 	if ((res = check_params(efp)))
 		return res;
 
-	if ((res = setup_disp(efp)))
-		return res;
-
 	efp->stress = mat_zero;
 	memset(&efp->energy, 0, sizeof(struct efp_energy));
-
-	if (efp->overlap_int)
-		memset(efp->overlap_int, 0, sizeof(double) * efp->n_overlap);
-
-	if (efp->overlap_int_deriv)
-		memset(efp->overlap_int_deriv, 0, sizeof(six_t) * efp->n_overlap);
 
 	for (size_t i = 0; i < efp->n_frag; i++) {
 		efp->frags[i].force = vec_zero;
@@ -916,9 +935,14 @@ efp_compute(struct efp *efp, int do_gradient)
 	for (size_t i = 0; i < efp->n_ptc; i++)
 		efp->point_charges[i].grad = vec_zero;
 
-	for (size_t i = 0; i < ARRAY_SIZE(term_list); i++)
-		if ((res = term_list[i](efp)))
-			return res;
+	if ((res = compute_elec_disp_xr(efp)))
+		return res;
+
+	if ((res = efp_compute_pol(efp)))
+		return res;
+
+	if ((res = efp_compute_ai_elec(efp)))
+		return res;
 
 #ifdef WITH_MPI
 	vec_t grad_f[2 * efp->n_frag];

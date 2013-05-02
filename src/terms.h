@@ -27,17 +27,17 @@
 #ifndef LIBEFP_TERMS_H
 #define LIBEFP_TERMS_H
 
+#include "math_util.h"
+
 struct efp;
 struct frag;
 
-enum efp_result efp_compute_elec(struct efp *);
+double efp_frag_frag_elec(struct efp *, size_t, size_t);
+double efp_frag_frag_disp(struct efp *, size_t, size_t, const double *, const six_t *);
+void efp_frag_frag_xr(struct efp *, size_t, size_t, double *, six_t *, double *, double *);
 enum efp_result efp_compute_pol(struct efp *);
-enum efp_result efp_compute_disp(struct efp *);
-enum efp_result efp_compute_xr(struct efp *);
 enum efp_result efp_compute_ai_elec(struct efp *);
-
 enum efp_result efp_compute_pol_energy(struct efp *, double *);
-
 void efp_update_elec(struct frag *);
 void efp_update_pol(struct frag *);
 void efp_update_disp(struct frag *);

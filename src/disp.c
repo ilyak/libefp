@@ -107,8 +107,8 @@ disp_tt(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 
 static double
 disp_overlap(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
-	     size_t pt_i_idx, size_t pt_j_idx, size_t overlap_idx, double sum,
-	     const struct swf *swf)
+	     size_t pt_i_idx, size_t pt_j_idx, double s_ij, six_t ds_ij,
+	     double sum, const struct swf *swf)
 {
 	const struct dynamic_polarizable_pt *pt_i =
 				fr_i->dynamic_polarizable_pts + pt_i_idx;
@@ -125,7 +125,6 @@ disp_overlap(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 	double r2 = r * r;
 	double r6 = r2 * r2 * r2;
 
-	double s_ij = efp->overlap_int[fr_i->overlap_offset + overlap_idx];
 	double ln_s = 0.0;
 	double damp = 1.0;
 
@@ -137,7 +136,6 @@ disp_overlap(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 	double energy = -4.0 / 3.0 * sum * damp / r6;
 
 	if (efp->do_gradient) {
-		six_t ds_ij = efp->overlap_int_deriv[fr_i->overlap_offset + overlap_idx];
 		vec_t force, torque_i, torque_j;
 
 		double t1 = -8.0 * sum / r6 / r2 * damp;
@@ -220,7 +218,7 @@ disp_off(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 
 static double
 point_point_disp(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
-		 size_t pt_i_idx, size_t pt_j_idx, size_t overlap_idx,
+		 size_t pt_i_idx, size_t pt_j_idx, double s, six_t ds,
 		 const struct swf *swf)
 {
 	struct frag *fr_i = efp->frags + fr_i_idx;
@@ -242,42 +240,12 @@ point_point_disp(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
 				       sum, swf);
 		case EFP_DISP_DAMP_OVERLAP:
 			return disp_overlap(efp, fr_i, fr_j, pt_i_idx, pt_j_idx,
-					    overlap_idx, sum, swf);
+					    s, ds, sum, swf);
 		case EFP_DISP_DAMP_OFF:
 			return disp_off(efp, fr_i, fr_j, pt_i_idx, pt_j_idx,
 					sum, swf);
 	}
 	assert(0);
-}
-
-static double
-frag_frag_disp(struct efp *efp, size_t frag_i, size_t frag_j, size_t overlap_idx)
-{
-	double energy = 0.0;
-
-	struct frag *fr_i = efp->frags + frag_i;
-	struct frag *fr_j = efp->frags + frag_j;
-
-	size_t n_disp_i = fr_i->n_dynamic_polarizable_pts;
-	size_t n_disp_j = fr_j->n_dynamic_polarizable_pts;
-
-	struct swf swf = efp_make_swf(efp, fr_i, fr_j);
-
-	for (size_t ii = 0, idx = overlap_idx; ii < n_disp_i; ii++)
-		for (size_t jj = 0; jj < n_disp_j; jj++, idx++)
-			energy += point_point_disp(efp, frag_i, frag_j, ii, jj, idx, &swf);
-
-	vec_t force = {
-		swf.dswf.x * energy,
-		swf.dswf.y * energy,
-		swf.dswf.z * energy
-	};
-
-	vec_atomic_add(&fr_i->force, &force);
-	vec_atomic_sub(&fr_j->force, &force);
-	efp_add_stress(&swf.dr, &force, &efp->stress);
-
-	return energy * swf.swf;
 }
 
 /*
@@ -290,37 +258,36 @@ frag_frag_disp(struct efp *efp, size_t frag_i, size_t frag_j, size_t overlap_idx
  *
  * Mol. Phys. 103, 379 (2005)
  */
-enum efp_result
-efp_compute_disp(struct efp *efp)
+double
+efp_frag_frag_disp(struct efp *efp, size_t frag_i, size_t frag_j,
+			const double *s, const six_t *ds)
 {
-	if (!(efp->opts.terms & EFP_TERM_DISP))
-		return EFP_RESULT_SUCCESS;
-
-	int rank = 0;
 	double energy = 0.0;
 
-#ifdef WITH_MPI
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#endif
-#ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic, 4) reduction(+:energy)
-#endif
-	for (size_t i = efp->mpi_offset[rank]; i < efp->mpi_offset[rank + 1]; i++) {
-		size_t cnt = efp_inner_count(i, efp->n_frag);
+	struct frag *fr_i = efp->frags + frag_i;
+	struct frag *fr_j = efp->frags + frag_j;
 
-		for (size_t j = i + 1, idx = 0; j < i + 1 + cnt; j++) {
-			if (!efp_skip_frag_pair(efp, i, j % efp->n_frag))
-				energy += frag_frag_disp(efp, i, j % efp->n_frag, idx);
+	size_t n_disp_i = fr_i->n_dynamic_polarizable_pts;
+	size_t n_disp_j = fr_j->n_dynamic_polarizable_pts;
 
-			idx += efp->frags[i].n_lmo * efp->frags[j % efp->n_frag].n_lmo;
-		}
-	}
+	struct swf swf = efp_make_swf(efp, fr_i, fr_j);
 
-#ifdef WITH_MPI
-	MPI_Allreduce(MPI_IN_PLACE, &energy, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-#endif
-	efp->energy.dispersion = energy;
-	return EFP_RESULT_SUCCESS;
+	for (size_t ii = 0, idx = 0; ii < n_disp_i; ii++)
+		for (size_t jj = 0; jj < n_disp_j; jj++, idx++)
+			energy += point_point_disp(efp, frag_i, frag_j, ii, jj,
+						   s[idx], ds[idx], &swf);
+
+	vec_t force = {
+		swf.dswf.x * energy,
+		swf.dswf.y * energy,
+		swf.dswf.z * energy
+	};
+
+	vec_atomic_add(&fr_i->force, &force);
+	vec_atomic_sub(&fr_j->force, &force);
+	efp_add_stress(&swf.dr, &force, &efp->stress);
+
+	return energy * swf.swf;
 }
 
 void
