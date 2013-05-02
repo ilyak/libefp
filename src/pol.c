@@ -409,7 +409,7 @@ pol_scf_iter(struct efp *efp)
 	}
 
 #ifdef WITH_MPI
-	MPI_Allreduce(MPI_IN_PLACE, &conv, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	allreduce(&conv, 1);
 #endif
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 4)
@@ -485,7 +485,7 @@ efp_compute_pol_energy(struct efp *efp, double *energy)
 	}
 
 #ifdef WITH_MPI
-	MPI_Allreduce(MPI_IN_PLACE, &ener, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	allreduce(&ener, 1);
 #endif
 	*energy = ener;
 	return EFP_RESULT_SUCCESS;

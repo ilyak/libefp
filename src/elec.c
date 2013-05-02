@@ -622,7 +622,7 @@ efp_compute_ai_elec(struct efp *efp)
 	}
 
 #ifdef WITH_MPI
-	MPI_Allreduce(MPI_IN_PLACE, &energy, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	allreduce(&energy, 1);
 #endif
 	efp->energy.electrostatic_point_charges = energy;
 	return EFP_RESULT_SUCCESS;

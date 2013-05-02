@@ -530,6 +530,38 @@ init_mpi_offsets(struct efp *efp)
 #endif
 }
 
+#ifdef WITH_MPI
+static void
+allreduce_gradient(struct efp *efp)
+{
+	vec_t *grad;
+	size_t count, i, idx;
+
+	count = 2 * efp->n_frag + efp->n_ptc;
+	grad = malloc(count * sizeof(vec_t));
+
+	for (i = 0, idx = 0; i < efp->n_frag; i++) {
+		grad[idx++] = efp->frags[i].force;
+		grad[idx++] = efp->frags[i].torque;
+	}
+
+	for (i = 0; i < efp->n_ptc; i++)
+		grad[idx++] = efp->point_charges[i].grad;
+
+	allreduce((double *)grad, 3 * count);
+
+	for (i = 0, idx = 0; i < efp->n_frag; i++) {
+		efp->frags[i].force = grad[idx++];
+		efp->frags[i].torque = grad[idx++];
+	}
+
+	for (i = 0; i < efp->n_ptc; i++)
+		efp->point_charges[i].grad = grad[idx++];
+
+	free(grad);
+}
+#endif
+
 static bool
 do_elec(const struct efp_opts *opts)
 {
@@ -597,10 +629,10 @@ compute_elec_disp_xr(struct efp *efp)
 	}
 
 #ifdef WITH_MPI
-	MPI_Allreduce(MPI_IN_PLACE, &e_elec, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-	MPI_Allreduce(MPI_IN_PLACE, &e_disp, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-	MPI_Allreduce(MPI_IN_PLACE, &e_xr, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-	MPI_Allreduce(MPI_IN_PLACE, &e_cp, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	allreduce(&e_elec, 1);
+	allreduce(&e_disp, 1);
+	allreduce(&e_xr, 1);
+	allreduce(&e_cp, 1);
 #endif
 	efp->energy.electrostatic = e_elec;
 	efp->energy.dispersion = e_disp;
@@ -911,33 +943,10 @@ efp_compute(struct efp *efp, int do_gradient)
 		return res;
 
 #ifdef WITH_MPI
-	vec_t grad_f[2 * efp->n_frag];
-
-	for (size_t i = 0; i < efp->n_frag; i++) {
-		grad_f[i] = efp->frags[i].force;
-		grad_f[efp->n_frag + i] = efp->frags[i].torque;
+	if (efp->do_gradient) {
+		allreduce_gradient(efp);
+		allreduce((double *)&efp->stress, 9);
 	}
-
-	MPI_Allreduce(MPI_IN_PLACE, grad_f, 6 * (int)efp->n_frag, MPI_DOUBLE,
-			MPI_SUM, MPI_COMM_WORLD);
-
-	for (size_t i = 0; i < efp->n_frag; i++) {
-		efp->frags[i].force = grad_f[i];
-		efp->frags[i].torque = grad_f[efp->n_frag + i];
-	}
-
-	vec_t grad_p[efp->n_ptc];
-
-	for (size_t i = 0; i < efp->n_ptc; i++)
-		grad_p[i] = efp->point_charges[i].grad;
-
-	MPI_Allreduce(MPI_IN_PLACE, grad_p, 3 * (int)efp->n_ptc, MPI_DOUBLE,
-			MPI_SUM, MPI_COMM_WORLD);
-
-	for (size_t i = 0; i < efp->n_ptc; i++)
-		efp->point_charges[i].grad = grad_p[i];
-
-	MPI_Allreduce(MPI_IN_PLACE, &efp->stress, 9, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 #endif
 
 	if (efp->opts.enable_links) {
