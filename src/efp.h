@@ -48,10 +48,6 @@ enum efp_result {
 	EFP_RESULT_SUCCESS = 0,
 	/** Insufficient memory. */
 	EFP_RESULT_NO_MEMORY,
-	/** Invalid argument to function was specified. */
-	EFP_RESULT_INVALID_ARGUMENT,
-	/** EFP structure was not properly initialized. */
-	EFP_RESULT_NOT_INITIALIZED,
 	/** File not found on disk. */
 	EFP_RESULT_FILE_NOT_FOUND,
 	/** Syntax error in EFP parameters file. */

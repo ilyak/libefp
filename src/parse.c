@@ -835,14 +835,11 @@ parse_file(struct efp *efp, struct stream *stream)
 EFP_EXPORT enum efp_result
 efp_add_potential(struct efp *efp, const char *path)
 {
-	if (!efp)
-		return EFP_RESULT_NOT_INITIALIZED;
-
-	if (!path)
-		return EFP_RESULT_INVALID_ARGUMENT;
-
 	enum efp_result res;
 	struct stream *stream;
+
+	assert(efp);
+	assert(path);
 
 	if ((stream = efp_stream_open(path)) == NULL)
 		return EFP_RESULT_FILE_NOT_FOUND;
