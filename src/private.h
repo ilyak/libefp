@@ -27,6 +27,8 @@
 #ifndef LIBEFP_PRIVATE_H
 #define LIBEFP_PRIVATE_H
 
+#include <assert.h>
+
 #ifdef WITH_MPI
 #include <mpi.h>
 #endif

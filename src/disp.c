@@ -24,8 +24,6 @@
  * SUCH DAMAGE.
  */
 
-#include <assert.h>
-
 #include "private.h"
 
 static const double weights[] = {
