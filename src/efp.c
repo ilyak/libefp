@@ -618,6 +618,7 @@ efp_get_energy(struct efp *efp, struct efp_energy *energy)
 	assert(energy);
 
 	*energy = efp->energy;
+
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -666,6 +667,7 @@ efp_get_point_charge_count(struct efp *efp, size_t *n_ptc)
 	assert(n_ptc);
 
 	*n_ptc = efp->n_ptc;
+
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -1009,6 +1011,7 @@ efp_get_multipole_count(struct efp *efp, size_t *n_mult)
 		sum += efp->frags[i].n_multipole_pts;
 
 	*n_mult = sum;
+
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -1072,6 +1075,7 @@ efp_get_induced_dipole_count(struct efp *efp, size_t *n_dip)
 		sum += efp->frags[i].n_polarizable_pts;
 
 	*n_dip = sum;
+
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -1328,6 +1332,7 @@ efp_get_frag_count(struct efp *efp, size_t *n_frag)
 	assert(n_frag);
 
 	*n_frag = efp->n_frag;
+
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -1344,6 +1349,7 @@ efp_get_frag_name(struct efp *efp, size_t frag_idx, size_t size, char *frag_name
 		return EFP_RESULT_INVALID_ARRAY_SIZE;
 
 	strcpy(frag_name, efp->frags[frag_idx].name);
+
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -1363,6 +1369,7 @@ efp_get_frag_mass(struct efp *efp, size_t frag_idx, double *mass_out)
 		mass += frag->atoms[i].mass;
 
 	*mass_out = mass;
+
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -1405,6 +1412,7 @@ efp_get_frag_atom_count(struct efp *efp, size_t frag_idx, size_t *n_atoms)
 		return EFP_RESULT_INDEX_OUT_OF_RANGE;
 
 	*n_atoms = efp->frags[frag_idx].n_atoms;
+
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -1424,6 +1432,7 @@ efp_get_frag_atoms(struct efp *efp, size_t frag_idx,
 		return EFP_RESULT_INVALID_ARRAY_SIZE;
 
 	memcpy(atoms, frag->atoms, frag->n_atoms * sizeof(struct efp_atom));
+
 	return EFP_RESULT_SUCCESS;
 }
 
