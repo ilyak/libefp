@@ -513,7 +513,7 @@ check_params(struct efp *efp)
 }
 
 static void
-init_mpi_offsets(struct efp *efp)
+init_mpi_offset(struct efp *efp)
 {
 #ifdef WITH_MPI
 	int size;
@@ -584,19 +584,15 @@ do_xr(const struct efp_opts *opts)
 	return (xr || cp || dd);
 }
 
-static enum efp_result
-compute_elec_disp_xr(struct efp *efp)
+static void
+compute_two_body_range(struct efp *efp, size_t frag_from, size_t frag_to)
 {
-	int rank = 0;
 	double e_elec = 0.0, e_disp = 0.0, e_xr = 0.0, e_cp = 0.0;
 
-#ifdef WITH_MPI
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#endif
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 4) reduction(+:e_elec,e_disp,e_xr,e_cp)
 #endif
-	for (size_t i = efp->mpi_offset[rank]; i < efp->mpi_offset[rank + 1]; i++) {
+	for (size_t i = frag_from; i < frag_to; i++) {
 		size_t cnt = efp_inner_count(i, efp->n_frag);
 
 		for (size_t j = i + 1; j < i + 1 + cnt; j++) {
@@ -628,17 +624,88 @@ compute_elec_disp_xr(struct efp *efp)
 		}
 	}
 
-#ifdef WITH_MPI
-	allreduce(&e_elec, 1);
-	allreduce(&e_disp, 1);
-	allreduce(&e_xr, 1);
-	allreduce(&e_cp, 1);
-#endif
-	efp->energy.electrostatic = e_elec;
-	efp->energy.dispersion = e_disp;
-	efp->energy.exchange_repulsion = e_xr;
-	efp->energy.charge_penetration = e_cp;
+	efp->energy.electrostatic += e_elec;
+	efp->energy.dispersion += e_disp;
+	efp->energy.exchange_repulsion += e_xr;
+	efp->energy.charge_penetration += e_cp;
+}
 
+#ifdef WITH_MPI
+static void
+compute_two_body_master(struct efp *efp, int size)
+{
+	MPI_Status status;
+	int chunk_size, n_frags, range[2];
+
+	range[1] = 0;
+	n_frags = (int)efp->n_frag;
+	chunk_size = n_frags / size / 10;
+
+	if (chunk_size == 0)
+		chunk_size = 1;
+
+	while (range[1] < n_frags) {
+		MPI_Recv(NULL, 0, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
+
+		range[0] = range[1];
+		range[1] += chunk_size;
+
+		if (range[1] > n_frags)
+			range[1] = n_frags;
+
+		MPI_Send(range, 2, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD);
+	}
+
+	range[0] = n_frags;
+
+	for (int i = 1; i < size; i++) {
+		MPI_Recv(NULL, 0, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
+		MPI_Send(range, 2, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD);
+	}
+}
+
+static void
+compute_two_body_slave(struct efp *efp)
+{
+	int range[2];
+
+	for (;;) {
+		MPI_Send(NULL, 0, MPI_INT, 0, 0, MPI_COMM_WORLD);
+		MPI_Recv(range, 2, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+		if (range[0] == (int)efp->n_frag)
+			break;
+
+		compute_two_body_range(efp, range[0], range[1]);
+	}
+}
+#endif
+
+static enum efp_result
+compute_two_body(struct efp *efp)
+{
+#ifdef WITH_MPI
+	int rank, size;
+
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+	if (size == 1)
+		compute_two_body_range(efp, 0, efp->n_frag);
+	else {
+		if (rank == 0)
+			compute_two_body_master(efp, size);
+		else
+			compute_two_body_slave(efp);
+
+		allreduce(&efp->energy.electrostatic, 1);
+		allreduce(&efp->energy.dispersion, 1);
+		allreduce(&efp->energy.exchange_repulsion, 1);
+		allreduce(&efp->energy.charge_penetration, 1);
+	}
+#else
+	compute_two_body_range(efp, 0, efp->n_frag);
+#endif
 	return (EFP_RESULT_SUCCESS);
 }
 
@@ -886,7 +953,7 @@ efp_prepare(struct efp *efp)
 {
 	assert(efp);
 
-	init_mpi_offsets(efp);
+	init_mpi_offset(efp);
 	efp->n_polarizable_pts = 0;
 
 	for (size_t i = 0; i < efp->n_frag; i++) {
@@ -933,7 +1000,7 @@ efp_compute(struct efp *efp, int do_gradient)
 	for (size_t i = 0; i < efp->n_ptc; i++)
 		efp->point_charges[i].grad = vec_zero;
 
-	if ((res = compute_elec_disp_xr(efp)))
+	if ((res = compute_two_body(efp)))
 		return res;
 
 	if ((res = efp_compute_pol(efp)))
@@ -948,7 +1015,6 @@ efp_compute(struct efp *efp, int do_gradient)
 		allreduce((double *)&efp->stress, 9);
 	}
 #endif
-
 	if (efp->opts.enable_links) {
 		size_t n_ff_atoms = efp_ff_get_atom_count(efp->ff);
 		vec_t ff_grad[n_ff_atoms];
