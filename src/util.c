@@ -29,17 +29,17 @@
 #include "private.h"
 #include "util.h"
 
-int efp_skip_frag_pair(const struct efp *efp, size_t fr_i_idx, size_t fr_j_idx)
+bool efp_skip_frag_pair(const struct efp *efp, size_t fr_i_idx, size_t fr_j_idx)
 {
 	if (efp->opts.enable_links) {
 		size_t idx = fr_i_idx * efp->n_frag + fr_j_idx;
 
 		if (efp_bvec_is_set(efp->links_bvec, idx))
-			return 1;
+			return true;
 	}
 
 	if (!efp->opts.enable_cutoff)
-		return 0;
+		return false;
 
 	const struct frag *fr_i = efp->frags + fr_i_idx;
 	const struct frag *fr_j = efp->frags + fr_j_idx;
@@ -91,6 +91,58 @@ struct swf efp_make_swf(const struct efp *efp, const struct frag *fr_i,
 	swf.dswf.z = -dswf * swf.dr.z;
 
 	return swf;
+}
+
+bool efp_check_rotation_matrix(const mat_t *rotmat)
+{
+	vec_t ax = { rotmat->xx, rotmat->yx, rotmat->zx };
+	vec_t ay = { rotmat->xy, rotmat->yy, rotmat->zy };
+	vec_t az = { rotmat->xz, rotmat->yz, rotmat->zz };
+
+	if (!eq(vec_len(&ax), 1.0) ||
+	    !eq(vec_len(&ay), 1.0) ||
+	    !eq(vec_len(&az), 1.0))
+		return false;
+
+	if (!eq(vec_dot(&ax, &ay), 0.0))
+		return false;
+
+	vec_t cross = vec_cross(&ax, &ay);
+
+	if (!eq(cross.x, az.x) ||
+	    !eq(cross.y, az.y) ||
+	    !eq(cross.z, az.z))
+		return false;
+
+	return true;
+}
+
+void efp_points_to_matrix(const double *pts, mat_t *rotmat)
+{
+	vec_t p1 = { pts[0], pts[1], pts[2] };
+	vec_t p2 = { pts[3], pts[4], pts[5] };
+	vec_t p3 = { pts[6], pts[7], pts[8] };
+
+	vec_t r12 = vec_sub(&p2, &p1);
+	vec_t r13 = vec_sub(&p3, &p1);
+
+	vec_normalize(&r12);
+	vec_normalize(&r13);
+
+	double dot = vec_dot(&r12, &r13);
+
+	r13.x -= dot * r12.x;
+	r13.y -= dot * r12.y;
+	r13.z -= dot * r12.z;
+
+	vec_t cross = vec_cross(&r12, &r13);
+
+	vec_normalize(&r13);
+	vec_normalize(&cross);
+
+	rotmat->xx = r12.x, rotmat->xy = r13.x, rotmat->xz = cross.x;
+	rotmat->yx = r12.y, rotmat->yy = r13.y, rotmat->yz = cross.y;
+	rotmat->zx = r12.z, rotmat->zy = r13.z, rotmat->zz = cross.z;
 }
 
 const struct frag *efp_find_lib(struct efp *efp, const char *name)

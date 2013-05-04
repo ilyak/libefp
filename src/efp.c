@@ -174,60 +174,6 @@ parse_topology(struct efp *efp, const char *path)
 	return res;
 }
 
-static int
-check_rotation_matrix(const mat_t *rotmat)
-{
-	vec_t ax = { rotmat->xx, rotmat->yx, rotmat->zx };
-	vec_t ay = { rotmat->xy, rotmat->yy, rotmat->zy };
-	vec_t az = { rotmat->xz, rotmat->yz, rotmat->zz };
-
-	if (!eq(vec_len(&ax), 1.0) ||
-	    !eq(vec_len(&ay), 1.0) ||
-	    !eq(vec_len(&az), 1.0))
-		return 0;
-
-	if (!eq(vec_dot(&ax, &ay), 0.0))
-		return 0;
-
-	vec_t cross = vec_cross(&ax, &ay);
-
-	if (!eq(cross.x, az.x) ||
-	    !eq(cross.y, az.y) ||
-	    !eq(cross.z, az.z))
-		return 0;
-
-	return 1;
-}
-
-static void
-points_to_matrix(const double *pts, mat_t *rotmat)
-{
-	vec_t p1 = { pts[0], pts[1], pts[2] };
-	vec_t p2 = { pts[3], pts[4], pts[5] };
-	vec_t p3 = { pts[6], pts[7], pts[8] };
-
-	vec_t r12 = vec_sub(&p2, &p1);
-	vec_t r13 = vec_sub(&p3, &p1);
-
-	vec_normalize(&r12);
-	vec_normalize(&r13);
-
-	double dot = vec_dot(&r12, &r13);
-
-	r13.x -= dot * r12.x;
-	r13.y -= dot * r12.y;
-	r13.z -= dot * r12.z;
-
-	vec_t cross = vec_cross(&r12, &r13);
-
-	vec_normalize(&r13);
-	vec_normalize(&cross);
-
-	rotmat->xx = r12.x, rotmat->xy = r13.x, rotmat->xz = cross.x;
-	rotmat->yx = r12.y, rotmat->yy = r13.y, rotmat->yz = cross.y;
-	rotmat->zx = r12.z, rotmat->zy = r13.z, rotmat->zz = cross.z;
-}
-
 static void
 update_fragment(struct frag *frag)
 {
@@ -270,8 +216,8 @@ set_coord_points(struct frag *frag, const double *coord)
 	vec_t p1;
 	mat_t rot1, rot2;
 
-	points_to_matrix(coord, &rot1);
-	points_to_matrix(ref, &rot2);
+	efp_points_to_matrix(coord, &rot1);
+	efp_points_to_matrix(ref, &rot2);
 	rot2 = mat_transpose(&rot2);
 	frag->rotmat = mat_mat(&rot1, &rot2);
 	p1 = mat_vec(&frag->rotmat, VEC(frag->lib->atoms[0].x));
@@ -288,7 +234,7 @@ set_coord_points(struct frag *frag, const double *coord)
 static enum efp_result
 set_coord_rotmat(struct frag *frag, const double *coord)
 {
-	if (!check_rotation_matrix((const mat_t *)(coord + 3)))
+	if (!efp_check_rotation_matrix((const mat_t *)(coord + 3)))
 		return EFP_RESULT_INVALID_ROTATION_MATRIX;
 
 	frag->x = coord[0];
