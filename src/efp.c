@@ -32,6 +32,10 @@
 #include "private.h"
 #include "stream.h"
 
+#ifdef WITH_MPI
+#define MPI_CHUNK_SIZE 64
+#endif
+
 static enum efp_result
 ff_to_efp(enum ff_res res)
 {
@@ -635,20 +639,16 @@ static void
 compute_two_body_master(struct efp *efp, int size)
 {
 	MPI_Status status;
-	int chunk_size, n_frags, range[2];
+	int n_frags, range[2];
 
-	range[1] = 0;
 	n_frags = (int)efp->n_frag;
-	chunk_size = n_frags / size / 10;
-
-	if (chunk_size == 0)
-		chunk_size = 1;
+	range[1] = 0;
 
 	while (range[1] < n_frags) {
 		MPI_Recv(NULL, 0, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
 
 		range[0] = range[1];
-		range[1] += chunk_size;
+		range[1] += MPI_CHUNK_SIZE;
 
 		if (range[1] > n_frags)
 			range[1] = n_frags;
@@ -656,7 +656,7 @@ compute_two_body_master(struct efp *efp, int size)
 		MPI_Send(range, 2, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD);
 	}
 
-	range[0] = n_frags;
+	range[0] = range[1] = -1;
 
 	for (int i = 1; i < size; i++) {
 		MPI_Recv(NULL, 0, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
@@ -673,7 +673,8 @@ compute_two_body_slave(struct efp *efp)
 		MPI_Send(NULL, 0, MPI_INT, 0, 0, MPI_COMM_WORLD);
 		MPI_Recv(range, 2, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-		if (range[0] == (int)efp->n_frag)
+		if (range[0] == -1 ||
+		    range[1] == -1)
 			break;
 
 		compute_two_body_range(efp, range[0], range[1]);
