@@ -46,57 +46,18 @@ extern "C" {
 enum efp_result {
 	/** Operation was successful. */
 	EFP_RESULT_SUCCESS = 0,
+	/** Fatal error has occurred. */
+	EFP_RESULT_FATAL,
 	/** Insufficient memory. */
 	EFP_RESULT_NO_MEMORY,
-	/** File not found on disk. */
+	/** File not found. */
 	EFP_RESULT_FILE_NOT_FOUND,
-	/** Syntax error in EFP parameters file. */
+	/** Syntax error. */
 	EFP_RESULT_SYNTAX_ERROR,
-	/** Unknown fragment type. */
+	/** Unknown EFP fragment. */
 	EFP_RESULT_UNKNOWN_FRAGMENT,
-	/** EFP parameters contain duplicate fragments. */
-	EFP_RESULT_DUPLICATE_PARAMETERS,
-	/** Call to callback function failed. */
-	EFP_RESULT_CALLBACK_FAILED,
-	/** Gradient computation was not requested. */
-	EFP_RESULT_GRADIENT_NOT_REQUESTED,
-	/**
-	 * Periodic boundary conditions are not supported for current selection
-	 * of energy terms. */
-	EFP_RESULT_PBC_NOT_SUPPORTED,
-	/** Interaction cutoff must be enabled. */
-	EFP_RESULT_PBC_REQUIRES_CUTOFF,
-	/** Switching function cutoff is too small. */
-	EFP_RESULT_SWF_CUTOFF_TOO_SMALL,
-	/** Periodic simulation box is too small. */
-	EFP_RESULT_BOX_TOO_SMALL,
-	/** Fragment must contain at least three atoms. */
-	EFP_RESULT_NEED_THREE_ATOMS,
-	/** Polarization SCF did not converge. */
-	EFP_RESULT_POL_NOT_CONVERGED,
-	/** Certain EFP parameters are missing. */
-	EFP_RESULT_PARAMETERS_MISSING,
-	/** Invalid rotation matrix specified. */
-	EFP_RESULT_INVALID_ROTATION_MATRIX,
-	/** Index is out of range. */
-	EFP_RESULT_INDEX_OUT_OF_RANGE,
-	/** Wrong array length. */
-	EFP_RESULT_INVALID_ARRAY_SIZE,
-	/** Unknown force field atom type. */
-	EFP_RESULT_UNKNOWN_FF_TYPE,
-	/** Covalent fragment-fragment links are not enabled. */
-	EFP_RESULT_LINKS_ARE_NOT_ENABLED,
-	/** Unknown atom name. */
-	EFP_RESULT_UNKNOWN_ATOM,
-	/** Unsupported SCREEN group in EFP parameters file. */
-	EFP_RESULT_UNSUPPORTED_SCREEN,
-	/**
-	 * Inconsistent selection of EFP terms.
-	 *
-	 * This means that AI/EFP terms were selected without selecting their
-	 * EFP/EFP counterparts. Enabling polarization without electrostatics
-	 * also produces this error. */
-	EFP_RESULT_INCONSISTENT_TERMS
+	/** Polarization SCF procedure did not converge. */
+	EFP_RESULT_POL_NOT_CONVERGED
 };
 
 /** Flags to specify EFP energy terms. */
@@ -271,6 +232,13 @@ struct efp *efp_create(void);
  * \param[out] opts Structure to store the defaults. See ::efp_opts.
  */
 void efp_opts_default(struct efp_opts *opts);
+
+/**
+ * Set the error log callback function.
+ *
+ * \param[in] cb Error log callback function or NULL if none.
+ */
+void efp_set_error_log(void (*cb)(const char *));
 
 /**
  * Set computation options.

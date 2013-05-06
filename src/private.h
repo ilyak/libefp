@@ -37,6 +37,7 @@
 #include "efp.h"
 #include "ff.h"
 #include "int.h"
+#include "log.h"
 #include "swf.h"
 #include "terms.h"
 #include "util.h"

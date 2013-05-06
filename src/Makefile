@@ -6,9 +6,9 @@ CFLAGS= $(MYCFLAGS)
 
 LIBEFP_A= libefp.a
 ALL_C= bvec.c disp.c efp.c elec.c elec_terms.c ff.c int.c \
-       parse.c pol.c stream.c swf.c util.c xr.c
+       log.c parse.c pol.c stream.c swf.c util.c xr.c
 ALL_O= bvec.o disp.o efp.o elec.o elec_terms.o ff.o int.o \
-       parse.o pol.o stream.o swf.o util.o xr.o
+       log.o parse.o pol.o stream.o swf.o util.o xr.o
 
 all: $(LIBEFP_A)
 

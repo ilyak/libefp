@@ -58,7 +58,7 @@ void NORETURN error(const char *format, ...)
 void check_fail(enum efp_result res)
 {
 	if (res)
-		die("LIBEFP ERROR: %s", efp_result_to_string(res));
+		die("LIBEFP: %s", efp_result_to_string(res));
 }
 
 void *xmalloc(size_t size)

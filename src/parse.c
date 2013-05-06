@@ -632,7 +632,8 @@ parse_screen(struct frag *frag, struct stream *stream)
 		frag->screen_params = scr;
 	}
 	else {
-		return EFP_RESULT_UNSUPPORTED_SCREEN;
+		efp_log("unsupported screen group in EFP data file");
+		return EFP_RESULT_FATAL;
 	}
 
 	efp_stream_next_line(stream);
@@ -780,6 +781,7 @@ parse_fragment(struct frag *frag, struct stream *stream)
 			if (tok_end(stream))
 				return EFP_RESULT_SUCCESS;
 
+			efp_log("unknown keyword in EFP potential data file");
 			return EFP_RESULT_SYNTAX_ERROR;
 		}
 
@@ -806,8 +808,10 @@ parse_file(struct efp *efp, struct stream *stream)
 		if (!tok_label(stream, sizeof(name), name))
 			return EFP_RESULT_SYNTAX_ERROR;
 
-		if (efp_find_lib(efp, name))
-			return EFP_RESULT_DUPLICATE_PARAMETERS;
+		if (efp_find_lib(efp, name)) {
+			efp_log("parameters for fragment %s are already loaded", name);
+			return EFP_RESULT_FATAL;
+		}
 
 		struct frag *frag = calloc(1, sizeof(struct frag));
 		if (!frag)

@@ -47,9 +47,11 @@ ff_to_efp(enum ff_res res)
 		case FF_BAD_FORMAT:
 			return EFP_RESULT_SYNTAX_ERROR;
 		case FF_STRING_TOO_LONG:
-			return EFP_RESULT_SYNTAX_ERROR;
+			efp_log("force field atom type name is too long");
+			return EFP_RESULT_FATAL;
 		case FF_NO_PARAMETERS:
-			return EFP_RESULT_UNKNOWN_FF_TYPE;
+			efp_log("some force field parameters are missing");
+			return EFP_RESULT_FATAL;
 	};
 	assert(0);
 }
@@ -117,14 +119,20 @@ parse_topology_record(struct efp *efp, const char *str)
 	size_t idx1, link1, idx2, link2;
 	char name1[32], name2[32];
 
-	if (sscanf(str, "%zu %zu %32s %32s", &idx1, &idx2, name1, name2) < 4)
+	if (sscanf(str, "%zu %zu %32s %32s", &idx1, &idx2, name1, name2) < 4) {
+		efp_log("bad topology record format");
 		return EFP_RESULT_SYNTAX_ERROR;
+	}
 
-	if (--idx1 == --idx2)
-		return EFP_RESULT_SYNTAX_ERROR;
+	if (--idx1 == --idx2) {
+		efp_log("cannot connect a fragment with itself");
+		return EFP_RESULT_FATAL;
+	}
 
-	if (idx1 >= efp->n_frag || idx2 >= efp->n_frag)
-		return EFP_RESULT_INDEX_OUT_OF_RANGE;
+	if (idx1 >= efp->n_frag || idx2 >= efp->n_frag) {
+		efp_log("fragment index is out of range in topology file");
+		return EFP_RESULT_FATAL;
+	}
 
 	const struct frag *frag1 = efp->frags + idx1;
 	const struct frag *frag2 = efp->frags + idx2;
@@ -133,12 +141,19 @@ parse_topology_record(struct efp *efp, const char *str)
 		if (strcmp(name1, frag1->atoms[frag1->ff_atoms[link1].idx].label) == 0)
 			break;
 
+	if (link1 == frag1->n_ff_atoms) {
+		efp_log("fragment %s does not have atom %s", frag1->name, name1);
+		return EFP_RESULT_FATAL;
+	}
+
 	for (link2 = 0; link2 < frag2->n_ff_atoms; link2++)
 		if (strcmp(name2, frag2->atoms[frag2->ff_atoms[link2].idx].label) == 0)
 			break;
 
-	if (link1 == frag1->n_ff_atoms || link2 == frag2->n_ff_atoms)
-		return EFP_RESULT_UNKNOWN_ATOM;
+	if (link2 == frag2->n_ff_atoms) {
+		efp_log("fragment %s does not have atom %s", frag2->name, name2);
+		return EFP_RESULT_FATAL;
+	}
 
 	if ((ff_res = efp_ff_add_bond(efp->ff, frag1->ff_offset + link1,
 				frag2->ff_offset + link2)))
@@ -204,8 +219,10 @@ set_coord_xyzabc(struct frag *frag, const double *coord)
 static enum efp_result
 set_coord_points(struct frag *frag, const double *coord)
 {
-	if (frag->n_atoms < 3)
-		return EFP_RESULT_NEED_THREE_ATOMS;
+	if (frag->n_atoms < 3) {
+		efp_log("fragment must contain at least three atoms");
+		return EFP_RESULT_FATAL;
+	}
 
 	double ref[9] = {
 		frag->lib->atoms[0].x, frag->lib->atoms[0].y, frag->lib->atoms[0].z,
@@ -234,8 +251,10 @@ set_coord_points(struct frag *frag, const double *coord)
 static enum efp_result
 set_coord_rotmat(struct frag *frag, const double *coord)
 {
-	if (!efp_check_rotation_matrix((const mat_t *)(coord + 3)))
-		return EFP_RESULT_INVALID_ROTATION_MATRIX;
+	if (!efp_check_rotation_matrix((const mat_t *)(coord + 3))) {
+		efp_log("invalid rotation matrix specified");
+		return EFP_RESULT_FATAL;
+	}
 
 	frag->x = coord[0];
 	frag->y = coord[1];
@@ -392,27 +411,38 @@ check_opts(const struct efp_opts *opts)
 	    ((terms & EFP_TERM_POL) && !(terms & EFP_TERM_ELEC)) ||
 	    ((terms & EFP_TERM_AI_DISP) && !(terms & EFP_TERM_DISP)) ||
 	    ((terms & EFP_TERM_AI_XR) && !(terms & EFP_TERM_XR)) ||
-	    ((terms & EFP_TERM_AI_CHTR) && !(terms & EFP_TERM_CHTR)))
-		return EFP_RESULT_INCONSISTENT_TERMS;
+	    ((terms & EFP_TERM_AI_CHTR) && !(terms & EFP_TERM_CHTR))) {
+		efp_log("inconsistent EFP terms specified");
+		return EFP_RESULT_FATAL;
+	}
 
 	if (opts->enable_pbc) {
 		if ((opts->terms & EFP_TERM_AI_ELEC) ||
 		    (opts->terms & EFP_TERM_AI_POL) ||
 		    (opts->terms & EFP_TERM_AI_DISP) ||
 		    (opts->terms & EFP_TERM_AI_XR) ||
-		    (opts->terms & EFP_TERM_AI_CHTR))
-			return EFP_RESULT_PBC_NOT_SUPPORTED;
+		    (opts->terms & EFP_TERM_AI_CHTR)) {
+			efp_log("periodic calculations are not supported for QM/EFP");
+			return EFP_RESULT_FATAL;
+		}
 
-		if (opts->enable_links)
-			return EFP_RESULT_PBC_NOT_SUPPORTED;
+		if (opts->enable_links) {
+			/* XXX enable this */
+			efp_log("periodic calculations are not supported for covalent links");
+			return EFP_RESULT_FATAL;
+		}
 
-		if (!opts->enable_cutoff)
-			return EFP_RESULT_PBC_REQUIRES_CUTOFF;
+		if (!opts->enable_cutoff) {
+			efp_log("periodic calculations require interaction cutoff");
+			return EFP_RESULT_FATAL;
+		}
 	}
 
 	if (opts->enable_cutoff) {
-		if (opts->swf_cutoff < 1.0)
-			return EFP_RESULT_SWF_CUTOFF_TOO_SMALL;
+		if (opts->swf_cutoff < 1.0) {
+			efp_log("interaction cutoff is too small");
+			return EFP_RESULT_FATAL;
+		}
 	}
 
 	return EFP_RESULT_SUCCESS;
@@ -422,30 +452,42 @@ static enum efp_result
 check_frag_params(const struct efp_opts *opts, const struct frag *frag)
 {
 	if (opts->terms & EFP_TERM_ELEC) {
-		if (!frag->multipole_pts)
-			return EFP_RESULT_PARAMETERS_MISSING;
+		if (!frag->multipole_pts) {
+			efp_log("electrostatic parameters are missing");
+			return EFP_RESULT_FATAL;
+		}
 
-		if (opts->elec_damp == EFP_ELEC_DAMP_SCREEN && !frag->screen_params)
-			return EFP_RESULT_PARAMETERS_MISSING;
+		if (opts->elec_damp == EFP_ELEC_DAMP_SCREEN && !frag->screen_params) {
+			efp_log("screening parameters are missing");
+			return EFP_RESULT_FATAL;
+		}
 	}
 	if (opts->terms & EFP_TERM_POL) {
-		if (!frag->polarizable_pts)
-			return EFP_RESULT_PARAMETERS_MISSING;
+		if (!frag->polarizable_pts) {
+			efp_log("polarization parameters are missing");
+			return EFP_RESULT_FATAL;
+		}
 	}
 	if (opts->terms & EFP_TERM_DISP) {
-		if (!frag->dynamic_polarizable_pts)
-			return EFP_RESULT_PARAMETERS_MISSING;
+		if (!frag->dynamic_polarizable_pts) {
+			efp_log("dispersion parameters are missing");
+			return EFP_RESULT_FATAL;
+		}
 
 		if (opts->disp_damp == EFP_DISP_DAMP_OVERLAP &&
-		    frag->n_lmo != frag->n_dynamic_polarizable_pts)
-			return EFP_RESULT_PARAMETERS_MISSING;
+		    frag->n_lmo != frag->n_dynamic_polarizable_pts) {
+			efp_log("numbers of LMOs and polarization points do not match");
+			return EFP_RESULT_FATAL;
+		}
 	}
 	if (opts->terms & EFP_TERM_XR) {
 		if (!frag->xr_shells ||
 		    !frag->xr_fock_mat ||
 		    !frag->xr_wf ||
-		    !frag->lmo_centroids)
-			return EFP_RESULT_PARAMETERS_MISSING;
+		    !frag->lmo_centroids) {
+			efp_log("exchange repulsion parameters are missing");
+			return EFP_RESULT_FATAL;
+		}
 	}
 	return EFP_RESULT_SUCCESS;
 }
@@ -672,12 +714,12 @@ efp_get_gradient(struct efp *efp, size_t n_frags, double *grad)
 {
 	assert(efp);
 	assert(grad);
+	assert(n_frags == efp->n_frag);
 
-	if (!efp->do_gradient)
-		return EFP_RESULT_GRADIENT_NOT_REQUESTED;
-
-	if (n_frags != efp->n_frag)
-		return EFP_RESULT_INVALID_ARRAY_SIZE;
+	if (!efp->do_gradient) {
+		efp_log("gradient calculation was not requested");
+		return EFP_RESULT_FATAL;
+	}
 
 	for (size_t i = 0; i < efp->n_frag; i++, grad += 6) {
 		memcpy(grad, &efp->frags[i].force, sizeof(vec_t));
@@ -693,8 +735,10 @@ efp_get_point_charge_gradient(struct efp *efp, double *grad)
 	assert(efp);
 	assert(grad);
 
-	if (!efp->do_gradient)
-		return EFP_RESULT_GRADIENT_NOT_REQUESTED;
+	if (!efp->do_gradient) {
+		efp_log("gradient calculation was not requested");
+		return EFP_RESULT_FATAL;
+	}
 
 	for (size_t i = 0; i < efp->n_ptc; i++) {
 		*grad++ = efp->point_charges[i].grad.x;
@@ -811,9 +855,7 @@ efp_set_frag_coordinates(struct efp *efp, size_t frag_idx,
 
 	assert(efp);
 	assert(coord);
-
-	if (frag_idx >= efp->n_frag)
-		return EFP_RESULT_INDEX_OUT_OF_RANGE;
+	assert(frag_idx < efp->n_frag);
 
 	struct frag *frag = efp->frags + frag_idx;
 
@@ -843,9 +885,7 @@ efp_get_coordinates(struct efp *efp, size_t n_frags, double *xyzabc)
 {
 	assert(efp);
 	assert(xyzabc);
-
-	if (n_frags != efp->n_frag)
-		return EFP_RESULT_INVALID_ARRAY_SIZE;
+	assert(n_frags == efp->n_frag);
 
 	for (size_t i = 0; i < efp->n_frag; i++) {
 		struct frag *frag = efp->frags + i;
@@ -871,8 +911,10 @@ efp_set_periodic_box(struct efp *efp, double x, double y, double z)
 
 	if (x < 2.0 * efp->opts.swf_cutoff ||
 	    y < 2.0 * efp->opts.swf_cutoff ||
-	    z < 2.0 * efp->opts.swf_cutoff)
-		return EFP_RESULT_BOX_TOO_SMALL;
+	    z < 2.0 * efp->opts.swf_cutoff) {
+		efp_log("periodic box dimensions must be at least twice the cutoff");
+		return EFP_RESULT_FATAL;
+	}
 
 	efp->box.x = x;
 	efp->box.y = y;
@@ -887,8 +929,10 @@ efp_get_stress_tensor(struct efp *efp, double *stress)
 	assert(efp);
 	assert(stress);
 
-	if (!efp->do_gradient)
-		return EFP_RESULT_GRADIENT_NOT_REQUESTED;
+	if (!efp->do_gradient) {
+		efp_log("gradient calculation was not requested");
+		return EFP_RESULT_FATAL;
+	}
 
 	*(mat_t *)stress = efp->stress;
 
@@ -990,9 +1034,7 @@ efp_get_frag_charge(struct efp *efp, size_t frag_idx, double *charge)
 {
 	assert(efp);
 	assert(charge);
-
-	if (frag_idx >= efp->n_frag)
-		return EFP_RESULT_INDEX_OUT_OF_RANGE;
+	assert(frag_idx < efp->n_frag);
 
 	struct frag *frag = efp->frags + frag_idx;
 	*charge = 0.0;
@@ -1011,9 +1053,7 @@ efp_get_frag_multiplicity(struct efp *efp, size_t frag_idx, int *mult)
 {
 	assert(efp);
 	assert(mult);
-
-	if (frag_idx >= efp->n_frag)
-		return EFP_RESULT_INDEX_OUT_OF_RANGE;
+	assert(frag_idx < efp->n_frag);
 
 	*mult = efp->frags[frag_idx].multiplicity;
 
@@ -1224,6 +1264,12 @@ efp_opts_default(struct efp_opts *opts)
 		EFP_TERM_XR | EFP_TERM_AI_ELEC | EFP_TERM_AI_POL;
 }
 
+EFP_EXPORT void
+efp_set_error_log(void (*cb)(const char *))
+{
+	efp_set_log_cb(cb);
+}
+
 EFP_EXPORT enum efp_result
 efp_add_fragment(struct efp *efp, const char *name)
 {
@@ -1267,8 +1313,10 @@ efp_load_forcefield(struct efp *efp, const char *path)
 	assert(efp);
 	assert(path);
 
-	if (!efp->opts.enable_links)
-		return EFP_RESULT_LINKS_ARE_NOT_ENABLED;
+	if (!efp->opts.enable_links) {
+		efp_log("covalent links are not enabled");
+		return EFP_RESULT_FATAL;
+	}
 
 	if ((ff_res = efp_ff_parse(efp->ff, path)))
 		return ff_to_efp(ff_res);
@@ -1285,8 +1333,10 @@ efp_load_topology(struct efp *efp, const char *path)
 	assert(efp);
 	assert(path);
 
-	if (!efp->opts.enable_links)
-		return EFP_RESULT_LINKS_ARE_NOT_ENABLED;
+	if (!efp->opts.enable_links) {
+		efp_log("covalent links are not enabled");
+		return EFP_RESULT_FATAL;
+	}
 
 	if ((efp->links_bvec = efp_bvec_create(efp->n_frag * efp->n_frag)) == NULL)
 		return EFP_RESULT_NO_MEMORY;
@@ -1362,14 +1412,9 @@ efp_get_frag_name(struct efp *efp, size_t frag_idx, size_t size, char *frag_name
 {
 	assert(efp);
 	assert(frag_name);
+	assert(frag_idx < efp->n_frag);
 
-	if (frag_idx >= efp->n_frag)
-		return EFP_RESULT_INDEX_OUT_OF_RANGE;
-
-	if (size <= strlen(efp->frags[frag_idx].name))
-		return EFP_RESULT_INVALID_ARRAY_SIZE;
-
-	strcpy(frag_name, efp->frags[frag_idx].name);
+	strncpy(frag_name, efp->frags[frag_idx].name, size);
 
 	return EFP_RESULT_SUCCESS;
 }
@@ -1379,9 +1424,7 @@ efp_get_frag_mass(struct efp *efp, size_t frag_idx, double *mass_out)
 {
 	assert(efp);
 	assert(mass_out);
-
-	if (frag_idx >= efp->n_frag)
-		return EFP_RESULT_INDEX_OUT_OF_RANGE;
+	assert(frag_idx < efp->n_frag);
 
 	const struct frag *frag = efp->frags + frag_idx;
 	double mass = 0.0;
@@ -1399,9 +1442,7 @@ efp_get_frag_inertia(struct efp *efp, size_t frag_idx, double *inertia_out)
 {
 	assert(efp);
 	assert(inertia_out);
-
-	if (frag_idx >= efp->n_frag)
-		return EFP_RESULT_INDEX_OUT_OF_RANGE;
+	assert(frag_idx < efp->n_frag);
 
 	/* center of mass is in origin and axes are principal axes of inertia */
 
@@ -1428,9 +1469,7 @@ efp_get_frag_atom_count(struct efp *efp, size_t frag_idx, size_t *n_atoms)
 {
 	assert(efp);
 	assert(n_atoms);
-
-	if (frag_idx >= efp->n_frag)
-		return EFP_RESULT_INDEX_OUT_OF_RANGE;
+	assert(frag_idx < efp->n_frag);
 
 	*n_atoms = efp->frags[frag_idx].n_atoms;
 
@@ -1438,19 +1477,14 @@ efp_get_frag_atom_count(struct efp *efp, size_t frag_idx, size_t *n_atoms)
 }
 
 EFP_EXPORT enum efp_result
-efp_get_frag_atoms(struct efp *efp, size_t frag_idx,
-		   size_t size, struct efp_atom *atoms)
+efp_get_frag_atoms(struct efp *efp, size_t frag_idx, size_t size, struct efp_atom *atoms)
 {
 	assert(efp);
 	assert(atoms);
-
-	if (frag_idx >= efp->n_frag)
-		return EFP_RESULT_INDEX_OUT_OF_RANGE;
+	assert(frag_idx < efp->n_frag);
+	assert(size >= efp->frags[frag_idx].n_atoms);
 
 	struct frag *frag = efp->frags + frag_idx;
-
-	if (size < frag->n_atoms)
-		return EFP_RESULT_INVALID_ARRAY_SIZE;
 
 	memcpy(atoms, frag->atoms, frag->n_atoms * sizeof(struct efp_atom));
 
@@ -1494,51 +1528,19 @@ efp_result_to_string(enum efp_result res)
 {
 	switch (res) {
 	case EFP_RESULT_SUCCESS:
-return "no error";
+		return "Operation was successful.";
+	case EFP_RESULT_FATAL:
+		return "Fatal error has occurred.";
 	case EFP_RESULT_NO_MEMORY:
-return "out of memory";
+		return "Insufficient memory.";
 	case EFP_RESULT_FILE_NOT_FOUND:
-return "EFP potential data file not found";
+		return "File not found.";
 	case EFP_RESULT_SYNTAX_ERROR:
-return "syntax error in potential data";
+		return "Syntax error.";
 	case EFP_RESULT_UNKNOWN_FRAGMENT:
-return "unknown EFP fragment type";
-	case EFP_RESULT_DUPLICATE_PARAMETERS:
-return "fragment parameters contain fragments with the same name";
-	case EFP_RESULT_CALLBACK_FAILED:
-return "callback function failed";
-	case EFP_RESULT_GRADIENT_NOT_REQUESTED:
-return "gradient computation was not requested";
-	case EFP_RESULT_PBC_NOT_SUPPORTED:
-return "periodic simulation is not supported for selected energy terms";
-	case EFP_RESULT_PBC_REQUIRES_CUTOFF:
-return "interaction cutoff must be enabled for periodic simulation";
-	case EFP_RESULT_SWF_CUTOFF_TOO_SMALL:
-return "switching function cutoff is too small";
-	case EFP_RESULT_BOX_TOO_SMALL:
-return "periodic simulation box is too small";
-	case EFP_RESULT_NEED_THREE_ATOMS:
-return "fragment must contain at least three atoms";
+		return "Unknown EFP fragment.";
 	case EFP_RESULT_POL_NOT_CONVERGED:
-return "polarization SCF did not converge";
-	case EFP_RESULT_PARAMETERS_MISSING:
-return "required EFP fragment parameters are missing";
-	case EFP_RESULT_INVALID_ROTATION_MATRIX:
-return "invalid rotation matrix specified";
-	case EFP_RESULT_INDEX_OUT_OF_RANGE:
-return "index is out of range";
-	case EFP_RESULT_INVALID_ARRAY_SIZE:
-return "invalid array size";
-	case EFP_RESULT_UNKNOWN_FF_TYPE:
-return "unknown force field atom type";
-	case EFP_RESULT_LINKS_ARE_NOT_ENABLED:
-return "covalent fragment-fragment links are not enabled";
-	case EFP_RESULT_UNKNOWN_ATOM:
-return "unknown atom name";
-	case EFP_RESULT_UNSUPPORTED_SCREEN:
-return "unsupported SCREEN group found in EFP data";
-	case EFP_RESULT_INCONSISTENT_TERMS:
-return "inconsistent EFP energy terms selected";
+		return "Polarization SCF procedure did not converge.";
 	}
 	assert(0);
 }
