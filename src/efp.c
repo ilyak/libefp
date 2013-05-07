@@ -113,56 +113,61 @@ init_ff(struct efp *efp)
 }
 
 static enum efp_result
+get_link_index(const struct efp *efp, size_t fr_idx, const char *name, size_t *link)
+{
+	const struct frag *frag;
+
+	if (fr_idx >= efp->n_frag) {
+		efp_log("fragment index is out of range in topology file");
+		return (EFP_RESULT_FATAL);
+	}
+
+	frag = efp->frags + fr_idx;
+
+	for (size_t i = 0; i < frag->n_ff_atoms; i++) {
+		size_t idx = frag->ff_atoms[i].idx;
+
+		if (strcmp(name, frag->atoms[idx].label) == 0) {
+			*link = frag->ff_offset + i;
+			return (EFP_RESULT_SUCCESS);
+		}
+	}
+
+	efp_log("fragment %s does not have an atom named %s", frag->name, name);
+	return (EFP_RESULT_FATAL);
+}
+
+static enum efp_result
 parse_topology_record(struct efp *efp, const char *str)
 {
+	char name_i[32], name_j[32];
+	size_t idx_i, idx_j, link_i, link_j;
+	enum efp_result res;
 	enum ff_res ff_res;
-	size_t idx1, link1, idx2, link2;
-	char name1[32], name2[32];
 
-	if (sscanf(str, "%zu %zu %32s %32s", &idx1, &idx2, name1, name2) < 4) {
+	if (sscanf(str, "%zu %zu %32s %32s", &idx_i, &idx_j, name_i, name_j) < 4) {
 		efp_log("bad topology record format");
-		return EFP_RESULT_SYNTAX_ERROR;
+		return (EFP_RESULT_SYNTAX_ERROR);
 	}
 
-	if (--idx1 == --idx2) {
+	if (idx_i == idx_j) {
 		efp_log("cannot connect a fragment with itself");
-		return EFP_RESULT_FATAL;
+		return (EFP_RESULT_FATAL);
 	}
 
-	if (idx1 >= efp->n_frag || idx2 >= efp->n_frag) {
-		efp_log("fragment index is out of range in topology file");
-		return EFP_RESULT_FATAL;
-	}
+	if ((res = get_link_index(efp, idx_i - 1, name_i, &link_i)))
+		return (res);
 
-	const struct frag *frag1 = efp->frags + idx1;
-	const struct frag *frag2 = efp->frags + idx2;
+	if ((res = get_link_index(efp, idx_j - 1, name_j, &link_j)))
+		return (res);
 
-	for (link1 = 0; link1 < frag1->n_ff_atoms; link1++)
-		if (strcmp(name1, frag1->atoms[frag1->ff_atoms[link1].idx].label) == 0)
-			break;
+	if ((ff_res = efp_ff_add_bond(efp->ff, link_i, link_j)))
+		return (ff_to_efp(ff_res));
 
-	if (link1 == frag1->n_ff_atoms) {
-		efp_log("fragment %s does not have atom %s", frag1->name, name1);
-		return EFP_RESULT_FATAL;
-	}
+	efp_bvec_set(efp->links_bvec, (idx_i - 1) * efp->n_frag + (idx_j - 1));
+	efp_bvec_set(efp->links_bvec, (idx_j - 1) * efp->n_frag + (idx_i - 1));
 
-	for (link2 = 0; link2 < frag2->n_ff_atoms; link2++)
-		if (strcmp(name2, frag2->atoms[frag2->ff_atoms[link2].idx].label) == 0)
-			break;
-
-	if (link2 == frag2->n_ff_atoms) {
-		efp_log("fragment %s does not have atom %s", frag2->name, name2);
-		return EFP_RESULT_FATAL;
-	}
-
-	if ((ff_res = efp_ff_add_bond(efp->ff, frag1->ff_offset + link1,
-				frag2->ff_offset + link2)))
-		return ff_to_efp(ff_res);
-
-	efp_bvec_set(efp->links_bvec, idx1 * efp->n_frag + idx2);
-	efp_bvec_set(efp->links_bvec, idx2 * efp->n_frag + idx1);
-
-	return EFP_RESULT_SUCCESS;
+	return (EFP_RESULT_SUCCESS);
 }
 
 static enum efp_result
