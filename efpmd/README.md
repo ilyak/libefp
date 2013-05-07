@@ -16,7 +16,7 @@ program:
 This will enable parallel computation using 4 threads and should give almost 4x
 speedup in all calculations.
 
-If you have compiled _liefp_ with MPI support you can also run parallel
+If you have compiled _libefp_ with MPI support you can also run parallel
 calculations across multiple nodes using standard _mpirun_ command:
 
 	mpirun -np 8 efpmd input.in
