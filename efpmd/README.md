@@ -6,14 +6,26 @@ analysis, geometry optimization, molecular dynamics simulations in
 microcanonical (NVE), canonical (NVT), and isobaric-isothermal (NPT) ensembles.
 
 Simulations can be accelerated by running in parallel mode on multi-core CPUs.
-To enable parallel computation set `OMP_NUM_THREADS` environmental variable to
-the desired number of parallel threads. For example on 4-core machine do this
-in shell before starting the program:
+To enable parallel computation set `OMP_NUM_THREADS` environment variable to
+the desired number of parallel threads. For example on a 4-core machine you can
+set the `OMP_NUM_THREADS` environment variable to four before starting the
+program:
 
 	export OMP_NUM_THREADS=4
 
 This will enable parallel computation using 4 threads and should give almost 4x
 speedup in all calculations.
+
+If you have compiled _liefp_ with MPI support you can also run parallel
+calculations across multiple nodes using standard _mpirun_ command:
+
+	mpirun -np 8 efpmd input.in
+
+Note that you can achieve better scalability by using OpenMP for
+parallelization within a single node and MPI for inter-node communication.
+
+Additional examples of input files can be found in the _tests_ directory in
+source code archive.
 
 ## Input file format
 
