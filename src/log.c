@@ -41,25 +41,31 @@ efp_log(const char *fmt, ...)
 	va_list ap;
 	char msg[512];
 
-	if (_log_cb) {
+	if (_log_cb == NULL)
+		return;
+
+#ifdef _OPENMP
+#pragma omp master
+#endif
+{
 #ifdef WITH_MPI
-		int rank;
+	int rank;
 
-		MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-		if (rank == 0) {
-			va_start(ap, fmt);
-			vsnprintf(msg, sizeof(msg), fmt, ap);
-			_log_cb(msg);
-			va_end(ap);
-		}
-#else
+	if (rank == 0) {
 		va_start(ap, fmt);
 		vsnprintf(msg, sizeof(msg), fmt, ap);
 		_log_cb(msg);
 		va_end(ap);
-#endif
 	}
+#else
+	va_start(ap, fmt);
+	vsnprintf(msg, sizeof(msg), fmt, ap);
+	_log_cb(msg);
+	va_end(ap);
+#endif
+}
 }
 
 void
