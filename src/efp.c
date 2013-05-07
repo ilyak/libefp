@@ -33,7 +33,7 @@
 #include "stream.h"
 
 #ifdef WITH_MPI
-#define MPI_CHUNK_SIZE 64
+#define MPI_CHUNK_SIZE 128
 #endif
 
 static enum efp_result
