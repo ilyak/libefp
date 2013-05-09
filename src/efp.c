@@ -28,13 +28,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "balance.h"
 #include "elec.h"
 #include "private.h"
 #include "stream.h"
-
-#ifdef WITH_MPI
-#define MPI_CHUNK_SIZE 128
-#endif
 
 static enum efp_result
 ff_to_efp(enum ff_res res)
@@ -509,51 +506,42 @@ check_params(struct efp *efp)
 	return EFP_RESULT_SUCCESS;
 }
 
-static void
-init_mpi_offset(struct efp *efp)
-{
-#ifdef WITH_MPI
-	int size;
-	MPI_Comm_size(MPI_COMM_WORLD, &size);
-
-	efp->mpi_offset = realloc(efp->mpi_offset, (size + 1) * sizeof(size_t));
-
-	for (int i = 0; i <= size; i++)
-		efp->mpi_offset[i] = i * efp->n_frag / size;
-#else
-	efp->mpi_offset = realloc(efp->mpi_offset, 2 * sizeof(size_t));
-	efp->mpi_offset[0] = 0;
-	efp->mpi_offset[1] = efp->n_frag;
-#endif
-}
-
 #ifdef WITH_MPI
 static void
 allreduce_gradient(struct efp *efp)
 {
-	vec_t *grad;
-	size_t count, i, idx;
+	size_t count = 2 * efp->n_frag + efp->n_ptc;
+	vec_t *grad = malloc(count * sizeof(vec_t));
 
-	count = 2 * efp->n_frag + efp->n_ptc;
-	grad = malloc(count * sizeof(vec_t));
-
-	for (i = 0, idx = 0; i < efp->n_frag; i++) {
-		grad[idx++] = efp->frags[i].force;
-		grad[idx++] = efp->frags[i].torque;
+#ifdef _OPENMP
+#pragma omp parallel for schedule(dynamic, 4)
+#endif
+	for (size_t i = 0; i < efp->n_frag; i++) {
+		grad[2 * i + 0] = efp->frags[i].force;
+		grad[2 * i + 1] = efp->frags[i].torque;
 	}
 
-	for (i = 0; i < efp->n_ptc; i++)
-		grad[idx++] = efp->point_charges[i].grad;
+#ifdef _OPENMP
+#pragma omp parallel for schedule(dynamic, 4)
+#endif
+	for (size_t i = 0; i < efp->n_ptc; i++)
+		grad[2 * efp->n_frag + i] = efp->point_charges[i].grad;
 
-	allreduce((double *)grad, 3 * count);
+	efp_allreduce((double *)grad, 3 * count);
 
-	for (i = 0, idx = 0; i < efp->n_frag; i++) {
-		efp->frags[i].force = grad[idx++];
-		efp->frags[i].torque = grad[idx++];
+#ifdef _OPENMP
+#pragma omp parallel for schedule(dynamic, 4)
+#endif
+	for (size_t i = 0; i < efp->n_frag; i++) {
+		efp->frags[i].force = grad[2 * i];
+		efp->frags[i].torque = grad[2 * i + 1];
 	}
 
-	for (i = 0; i < efp->n_ptc; i++)
-		efp->point_charges[i].grad = grad[idx++];
+#ifdef _OPENMP
+#pragma omp parallel for schedule(dynamic, 4)
+#endif
+	for (size_t i = 0; i < efp->n_ptc; i++)
+		efp->point_charges[i].grad = grad[2 * efp->n_frag + i];
 
 	free(grad);
 }
@@ -582,9 +570,11 @@ do_xr(const struct efp_opts *opts)
 }
 
 static void
-compute_two_body_range(struct efp *efp, size_t frag_from, size_t frag_to)
+compute_two_body_range(struct efp *efp, size_t frag_from, size_t frag_to, void *data)
 {
 	double e_elec = 0.0, e_disp = 0.0, e_xr = 0.0, e_cp = 0.0;
+
+	(void)data;
 
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 4) reduction(+:e_elec,e_disp,e_xr,e_cp)
@@ -625,82 +615,6 @@ compute_two_body_range(struct efp *efp, size_t frag_from, size_t frag_to)
 	efp->energy.dispersion += e_disp;
 	efp->energy.exchange_repulsion += e_xr;
 	efp->energy.charge_penetration += e_cp;
-}
-
-#ifdef WITH_MPI
-static void
-compute_two_body_master(struct efp *efp, int size)
-{
-	MPI_Status status;
-	int n_frags, range[2];
-
-	n_frags = (int)efp->n_frag;
-	range[1] = 0;
-
-	while (range[1] < n_frags) {
-		MPI_Recv(NULL, 0, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
-
-		range[0] = range[1];
-		range[1] += MPI_CHUNK_SIZE;
-
-		if (range[1] > n_frags)
-			range[1] = n_frags;
-
-		MPI_Send(range, 2, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD);
-	}
-
-	range[0] = range[1] = -1;
-
-	for (int i = 1; i < size; i++) {
-		MPI_Recv(NULL, 0, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
-		MPI_Send(range, 2, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD);
-	}
-}
-
-static void
-compute_two_body_slave(struct efp *efp)
-{
-	int range[2];
-
-	for (;;) {
-		MPI_Send(NULL, 0, MPI_INT, 0, 0, MPI_COMM_WORLD);
-		MPI_Recv(range, 2, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-
-		if (range[0] == -1 ||
-		    range[1] == -1)
-			break;
-
-		compute_two_body_range(efp, range[0], range[1]);
-	}
-}
-#endif
-
-static enum efp_result
-compute_two_body(struct efp *efp)
-{
-#ifdef WITH_MPI
-	int rank, size;
-
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	MPI_Comm_size(MPI_COMM_WORLD, &size);
-
-	if (size == 1)
-		compute_two_body_range(efp, 0, efp->n_frag);
-	else {
-		if (rank == 0)
-			compute_two_body_master(efp, size);
-		else
-			compute_two_body_slave(efp);
-
-		allreduce(&efp->energy.electrostatic, 1);
-		allreduce(&efp->energy.dispersion, 1);
-		allreduce(&efp->energy.exchange_repulsion, 1);
-		allreduce(&efp->energy.charge_penetration, 1);
-	}
-#else
-	compute_two_body_range(efp, 0, efp->n_frag);
-#endif
-	return (EFP_RESULT_SUCCESS);
 }
 
 EFP_EXPORT enum efp_result
@@ -949,7 +863,6 @@ efp_prepare(struct efp *efp)
 {
 	assert(efp);
 
-	init_mpi_offset(efp);
 	efp->n_polarizable_pts = 0;
 
 	for (size_t i = 0; i < efp->n_frag; i++) {
@@ -996,8 +909,14 @@ efp_compute(struct efp *efp, int do_gradient)
 	for (size_t i = 0; i < efp->n_ptc; i++)
 		efp->point_charges[i].grad = vec_zero;
 
-	if ((res = compute_two_body(efp)))
-		return res;
+	efp_balance_work(efp, compute_two_body_range, NULL);
+
+#ifdef WITH_MPI
+	efp_allreduce(&efp->energy.electrostatic, 1);
+	efp_allreduce(&efp->energy.dispersion, 1);
+	efp_allreduce(&efp->energy.exchange_repulsion, 1);
+	efp_allreduce(&efp->energy.charge_penetration, 1);
+#endif
 
 	if ((res = efp_compute_pol(efp)))
 		return res;
@@ -1008,7 +927,7 @@ efp_compute(struct efp *efp, int do_gradient)
 #ifdef WITH_MPI
 	if (efp->do_gradient) {
 		allreduce_gradient(efp);
-		allreduce((double *)&efp->stress, 9);
+		efp_allreduce((double *)&efp->stress, 9);
 	}
 #endif
 	if (efp->opts.enable_links) {
@@ -1225,7 +1144,6 @@ efp_shutdown(struct efp *efp)
 	free(efp->frags);
 	free(efp->lib);
 	free(efp->point_charges);
-	free(efp->mpi_offset);
 	efp_ff_free(efp->ff);
 	efp_bvec_free(efp->links_bvec);
 	free(efp);

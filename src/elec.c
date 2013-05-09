@@ -24,6 +24,7 @@
  * SUCH DAMAGE.
  */
 
+#include "balance.h"
 #include "elec.h"
 #include "private.h"
 
@@ -599,31 +600,37 @@ compute_ai_elec_frag_grad(struct efp *efp, size_t frag_idx)
 	}
 }
 
-enum efp_result
-efp_compute_ai_elec(struct efp *efp)
+static void
+compute_ai_elec_range(struct efp *efp, size_t from, size_t to, void *data)
 {
-	if (!(efp->opts.terms & EFP_TERM_AI_ELEC))
-		return EFP_RESULT_SUCCESS;
-
 	double energy = 0.0;
 
-	int rank = 0;
-#ifdef WITH_MPI
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#endif
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 4) reduction(+:energy)
 #endif
-	for (size_t i = efp->mpi_offset[rank]; i < efp->mpi_offset[rank + 1]; i++) {
+	for (size_t i = from; i < to; i++) {
 		energy += compute_ai_elec_frag(efp, i);
 
 		if (efp->do_gradient)
 			compute_ai_elec_frag_grad(efp, i);
 	}
 
+	*(double *)data = energy;
+}
+
+enum efp_result
+efp_compute_ai_elec(struct efp *efp)
+{
+	double energy;
+
+	if (!(efp->opts.terms & EFP_TERM_AI_ELEC))
+		return EFP_RESULT_SUCCESS;
+
+	efp_balance_work(efp, compute_ai_elec_range, &energy);
+
 #ifdef WITH_MPI
-	allreduce(&energy, 1);
+	efp_allreduce(&energy, 1);
 #endif
 	efp->energy.electrostatic_point_charges = energy;
-	return EFP_RESULT_SUCCESS;
+	return (EFP_RESULT_SUCCESS);
 }

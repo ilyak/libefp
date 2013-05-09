@@ -209,17 +209,6 @@ struct efp {
 
 	/* bit matrix of covalent links between fragments */
 	struct bvec *links_bvec;
-
-	/* fragment offsets for each mpi process */
-	size_t *mpi_offset;
 };
-
-#ifdef WITH_MPI
-static inline void
-allreduce(double *x, size_t n)
-{
-	MPI_Allreduce(MPI_IN_PLACE, x, (int)n, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-}
-#endif
 
 #endif /* LIBEFP_PRIVATE_H */

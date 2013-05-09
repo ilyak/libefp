@@ -26,11 +26,18 @@
 
 #include <stdlib.h>
 
+#include "balance.h"
 #include "elec.h"
 #include "private.h"
 
 #define POL_SCF_TOL 1.0e-10
 #define POL_SCF_MAX_ITER 80
+
+struct id_work_data {
+	double conv;
+	vec_t *id_new;
+	vec_t *id_conj_new;
+};
 
 static double
 get_pol_damp_tt(double r)
@@ -225,50 +232,33 @@ add_electron_density_field(struct efp *efp)
 	return EFP_RESULT_SUCCESS;
 }
 
-#ifdef WITH_MPI
-static size_t
-polarizable_offset(struct efp *efp, size_t idx)
-{
-	return idx < efp->n_frag ? efp->frags[idx].polarizable_offset : efp->n_polarizable_pts;
-}
-
 static void
-broadcast(struct efp *efp, vec_t *all)
+compute_elec_field_range(struct efp *efp, size_t from, size_t to, void *data)
 {
-	int size;
-	MPI_Comm_size(MPI_COMM_WORLD, &size);
+	vec_t *elec_field = (vec_t *)data;
 
-	for (int i = 0; i < size; i++) {
-		size_t off1 = polarizable_offset(efp, efp->mpi_offset[i]);
-		size_t off2 = polarizable_offset(efp, efp->mpi_offset[i + 1]);
-
-		MPI_Bcast(all + off1, (int)(off2 - off1) * 3, MPI_DOUBLE, i, MPI_COMM_WORLD);
-	}
-}
-#endif
-
-static enum efp_result
-compute_elec_field(struct efp *efp)
-{
-	int rank = 0;
-	enum efp_result res;
-	vec_t elec_field[efp->n_polarizable_pts];
-
-#ifdef WITH_MPI
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#endif
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 4)
 #endif
-	for (size_t i = efp->mpi_offset[rank]; i < efp->mpi_offset[rank + 1]; i++) {
+	for (size_t i = from; i < to; i++) {
 		const struct frag *frag = efp->frags + i;
 
 		for (size_t j = 0; j < frag->n_polarizable_pts; j++)
 			elec_field[frag->polarizable_offset + j] = get_elec_field(efp, i, j);
 	}
+}
+
+static enum efp_result
+compute_elec_field(struct efp *efp)
+{
+	vec_t *elec_field;
+	enum efp_result res;
+
+	elec_field = calloc(efp->n_polarizable_pts, sizeof(vec_t));
+	efp_balance_work(efp, compute_elec_field_range, elec_field);
 
 #ifdef WITH_MPI
-	broadcast(efp, elec_field);
+	efp_allreduce((double *)elec_field, 3 * efp->n_polarizable_pts);
 #endif
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 4)
@@ -284,11 +274,13 @@ compute_elec_field(struct efp *efp)
 		}
 	}
 
+	free(elec_field);
+
 	if (efp->opts.terms & EFP_TERM_AI_POL)
 		if ((res = add_electron_density_field(efp)))
-			return res;
+			return (res);
 
-	return EFP_RESULT_SUCCESS;
+	return (EFP_RESULT_SUCCESS);
 }
 
 static void
@@ -347,29 +339,27 @@ get_induced_dipole_field(struct efp *efp, size_t frag_idx,
 	}
 }
 
-static double
-pol_scf_iter(struct efp *efp)
+static void
+compute_id_range(struct efp *efp, size_t from, size_t to, void *data)
 {
-	int rank = 0;
 	double conv = 0.0;
-	vec_t *id_new = malloc(efp->n_polarizable_pts * sizeof(vec_t));
-	vec_t *id_conj_new = malloc(efp->n_polarizable_pts * sizeof(vec_t));
+	vec_t *id_new, *id_conj_new;
 
-#ifdef WITH_MPI
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#endif
-	/* compute new induced dipoles on polarizable points */
+	id_new = ((struct id_work_data *)data)->id_new;
+	id_conj_new = ((struct id_work_data *)data)->id_conj_new;
+
 #ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic, 4)
+#pragma omp parallel for schedule(dynamic, 4) reduction(+:conv)
 #endif
-	for (size_t i = efp->mpi_offset[rank]; i < efp->mpi_offset[rank + 1]; i++) {
+	for (size_t i = from; i < to; i++) {
 		struct frag *frag = efp->frags + i;
 
 		for (size_t j = 0; j < frag->n_polarizable_pts; j++) {
 			struct polarizable_pt *pt = frag->polarizable_pts + j;
+			size_t idx = frag->polarizable_offset + j;
+			vec_t field, field_conj;
 
 			/* electric field from other induced dipoles */
-			vec_t field, field_conj;
 			get_induced_dipole_field(efp, i, pt, &field, &field_conj);
 
 			/* add field that doesn't change during scf */
@@ -381,35 +371,31 @@ pol_scf_iter(struct efp *efp)
 			field_conj.y += pt->elec_field.y + pt->elec_field_wf.y;
 			field_conj.z += pt->elec_field.z + pt->elec_field_wf.z;
 
-			id_new[frag->polarizable_offset + j] =
-						mat_vec(&pt->tensor, &field);
-			id_conj_new[frag->polarizable_offset + j] =
-						mat_trans_vec(&pt->tensor, &field_conj);
+			id_new[idx] = mat_vec(&pt->tensor, &field);
+			id_conj_new[idx] = mat_trans_vec(&pt->tensor, &field_conj);
+
+			conv += vec_dist(&id_new[idx], &pt->induced_dipole);
+			conv += vec_dist(&id_conj_new[idx], &pt->induced_dipole_conj);
 		}
 	}
 
-#ifdef WITH_MPI
-	broadcast(efp, id_new);
-	broadcast(efp, id_conj_new);
-#endif
-#ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic, 4) reduction(+:conv)
-#endif
-	for (size_t i = efp->mpi_offset[rank]; i < efp->mpi_offset[rank + 1]; i++) {
-		struct frag *frag = efp->frags + i;
+	((struct id_work_data *)data)->conv = conv;
+}
 
-		for (size_t j = 0; j < frag->n_polarizable_pts; j++) {
-			struct polarizable_pt *pt = frag->polarizable_pts + j;
+static double
+pol_scf_iter(struct efp *efp)
+{
+	struct id_work_data data;
 
-			conv += vec_dist(&id_new[frag->polarizable_offset + j],
-					 &pt->induced_dipole);
-			conv += vec_dist(&id_conj_new[frag->polarizable_offset + j],
-					 &pt->induced_dipole_conj);
-		}
-	}
+	data.id_new = calloc(efp->n_polarizable_pts, sizeof(vec_t));
+	data.id_conj_new = calloc(efp->n_polarizable_pts, sizeof(vec_t));
+
+	efp_balance_work(efp, compute_id_range, &data);
 
 #ifdef WITH_MPI
-	allreduce(&conv, 1);
+	efp_allreduce((double *)data.id_new, 3 * efp->n_polarizable_pts);
+	efp_allreduce((double *)data.id_conj_new, 3 * efp->n_polarizable_pts);
+	efp_allreduce(&data.conv, 1);
 #endif
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 4)
@@ -419,16 +405,41 @@ pol_scf_iter(struct efp *efp)
 
 		for (size_t j = 0; j < frag->n_polarizable_pts; j++) {
 			struct polarizable_pt *pt = frag->polarizable_pts + j;
+			size_t idx = frag->polarizable_offset + j;
 
-			pt->induced_dipole = id_new[frag->polarizable_offset + j];
-			pt->induced_dipole_conj = id_conj_new[frag->polarizable_offset + j];
+			pt->induced_dipole = data.id_new[idx];
+			pt->induced_dipole_conj = data.id_conj_new[idx];
 		}
 	}
 
-	free(id_new);
-	free(id_conj_new);
+	free(data.id_new);
+	free(data.id_conj_new);
 
-	return (conv / efp->n_polarizable_pts / 2);
+	return (data.conv / efp->n_polarizable_pts / 2);
+}
+
+static void
+compute_energy_range(struct efp *efp, size_t from, size_t to, void *data)
+{
+	double energy = 0.0;
+
+#ifdef _OPENMP
+#pragma omp parallel for schedule(dynamic, 4) reduction(+:energy)
+#endif
+	for (size_t i = from; i < to; i++) {
+		struct frag *frag = efp->frags + i;
+
+		for (size_t j = 0; j < frag->n_polarizable_pts; j++) {
+			struct polarizable_pt *pt = frag->polarizable_pts + j;
+
+			energy += 0.5 * vec_dot(&pt->induced_dipole_conj,
+						&pt->elec_field_wf) -
+				  0.5 * vec_dot(&pt->induced_dipole,
+						&pt->elec_field);
+		}
+	}
+
+	*(double *)data = energy;
 }
 
 enum efp_result
@@ -463,32 +474,12 @@ efp_compute_pol_energy(struct efp *efp, double *energy)
 			return EFP_RESULT_POL_NOT_CONVERGED;
 	}
 
-	int rank = 0;
-	double ener = 0.0;
-#ifdef WITH_MPI
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#endif
-#ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic, 4) reduction(+:ener)
-#endif
-	for (size_t i = efp->mpi_offset[rank]; i < efp->mpi_offset[rank + 1]; i++) {
-		struct frag *frag = efp->frags + i;
-
-		for (size_t j = 0; j < frag->n_polarizable_pts; j++) {
-			struct polarizable_pt *pt = frag->polarizable_pts + j;
-
-			ener += 0.5 * vec_dot(&pt->induced_dipole_conj,
-					      &pt->elec_field_wf) -
-				0.5 * vec_dot(&pt->induced_dipole,
-					      &pt->elec_field);
-		}
-	}
+	efp_balance_work(efp, compute_energy_range, energy);
 
 #ifdef WITH_MPI
-	allreduce(&ener, 1);
+	efp_allreduce(energy, 1);
 #endif
-	*energy = ener;
-	return EFP_RESULT_SUCCESS;
+	return (EFP_RESULT_SUCCESS);
 }
 
 static void
@@ -710,16 +701,14 @@ compute_grad_point(struct efp *efp, size_t frag_idx, size_t pt_idx)
 }
 
 static void
-compute_grad(struct efp *efp)
+compute_grad_range(struct efp *efp, size_t from, size_t to, void *data)
 {
-	int rank = 0;
-#ifdef WITH_MPI
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#endif
+	(void)data;
+
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 4)
 #endif
-	for (size_t i = efp->mpi_offset[rank]; i < efp->mpi_offset[rank + 1]; i++)
+	for (size_t i = from; i < to; i++)
 		for (size_t j = 0; j < efp->frags[i].n_polarizable_pts; j++)
 			compute_grad_point(efp, i, j);
 }
@@ -736,7 +725,7 @@ efp_compute_pol(struct efp *efp)
 		return res;
 
 	if (efp->do_gradient)
-		compute_grad(efp);
+		efp_balance_work(efp, compute_grad_range, NULL);
 
 	return EFP_RESULT_SUCCESS;
 }
