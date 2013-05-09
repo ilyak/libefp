@@ -112,6 +112,8 @@ efp_balance_work(struct efp *efp, work_fn fn, void *data)
 			master(efp, size);
 		else
 			slave(efp, fn, data);
+
+		MPI_Barrier(MPI_COMM_WORLD);
 	}
 #else
 	fn(efp, 0, efp->n_frag, data);
