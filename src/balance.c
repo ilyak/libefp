@@ -37,14 +37,13 @@
 
 #ifdef WITH_MPI
 static void
-master(struct efp *efp)
+master(struct efp *efp, int size)
 {
 	MPI_Status status;
-	int n_frags, range[2], size;
+	int n_frags, range[2];
 
 	n_frags = (int)efp->n_frag;
 	range[1] = 0;
-	MPI_Comm_size(MPI_COMM_WORLD, &size);
 
 	while (range[1] < n_frags) {
 		MPI_Recv(NULL, 0, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
@@ -110,7 +109,7 @@ efp_balance_work(struct efp *efp, work_fn fn, void *data)
 		fn(efp, 0, efp->n_frag, data);
 	else {
 		if (rank == 0)
-			master(efp);
+			master(efp, size);
 		else
 			slave(efp, fn, data);
 	}

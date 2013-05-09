@@ -621,7 +621,7 @@ compute_ai_elec_range(struct efp *efp, size_t from, size_t to, void *data)
 enum efp_result
 efp_compute_ai_elec(struct efp *efp)
 {
-	double energy;
+	double energy = 0.0;
 
 	if (!(efp->opts.terms & EFP_TERM_AI_ELEC))
 		return EFP_RESULT_SUCCESS;

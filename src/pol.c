@@ -387,6 +387,7 @@ pol_scf_iter(struct efp *efp)
 {
 	struct id_work_data data;
 
+	data.conv = 0.0;
 	data.id_new = calloc(efp->n_polarizable_pts, sizeof(vec_t));
 	data.id_conj_new = calloc(efp->n_polarizable_pts, sizeof(vec_t));
 
@@ -446,6 +447,9 @@ enum efp_result
 efp_compute_pol_energy(struct efp *efp, double *energy)
 {
 	enum efp_result res;
+
+	assert(energy);
+	*energy = 0.0;
 
 	if ((res = compute_elec_field(efp)))
 		return res;
