@@ -29,10 +29,6 @@
 
 #include <assert.h>
 
-#ifdef WITH_MPI
-#include <mpi.h>
-#endif
-
 #include "bvec.h"
 #include "efp.h"
 #include "ff.h"

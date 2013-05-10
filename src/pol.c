@@ -256,10 +256,8 @@ compute_elec_field(struct efp *efp)
 
 	elec_field = calloc(efp->n_polarizable_pts, sizeof(vec_t));
 	efp_balance_work(efp, compute_elec_field_range, elec_field);
-
-#ifdef WITH_MPI
 	efp_allreduce((double *)elec_field, 3 * efp->n_polarizable_pts);
-#endif
+
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 4)
 #endif
@@ -393,11 +391,10 @@ pol_scf_iter(struct efp *efp)
 
 	efp_balance_work(efp, compute_id_range, &data);
 
-#ifdef WITH_MPI
 	efp_allreduce((double *)data.id_new, 3 * efp->n_polarizable_pts);
 	efp_allreduce((double *)data.id_conj_new, 3 * efp->n_polarizable_pts);
 	efp_allreduce(&data.conv, 1);
-#endif
+
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 4)
 #endif
@@ -479,10 +476,8 @@ efp_compute_pol_energy(struct efp *efp, double *energy)
 	}
 
 	efp_balance_work(efp, compute_energy_range, energy);
-
-#ifdef WITH_MPI
 	efp_allreduce(energy, 1);
-#endif
+
 	return (EFP_RESULT_SUCCESS);
 }
 

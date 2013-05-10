@@ -627,10 +627,8 @@ efp_compute_ai_elec(struct efp *efp)
 		return EFP_RESULT_SUCCESS;
 
 	efp_balance_work(efp, compute_ai_elec_range, &energy);
-
-#ifdef WITH_MPI
 	efp_allreduce(&energy, 1);
-#endif
 	efp->energy.electrostatic_point_charges = energy;
+
 	return (EFP_RESULT_SUCCESS);
 }

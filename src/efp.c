@@ -911,13 +911,6 @@ efp_compute(struct efp *efp, int do_gradient)
 
 	efp_balance_work(efp, compute_two_body_range, NULL);
 
-#ifdef WITH_MPI
-	efp_allreduce(&efp->energy.electrostatic, 1);
-	efp_allreduce(&efp->energy.dispersion, 1);
-	efp_allreduce(&efp->energy.exchange_repulsion, 1);
-	efp_allreduce(&efp->energy.charge_penetration, 1);
-#endif
-
 	if ((res = efp_compute_pol(efp)))
 		return res;
 
@@ -925,6 +918,11 @@ efp_compute(struct efp *efp, int do_gradient)
 		return res;
 
 #ifdef WITH_MPI
+	efp_allreduce(&efp->energy.electrostatic, 1);
+	efp_allreduce(&efp->energy.dispersion, 1);
+	efp_allreduce(&efp->energy.exchange_repulsion, 1);
+	efp_allreduce(&efp->energy.charge_penetration, 1);
+
 	if (efp->do_gradient) {
 		allreduce_gradient(efp);
 		efp_allreduce((double *)&efp->stress, 9);
