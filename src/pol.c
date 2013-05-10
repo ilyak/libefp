@@ -379,7 +379,7 @@ compute_id_range(struct efp *efp, size_t from, size_t to, void *data)
 		}
 	}
 
-	((struct id_work_data *)data)->conv = conv;
+	((struct id_work_data *)data)->conv += conv;
 }
 
 static double
@@ -440,7 +440,7 @@ compute_energy_range(struct efp *efp, size_t from, size_t to, void *data)
 		}
 	}
 
-	*(double *)data = energy;
+	*(double *)data += energy;
 }
 
 enum efp_result

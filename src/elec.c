@@ -615,7 +615,7 @@ compute_ai_elec_range(struct efp *efp, size_t from, size_t to, void *data)
 			compute_ai_elec_frag_grad(efp, i);
 	}
 
-	*(double *)data = energy;
+	*(double *)data += energy;
 }
 
 enum efp_result
