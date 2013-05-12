@@ -191,11 +191,13 @@ static enum efp_result
 add_electron_density_field(struct efp *efp)
 {
 	enum efp_result res;
-	vec_t xyz[efp->n_polarizable_pts];
-	vec_t field[efp->n_polarizable_pts];
+	vec_t *xyz, *field;
 
 	if (efp->get_electron_density_field == NULL)
 		return (EFP_RESULT_SUCCESS);
+
+	xyz = malloc(efp->n_polarizable_pts * sizeof(vec_t));
+	field = malloc(efp->n_polarizable_pts * sizeof(vec_t));
 
 	for (size_t i = 0, idx = 0; i < efp->n_frag; i++) {
 		struct frag *frag = efp->frags + i;
@@ -211,8 +213,8 @@ add_electron_density_field(struct efp *efp)
 
 	if ((res = efp->get_electron_density_field(efp->n_polarizable_pts,
 			(const double *)xyz, (double *)field,
-				efp->get_electron_density_field_user_data)))
-		return res;
+			efp->get_electron_density_field_user_data)))
+		goto error;
 
 	for (size_t i = 0, idx = 0; i < efp->n_frag; i++) {
 		struct frag *frag = efp->frags + i;
@@ -223,7 +225,10 @@ add_electron_density_field(struct efp *efp)
 		}
 	}
 
-	return EFP_RESULT_SUCCESS;
+error:
+	free(xyz);
+	free(field);
+	return (res);
 }
 
 static void
