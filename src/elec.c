@@ -605,6 +605,8 @@ compute_ai_elec_range(struct efp *efp, size_t from, size_t to, void *data)
 {
 	double energy = 0.0;
 
+	(void)data;
+
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 4) reduction(+:energy)
 #endif
@@ -615,20 +617,17 @@ compute_ai_elec_range(struct efp *efp, size_t from, size_t to, void *data)
 			compute_ai_elec_frag_grad(efp, i);
 	}
 
-	*(double *)data += energy;
+	efp->energy.electrostatic_point_charges += energy;
 }
 
 enum efp_result
 efp_compute_ai_elec(struct efp *efp)
 {
-	double energy = 0.0;
-
 	if (!(efp->opts.terms & EFP_TERM_AI_ELEC))
-		return EFP_RESULT_SUCCESS;
+		return (EFP_RESULT_SUCCESS);
 
-	efp_balance_work(efp, compute_ai_elec_range, &energy);
-	efp_allreduce(&energy, 1);
-	efp->energy.electrostatic_point_charges = energy;
+	efp_balance_work(efp, compute_ai_elec_range, NULL);
+	efp_allreduce(&efp->energy.electrostatic_point_charges, 1);
 
 	return (EFP_RESULT_SUCCESS);
 }
