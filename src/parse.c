@@ -789,6 +789,7 @@ parse_fragment(struct frag *frag, struct stream *stream)
 			return res;
 	}
 
+	efp_log("unexpected end of EFP potential data file");
 	return EFP_RESULT_SYNTAX_ERROR;
 }
 
