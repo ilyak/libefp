@@ -47,6 +47,8 @@ Lines beginning with the `#` symbol are ignored during input parsing.
 
 `md` - molecular dynamics simulation.
 
+`efield` - compute and print electric field on all atoms.
+
 `gtest` - compute and compare numerical and analytical gradients.
 
 Default value: `sp`
