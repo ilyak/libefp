@@ -62,40 +62,34 @@ get_pol_damp_tt_grad(double r)
 }
 
 static vec_t
-get_multipole_field(const struct efp *efp, const struct polarizable_pt *pt,
-		    const struct multipole_pt *mult_pt, const struct swf *swf)
+get_multipole_field(const vec_t *xyz, const struct multipole_pt *mult_pt,
+			const struct swf *swf)
 {
 	vec_t field = vec_zero;
 
 	vec_t dr = {
-		pt->x - mult_pt->x - swf->cell.x,
-		pt->y - mult_pt->y - swf->cell.y,
-		pt->z - mult_pt->z - swf->cell.z
+		xyz->x - mult_pt->x - swf->cell.x,
+		xyz->y - mult_pt->y - swf->cell.y,
+		xyz->z - mult_pt->z - swf->cell.z
 	};
 
+	double t1, t2;
 	double r = vec_len(&dr);
 	double r3 = r * r * r;
 	double r5 = r3 * r * r;
 	double r7 = r5 * r * r;
 
-	double p1 = 1.0;
-
-	if (efp->opts.pol_damp == EFP_POL_DAMP_TT)
-		p1 = get_pol_damp_tt(r);
-
-	double t1, t2;
-
 	/* charge */
-	field.x += swf->swf * mult_pt->monopole * dr.x / r3 * p1;
-	field.y += swf->swf * mult_pt->monopole * dr.y / r3 * p1;
-	field.z += swf->swf * mult_pt->monopole * dr.z / r3 * p1;
+	field.x += swf->swf * mult_pt->monopole * dr.x / r3;
+	field.y += swf->swf * mult_pt->monopole * dr.y / r3;
+	field.z += swf->swf * mult_pt->monopole * dr.z / r3;
 
 	/* dipole */
 	t1 = vec_dot(&mult_pt->dipole, &dr);
 
-	field.x += swf->swf * (3.0 / r5 * t1 * dr.x - mult_pt->dipole.x / r3) * p1;
-	field.y += swf->swf * (3.0 / r5 * t1 * dr.y - mult_pt->dipole.y / r3) * p1;
-	field.z += swf->swf * (3.0 / r5 * t1 * dr.z - mult_pt->dipole.z / r3) * p1;
+	field.x += swf->swf * (3.0 / r5 * t1 * dr.x - mult_pt->dipole.x / r3);
+	field.y += swf->swf * (3.0 / r5 * t1 * dr.y - mult_pt->dipole.y / r3);
+	field.z += swf->swf * (3.0 / r5 * t1 * dr.z - mult_pt->dipole.z / r3);
 
 	/* quadrupole */
 	t1 = quadrupole_sum(mult_pt->quadrupole, &dr);
@@ -103,17 +97,17 @@ get_multipole_field(const struct efp *efp, const struct polarizable_pt *pt,
 	t2 = mult_pt->quadrupole[quad_idx(0, 0)] * dr.x +
 	     mult_pt->quadrupole[quad_idx(1, 0)] * dr.y +
 	     mult_pt->quadrupole[quad_idx(2, 0)] * dr.z;
-	field.x += swf->swf * (-2.0 / r5 * t2 + 5.0 / r7 * t1 * dr.x) * p1;
+	field.x += swf->swf * (-2.0 / r5 * t2 + 5.0 / r7 * t1 * dr.x);
 
 	t2 = mult_pt->quadrupole[quad_idx(0, 1)] * dr.x +
 	     mult_pt->quadrupole[quad_idx(1, 1)] * dr.y +
 	     mult_pt->quadrupole[quad_idx(2, 1)] * dr.z;
-	field.y += swf->swf * (-2.0 / r5 * t2 + 5.0 / r7 * t1 * dr.y) * p1;
+	field.y += swf->swf * (-2.0 / r5 * t2 + 5.0 / r7 * t1 * dr.y);
 
 	t2 = mult_pt->quadrupole[quad_idx(0, 2)] * dr.x +
 	     mult_pt->quadrupole[quad_idx(1, 2)] * dr.y +
 	     mult_pt->quadrupole[quad_idx(2, 2)] * dr.z;
-	field.z += swf->swf * (-2.0 / r5 * t2 + 5.0 / r7 * t1 * dr.z) * p1;
+	field.z += swf->swf * (-2.0 / r5 * t2 + 5.0 / r7 * t1 * dr.z);
 
 	/* octupole-polarizability interactions are ignored */
 
@@ -146,7 +140,6 @@ get_elec_field(const struct efp *efp, size_t frag_idx, size_t pt_idx)
 
 			double r = vec_len(&dr);
 			double r3 = r * r * r;
-
 			double p1 = 1.0;
 
 			if (efp->opts.pol_damp == EFP_POL_DAMP_TT)
@@ -160,11 +153,23 @@ get_elec_field(const struct efp *efp, size_t frag_idx, size_t pt_idx)
 		/* field due to multipoles */
 		for (size_t j = 0; j < fr_i->n_multipole_pts; j++) {
 			const struct multipole_pt *mult_pt = fr_i->multipole_pts + j;
-			vec_t mult_field = get_multipole_field(efp, pt, mult_pt, &swf);
+			vec_t mult_field = get_multipole_field(CVEC(pt->x), mult_pt, &swf);
 
-			elec_field.x += mult_field.x;
-			elec_field.y += mult_field.y;
-			elec_field.z += mult_field.z;
+			vec_t dr = {
+				pt->x - mult_pt->x - swf.cell.x,
+				pt->y - mult_pt->y - swf.cell.y,
+				pt->z - mult_pt->z - swf.cell.z
+			};
+
+			double r = vec_len(&dr);
+			double p1 = 1.0;
+
+			if (efp->opts.pol_damp == EFP_POL_DAMP_TT)
+				p1 = get_pol_damp_tt(r);
+
+			elec_field.x += mult_field.x * p1;
+			elec_field.y += mult_field.y * p1;
+			elec_field.z += mult_field.z * p1;
 		}
 	}
 
@@ -172,15 +177,18 @@ get_elec_field(const struct efp *efp, size_t frag_idx, size_t pt_idx)
 		/* field due to nuclei from ab initio subsystem */
 		for (size_t i = 0; i < efp->n_ptc; i++) {
 			const struct point_charge *at_i = efp->point_charges + i;
-
 			vec_t dr = vec_sub(CVEC(pt->x), CVEC(at_i->x));
 
 			double r = vec_len(&dr);
 			double r3 = r * r * r;
+			double p1 = 1.0;
 
-			elec_field.x += at_i->charge * dr.x / r3;
-			elec_field.y += at_i->charge * dr.y / r3;
-			elec_field.z += at_i->charge * dr.z / r3;
+			if (efp->opts.pol_damp == EFP_POL_DAMP_TT)
+				p1 = get_pol_damp_tt(r);
+
+			elec_field.x += at_i->charge * dr.x / r3 * p1;
+			elec_field.y += at_i->charge * dr.y / r3 * p1;
+			elec_field.z += at_i->charge * dr.z / r3 * p1;
 		}
 	}
 
@@ -741,4 +749,92 @@ efp_update_pol(struct frag *frag)
 
 		efp_rotate_t2(&frag->rotmat, (const double *)in, (double *)out);
 	}
+}
+
+EFP_EXPORT enum efp_result
+efp_get_electric_field(struct efp *efp, size_t frag_idx, const double *xyz, double *field)
+{
+	assert(efp);
+	assert(frag_idx < efp->n_frag);
+	assert(xyz);
+	assert(field);
+
+	const struct frag *frag = efp->frags + frag_idx;
+	vec_t elec_field = vec_zero;
+
+	for (size_t i = 0; i < efp->n_frag; i++) {
+		if (i == frag_idx || efp_skip_frag_pair(efp, i, frag_idx))
+			continue;
+
+		const struct frag *fr_i = efp->frags + i;
+		struct swf swf = efp_make_swf(efp, fr_i, frag);
+
+		/* field due to nuclei */
+		for (size_t j = 0; j < fr_i->n_atoms; j++) {
+			const struct efp_atom *at = fr_i->atoms + j;
+
+			vec_t dr = {
+				xyz[0] - at->x - swf.cell.x,
+				xyz[1] - at->y - swf.cell.y,
+				xyz[2] - at->z - swf.cell.z
+			};
+
+			double r = vec_len(&dr);
+			double r3 = r * r * r;
+
+			elec_field.x += swf.swf * at->znuc * dr.x / r3;
+			elec_field.y += swf.swf * at->znuc * dr.y / r3;
+			elec_field.z += swf.swf * at->znuc * dr.z / r3;
+		}
+
+		/* field due to multipoles */
+		for (size_t j = 0; j < fr_i->n_multipole_pts; j++) {
+			const struct multipole_pt *mpt = fr_i->multipole_pts + j;
+			vec_t mult_field = get_multipole_field((const vec_t *)xyz, mpt, &swf);
+
+			elec_field.x += mult_field.x;
+			elec_field.y += mult_field.y;
+			elec_field.z += mult_field.z;
+		}
+
+		for (size_t j = 0; j < fr_i->n_polarizable_pts; j++) {
+			struct polarizable_pt *pt_i = fr_i->polarizable_pts + j;
+
+			vec_t dr = {
+				xyz[0] - pt_i->x - swf.cell.x,
+				xyz[1] - pt_i->y - swf.cell.y,
+				xyz[2] - pt_i->z - swf.cell.z
+			};
+
+			double r = vec_len(&dr);
+			double r3 = r * r * r;
+			double r5 = r3 * r * r;
+			double t1 = vec_dot(&pt_i->induced_dipole, &dr);
+
+			elec_field.x -= swf.swf * (pt_i->induced_dipole.x / r3 -
+						3.0 * t1 * dr.x / r5);
+			elec_field.y -= swf.swf * (pt_i->induced_dipole.y / r3 -
+						3.0 * t1 * dr.y / r5);
+			elec_field.z -= swf.swf * (pt_i->induced_dipole.z / r3 -
+						3.0 * t1 * dr.z / r5);
+		}
+	}
+
+	if (efp->opts.terms & EFP_TERM_AI_POL) {
+		/* field due to nuclei from ab initio subsystem */
+		for (size_t i = 0; i < efp->n_ptc; i++) {
+			const struct point_charge *at_i = efp->point_charges + i;
+			vec_t dr = vec_sub((const vec_t *)xyz, CVEC(at_i->x));
+
+			double r = vec_len(&dr);
+			double r3 = r * r * r;
+
+			elec_field.x += at_i->charge * dr.x / r3;
+			elec_field.y += at_i->charge * dr.y / r3;
+			elec_field.z += at_i->charge * dr.z / r3;
+		}
+	}
+
+	*((vec_t *)field) = elec_field;
+	return (EFP_RESULT_SUCCESS);
 }
