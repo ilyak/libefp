@@ -54,6 +54,7 @@ enum run_type {
 	RUN_TYPE_HESS,
 	RUN_TYPE_OPT,
 	RUN_TYPE_MD,
+	RUN_TYPE_EFIELD,
 	RUN_TYPE_GTEST
 };
 

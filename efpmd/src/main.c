@@ -33,6 +33,7 @@ void sim_grad(struct efp *, const struct cfg *, const struct sys *);
 void sim_hess(struct efp *, const struct cfg *, const struct sys *);
 void sim_opt(struct efp *, const struct cfg *, const struct sys *);
 void sim_md(struct efp *, const struct cfg *, const struct sys *);
+void sim_efield(struct efp *, const struct cfg *, const struct sys *);
 void sim_gtest(struct efp *, const struct cfg *, const struct sys *);
 
 #define USAGE_STRING \
@@ -51,12 +52,14 @@ static struct cfg *make_cfg(void)
 		"hess\n"
 		"opt\n"
 		"md\n"
+		"efield\n"
 		"gtest\n",
 		(int []) { RUN_TYPE_SP,
 			   RUN_TYPE_GRAD,
 			   RUN_TYPE_HESS,
 			   RUN_TYPE_OPT,
 			   RUN_TYPE_MD,
+			   RUN_TYPE_EFIELD,
 			   RUN_TYPE_GTEST });
 
 	cfg_add_enum(cfg, "coord", EFP_COORD_TYPE_XYZABC,
@@ -145,6 +148,8 @@ static sim_fn_t get_sim_fn(enum run_type run_type)
 		return sim_opt;
 	case RUN_TYPE_MD:
 		return sim_md;
+	case RUN_TYPE_EFIELD:
+		return sim_efield;
 	case RUN_TYPE_GTEST:
 		return sim_gtest;
 	}
