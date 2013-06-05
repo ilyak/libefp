@@ -307,7 +307,7 @@ void sim_hess(struct efp *efp, const struct cfg *cfg, const struct sys *sys)
 
 	eigen = xmalloc(n_coord * sizeof(double));
 
-	if (c_dsyev('V', 'U', (int)n_coord, mass_hess, (int)n_coord, eigen))
+	if (efp_dsyev('V', 'U', (int)n_coord, mass_hess, (int)n_coord, eigen))
 		error("unable to diagonalize mass-weighted hessian matrix");
 
 	for (size_t i = 0; i < n_coord; i++) {

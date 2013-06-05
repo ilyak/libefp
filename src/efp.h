@@ -114,6 +114,13 @@ enum efp_coord_type {
 	EFP_COORD_TYPE_ROTMAT
 };
 
+enum efp_pol_driver {
+	/** Iterative solution of polarization equations. */
+	EFP_POL_DRIVER_ITERATIVE = 0,
+	/** Direct solution of polarization equations. */
+	EFP_POL_DRIVER_DIRECT
+};
+
 /** \struct efp
  * Main EFP opaque structure.
  */
@@ -132,6 +139,9 @@ struct efp_opts {
 
 	/** Polarization damping type (see #efp_pol_damp). */
 	enum efp_pol_damp pol_damp;
+
+	/** Driver used to find polarization induced dipoles. */
+	enum efp_pol_driver pol_driver;
 
 	/** Enable periodic boundary conditions if nonzero. */
 	int enable_pbc;

@@ -91,6 +91,12 @@ static struct cfg *make_cfg(void)
 		(int []) { EFP_POL_DAMP_TT,
 			   EFP_POL_DAMP_OFF });
 
+	cfg_add_enum(cfg, "pol_driver", EFP_POL_DRIVER_ITERATIVE,
+		"iterative\n"
+		"direct\n",
+		(int []) { EFP_POL_DRIVER_ITERATIVE,
+			   EFP_POL_DRIVER_DIRECT });
+
 	cfg_add_bool(cfg, "enable_links", false);
 	cfg_add_string(cfg, "forcefield", FRAGLIB_PATH "/amber99.ff");
 	cfg_add_string(cfg, "topology", "top.etp");
@@ -231,6 +237,7 @@ static struct efp *init_sim(const struct cfg *cfg, const struct sys *sys)
 		.elec_damp = cfg_get_enum(cfg, "elec_damp"),
 		.disp_damp = cfg_get_enum(cfg, "disp_damp"),
 		.pol_damp = cfg_get_enum(cfg, "pol_damp"),
+		.pol_driver = cfg_get_enum(cfg, "pol_driver"),
 		.enable_pbc = cfg_get_bool(cfg, "enable_pbc"),
 		.enable_cutoff = cfg_get_bool(cfg, "enable_cutoff"),
 		.swf_cutoff = cfg_get_double(cfg, "swf_cutoff"),

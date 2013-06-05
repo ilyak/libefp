@@ -57,6 +57,10 @@ static const mat_t mat_zero = { 0.0, 0.0, 0.0,
 				0.0, 0.0, 0.0,
 				0.0, 0.0, 0.0 };
 
+static const mat_t mat_identity = { 1.0, 0.0, 0.0,
+				    0.0, 1.0, 0.0,
+				    0.0, 0.0, 1.0 };
+
 static inline int
 eq(double a, double b)
 {
@@ -219,6 +223,7 @@ mat_vec(const mat_t *mat, const vec_t *vec)
 	return out;
 }
 
+/* returns mat(t) * vec */
 static inline vec_t
 mat_trans_vec(const mat_t *mat, const vec_t *vec)
 {
@@ -241,6 +246,36 @@ mat_mat(const mat_t *m1, const mat_t *m2)
 		      m1->zx * m2->xy + m1->zy * m2->yy + m1->zz * m2->zy,
 		      m1->zx * m2->xz + m1->zy * m2->yz + m1->zz * m2->zz };
 	return out;
+}
+
+/* returns m1(t) * m2 */
+static inline mat_t
+mat_trans_mat(const mat_t *m1, const mat_t *m2)
+{
+	mat_t out = { m1->xx * m2->xx + m1->yx * m2->yx + m1->zx * m2->zx,
+		      m1->xx * m2->xy + m1->yx * m2->yy + m1->zx * m2->zy,
+		      m1->xx * m2->xz + m1->yx * m2->yz + m1->zx * m2->zz,
+		      m1->xy * m2->xx + m1->yy * m2->yx + m1->zy * m2->zx,
+		      m1->xy * m2->xy + m1->yy * m2->yy + m1->zy * m2->zy,
+		      m1->xy * m2->xz + m1->yy * m2->yz + m1->zy * m2->zz,
+		      m1->xz * m2->xx + m1->yz * m2->yx + m1->zz * m2->zx,
+		      m1->xz * m2->xy + m1->yz * m2->yy + m1->zz * m2->zy,
+		      m1->xz * m2->xz + m1->yz * m2->yz + m1->zz * m2->zz };
+	return out;
+}
+
+static inline void
+mat_negate(mat_t *mat)
+{
+	mat->xx = -mat->xx;
+	mat->xy = -mat->xy;
+	mat->xz = -mat->xz;
+	mat->yx = -mat->yx;
+	mat->yy = -mat->yy;
+	mat->yz = -mat->yz;
+	mat->zx = -mat->zx;
+	mat->zy = -mat->zy;
+	mat->zz = -mat->zz;
 }
 
 static inline double
