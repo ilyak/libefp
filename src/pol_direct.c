@@ -37,15 +37,15 @@ enum efp_result efp_compute_id_direct(struct efp *);
 static void
 copy_matrix(double *dst, size_t n, size_t off_i, size_t off_j, const mat_t *m)
 {
-	dst[3 * n * (3 * off_i + 0) + 3 * off_j + 0] = m->xx;
-	dst[3 * n * (3 * off_i + 0) + 3 * off_j + 1] = m->xy;
-	dst[3 * n * (3 * off_i + 0) + 3 * off_j + 2] = m->xz;
-	dst[3 * n * (3 * off_i + 1) + 3 * off_j + 0] = m->yx;
-	dst[3 * n * (3 * off_i + 1) + 3 * off_j + 1] = m->yy;
-	dst[3 * n * (3 * off_i + 1) + 3 * off_j + 2] = m->yz;
-	dst[3 * n * (3 * off_i + 2) + 3 * off_j + 0] = m->zx;
-	dst[3 * n * (3 * off_i + 2) + 3 * off_j + 1] = m->zy;
-	dst[3 * n * (3 * off_i + 2) + 3 * off_j + 2] = m->zz;
+	dst[n * (3 * off_i + 0) + 3 * off_j + 0] = m->xx;
+	dst[n * (3 * off_i + 0) + 3 * off_j + 1] = m->xy;
+	dst[n * (3 * off_i + 0) + 3 * off_j + 2] = m->xz;
+	dst[n * (3 * off_i + 1) + 3 * off_j + 0] = m->yx;
+	dst[n * (3 * off_i + 1) + 3 * off_j + 1] = m->yy;
+	dst[n * (3 * off_i + 1) + 3 * off_j + 2] = m->yz;
+	dst[n * (3 * off_i + 2) + 3 * off_j + 0] = m->zx;
+	dst[n * (3 * off_i + 2) + 3 * off_j + 1] = m->zy;
+	dst[n * (3 * off_i + 2) + 3 * off_j + 2] = m->zz;
 }
 
 static void
@@ -99,7 +99,7 @@ get_int_mat(const struct efp *efp, size_t i, size_t j, size_t ii, size_t jj)
 static void
 compute_lhs(const struct efp *efp, double *c, bool conj)
 {
-	size_t n = efp->n_polarizable_pts;
+	size_t n = 3 * efp->n_polarizable_pts;
 
 	for (size_t i = 0, offset_i = 0; i < efp->n_frag; i++) {
 	for (size_t ii = 0; ii < efp->frags[i].n_polarizable_pts; ii++, offset_i++) {
@@ -125,8 +125,6 @@ compute_lhs(const struct efp *efp, double *c, bool conj)
 		mat_negate(&m);
 		copy_matrix(c, n, offset_i, offset_j, &m);
 	}}}}
-
-	transpose_matrix(c, 3 * n);
 }
 
 static void
@@ -151,51 +149,44 @@ enum efp_result
 efp_compute_id_direct(struct efp *efp)
 {
 	double *c;
-	vec_t *id;
 	size_t n;
 	int *ipiv;
-	enum efp_result res = EFP_RESULT_SUCCESS;
+	enum efp_result res;
 
 	n = 3 * efp->n_polarizable_pts;
-	c = calloc(n * n, sizeof(mat_t));
-	id = calloc(efp->n_polarizable_pts, sizeof(vec_t));
+	c = calloc(n * n, sizeof(double));
 	ipiv = calloc(n, sizeof(int));
 
-	if (c == NULL || id == NULL || ipiv == NULL) {
+	if (c == NULL || ipiv == NULL) {
 		res = EFP_RESULT_NO_MEMORY;
 		goto error;
 	}
 
 	/* induced dipoles */
 	compute_lhs(efp, c, false);
-	compute_rhs(efp, id, false);
+	compute_rhs(efp, efp->indip, false);
+	transpose_matrix(c, n);
 
-	if (efp_dgesv((int)n, 1, c, (int)n, ipiv, (double *)id, (int)n) != 0) {
+	if (efp_dgesv((int)n, 1, c, (int)n, ipiv, (double *)efp->indip, (int)n) != 0) {
 		efp_log("dgesv: error solving for induced dipoles");
 		res = EFP_RESULT_FATAL;
 		goto error;
 	}
 
-	for (size_t i = 0, idx = 0; i < efp->n_frag; i++)
-		for (size_t j = 0; j < efp->frags[i].n_polarizable_pts; j++, idx++)
-			efp->frags[i].polarizable_pts[j].induced_dipole = id[idx];
-
 	/* conjugate induced dipoles */
 	compute_lhs(efp, c, true);
-	compute_rhs(efp, id, true);
+	compute_rhs(efp, efp->indipconj, true);
+	transpose_matrix(c, n);
 
-	if (efp_dgesv((int)n, 1, c, (int)n, ipiv, (double *)id, (int)n) != 0) {
+	if (efp_dgesv((int)n, 1, c, (int)n, ipiv, (double *)efp->indipconj, (int)n) != 0) {
 		efp_log("dgesv: error solving for conjugate induced dipoles");
 		res = EFP_RESULT_FATAL;
 		goto error;
 	}
 
-	for (size_t i = 0, idx = 0; i < efp->n_frag; i++)
-		for (size_t j = 0; j < efp->frags[i].n_polarizable_pts; j++, idx++)
-			efp->frags[i].polarizable_pts[j].induced_dipole_conj = id[idx];
+	res = EFP_RESULT_SUCCESS;
 error:
 	free(c);
-	free(id);
 	free(ipiv);
 
 	return (res);

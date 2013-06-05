@@ -90,8 +90,6 @@ struct frag {
 		mat_t tensor;
 		vec_t elec_field;
 		vec_t elec_field_wf;
-		vec_t induced_dipole;
-		vec_t induced_dipole_conj;
 	} *polarizable_pts;
 
 	/* number of distributed polarizability points */
@@ -193,6 +191,12 @@ struct efp {
 		double charge;
 		vec_t grad;
 	} *point_charges;
+
+	/* polarization induced dipoles */
+	vec_t *indip;
+
+	/* polarization conjugate induced dipoles */
+	vec_t *indipconj;
 
 	/* total number of polarizable points */
 	size_t n_polarizable_pts;

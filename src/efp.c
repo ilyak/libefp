@@ -870,6 +870,9 @@ efp_prepare(struct efp *efp)
 		efp->n_polarizable_pts += efp->frags[i].n_polarizable_pts;
 	}
 
+	efp->indip = calloc(efp->n_polarizable_pts, sizeof(vec_t));
+	efp->indipconj = calloc(efp->n_polarizable_pts, sizeof(vec_t));
+
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -1089,17 +1092,7 @@ efp_get_induced_dipole_values(struct efp *efp, double *dip)
 	assert(efp);
 	assert(dip);
 
-	for (size_t i = 0; i < efp->n_frag; i++) {
-		struct frag *frag = efp->frags + i;
-
-		for (size_t j = 0; j < frag->n_polarizable_pts; j++) {
-			struct polarizable_pt *pt = frag->polarizable_pts + j;
-
-			*dip++ = pt->induced_dipole.x;
-			*dip++ = pt->induced_dipole.y;
-			*dip++ = pt->induced_dipole.z;
-		}
-	}
+	memcpy(dip, efp->indip, efp->n_polarizable_pts * sizeof(vec_t));
 
 	return EFP_RESULT_SUCCESS;
 }
@@ -1110,17 +1103,7 @@ efp_get_induced_dipole_conj_values(struct efp *efp, double *dip)
 	assert(efp);
 	assert(dip);
 
-	for (size_t i = 0; i < efp->n_frag; i++) {
-		struct frag *frag = efp->frags + i;
-
-		for (size_t j = 0; j < frag->n_polarizable_pts; j++) {
-			struct polarizable_pt *pt = frag->polarizable_pts + j;
-
-			*dip++ = pt->induced_dipole_conj.x;
-			*dip++ = pt->induced_dipole_conj.y;
-			*dip++ = pt->induced_dipole_conj.z;
-		}
-	}
+	memcpy(dip, efp->indipconj, efp->n_polarizable_pts * sizeof(vec_t));
 
 	return EFP_RESULT_SUCCESS;
 }
@@ -1142,6 +1125,8 @@ efp_shutdown(struct efp *efp)
 	free(efp->frags);
 	free(efp->lib);
 	free(efp->point_charges);
+	free(efp->indip);
+	free(efp->indipconj);
 	efp_ff_free(efp->ff);
 	efp_bvec_free(efp->links_bvec);
 	free(efp);
