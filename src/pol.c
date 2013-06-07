@@ -179,8 +179,7 @@ get_elec_field(const struct efp *efp, size_t frag_idx, size_t pt_idx)
 	if (efp->opts.terms & EFP_TERM_AI_POL) {
 		/* field due to nuclei from ab initio subsystem */
 		for (size_t i = 0; i < efp->n_ptc; i++) {
-			const struct point_charge *at_i = efp->point_charges + i;
-			vec_t dr = vec_sub(CVEC(pt->x), CVEC(at_i->x));
+			vec_t dr = vec_sub(CVEC(pt->x), efp->ptc_xyz + i);
 
 			double r = vec_len(&dr);
 			double r3 = r * r * r;
@@ -189,9 +188,9 @@ get_elec_field(const struct efp *efp, size_t frag_idx, size_t pt_idx)
 			if (efp->opts.pol_damp == EFP_POL_DAMP_TT)
 				p1 = efp_get_pol_damp_tt(r);
 
-			elec_field.x += at_i->charge * dr.x / r3 * p1;
-			elec_field.y += at_i->charge * dr.y / r3 * p1;
-			elec_field.z += at_i->charge * dr.z / r3 * p1;
+			elec_field.x += efp->ptc[i] * dr.x / r3 * p1;
+			elec_field.y += efp->ptc[i] * dr.y / r3 * p1;
+			elec_field.z += efp->ptc[i] * dr.z / r3 * p1;
 		}
 	}
 
@@ -690,16 +689,14 @@ compute_grad_point(struct efp *efp, size_t frag_idx, size_t pt_idx)
 	/* induced dipole - ab initio nuclei */
 	if (efp->opts.terms & EFP_TERM_AI_POL) {
 		for (size_t j = 0; j < efp->n_ptc; j++) {
-			struct point_charge *at_j = efp->point_charges + j;
-
-			vec_t dr = vec_sub(CVEC(at_j->x), CVEC(pt_i->x));
+			vec_t dr = vec_sub(efp->ptc_xyz + j, CVEC(pt_i->x));
 			vec_t force, add_i, add_j;
 
-			efp_charge_dipole_grad(at_j->charge, &dipole_i, &dr,
+			efp_charge_dipole_grad(efp->ptc[j], &dipole_i, &dr,
 					       &force, &add_j, &add_i);
 			vec_negate(&add_i);
 
-			vec_atomic_add(&at_j->grad, &force);
+			vec_atomic_add(efp->ptc_grad + j, &force);
 			efp_sub_force(fr_i, CVEC(pt_i->x), &force, &add_i);
 		}
 	}
@@ -824,15 +821,14 @@ efp_get_electric_field(struct efp *efp, size_t frag_idx, const double *xyz, doub
 	if (efp->opts.terms & EFP_TERM_AI_POL) {
 		/* field due to nuclei from ab initio subsystem */
 		for (size_t i = 0; i < efp->n_ptc; i++) {
-			const struct point_charge *at_i = efp->point_charges + i;
-			vec_t dr = vec_sub((const vec_t *)xyz, CVEC(at_i->x));
+			vec_t dr = vec_sub((const vec_t *)xyz, efp->ptc_xyz + i);
 
 			double r = vec_len(&dr);
 			double r3 = r * r * r;
 
-			elec_field.x += at_i->charge * dr.x / r3;
-			elec_field.y += at_i->charge * dr.y / r3;
-			elec_field.z += at_i->charge * dr.z / r3;
+			elec_field.x += efp->ptc[i] * dr.x / r3;
+			elec_field.y += efp->ptc[i] * dr.y / r3;
+			elec_field.z += efp->ptc[i] * dr.z / r3;
 		}
 	}
 

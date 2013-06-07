@@ -353,7 +353,7 @@ enum efp_result efp_set_electron_density_field_user_data(
  *
  * \param[in] n_ptc Number of point charges.
  *
- * \param[in] q Array of \p n_ptc elements with charge values.
+ * \param[in] ptc Array of \p n_ptc elements with charge values.
  *
  * \param[in] xyz Array of [3 * \p n_ptc] elements with \a x \a y \a z
  * coordinates of charge positions.
@@ -363,13 +363,14 @@ enum efp_result efp_set_electron_density_field_user_data(
 enum efp_result efp_set_point_charges(
 			struct efp *efp,
 			size_t n_ptc,
-			const double *q,
+			const double *ptc,
 			const double *xyz);
 
 /**
  * Get the number of currently set point charges.
  *
  * \param[in] efp The efp structure.
+ *
  * \param[out] n_ptc Number of point charges.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
@@ -382,13 +383,14 @@ enum efp_result efp_get_point_charge_count(
  * Get values of currently set point charges.
  *
  * \param[in] efp The efp structure.
- * \param[out] q Array of \p n_ptc elements where charges will be stored.
+ *
+ * \param[out] ptc Array of \p n_ptc elements where charges will be stored.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
 enum efp_result efp_get_point_charge_values(
 			struct efp *efp,
-			double *q);
+			double *ptc);
 
 /**
  * Get coordinates of currently set point charges.

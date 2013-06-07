@@ -510,38 +510,20 @@ check_params(struct efp *efp)
 static void
 allreduce_gradient(struct efp *efp)
 {
-	size_t count = 2 * efp->n_frag + efp->n_ptc;
+	size_t count = 2 * efp->n_frag;
 	vec_t *grad = malloc(count * sizeof(vec_t));
 
-#ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic, 4)
-#endif
 	for (size_t i = 0; i < efp->n_frag; i++) {
 		grad[2 * i + 0] = efp->frags[i].force;
 		grad[2 * i + 1] = efp->frags[i].torque;
 	}
 
-#ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic, 4)
-#endif
-	for (size_t i = 0; i < efp->n_ptc; i++)
-		grad[2 * efp->n_frag + i] = efp->point_charges[i].grad;
-
 	efp_allreduce((double *)grad, 3 * count);
 
-#ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic, 4)
-#endif
 	for (size_t i = 0; i < efp->n_frag; i++) {
 		efp->frags[i].force = grad[2 * i];
 		efp->frags[i].torque = grad[2 * i + 1];
 	}
-
-#ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic, 4)
-#endif
-	for (size_t i = 0; i < efp->n_ptc; i++)
-		efp->point_charges[i].grad = grad[2 * efp->n_frag + i];
 
 	free(grad);
 }
@@ -649,23 +631,34 @@ efp_get_gradient(struct efp *efp, size_t n_frags, double *grad)
 }
 
 EFP_EXPORT enum efp_result
-efp_get_point_charge_gradient(struct efp *efp, double *grad)
+efp_set_point_charges(struct efp *efp, size_t n_ptc, const double *ptc, const double *xyz)
 {
 	assert(efp);
-	assert(grad);
+	efp->n_ptc = n_ptc;
 
-	if (!efp->do_gradient) {
-		efp_log("gradient calculation was not requested");
-		return EFP_RESULT_FATAL;
+	if (n_ptc == 0) {
+		free(efp->ptc);
+		free(efp->ptc_xyz);
+		free(efp->ptc_grad);
+		efp->ptc = NULL;
+		efp->ptc_xyz = NULL;
+		efp->ptc_grad = NULL;
+
+		return (EFP_RESULT_SUCCESS);
 	}
 
-	for (size_t i = 0; i < efp->n_ptc; i++) {
-		*grad++ = efp->point_charges[i].grad.x;
-		*grad++ = efp->point_charges[i].grad.y;
-		*grad++ = efp->point_charges[i].grad.z;
-	}
+	assert(ptc);
+	assert(xyz);
 
-	return EFP_RESULT_SUCCESS;
+	efp->ptc = realloc(efp->ptc, n_ptc * sizeof(double));
+	efp->ptc_xyz = realloc(efp->ptc_xyz, n_ptc * sizeof(vec_t));
+	efp->ptc_grad = realloc(efp->ptc_grad, n_ptc * sizeof(vec_t));
+
+	memcpy(efp->ptc, ptc, n_ptc * sizeof(double));
+	memcpy(efp->ptc_xyz, xyz, n_ptc * sizeof(vec_t));
+	memset(efp->ptc_grad, 0, n_ptc * sizeof(vec_t));
+
+	return (EFP_RESULT_SUCCESS);
 }
 
 EFP_EXPORT enum efp_result
@@ -676,45 +669,23 @@ efp_get_point_charge_count(struct efp *efp, size_t *n_ptc)
 
 	*n_ptc = efp->n_ptc;
 
-	return EFP_RESULT_SUCCESS;
+	return (EFP_RESULT_SUCCESS);
 }
 
 EFP_EXPORT enum efp_result
-efp_set_point_charges(struct efp *efp, size_t n_ptc,
-			const double *q, const double *xyz)
+efp_get_point_charge_gradient(struct efp *efp, double *grad)
 {
 	assert(efp);
+	assert(grad);
 
-	if (n_ptc == 0) {
-		free(efp->point_charges);
-
-		efp->n_ptc = 0;
-		efp->point_charges = NULL;
-
-		return EFP_RESULT_SUCCESS;
+	if (!efp->do_gradient) {
+		efp_log("gradient calculation was not requested");
+		return (EFP_RESULT_FATAL);
 	}
 
-	assert(q);
-	assert(xyz);
+	memcpy(grad, efp->ptc_grad, efp->n_ptc * sizeof(vec_t));
 
-	efp->n_ptc = n_ptc;
-	efp->point_charges = realloc(efp->point_charges,
-				efp->n_ptc * sizeof(struct point_charge));
-
-	if (!efp->point_charges)
-		return EFP_RESULT_NO_MEMORY;
-
-	for (size_t i = 0; i < efp->n_ptc; i++) {
-		struct point_charge *ptc = efp->point_charges + i;
-
-		ptc->x = *xyz++;
-		ptc->y = *xyz++;
-		ptc->z = *xyz++;
-
-		ptc->charge = *q++;
-	}
-
-	return EFP_RESULT_SUCCESS;
+	return (EFP_RESULT_SUCCESS);
 }
 
 EFP_EXPORT enum efp_result
@@ -723,27 +694,20 @@ efp_get_point_charge_coordinates(struct efp *efp, double *xyz)
 	assert(efp);
 	assert(xyz);
 
-	for (size_t i = 0; i < efp->n_ptc; i++) {
-		struct point_charge *ptc = efp->point_charges + i;
+	memcpy(xyz, efp->ptc_xyz, efp->n_ptc * sizeof(vec_t));
 
-		*xyz++ = ptc->x;
-		*xyz++ = ptc->y;
-		*xyz++ = ptc->z;
-	}
-
-	return EFP_RESULT_SUCCESS;
+	return (EFP_RESULT_SUCCESS);
 }
 
 EFP_EXPORT enum efp_result
-efp_get_point_charge_values(struct efp *efp, double *q)
+efp_get_point_charge_values(struct efp *efp, double *ptc)
 {
 	assert(efp);
-	assert(q);
+	assert(ptc);
 
-	for (size_t i = 0; i < efp->n_ptc; i++)
-		*q++ = efp->point_charges[i].charge;
+	memcpy(ptc, efp->ptc, efp->n_ptc * sizeof(double));
 
-	return EFP_RESULT_SUCCESS;
+	return (EFP_RESULT_SUCCESS);
 }
 
 EFP_EXPORT enum efp_result
@@ -903,14 +867,12 @@ efp_compute(struct efp *efp, int do_gradient)
 
 	efp->stress = mat_zero;
 	memset(&efp->energy, 0, sizeof(struct efp_energy));
+	memset(efp->ptc_grad, 0, efp->n_ptc * sizeof(vec_t));
 
 	for (size_t i = 0; i < efp->n_frag; i++) {
 		efp->frags[i].force = vec_zero;
 		efp->frags[i].torque = vec_zero;
 	}
-
-	for (size_t i = 0; i < efp->n_ptc; i++)
-		efp->point_charges[i].grad = vec_zero;
 
 	efp_balance_work(efp, compute_two_body_range, NULL);
 
@@ -928,6 +890,7 @@ efp_compute(struct efp *efp, int do_gradient)
 
 	if (efp->do_gradient) {
 		allreduce_gradient(efp);
+		efp_allreduce((double *)efp->ptc_grad, 3 * efp->n_ptc);
 		efp_allreduce((double *)&efp->stress, 9);
 	}
 #endif
@@ -1124,7 +1087,9 @@ efp_shutdown(struct efp *efp)
 
 	free(efp->frags);
 	free(efp->lib);
-	free(efp->point_charges);
+	free(efp->ptc);
+	free(efp->ptc_xyz);
+	free(efp->ptc_grad);
 	free(efp->indip);
 	free(efp->indipconj);
 	efp_ff_free(efp->ff);

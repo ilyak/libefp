@@ -186,11 +186,14 @@ struct efp {
 	/* number of point charges */
 	size_t n_ptc;
 
-	struct point_charge {
-		double x, y, z;
-		double charge;
-		vec_t grad;
-	} *point_charges;
+	/* coordinates of point charges */
+	vec_t *ptc_xyz;
+
+	/* point charges */
+	double *ptc;
+
+	/* gradient on point charges */
+	vec_t *ptc_grad;
 
 	/* polarization induced dipoles */
 	vec_t *indip;
