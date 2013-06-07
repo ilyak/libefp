@@ -24,6 +24,8 @@
  * SUCH DAMAGE.
  */
 
+#include <time.h>
+
 #include "common.h"
 
 typedef void (*sim_fn_t)(struct efp *, const struct cfg *, const struct sys *);
@@ -308,6 +310,27 @@ static void print_banner(void)
 	msg("%s", efp_banner());
 }
 
+static void print_proc_info(void)
+{
+	int n_mpi = 1, n_omp = 1;
+
+#ifdef WITH_MPI
+	MPI_Comm_size(MPI_COMM_WORLD, &n_mpi);
+#endif
+#ifdef _OPENMP
+	n_omp = omp_get_max_threads();
+#endif
+
+	msg("RUNNING %d MPI PROCESS(ES) WITH %d OPENMP THREAD(S)\n", n_mpi, n_omp);
+}
+
+static void print_time(void)
+{
+	time_t t = time(NULL);
+
+	msg("WALL CLOCK TIME IS %s", ctime(&t));
+}
+
 static void print_config(struct cfg *cfg)
 {
 #ifdef WITH_MPI
@@ -389,6 +412,9 @@ int main(int argc, char **argv)
 
 	print_banner();
 	msg("\n");
+	print_time();
+	print_proc_info();
+	msg("\n");
 	struct sys *sys = parse_input(cfg, argv[1]);
 	msg("SIMULATION SETTINGS\n\n");
 	print_config(cfg);
@@ -397,6 +423,7 @@ int main(int argc, char **argv)
 	struct efp *efp = init_sim(cfg, sys);
 	sim_fn_t sim_fn = get_sim_fn(cfg_get_enum(cfg, "run_type"));
 	sim_fn(efp, cfg, sys);
+	print_time();
 	efp_shutdown(efp);
 	sys_free(sys);
 exit:

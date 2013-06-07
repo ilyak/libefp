@@ -37,6 +37,9 @@
 #ifdef WITH_MPI
 #include <mpi.h>
 #endif
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 #include <efp.h>
 #include <math_util.h>
