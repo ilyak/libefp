@@ -28,6 +28,8 @@ install: all
 	install -d $(PREFIX)/lib
 	install -d $(FRAGLIB)
 	install -m 0755 efpmd/src/efpmd $(PREFIX)/bin
+	install -m 0755 efpmd/tools/cubegen.pl $(PREFIX)/bin
+	install -m 0755 efpmd/tools/trajectory.pl $(PREFIX)/bin
 	install -m 0644 src/efp.h $(PREFIX)/include
 	install -m 0644 src/libefp.a $(PREFIX)/lib
 	install -m 0644 fraglib/* $(FRAGLIB)
