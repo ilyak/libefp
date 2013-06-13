@@ -164,7 +164,7 @@ void print_gradient(struct efp *efp)
 	check_fail(efp_get_frag_count(efp, &n_frags));
 
 	double grad[6 * n_frags];
-	check_fail(efp_get_gradient(efp, n_frags, grad));
+	check_fail(efp_get_gradient(efp, grad));
 
 	for (size_t i = 0; i < n_frags; i++) {
 		char name[64];

@@ -333,7 +333,7 @@ static void compute_forces(struct md *md)
 
 	check_fail(efp_compute(md->efp, 1));
 	check_fail(efp_get_energy(md->efp, &energy));
-	check_fail(efp_get_gradient(md->efp, md->n_bodies, grad));
+	check_fail(efp_get_gradient(md->efp, grad));
 
 	md->potential_energy = energy.total;
 

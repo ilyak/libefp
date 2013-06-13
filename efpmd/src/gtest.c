@@ -133,7 +133,7 @@ static void test_grad(struct efp *efp, const struct cfg *cfg)
 	check_fail(efp_get_point_charge_count(efp, &n_charges));
 
 	double fgrad[6 * n_frags];
-	check_fail(efp_get_gradient(efp, n_frags, fgrad));
+	check_fail(efp_get_gradient(efp, fgrad));
 
 	if (n_charges > 0) {
 		double cgrad[3 * n_charges];

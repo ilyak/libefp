@@ -44,7 +44,7 @@ static double compute_efp(size_t n, const double *x, double *gx, void *data)
 	struct efp_energy energy;
 	check_fail(efp_get_energy(efp, &energy));
 
-	check_fail(efp_get_gradient(efp, n_frags, gx));
+	check_fail(efp_get_gradient(efp, gx));
 
 	for (size_t i = 0; i < n_frags; i++) {
 		const double *euler = x + 6 * i + 3;

@@ -36,7 +36,7 @@ static void compute_gradient(struct efp *efp, size_t n_frags,
 {
 	check_fail(efp_set_coordinates(efp, EFP_COORD_TYPE_XYZABC, xyzabc));
 	check_fail(efp_compute(efp, 1));
-	check_fail(efp_get_gradient(efp, n_frags, grad));
+	check_fail(efp_get_gradient(efp, grad));
 
 	for (size_t i = 0; i < n_frags; i++) {
 		const double *euler = xyzabc + 6 * i + 3;
@@ -68,7 +68,7 @@ static void compute_hessian(struct efp *efp, const struct cfg *cfg, double *hess
 	check_fail(efp_get_coordinates(efp, n_frags, xyzabc));
 
 	if (!central) {
-		check_fail(efp_get_gradient(efp, n_frags, grad_b));
+		check_fail(efp_get_gradient(efp, grad_b));
 
 		for (size_t i = 0; i < n_frags; i++) {
 			const double *euler = xyzabc + 6 * i + 3;
