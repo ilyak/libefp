@@ -172,9 +172,10 @@ void efp_add_stress(const vec_t *dr, const vec_t *force, mat_t *stress)
 	}
 }
 
-void efp_add_force(struct frag *frag, const vec_t *pt, const vec_t *force, const vec_t *add)
+void efp_add_force(six_t *grad, const vec_t *com, const vec_t *pt,
+		const vec_t *force, const vec_t *add)
 {
-	vec_t dr = vec_sub(CVEC(pt->x), CVEC(frag->x));
+	vec_t dr = vec_sub(CVEC(pt->x), com);
 	vec_t torque = vec_cross(&dr, force);
 
 	if (add) {
@@ -183,13 +184,14 @@ void efp_add_force(struct frag *frag, const vec_t *pt, const vec_t *force, const
 		torque.z += add->z;
 	}
 
-	vec_atomic_add(&frag->force, force);
-	vec_atomic_add(&frag->torque, &torque);
+	six_atomic_add_xyz(grad, force);
+	six_atomic_add_abc(grad, &torque);
 }
 
-void efp_sub_force(struct frag *frag, const vec_t *pt, const vec_t *force, const vec_t *add)
+void efp_sub_force(six_t *grad, const vec_t *com, const vec_t *pt,
+		const vec_t *force, const vec_t *add)
 {
-	vec_t dr = vec_sub(CVEC(pt->x), CVEC(frag->x));
+	vec_t dr = vec_sub(CVEC(pt->x), com);
 	vec_t torque = vec_cross(&dr, force);
 
 	if (add) {
@@ -198,8 +200,8 @@ void efp_sub_force(struct frag *frag, const vec_t *pt, const vec_t *force, const
 		torque.z += add->z;
 	}
 
-	vec_atomic_sub(&frag->force, force);
-	vec_atomic_sub(&frag->torque, &torque);
+	six_atomic_sub_xyz(grad, force);
+	six_atomic_sub_abc(grad, &torque);
 }
 
 void efp_move_pt(const vec_t *com, const mat_t *rotmat, const vec_t *pos_int, vec_t *out)

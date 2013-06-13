@@ -487,8 +487,8 @@ efp_compute_pol_energy(struct efp *efp, double *energy)
 static void
 compute_grad_point(struct efp *efp, size_t frag_idx, size_t pt_idx)
 {
-	struct frag *fr_i = efp->frags + frag_idx;
-	struct polarizable_pt *pt_i = fr_i->polarizable_pts + pt_idx;
+	const struct frag *fr_i = efp->frags + frag_idx;
+	const struct polarizable_pt *pt_i = fr_i->polarizable_pts + pt_idx;
 	size_t idx_i = fr_i->polarizable_offset + pt_idx;
 
 	vec_t dipole_i = {
@@ -546,8 +546,10 @@ compute_grad_point(struct efp *efp, size_t frag_idx, size_t pt_idx)
 			vec_scale(&add_i, swf.swf);
 			vec_scale(&add_j, swf.swf);
 
-			efp_add_force(fr_i, CVEC(pt_i->x), &force, &add_i);
-			efp_sub_force(fr_j, CVEC(at_j->x), &force, &add_j);
+			efp_add_force(efp->grad + frag_idx, CVEC(fr_i->x),
+					CVEC(pt_i->x), &force, &add_i);
+			efp_sub_force(efp->grad + j, CVEC(fr_j->x),
+					CVEC(at_j->x), &force, &add_j);
 			efp_add_stress(&swf.dr, &force, &efp->stress);
 
 			energy += p1 * e;
@@ -614,8 +616,10 @@ compute_grad_point(struct efp *efp, size_t frag_idx, size_t pt_idx)
 			vec_scale(&add_i, swf.swf);
 			vec_scale(&add_j, swf.swf);
 
-			efp_add_force(fr_i, CVEC(pt_i->x), &force, &add_i);
-			efp_sub_force(fr_j, CVEC(pt_j->x), &force, &add_j);
+			efp_add_force(efp->grad + frag_idx, CVEC(fr_i->x),
+					CVEC(pt_i->x), &force, &add_i);
+			efp_sub_force(efp->grad + j, CVEC(fr_j->x),
+					CVEC(pt_j->x), &force, &add_j);
 			efp_add_stress(&swf.dr, &force, &efp->stress);
 
 			energy += p1 * e;
@@ -668,8 +672,10 @@ compute_grad_point(struct efp *efp, size_t frag_idx, size_t pt_idx)
 			vec_scale(&add_i, swf.swf);
 			vec_scale(&add_j, swf.swf);
 
-			efp_add_force(fr_i, CVEC(pt_i->x), &force, &add_i);
-			efp_sub_force(fr_j, CVEC(pt_j->x), &force, &add_j);
+			efp_add_force(efp->grad + frag_idx, CVEC(fr_i->x),
+					CVEC(pt_i->x), &force, &add_i);
+			efp_sub_force(efp->grad + j, CVEC(fr_j->x),
+					CVEC(pt_j->x), &force, &add_j);
 			efp_add_stress(&swf.dr, &force, &efp->stress);
 
 			energy += p1 * e;
@@ -681,8 +687,8 @@ compute_grad_point(struct efp *efp, size_t frag_idx, size_t pt_idx)
 			swf.dswf.z * energy
 		};
 
-		vec_atomic_add(&fr_i->force, &force);
-		vec_atomic_sub(&fr_j->force, &force);
+		six_atomic_add_xyz(efp->grad + frag_idx, &force);
+		six_atomic_sub_xyz(efp->grad + j, &force);
 		efp_add_stress(&swf.dr, &force, &efp->stress);
 	}
 
@@ -697,7 +703,8 @@ compute_grad_point(struct efp *efp, size_t frag_idx, size_t pt_idx)
 			vec_negate(&add_i);
 
 			vec_atomic_add(efp->ptc_grad + j, &force);
-			efp_sub_force(fr_i, CVEC(pt_i->x), &force, &add_i);
+			efp_sub_force(efp->grad + frag_idx, CVEC(fr_i->x),
+					CVEC(pt_i->x), &force, &add_i);
 		}
 	}
 }

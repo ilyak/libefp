@@ -711,15 +711,14 @@ enum efp_result efp_get_energy(struct efp *efp, struct efp_energy *energy);
  *
  * \param[in] efp The efp structure.
  *
- * \param[in] n_frags Expected number of fragments.
- *
  * \param[out] grad For each fragment \a x \a y \a z components of negative
  * force and torque will be written to this array. The size of this array must
- * be at least [6 * \p n_frags] elements.
+ * be at least [6 * \a n] elements, where \a n is the total number of
+ * fragments.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_gradient(struct efp *efp, size_t n_frags, double *grad);
+enum efp_result efp_get_gradient(struct efp *efp, double *grad);
 
 /**
  * Get the number of fragments in this computation.

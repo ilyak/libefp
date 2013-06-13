@@ -144,6 +144,30 @@ vec_atomic_sub(vec_t *a, const vec_t *b)
 	a->z -= b->z;
 }
 
+static inline void
+six_atomic_add_xyz(six_t *six, const vec_t *a)
+{
+	vec_atomic_add((vec_t *)six, a);
+}
+
+static inline void
+six_atomic_add_abc(six_t *six, const vec_t *a)
+{
+	vec_atomic_add(((vec_t *)six) + 1, a);
+}
+
+static inline void
+six_atomic_sub_xyz(six_t *six, const vec_t *a)
+{
+	vec_atomic_sub((vec_t *)six, a);
+}
+
+static inline void
+six_atomic_sub_abc(six_t *six, const vec_t *a)
+{
+	vec_atomic_sub(((vec_t *)six) + 1, a);
+}
+
 static inline vec_t
 vec_add(const vec_t *a, const vec_t *b)
 {

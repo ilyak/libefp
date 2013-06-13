@@ -98,11 +98,13 @@ atom_mult_energy(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 }
 
 static void
-atom_mult_grad(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
+atom_mult_grad(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
 	       size_t atom_i_idx, size_t pt_j_idx, const struct swf *swf)
 {
-	struct efp_atom *at_i = fr_i->atoms + atom_i_idx;
-	struct multipole_pt *pt_j = fr_j->multipole_pts + pt_j_idx;
+	const struct frag *fr_i = efp->frags + fr_i_idx;
+	const struct frag *fr_j = efp->frags + fr_j_idx;
+	const struct efp_atom *at_i = fr_i->atoms + atom_i_idx;
+	const struct multipole_pt *pt_j = fr_j->multipole_pts + pt_j_idx;
 
 	vec_t dr = {
 		pt_j->x - at_i->x - swf->cell.x,
@@ -149,8 +151,8 @@ atom_mult_grad(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 	vec_scale(&torque_i, swf->swf);
 	vec_scale(&torque_j, swf->swf);
 
-	efp_add_force(fr_i, CVEC(at_i->x), &force, &torque_i);
-	efp_sub_force(fr_j, CVEC(pt_j->x), &force, &torque_j);
+	efp_add_force(efp->grad + fr_i_idx, CVEC(fr_i->x), CVEC(at_i->x), &force, &torque_i);
+	efp_sub_force(efp->grad + fr_j_idx, CVEC(fr_j->x), CVEC(pt_j->x), &force, &torque_j);
 	efp_add_stress(&swf->dr, &force, &efp->stress);
 }
 
@@ -313,8 +315,8 @@ mult_mult_grad(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
 	vec_scale(&torque_i, swf->swf);
 	vec_scale(&torque_j, swf->swf);
 
-	efp_add_force(fr_i, CVEC(pt_i->x), &force, &torque_i);
-	efp_sub_force(fr_j, CVEC(pt_j->x), &force, &torque_j);
+	efp_add_force(efp->grad + fr_i_idx, CVEC(fr_i->x), CVEC(pt_i->x), &force, &torque_i);
+	efp_sub_force(efp->grad + fr_j_idx, CVEC(fr_j->x), CVEC(pt_j->x), &force, &torque_j);
 	efp_add_stress(&swf->dr, &force, &efp->stress);
 }
 
@@ -347,8 +349,10 @@ efp_frag_frag_elec(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx)
 				efp_charge_charge_grad(at_i->znuc, at_j->znuc,
 						       &dr, &force, &add_i, &add_j);
 				vec_scale(&force, swf.swf);
-				efp_add_force(fr_i, CVEC(at_i->x), &force, NULL);
-				efp_sub_force(fr_j, CVEC(at_j->x), &force, NULL);
+				efp_add_force(efp->grad + fr_i_idx, CVEC(fr_i->x),
+						CVEC(at_i->x), &force, NULL);
+				efp_sub_force(efp->grad + fr_j_idx, CVEC(fr_j->x),
+						CVEC(at_j->x), &force, NULL);
 				efp_add_stress(&swf.dr, &force, &efp->stress);
 			}
 		}
@@ -360,7 +364,7 @@ efp_frag_frag_elec(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx)
 			energy += atom_mult_energy(efp, fr_i, fr_j, ii, jj, &swf);
 
 			if (efp->do_gradient)
-				atom_mult_grad(efp, fr_i, fr_j, ii, jj, &swf);
+				atom_mult_grad(efp, fr_i_idx, fr_j_idx, ii, jj, &swf);
 		}
 	}
 
@@ -377,7 +381,7 @@ efp_frag_frag_elec(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx)
 			energy += atom_mult_energy(efp, fr_j, fr_i, jj, ii, &swf2);
 
 			if (efp->do_gradient)
-				atom_mult_grad(efp, fr_j, fr_i, jj, ii, &swf2);
+				atom_mult_grad(efp, fr_j_idx, fr_i_idx, jj, ii, &swf2);
 		}
 	}
 
@@ -397,8 +401,8 @@ efp_frag_frag_elec(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx)
 		swf.dswf.z * energy
 	};
 
-	vec_atomic_add(&fr_i->force, &force);
-	vec_atomic_sub(&fr_j->force, &force);
+	six_atomic_add_xyz(efp->grad + fr_i_idx, &force);
+	six_atomic_sub_xyz(efp->grad + fr_j_idx, &force);
 	efp_add_stress(&swf.dr, &force, &efp->stress);
 
 	return energy * swf.swf;
@@ -555,7 +559,8 @@ compute_ai_elec_frag_grad(struct efp *efp, size_t frag_idx)
 					       &force, &add_i, &add_j);
 
 			vec_atomic_add(efp->ptc_grad + i, &force);
-			efp_sub_force(fr_j, CVEC(at_j->x), &force, &add_j);
+			efp_sub_force(efp->grad + frag_idx, CVEC(fr_j->x), CVEC(at_j->x),
+					&force, &add_j);
 		}
 
 		/* ab initio atom - fragment multipoles */
@@ -588,7 +593,8 @@ compute_ai_elec_frag_grad(struct efp *efp, size_t frag_idx)
 			add_3(&force, &force_, &add_i, &add_i_, &add_j, &add_j_);
 
 			vec_atomic_add(efp->ptc_grad + i, &force);
-			efp_sub_force(fr_j, CVEC(pt_j->x), &force, &add_j);
+			efp_sub_force(efp->grad + frag_idx, CVEC(fr_j->x), CVEC(pt_j->x),
+					&force, &add_j);
 		}
 	}
 }

@@ -54,12 +54,6 @@ struct frag {
 	/* pointer to the initial fragment state in library */
 	const struct frag *lib;
 
-	/* force on fragment center of mass */
-	vec_t force;
-
-	/* torque on fragment */
-	vec_t torque;
-
 	/* number of atoms in this fragment */
 	size_t n_atoms;
 
@@ -182,6 +176,9 @@ struct efp {
 
 	/* stress tensor */
 	mat_t stress;
+
+	/* force and torque on fragments */
+	six_t *grad;
 
 	/* number of point charges */
 	size_t n_ptc;

@@ -64,16 +64,6 @@ update_ff_atoms(struct ff *ff, const struct frag *frag)
 	}
 }
 
-static void
-add_ff_gradient(struct frag *frag, const vec_t *ff_grad)
-{
-	for (size_t i = 0; i < frag->n_ff_atoms; i++) {
-		const struct efp_atom *atom = frag->atoms + frag->ff_atoms[i].idx;
-
-		efp_add_force(frag, CVEC(atom->x), ff_grad + frag->ff_offset + i, NULL);
-	}
-}
-
 static enum efp_result
 init_ff(struct efp *efp)
 {
@@ -506,29 +496,6 @@ check_params(struct efp *efp)
 	return EFP_RESULT_SUCCESS;
 }
 
-#ifdef WITH_MPI
-static void
-allreduce_gradient(struct efp *efp)
-{
-	size_t count = 2 * efp->n_frag;
-	vec_t *grad = malloc(count * sizeof(vec_t));
-
-	for (size_t i = 0; i < efp->n_frag; i++) {
-		grad[2 * i + 0] = efp->frags[i].force;
-		grad[2 * i + 1] = efp->frags[i].torque;
-	}
-
-	efp_allreduce((double *)grad, 3 * count);
-
-	for (size_t i = 0; i < efp->n_frag; i++) {
-		efp->frags[i].force = grad[2 * i];
-		efp->frags[i].torque = grad[2 * i + 1];
-	}
-
-	free(grad);
-}
-#endif
-
 static bool
 do_elec(const struct efp_opts *opts)
 {
@@ -611,23 +578,19 @@ efp_get_energy(struct efp *efp, struct efp_energy *energy)
 }
 
 EFP_EXPORT enum efp_result
-efp_get_gradient(struct efp *efp, size_t n_frags, double *grad)
+efp_get_gradient(struct efp *efp, double *grad)
 {
 	assert(efp);
 	assert(grad);
-	assert(n_frags == efp->n_frag);
 
 	if (!efp->do_gradient) {
 		efp_log("gradient calculation was not requested");
-		return EFP_RESULT_FATAL;
+		return (EFP_RESULT_FATAL);
 	}
 
-	for (size_t i = 0; i < efp->n_frag; i++, grad += 6) {
-		memcpy(grad, &efp->frags[i].force, sizeof(vec_t));
-		memcpy(grad + 3, &efp->frags[i].torque, sizeof(vec_t));
-	}
+	memcpy(grad, efp->grad, efp->n_frag * sizeof(six_t));
 
-	return EFP_RESULT_SUCCESS;
+	return (EFP_RESULT_SUCCESS);
 }
 
 EFP_EXPORT enum efp_result
@@ -836,8 +799,9 @@ efp_prepare(struct efp *efp)
 
 	efp->indip = calloc(efp->n_polarizable_pts, sizeof(vec_t));
 	efp->indipconj = calloc(efp->n_polarizable_pts, sizeof(vec_t));
+	efp->grad = calloc(efp->n_frag, sizeof(six_t));
 
-	return EFP_RESULT_SUCCESS;
+	return (EFP_RESULT_SUCCESS);
 }
 
 EFP_EXPORT enum efp_result
@@ -865,14 +829,10 @@ efp_compute(struct efp *efp, int do_gradient)
 	if ((res = check_params(efp)))
 		return res;
 
-	efp->stress = mat_zero;
 	memset(&efp->energy, 0, sizeof(struct efp_energy));
+	memset(&efp->stress, 0, sizeof(mat_t));
+	memset(efp->grad, 0, efp->n_frag * sizeof(six_t));
 	memset(efp->ptc_grad, 0, efp->n_ptc * sizeof(vec_t));
-
-	for (size_t i = 0; i < efp->n_frag; i++) {
-		efp->frags[i].force = vec_zero;
-		efp->frags[i].torque = vec_zero;
-	}
 
 	efp_balance_work(efp, compute_two_body_range, NULL);
 
@@ -889,7 +849,7 @@ efp_compute(struct efp *efp, int do_gradient)
 	efp_allreduce(&efp->energy.charge_penetration, 1);
 
 	if (efp->do_gradient) {
-		allreduce_gradient(efp);
+		efp_allreduce((double *)efp->grad, 6 * efp->n_frag);
 		efp_allreduce((double *)efp->ptc_grad, 3 * efp->n_ptc);
 		efp_allreduce((double *)&efp->stress, 9);
 	}
@@ -901,8 +861,18 @@ efp_compute(struct efp *efp, int do_gradient)
 		efp->energy.covalent = efp_ff_compute(efp->ff, ff_grad);
 
 		if (do_gradient) {
-			for (size_t i = 0; i < efp->n_frag; i++)
-				add_ff_gradient(efp->frags + i, ff_grad);
+			for (size_t i = 0; i < efp->n_frag; i++) {
+				const struct frag *frag = efp->frags + i;
+
+				for (size_t ii = 0; ii < frag->n_ff_atoms; ii++) {
+					const struct efp_atom *at = frag->atoms +
+						frag->ff_atoms[ii].idx;
+
+					efp_add_force(efp->grad + i, CVEC(frag->x),
+						CVEC(at->x), ff_grad + frag->ff_offset + ii,
+						NULL);
+				}
+			}
 		}
 	}
 
@@ -1087,6 +1057,7 @@ efp_shutdown(struct efp *efp)
 
 	free(efp->frags);
 	free(efp->lib);
+	free(efp->grad);
 	free(efp->ptc);
 	free(efp->ptc_xyz);
 	free(efp->ptc_grad);

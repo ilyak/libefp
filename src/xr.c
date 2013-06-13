@@ -62,13 +62,15 @@ charge_penetration_energy(double s_ij, double r_ij)
 }
 
 static void
-charge_penetration_grad(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
-			size_t lmo_i_idx, size_t lmo_j_idx, double s_ij, const six_t ds_ij,
-			const struct swf *swf)
+charge_penetration_grad(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
+			size_t lmo_i_idx, size_t lmo_j_idx, double s_ij,
+			const six_t ds_ij, const struct swf *swf)
 {
 	if (fabs(s_ij) < INTEGRAL_THRESHOLD)
 		return;
 
+	const struct frag *fr_i = efp->frags + fr_i_idx;
+	const struct frag *fr_j = efp->frags + fr_j_idx;
 	const vec_t *ct_i = fr_i->lmo_centroids + lmo_i_idx;
 	const vec_t *ct_j = fr_j->lmo_centroids + lmo_j_idx;
 
@@ -105,11 +107,10 @@ charge_penetration_grad(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 	torque_j.z = torque_i.z + force.x * (fr_j->y - fr_i->y - swf->cell.y) -
 				  force.y * (fr_j->x - fr_i->x - swf->cell.x);
 
-	vec_atomic_add(&fr_i->force, &force);
-	vec_atomic_add(&fr_i->torque, &torque_i);
-
-	vec_atomic_sub(&fr_j->force, &force);
-	vec_atomic_sub(&fr_j->torque, &torque_j);
+	six_atomic_add_xyz(efp->grad + fr_i_idx, &force);
+	six_atomic_sub_xyz(efp->grad + fr_j_idx, &force);
+	six_atomic_add_abc(efp->grad + fr_i_idx, &torque_i);
+	six_atomic_sub_abc(efp->grad + fr_j_idx, &torque_j);
 
 	efp_add_stress(&swf->dr, &force, &efp->stress);
 }
@@ -205,14 +206,16 @@ add_six_vec(size_t el, size_t size, const double *vec, six_t *six)
  * Theor. Chem. Acc. 115, 385 (2006)
  */
 static void
-lmo_lmo_xr_grad(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
+lmo_lmo_xr_grad(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
 		size_t i, size_t j, const double *lmo_s, const double *lmo_t,
 		const six_t *lmo_ds, const six_t *lmo_dt, const struct swf *swf)
 {
-	size_t ij = i * fr_j->n_lmo + j;
-
+	const struct frag *fr_i = efp->frags + fr_i_idx;
+	const struct frag *fr_j = efp->frags + fr_j_idx;
 	const vec_t *ct_i = fr_i->lmo_centroids + i;
 	const vec_t *ct_j = fr_j->lmo_centroids + j;
+
+	size_t ij = i * fr_j->n_lmo + j;
 
 	vec_t dr = {
 		ct_j->x - ct_i->x - swf->cell.x,
@@ -433,11 +436,10 @@ lmo_lmo_xr_grad(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 			force.y * (fr_j->x - fr_i->x - swf->cell.x)
 	};
 
-	vec_atomic_add(&fr_i->force, &force);
-	vec_atomic_add(&fr_i->torque, &torque_i);
-
-	vec_atomic_sub(&fr_j->force, &force);
-	vec_atomic_sub(&fr_j->torque, &torque_j);
+	six_atomic_add_xyz(efp->grad + fr_i_idx, &force);
+	six_atomic_sub_xyz(efp->grad + fr_j_idx, &force);
+	six_atomic_add_abc(efp->grad + fr_i_idx, &torque_i);
+	six_atomic_sub_abc(efp->grad + fr_j_idx, &torque_j);
 
 	efp_add_stress(&swf->dr, &force, &efp->stress);
 }
@@ -647,11 +649,11 @@ efp_frag_frag_xr(struct efp *efp, size_t frag_i, size_t frag_j, double *lmo_s,
 
 			if ((efp->opts.terms & EFP_TERM_ELEC) &&
 			    (efp->opts.elec_damp == EFP_ELEC_DAMP_OVERLAP))
-				charge_penetration_grad(efp, fr_i, fr_j, i, j,
+				charge_penetration_grad(efp, frag_i, frag_j, i, j,
 							lmo_s[ij], lmo_ds[ij], &swf);
 
 			if (efp->opts.terms & EFP_TERM_XR)
-				lmo_lmo_xr_grad(efp, fr_i, fr_j, i, j, lmo_s, lmo_t,
+				lmo_lmo_xr_grad(efp, frag_i, frag_j, i, j, lmo_s, lmo_t,
 						lmo_ds, lmo_dt, &swf);
 		}
 	}
@@ -662,8 +664,8 @@ efp_frag_frag_xr(struct efp *efp, size_t frag_i, size_t frag_j, double *lmo_s,
 		swf.dswf.z * (exr + ecp)
 	};
 
-	vec_atomic_add(&fr_i->force, &force);
-	vec_atomic_sub(&fr_j->force, &force);
+	six_atomic_add_xyz(efp->grad + frag_i, &force);
+	six_atomic_sub_xyz(efp->grad + frag_j, &force);
 	efp_add_stress(&swf.dr, &force, &efp->stress);
 
 	free(s), free(ds), free(t), free(dt), free(lmo_dt);

@@ -64,9 +64,12 @@ get_damp_tt_grad(double r)
 }
 
 static double
-disp_tt(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
+disp_tt(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
 	size_t pt_i_idx, size_t pt_j_idx, double sum, const struct swf *swf)
 {
+	const struct frag *fr_i = efp->frags + fr_i_idx;
+	const struct frag *fr_j = efp->frags + fr_j_idx;
+
 	const struct dynamic_polarizable_pt *pt_i =
 				fr_i->dynamic_polarizable_pts + pt_i_idx;
 	const struct dynamic_polarizable_pt *pt_j =
@@ -95,8 +98,10 @@ disp_tt(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 			g * dr.z * swf->swf
 		};
 
-		efp_add_force(fr_i, CVEC(pt_i->x), &force, NULL);
-		efp_sub_force(fr_j, CVEC(pt_j->x), &force, NULL);
+		efp_add_force(efp->grad + fr_i_idx, CVEC(fr_i->x),
+				CVEC(pt_i->x), &force, NULL);
+		efp_sub_force(efp->grad + fr_j_idx, CVEC(fr_j->x),
+				CVEC(pt_j->x), &force, NULL);
 		efp_add_stress(&swf->dr, &force, &efp->stress);
 	}
 
@@ -104,10 +109,13 @@ disp_tt(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 }
 
 static double
-disp_overlap(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
+disp_overlap(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
 	     size_t pt_i_idx, size_t pt_j_idx, double s_ij, six_t ds_ij,
 	     double sum, const struct swf *swf)
 {
+	const struct frag *fr_i = efp->frags + fr_i_idx;
+	const struct frag *fr_j = efp->frags + fr_j_idx;
+
 	const struct dynamic_polarizable_pt *pt_i =
 				fr_i->dynamic_polarizable_pts + pt_i_idx;
 	const struct dynamic_polarizable_pt *pt_j =
@@ -163,11 +171,11 @@ disp_overlap(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 			     t2 * (ds_ij.y * swf->dr.x - ds_ij.x * swf->dr.y) +
 			     t2 * ds_ij.c);
 
-		vec_atomic_add(&fr_i->force, &force);
-		vec_atomic_add(&fr_i->torque, &torque_i);
+		six_atomic_add_xyz(efp->grad + fr_i_idx, &force);
+		six_atomic_add_abc(efp->grad + fr_i_idx, &torque_i);
 
-		vec_atomic_sub(&fr_j->force, &force);
-		vec_atomic_sub(&fr_j->torque, &torque_j);
+		six_atomic_sub_xyz(efp->grad + fr_j_idx, &force);
+		six_atomic_sub_abc(efp->grad + fr_j_idx, &torque_j);
 
 		efp_add_stress(&swf->dr, &force, &efp->stress);
 	}
@@ -176,9 +184,12 @@ disp_overlap(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 }
 
 static double
-disp_off(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
+disp_off(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
 	 size_t pt_i_idx, size_t pt_j_idx, double sum, const struct swf *swf)
 {
+	const struct frag *fr_i = efp->frags + fr_i_idx;
+	const struct frag *fr_j = efp->frags + fr_j_idx;
+
 	const struct dynamic_polarizable_pt *pt_i =
 				fr_i->dynamic_polarizable_pts + pt_i_idx;
 	const struct dynamic_polarizable_pt *pt_j =
@@ -206,8 +217,10 @@ disp_off(struct efp *efp, struct frag *fr_i, struct frag *fr_j,
 			g * dr.z * swf->swf
 		};
 
-		efp_add_force(fr_i, CVEC(pt_i->x), &force, NULL);
-		efp_sub_force(fr_j, CVEC(pt_j->x), &force, NULL);
+		efp_add_force(efp->grad + fr_i_idx, CVEC(fr_i->x),
+				CVEC(pt_i->x), &force, NULL);
+		efp_sub_force(efp->grad + fr_j_idx, CVEC(fr_j->x),
+				CVEC(pt_j->x), &force, NULL);
 		efp_add_stress(&swf->dr, &force, &efp->stress);
 	}
 
@@ -234,14 +247,14 @@ point_point_disp(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
 
 	switch (efp->opts.disp_damp) {
 		case EFP_DISP_DAMP_TT:
-			return disp_tt(efp, fr_i, fr_j, pt_i_idx, pt_j_idx,
-				       sum, swf);
+			return disp_tt(efp, fr_i_idx, fr_j_idx,
+				pt_i_idx, pt_j_idx, sum, swf);
 		case EFP_DISP_DAMP_OVERLAP:
-			return disp_overlap(efp, fr_i, fr_j, pt_i_idx, pt_j_idx,
-					    s, ds, sum, swf);
+			return disp_overlap(efp, fr_i_idx, fr_j_idx,
+				pt_i_idx, pt_j_idx, s, ds, sum, swf);
 		case EFP_DISP_DAMP_OFF:
-			return disp_off(efp, fr_i, fr_j, pt_i_idx, pt_j_idx,
-					sum, swf);
+			return disp_off(efp, fr_i_idx, fr_j_idx,
+				pt_i_idx, pt_j_idx, sum, swf);
 	}
 	assert(0);
 }
@@ -281,8 +294,8 @@ efp_frag_frag_disp(struct efp *efp, size_t frag_i, size_t frag_j,
 		swf.dswf.z * energy
 	};
 
-	vec_atomic_add(&fr_i->force, &force);
-	vec_atomic_sub(&fr_j->force, &force);
+	six_atomic_add_xyz(efp->grad + frag_i, &force);
+	six_atomic_sub_xyz(efp->grad + frag_j, &force);
 	efp_add_stress(&swf.dr, &force, &efp->stress);
 
 	return energy * swf.swf;
