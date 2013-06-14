@@ -727,11 +727,10 @@ efp_set_frag_coordinates(struct efp *efp, size_t frag_idx,
 }
 
 EFP_EXPORT enum efp_result
-efp_get_coordinates(struct efp *efp, size_t n_frags, double *xyzabc)
+efp_get_coordinates(struct efp *efp, double *xyzabc)
 {
 	assert(efp);
 	assert(xyzabc);
-	assert(n_frags == efp->n_frag);
 
 	for (size_t i = 0; i < efp->n_frag; i++) {
 		struct frag *frag = efp->frags + i;
@@ -747,7 +746,7 @@ efp_get_coordinates(struct efp *efp, size_t n_frags, double *xyzabc)
 		*xyzabc++ = c;
 	}
 
-	return EFP_RESULT_SUCCESS;
+	return (EFP_RESULT_SUCCESS);
 }
 
 EFP_EXPORT enum efp_result
