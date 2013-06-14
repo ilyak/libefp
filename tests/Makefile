@@ -14,7 +14,7 @@ check-omp:
 check-mpi:
 	@for prc in 1 2 3; do \
 		echo "Testing for $$prc process(es)..."; \
-		EFPMD="mpirun -np $$prc ../efpmd/src/efpmd" ./run.sh; \
+		OMP_NUM_THREADS=1 EFPMD="mpirun -np $$prc ../efpmd/src/efpmd" ./run.sh; \
 	done
 
 clean:
