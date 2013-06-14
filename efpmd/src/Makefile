@@ -5,7 +5,7 @@ include $(TOP)/config.inc
 CFLAGS= -I$(TOP)/src -DFRAGLIB_PATH="\"$(FRAGLIB)\"" $(MYCFLAGS)
 FFLAGS= $(MYFFLAGS)
 LDFLAGS= -L$(TOP)/src $(MYLDFLAGS)
-LIBS= $(LAPACK) -lefp -lm
+LIBS= $(MYLIBS) -lefp -lm
 
 PROG= efpmd
 ALL_C= cfg.c common.c efield.c grad.c gtest.c hess.c main.c \

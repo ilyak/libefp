@@ -34,12 +34,13 @@ If you are going to compile EFPMD program (needed for tests):
 
 - LAPACK library
 
-First, edit the `config.inc` file according to your needs. All available
-options are explained with comments. Defaults usually work well but you may
-need to change the `LAPACK` variable to link with the implementation installed
-on your system (the default is ATLAS). You might also need to add additional
-include directories to `MYCFLAGS` (using -I flag) or library search path to
-`MYLDFLAGS` (using -L flag).
+First, copy the configuration file which suits you from `config` directory to
+the top source code directory. Rename the file to `config.inc` and edit it
+according to your needs. All available options are explained with comments.
+Defaults usually work well but you may need to change the `MYLIBS` variable to
+link with additional libraries required by your setup. You may also need to add
+additional include directories to `MYCFLAGS` (using -I flag) or library search
+path to `MYLDFLAGS` (using -L flag).
 
 To compile issue:
 
