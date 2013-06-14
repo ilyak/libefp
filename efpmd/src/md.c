@@ -786,7 +786,7 @@ static struct md *md_create(struct efp *efp, const struct cfg *cfg, const struct
 	md->bodies = xcalloc(md->n_bodies, sizeof(struct body));
 
 	double coord[6 * md->n_bodies];
-	check_fail(efp_get_coordinates(efp, md->n_bodies, coord));
+	check_fail(efp_get_coordinates(efp, coord));
 
 	for (size_t i = 0; i < md->n_bodies; i++) {
 		struct body *body = md->bodies + i;

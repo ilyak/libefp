@@ -94,7 +94,7 @@ static void test_fgrad(struct efp *efp, const struct cfg *cfg, const double *fgr
 	check_fail(efp_get_frag_count(efp, &n_frags));
 
 	double xyzabc[6 * n_frags];
-	check_fail(efp_get_coordinates(efp, n_frags, xyzabc));
+	check_fail(efp_get_coordinates(efp, xyzabc));
 
 	for (size_t i = 0; i < n_frags; i++) {
 		double deriv[3], ngrad[6];

@@ -62,7 +62,7 @@ static void print_restart(struct efp *efp)
 	check_fail(efp_get_frag_count(efp, &n_frags));
 
 	double coord[6 * n_frags];
-	check_fail(efp_get_coordinates(efp, n_frags, coord));
+	check_fail(efp_get_coordinates(efp, coord));
 
 	msg("    RESTART DATA\n\n");
 
@@ -157,7 +157,7 @@ void sim_opt(struct efp *efp, const struct cfg *cfg, const struct sys *sys)
 	opt_set_user_data(state, efp);
 
 	double coord[n_coord], grad[n_coord];
-	check_fail(efp_get_coordinates(efp, n_frags, coord));
+	check_fail(efp_get_coordinates(efp, coord));
 
 	if (opt_init(state, n_coord, coord))
 		error("unable to initialize an optimizer");

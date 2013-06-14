@@ -65,7 +65,7 @@ static void compute_hessian(struct efp *efp, const struct cfg *cfg, double *hess
 	grad_f = xmalloc(n_coord * sizeof(double));
 	grad_b = xmalloc(n_coord * sizeof(double));
 
-	check_fail(efp_get_coordinates(efp, n_frags, xyzabc));
+	check_fail(efp_get_coordinates(efp, xyzabc));
 
 	if (!central) {
 		check_fail(efp_get_gradient(efp, grad_b));
@@ -148,7 +148,7 @@ static void get_weight_factor(struct efp *efp, double *mass_fact,
 	check_fail(efp_get_frag_count(efp, &n_frags));
 
 	double xyzabc[6 * n_frags];
-	check_fail(efp_get_coordinates(efp, n_frags, xyzabc));
+	check_fail(efp_get_coordinates(efp, xyzabc));
 
 	for (size_t i = 0; i < n_frags; i++) {
 		double mass;
