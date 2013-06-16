@@ -846,13 +846,15 @@ efp_add_potential(struct efp *efp, const char *path)
 	assert(efp);
 	assert(path);
 
-	if ((stream = efp_stream_open(path)) == NULL)
-		return EFP_RESULT_FILE_NOT_FOUND;
+	if ((stream = efp_stream_open(path)) == NULL) {
+		efp_log("unable to open file %s", path);
+		return (EFP_RESULT_FILE_NOT_FOUND);
+	}
 
 	efp_stream_set_split_char(stream, '>');
 	efp_stream_next_line(stream);
 	res = parse_file(efp, stream);
 	efp_stream_close(stream);
 
-	return res;
+	return (res);
 }
