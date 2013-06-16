@@ -321,14 +321,16 @@ static void print_proc_info(void)
 	n_omp = omp_get_max_threads();
 #endif
 
-	msg("RUNNING %d MPI PROCESS(ES) WITH %d OPENMP THREAD(S)\n", n_mpi, n_omp);
+	if (n_mpi > 1)
+		msg("RUNNING 1 MASTER AND %d SLAVE PROCESSES WITH %d OPENMP THREADS EACH\n",
+					n_mpi - 1, n_omp);
+	else
+		msg("RUNNING 1 PROCESS WITH %d OPENMP THREADS\n", n_omp);
 }
 
-static void print_time(void)
+static void print_time(const time_t *t)
 {
-	time_t t = time(NULL);
-
-	msg("WALL CLOCK TIME IS %s", ctime(&t));
+	msg("WALL CLOCK TIME IS %s", ctime(t));
 }
 
 static void print_config(struct cfg *cfg)
@@ -386,10 +388,14 @@ static void sys_free(struct sys *sys)
 
 int main(int argc, char **argv)
 {
+	struct cfg *cfg;
+	struct efp *efp;
+	struct sys *sys;
+	time_t start_time, end_time;
+
 #ifdef WITH_MPI
 	MPI_Init(&argc, &argv);
 #endif
-	struct cfg *cfg = make_cfg();
 
 	if (argc < 2) {
 		msg(USAGE_STRING);
@@ -402,7 +408,9 @@ int main(int argc, char **argv)
 			print_banner();
 			goto exit;
 		case 'd':
+			cfg = make_cfg();
 			print_config(cfg);
+			cfg_free(cfg);
 			goto exit;
 		default:
 			msg(USAGE_STRING);
@@ -410,27 +418,31 @@ int main(int argc, char **argv)
 		}
 	}
 
+	start_time = time(NULL);
 	print_banner();
 	msg("\n");
-	print_time();
 	print_proc_info();
+	print_time(&start_time);
 	msg("\n");
-	struct sys *sys = parse_input(cfg, argv[1]);
+	cfg = make_cfg();
+	sys = parse_input(cfg, argv[1]);
 	msg("SIMULATION SETTINGS\n\n");
 	print_config(cfg);
 	msg("\n\n");
 	convert_units(cfg, sys);
-	struct efp *efp = init_sim(cfg, sys);
+	efp = init_sim(cfg, sys);
 	sim_fn_t sim_fn = get_sim_fn(cfg_get_enum(cfg, "run_type"));
 	sim_fn(efp, cfg, sys);
-	print_time();
+	end_time = time(NULL);
+	print_time(&end_time);
+	msg("TOTAL RUN TIME IS %d SECONDS\n", (int)(difftime(end_time, start_time)));
 	efp_shutdown(efp);
 	sys_free(sys);
-exit:
 	cfg_free(cfg);
 
+exit:
 #ifdef WITH_MPI
 	MPI_Finalize();
 #endif
-	return EXIT_SUCCESS;
+	return (EXIT_SUCCESS);
 }
