@@ -4,6 +4,7 @@ gtest_tol 5.0e-6
 elec_damp overlap
 disp_damp tt
 pol_driver direct
+fraglib_path ../fraglib
 
 charge   1.0   3.2   1.8  -2.3
 charge   8.0  -2.9  -6.2  -2.5

@@ -8,6 +8,7 @@ enable_pbc true
 periodic_box 15.0 15.0 15.0
 enable_cutoff true
 swf_cutoff 5.0
+fraglib_path ../fraglib
 
 fragment h2o_l
    0.0   0.0   0.0   0.0   0.0   0.0

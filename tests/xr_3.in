@@ -3,6 +3,7 @@ ref_energy 0.0301402098
 gtest_tol 5.0e-6
 coord points
 terms xr
+fraglib_path ../fraglib
 
 fragment h2o_l
   -3.394  -1.900  -3.700

@@ -2,6 +2,7 @@ run_type gtest
 ref_energy 0.0002910961
 terms elec
 elec_damp overlap
+fraglib_path ../fraglib
 
 fragment h2o_l
    0.0   0.0   0.0   1.0   2.0   3.0

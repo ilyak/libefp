@@ -3,6 +3,7 @@ ref_energy -0.0039531505
 coord points
 terms elec
 elec_damp screen
+fraglib_path ../fraglib
 
 fragment h2o_l
   -3.394  -1.900  -3.700

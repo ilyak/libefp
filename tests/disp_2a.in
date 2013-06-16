@@ -2,6 +2,7 @@ run_type gtest
 ref_energy -0.0014688094
 terms disp
 disp_damp tt
+fraglib_path ../fraglib
 
 fragment h2o_l
   -1.0   3.7   0.4  -1.3   0.0   7.0

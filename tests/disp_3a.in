@@ -3,6 +3,7 @@ ref_energy -0.0173897265
 coord points
 terms disp
 disp_damp tt
+fraglib_path ../fraglib
 
 fragment h2o_l
   -3.394  -1.900  -3.700

@@ -5,6 +5,7 @@ coord points
 elec_damp screen
 disp_damp tt
 pol_damp tt
+fraglib_path ../fraglib
 
 fragment h2o_l
   -3.394  -1.900  -3.700

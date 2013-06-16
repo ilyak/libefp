@@ -3,6 +3,7 @@ ref_energy 0.0002777238
 terms elec pol
 elec_damp screen
 pol_driver direct
+fraglib_path ../fraglib
 
 fragment h2o_l
    0.0   0.0   0.0   1.0   2.0   3.0

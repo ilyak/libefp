@@ -5,6 +5,7 @@ elec_damp screen
 disp_damp tt
 pol_damp tt
 pol_driver direct
+fraglib_path ../fraglib
 
 fragment acetone_l
    0.0   0.0   0.0   0.0   0.2   0.3

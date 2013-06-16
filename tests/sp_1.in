@@ -2,6 +2,7 @@ run_type sp
 coord xyzabc
 terms elec pol disp xr
 disp_damp overlap
+fraglib_path ../fraglib
 
 fragment h2o_l
    0.000   0.000   0.000   0.000   0.000   0.000

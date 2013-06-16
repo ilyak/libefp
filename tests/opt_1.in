@@ -3,6 +3,7 @@
 run_type opt
 max_steps 10
 coord points
+fraglib_path ../fraglib
 
 fragment h2o_l
    -6.6939 -0.7053  0.2031

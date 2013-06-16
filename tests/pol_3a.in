@@ -4,6 +4,7 @@ coord points
 terms elec pol
 elec_damp screen
 pol_damp off
+fraglib_path ../fraglib
 
 fragment h2o_l
   -3.394  -1.900  -3.700
