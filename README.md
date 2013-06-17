@@ -26,13 +26,11 @@ To build LIBEFP from source you need the following:
 
 - POSIX complaint make (BSD make or GNU make will work)
 
-- BLAS/CBLAS library (required when linking with libefp)
+- BLAS/CBLAS/LAPACK libraries (required when linking with libefp)
 
-If you are going to compile EFPMD program (needed for tests):
+If you are going to compile EFPMD program (required for tests):
 
 - Fortran 77 compiler
-
-- LAPACK library
 
 First, copy the configuration file which suits you from `config` directory to
 the top source code directory. Rename the file to `config.inc` and edit it
