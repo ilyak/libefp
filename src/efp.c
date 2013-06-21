@@ -680,17 +680,26 @@ efp_set_coordinates(struct efp *efp, enum efp_coord_type coord_type,
 	assert(efp);
 	assert(coord);
 
+	size_t stride;
 	enum efp_result res;
-	size_t stride = (size_t []) {
-		[EFP_COORD_TYPE_XYZABC] = 6,
-		[EFP_COORD_TYPE_POINTS] = 9,
-		[EFP_COORD_TYPE_ROTMAT] = 12 }[coord_type];
+
+	switch (coord_type) {
+		case EFP_COORD_TYPE_XYZABC:
+			stride = 6;
+			break;
+		case EFP_COORD_TYPE_POINTS:
+			stride = 9;
+			break;
+		case EFP_COORD_TYPE_ROTMAT:
+			stride = 12;
+			break;
+	}
 
 	for (size_t i = 0; i < efp->n_frag; i++, coord += stride)
 		if ((res = efp_set_frag_coordinates(efp, i, coord_type, coord)))
-			return res;
+			return (res);
 
-	return EFP_RESULT_SUCCESS;
+	return (EFP_RESULT_SUCCESS);
 }
 
 EFP_EXPORT enum efp_result
