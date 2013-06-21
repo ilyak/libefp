@@ -125,7 +125,8 @@ induced dipoles.
 
 `direct` - Direct solution of system of linear equations for polarization
 induced dipoles. This solver does not have convergence issues but is unsuitable
-for large systems (more than 2000 polarizable points).
+for large systems (more than 2000 polarizable points). The direct solver is not
+parallelized.
 
 Default value: `iterative`
 
