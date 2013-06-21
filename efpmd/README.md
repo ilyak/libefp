@@ -104,7 +104,7 @@ Default value: `screen`
 
 `off` - No dispersion damping.
 
-Default value: `tt`
+Default value: `overlap`
 
 ##### Polarization damping type
 
