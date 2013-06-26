@@ -33,7 +33,7 @@
 #define POL_SCF_TOL 1.0e-10
 #define POL_SCF_MAX_ITER 80
 
-double efp_get_pol_damp_tt(double);
+double efp_get_pol_damp_tt(double, double, double);
 enum efp_result efp_compute_id_direct(struct efp *);
 
 struct id_work_data {
@@ -43,25 +43,21 @@ struct id_work_data {
 };
 
 double
-efp_get_pol_damp_tt(double r)
+efp_get_pol_damp_tt(double r, double pa, double pb)
 {
-	/* polarization damping parameter */
-	static const double a = 0.6;
-
+	double ab = sqrt(pa * pb);
 	double r2 = r * r;
 
-	return 1.0 - exp(-a * r2) * (1.0 + a * r2);
+	return (1.0 - exp(-ab * r2) * (1.0 + ab * r2));
 }
 
 static double
-efp_get_pol_damp_tt_grad(double r)
+efp_get_pol_damp_tt_grad(double r, double pa, double pb)
 {
-	/* polarization damping parameter */
-	static const double a = 0.6;
-
+	double ab = sqrt(pa * pb);
 	double r2 = r * r;
 
-	return -2.0 * exp(-a * r2) * (a * a * r2);
+	return (-2.0 * exp(-ab * r2) * (ab * ab * r2));
 }
 
 static vec_t
@@ -120,8 +116,8 @@ get_multipole_field(const vec_t *xyz, const struct multipole_pt *mult_pt,
 static vec_t
 get_elec_field(const struct efp *efp, size_t frag_idx, size_t pt_idx)
 {
-	const struct frag *frag = efp->frags + frag_idx;
-	const struct polarizable_pt *pt = frag->polarizable_pts + pt_idx;
+	const struct frag *fr_j = efp->frags + frag_idx;
+	const struct polarizable_pt *pt = fr_j->polarizable_pts + pt_idx;
 	vec_t elec_field = vec_zero;
 
 	for (size_t i = 0; i < efp->n_frag; i++) {
@@ -129,7 +125,7 @@ get_elec_field(const struct efp *efp, size_t frag_idx, size_t pt_idx)
 			continue;
 
 		const struct frag *fr_i = efp->frags + i;
-		struct swf swf = efp_make_swf(efp, fr_i, frag);
+		struct swf swf = efp_make_swf(efp, fr_i, fr_j);
 
 		/* field due to nuclei */
 		for (size_t j = 0; j < fr_i->n_atoms; j++) {
@@ -146,7 +142,7 @@ get_elec_field(const struct efp *efp, size_t frag_idx, size_t pt_idx)
 			double p1 = 1.0;
 
 			if (efp->opts.pol_damp == EFP_POL_DAMP_TT)
-				p1 = efp_get_pol_damp_tt(r);
+				p1 = efp_get_pol_damp_tt(r, fr_i->pol_damp, fr_j->pol_damp);
 
 			elec_field.x += swf.swf * at->znuc * dr.x / r3 * p1;
 			elec_field.y += swf.swf * at->znuc * dr.y / r3 * p1;
@@ -168,7 +164,7 @@ get_elec_field(const struct efp *efp, size_t frag_idx, size_t pt_idx)
 			double p1 = 1.0;
 
 			if (efp->opts.pol_damp == EFP_POL_DAMP_TT)
-				p1 = efp_get_pol_damp_tt(r);
+				p1 = efp_get_pol_damp_tt(r, fr_i->pol_damp, fr_j->pol_damp);
 
 			elec_field.x += mult_field.x * p1;
 			elec_field.y += mult_field.y * p1;
@@ -183,14 +179,10 @@ get_elec_field(const struct efp *efp, size_t frag_idx, size_t pt_idx)
 
 			double r = vec_len(&dr);
 			double r3 = r * r * r;
-			double p1 = 1.0;
 
-			if (efp->opts.pol_damp == EFP_POL_DAMP_TT)
-				p1 = efp_get_pol_damp_tt(r);
-
-			elec_field.x += efp->ptc[i] * dr.x / r3 * p1;
-			elec_field.y += efp->ptc[i] * dr.y / r3 * p1;
-			elec_field.z += efp->ptc[i] * dr.z / r3 * p1;
+			elec_field.x += efp->ptc[i] * dr.x / r3;
+			elec_field.y += efp->ptc[i] * dr.y / r3;
+			elec_field.z += efp->ptc[i] * dr.z / r3;
 		}
 	}
 
@@ -327,7 +319,7 @@ get_induced_dipole_field(struct efp *efp, size_t frag_idx,
 			double p1 = 1.0;
 
 			if (efp->opts.pol_damp == EFP_POL_DAMP_TT)
-				p1 = efp_get_pol_damp_tt(r);
+				p1 = efp_get_pol_damp_tt(r, fr_i->pol_damp, fr_j->pol_damp);
 
 			field->x -= swf.swf * p1 * (efp->indip[idx].x / r3 -
 						3.0 * t1 * dr.x / r5);
@@ -522,8 +514,10 @@ compute_grad_point(struct efp *efp, size_t frag_idx, size_t pt_idx)
 			if (efp->opts.pol_damp == EFP_POL_DAMP_TT) {
 				double r = vec_len(&dr);
 
-				p1 = efp_get_pol_damp_tt(r);
-				p2 = efp_get_pol_damp_tt_grad(r);
+				p1 = efp_get_pol_damp_tt(r, fr_i->pol_damp,
+						fr_j->pol_damp);
+				p2 = efp_get_pol_damp_tt_grad(r, fr_i->pol_damp,
+						fr_j->pol_damp);
 			}
 
 			vec_t force, add_i, add_j;
@@ -570,8 +564,10 @@ compute_grad_point(struct efp *efp, size_t frag_idx, size_t pt_idx)
 			if (efp->opts.pol_damp == EFP_POL_DAMP_TT) {
 				double r = vec_len(&dr);
 
-				p1 = efp_get_pol_damp_tt(r);
-				p2 = efp_get_pol_damp_tt_grad(r);
+				p1 = efp_get_pol_damp_tt(r, fr_i->pol_damp,
+						fr_j->pol_damp);
+				p2 = efp_get_pol_damp_tt_grad(r, fr_i->pol_damp,
+						fr_j->pol_damp);
 			}
 
 			double e = 0.0;
@@ -647,8 +643,10 @@ compute_grad_point(struct efp *efp, size_t frag_idx, size_t pt_idx)
 			if (efp->opts.pol_damp == EFP_POL_DAMP_TT) {
 				double r = vec_len(&dr);
 
-				p1 = efp_get_pol_damp_tt(r);
-				p2 = efp_get_pol_damp_tt_grad(r);
+				p1 = efp_get_pol_damp_tt(r, fr_i->pol_damp,
+						fr_j->pol_damp);
+				p2 = efp_get_pol_damp_tt_grad(r, fr_i->pol_damp,
+						fr_j->pol_damp);
 			}
 
 			vec_t force, add_i, add_j;

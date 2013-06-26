@@ -654,6 +654,22 @@ parse_screen(struct frag *frag, struct stream *stream)
 }
 
 static enum efp_result
+parse_polab(struct frag *frag, struct stream *stream)
+{
+	if (!tok_double(stream, &frag->pol_damp)) {
+		efp_log("error parsing fragment polarization damping parameter");
+		return (EFP_RESULT_SYNTAX_ERROR);
+	}
+
+	efp_stream_next_line(stream);
+
+	if (!tok_stop(stream))
+		return (EFP_RESULT_SYNTAX_ERROR);
+
+	return (EFP_RESULT_SUCCESS);
+}
+
+static enum efp_result
 parse_ff_types(struct frag *frag, struct stream *stream)
 {
 	while (!efp_stream_eof(stream)) {
@@ -743,23 +759,24 @@ get_parse_fn(struct stream *stream)
 		const char *label;
 		parse_fn fn;
 	} funcs[] = {
-		{ "COORDINATES",                parse_coordinates },
-		{ "MONOPOLES",                  parse_monopoles },
-		{ "DIPOLES",                    parse_dipoles },
-		{ "QUADRUPOLES",                parse_quadrupoles },
-		{ "OCTUPOLES",                  parse_octupoles },
-		{ "POLARIZABLE POINTS",         parse_polarizable_pts },
+		{ "COORDINATES",                parse_coordinates             },
+		{ "MONOPOLES",                  parse_monopoles               },
+		{ "DIPOLES",                    parse_dipoles                 },
+		{ "QUADRUPOLES",                parse_quadrupoles             },
+		{ "OCTUPOLES",                  parse_octupoles               },
+		{ "POLARIZABLE POINTS",         parse_polarizable_pts         },
 		{ "DYNAMIC POLARIZABLE POINTS", parse_dynamic_polarizable_pts },
-		{ "PROJECTION BASIS SET",       parse_projection_basis },
-		{ "MULTIPLICITY",               parse_multiplicity },
-		{ "PROJECTION WAVEFUNCTION",    parse_projection_wf },
-		{ "FOCK MATRIX ELEMENTS",       parse_fock_mat },
-		{ "LMO CENTROIDS",              parse_lmo_centroids },
-		{ "CANONVEC",                   parse_canonvec },
-		{ "CANONFOK",                   parse_canonfok },
-		{ "SCREEN",                     parse_screen },
-		{ "FFTYPES",                    parse_ff_types },
-		{ "FFBONDS",                    parse_ff_bonds }
+		{ "PROJECTION BASIS SET",       parse_projection_basis        },
+		{ "MULTIPLICITY",               parse_multiplicity            },
+		{ "PROJECTION WAVEFUNCTION",    parse_projection_wf           },
+		{ "FOCK MATRIX ELEMENTS",       parse_fock_mat                },
+		{ "LMO CENTROIDS",              parse_lmo_centroids           },
+		{ "CANONVEC",                   parse_canonvec                },
+		{ "CANONFOK",                   parse_canonfok                },
+		{ "SCREEN",                     parse_screen                  },
+		{ "POLAB",                      parse_polab                   },
+		{ "FFTYPES",                    parse_ff_types                },
+		{ "FFBONDS",                    parse_ff_bonds                }
 	};
 
 	for (size_t i = 0; i < ARRAY_SIZE(funcs); i++)
@@ -826,6 +843,9 @@ parse_file(struct efp *efp, struct stream *stream)
 		frag->lib = frag;
 		strcpy(frag->name, name);
 		efp->lib[efp->n_lib - 1] = frag;
+
+		/* default value */
+		frag->pol_damp = 0.6;
 
 		efp_stream_next_line(stream);
 		efp_stream_next_line(stream);

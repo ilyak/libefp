@@ -31,7 +31,7 @@
 #include "clapack.h"
 #include "private.h"
 
-double efp_get_pol_damp_tt(double);
+double efp_get_pol_damp_tt(double, double, double);
 enum efp_result efp_compute_id_direct(struct efp *);
 
 static void
@@ -81,7 +81,7 @@ get_int_mat(const struct efp *efp, size_t i, size_t j, size_t ii, size_t jj)
 	double r5 = r3 * r * r;
 
 	if (efp->opts.pol_damp == EFP_POL_DAMP_TT)
-		p1 = efp_get_pol_damp_tt(r);
+		p1 = efp_get_pol_damp_tt(r, fr_i->pol_damp, fr_j->pol_damp);
 
 	m.xx = swf.swf * p1 * (3.0 * dr.x * dr.x / r5 - 1.0 / r3);
 	m.xy = swf.swf * p1 *  3.0 * dr.x * dr.y / r5;

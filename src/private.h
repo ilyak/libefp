@@ -78,6 +78,9 @@ struct frag {
 	/* ab initio electrostatic screening parameters */
 	double *ai_screen_params;
 
+	/* polarization damping parameter */
+	double pol_damp;
+
 	/* distributed polarizability points */
 	struct polarizable_pt {
 		double x, y, z;
