@@ -30,8 +30,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "stream.h"
 #include "ff.h"
+#include "log.h"
+#include "stream.h"
 
 #define DEG2RAD (PI / 180.0)
 #define KCALMOL2AU (1.0 / 627.50947)
@@ -582,8 +583,11 @@ enum ff_res efp_ff_add_bond(struct ff *ff, size_t idx1, size_t idx2)
 	struct bond_fp *fp = find_bond_fp(ff->bond_fps,
 			ff->atoms[idx1].type, ff->atoms[idx2].type);
 
-	if (!fp)
-		return FF_NO_PARAMETERS;
+	if (!fp) {
+		efp_log("no parameters for bond %s %s",
+			ff->atoms[idx1].type, ff->atoms[idx2].type);
+		return (FF_NO_PARAMETERS);
+	}
 
 	struct bond *bond = malloc(sizeof(struct bond));
 
@@ -608,8 +612,12 @@ enum ff_res efp_ff_add_angle(struct ff *ff, size_t idx1, size_t idx2, size_t idx
 			ff->atoms[idx1].type, ff->atoms[idx2].type,
 			ff->atoms[idx3].type);
 
-	if (!fp)
-		return FF_NO_PARAMETERS;
+	if (!fp) {
+		efp_log("no parameters for angle %s %s %s",
+			ff->atoms[idx1].type, ff->atoms[idx2].type,
+			ff->atoms[idx3].type);
+		return (FF_NO_PARAMETERS);
+	}
 
 	struct angle *angle = malloc(sizeof(struct angle));
 
@@ -638,8 +646,12 @@ enum ff_res efp_ff_add_torsion(struct ff *ff, size_t idx1, size_t idx2,
 			ff->atoms[idx1].type, ff->atoms[idx2].type,
 			ff->atoms[idx3].type, ff->atoms[idx4].type);
 
-	if (!fp)
-		return FF_NO_PARAMETERS;
+	if (!fp) {
+		efp_log("no parameters for torsion %s %s %s %s",
+			ff->atoms[idx1].type, ff->atoms[idx2].type,
+			ff->atoms[idx3].type, ff->atoms[idx4].type);
+		return (FF_NO_PARAMETERS);
+	}
 
 	struct torsion *torsion = malloc(sizeof(struct torsion));
 
