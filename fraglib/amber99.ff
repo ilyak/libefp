@@ -365,6 +365,13 @@ torsion  HC  CT  CT  F    0.190     0.0   1
 torsion  HC  CT  CT  Cl   0.250     0.0   1
 torsion  HC  CT  CT  Br   0.550     0.0   1
 torsion  CT  OS  CT  N*   0.383     0.0   3    0.650     0.0   2
+torsion  CT  CT  C   O    0.000     0.0   2
+torsion  N   CT  C   O    0.000     0.0   2
+torsion  H1  CT  C   N    0.000     0.0   2
+torsion  H1  CT  N   C    0.000     0.0   2
+torsion  CT  CT  N   H    0.000     0.0   2
+torsion  H1  CT  N   H    0.000     0.0   2
+torsion  C   CT  N   H    0.000     0.0   2
 torsion  X   C   C   X    3.625   180.0   2
 torsion  X   C   O   X    2.800   180.0   2
 torsion  X   C   OS  X    2.700   180.0   2
