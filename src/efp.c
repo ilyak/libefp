@@ -419,7 +419,6 @@ check_opts(const struct efp_opts *opts)
 		}
 
 		if (opts->enable_links) {
-			/* XXX enable this */
 			efp_log("periodic calculations are not supported for covalent links");
 			return EFP_RESULT_FATAL;
 		}
@@ -785,12 +784,17 @@ efp_get_stress_tensor(struct efp *efp, double *stress)
 
 	if (!efp->do_gradient) {
 		efp_log("gradient calculation was not requested");
-		return EFP_RESULT_FATAL;
+		return (EFP_RESULT_FATAL);
+	}
+
+	if (efp->opts.enable_links) {
+		efp_log("stress tensor calculation is not supported for covalent links");
+		return (EFP_RESULT_FATAL);
 	}
 
 	*(mat_t *)stress = efp->stress;
 
-	return EFP_RESULT_SUCCESS;
+	return (EFP_RESULT_SUCCESS);
 }
 
 EFP_EXPORT enum efp_result
