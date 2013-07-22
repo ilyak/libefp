@@ -154,8 +154,8 @@ efp_compute_id_direct(struct efp *efp)
 	enum efp_result res;
 
 	n = 3 * efp->n_polarizable_pts;
-	c = calloc(n * n, sizeof(double));
-	ipiv = calloc(n, sizeof(int));
+	c = (double *)calloc(n * n, sizeof(double));
+	ipiv = (int *)calloc(n, sizeof(int));
 
 	if (c == NULL || ipiv == NULL) {
 		res = EFP_RESULT_NO_MEMORY;

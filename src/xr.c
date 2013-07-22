@@ -533,8 +533,8 @@ efp_frag_frag_xr(struct efp *efp, size_t frag_i, size_t frag_j, double *lmo_s,
 	struct frag *fr_i = efp->frags + frag_i;
 	struct frag *fr_j = efp->frags + frag_j;
 
-	double *s = malloc(fr_i->xr_wf_size * fr_j->xr_wf_size * sizeof(double));
-	double *t = malloc(fr_i->xr_wf_size * fr_j->xr_wf_size * sizeof(double));
+	double *s = (double *)malloc(fr_i->xr_wf_size * fr_j->xr_wf_size * sizeof(double));
+	double *t = (double *)malloc(fr_i->xr_wf_size * fr_j->xr_wf_size * sizeof(double));
 	double lmo_t[fr_i->n_lmo * fr_j->n_lmo];
 
 	struct swf swf = efp_make_swf(efp, fr_i, fr_j);
@@ -599,9 +599,9 @@ efp_frag_frag_xr(struct efp *efp, size_t frag_i, size_t frag_j, double *lmo_s,
 
 	/* compute gradient */
 
-	six_t *ds = malloc(fr_i->xr_wf_size * fr_j->xr_wf_size * sizeof(six_t));
-	six_t *dt = malloc(fr_i->xr_wf_size * fr_j->xr_wf_size * sizeof(six_t));
-	six_t *lmo_dt = malloc(fr_i->n_lmo * fr_j->n_lmo * sizeof(six_t));
+	six_t *ds = (six_t *)malloc(fr_i->xr_wf_size * fr_j->xr_wf_size * sizeof(six_t));
+	six_t *dt = (six_t *)malloc(fr_i->xr_wf_size * fr_j->xr_wf_size * sizeof(six_t));
+	six_t *lmo_dt = (six_t *)malloc(fr_i->n_lmo * fr_j->n_lmo * sizeof(six_t));
 
 	efp_st_int_deriv(fr_i->n_xr_atoms, fr_i->xr_atoms,
 			 fr_j->n_xr_atoms, atoms_j,

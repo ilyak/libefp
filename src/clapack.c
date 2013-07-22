@@ -53,7 +53,7 @@ int efp_dsyev(char jobz, char uplo, int n, double *a, int lda, double *w)
 	double *work;
 
 	lwork = n * n;
-	work = malloc(lwork * sizeof(double));
+	work = (double *)malloc(lwork * sizeof(double));
 
 	dsyev_(&jobz, &uplo, &n, a, &lda, w, work, &lwork, &info);
 

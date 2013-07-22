@@ -61,12 +61,11 @@ bool efp_skip_frag_pair(const struct efp *efp, size_t fr_i_idx, size_t fr_j_idx)
 struct swf efp_make_swf(const struct efp *efp, const struct frag *fr_i,
 				const struct frag *fr_j)
 {
-	struct swf swf = {
-		.swf = 1.0,
-		.dswf = vec_zero,
-		.dr = vec_sub(CVEC(fr_j->x), CVEC(fr_i->x)),
-		.cell = vec_zero
-	};
+	struct swf swf;
+
+	memset(&swf, 0, sizeof(struct swf));
+	swf.swf = 1.0;
+	swf.dr = vec_sub(CVEC(fr_j->x), CVEC(fr_i->x));
 
 	if (!efp->opts.enable_cutoff)
 		return swf;

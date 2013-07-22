@@ -198,8 +198,8 @@ add_electron_density_field(struct efp *efp)
 	if (efp->get_electron_density_field == NULL)
 		return (EFP_RESULT_SUCCESS);
 
-	xyz = malloc(efp->n_polarizable_pts * sizeof(vec_t));
-	field = malloc(efp->n_polarizable_pts * sizeof(vec_t));
+	xyz = (vec_t *)malloc(efp->n_polarizable_pts * sizeof(vec_t));
+	field = (vec_t *)malloc(efp->n_polarizable_pts * sizeof(vec_t));
 
 	for (size_t i = 0, idx = 0; i < efp->n_frag; i++) {
 		struct frag *frag = efp->frags + i;
@@ -255,7 +255,7 @@ compute_elec_field(struct efp *efp)
 	vec_t *elec_field;
 	enum efp_result res;
 
-	elec_field = calloc(efp->n_polarizable_pts, sizeof(vec_t));
+	elec_field = (vec_t *)calloc(efp->n_polarizable_pts, sizeof(vec_t));
 	efp_balance_work(efp, compute_elec_field_range, elec_field);
 	efp_allreduce((double *)elec_field, 3 * efp->n_polarizable_pts);
 
@@ -387,8 +387,8 @@ pol_scf_iter(struct efp *efp)
 	struct id_work_data data;
 
 	data.conv = 0.0;
-	data.id_new = calloc(efp->n_polarizable_pts, sizeof(vec_t));
-	data.id_conj_new = calloc(efp->n_polarizable_pts, sizeof(vec_t));
+	data.id_new = (vec_t *)calloc(efp->n_polarizable_pts, sizeof(vec_t));
+	data.id_conj_new = (vec_t *)calloc(efp->n_polarizable_pts, sizeof(vec_t));
 
 	efp_balance_work(efp, compute_id_range, &data);
 

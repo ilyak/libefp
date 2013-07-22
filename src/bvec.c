@@ -39,7 +39,7 @@ struct bvec {
 
 struct bvec *efp_bvec_create(size_t len)
 {
-	struct bvec *bvec = malloc(sizeof(struct bvec));
+	struct bvec *bvec = (struct bvec *)malloc(sizeof(struct bvec));
 
 	if (!bvec)
 		return NULL;
@@ -47,7 +47,7 @@ struct bvec *efp_bvec_create(size_t len)
 	size_t cnt = len / EBITS + (len % EBITS == 0 ? 0 : 1);
 
 	bvec->len = len;
-	bvec->data = calloc(cnt, sizeof(uint64_t));
+	bvec->data = (uint64_t *)calloc(cnt, sizeof(uint64_t));
 
 	if (!bvec->data) {
 		free(bvec);

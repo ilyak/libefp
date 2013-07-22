@@ -371,12 +371,11 @@ efp_frag_frag_elec(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx)
 	/* mult points - nuclei */
 	for (size_t jj = 0; jj < fr_j->n_atoms; jj++) {
 		for (size_t ii = 0; ii < fr_i->n_multipole_pts; ii++) {
-			struct swf swf2 = {
-				.swf = swf.swf,
-				.dswf = { -swf.dswf.x, -swf.dswf.y, -swf.dswf.z },
-				.dr = { -swf.dr.x, -swf.dr.y, -swf.dr.z },
-				.cell = { -swf.cell.x, -swf.cell.y, -swf.cell.z }
-			};
+			struct swf swf2 = swf;
+
+			vec_negate(&swf2.cell);
+			vec_negate(&swf2.dr);
+			vec_negate(&swf2.dswf);
 
 			energy += atom_mult_energy(efp, fr_j, fr_i, jj, ii, &swf2);
 

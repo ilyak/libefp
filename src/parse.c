@@ -148,7 +148,7 @@ parse_coordinates(struct frag *frag, struct stream *stream)
 
 		if (!eq(atom.mass, 0.0)) {
 			frag->n_atoms++;
-			frag->atoms = realloc(frag->atoms,
+			frag->atoms = (struct efp_atom *)realloc(frag->atoms,
 				frag->n_atoms * sizeof(struct efp_atom));
 			if (!frag->atoms)
 				return EFP_RESULT_NO_MEMORY;
@@ -157,7 +157,7 @@ parse_coordinates(struct frag *frag, struct stream *stream)
 		}
 
 		frag->n_multipole_pts++;
-		frag->multipole_pts = realloc(frag->multipole_pts,
+		frag->multipole_pts = (struct multipole_pt *)realloc(frag->multipole_pts,
 			frag->n_multipole_pts * sizeof(struct multipole_pt));
 		if (!frag->multipole_pts)
 			return EFP_RESULT_NO_MEMORY;
@@ -282,10 +282,10 @@ parse_polarizable_pts(struct frag *frag, struct stream *stream)
 			return EFP_RESULT_SUCCESS;
 
 		frag->n_polarizable_pts++;
+		frag->polarizable_pts = (struct polarizable_pt *)realloc(
+			frag->polarizable_pts,
+			frag->n_polarizable_pts * sizeof(struct polarizable_pt));
 
-		size_t size = sizeof(struct polarizable_pt);
-		frag->polarizable_pts = realloc(frag->polarizable_pts,
-			frag->n_polarizable_pts * size);
 		if (!frag->polarizable_pts)
 			return EFP_RESULT_NO_MEMORY;
 
@@ -332,9 +332,11 @@ parse_dynamic_polarizable_pts(struct frag *frag, struct stream *stream)
 		frag->n_dynamic_polarizable_pts++;
 
 		size_t size = sizeof(struct dynamic_polarizable_pt);
-		frag->dynamic_polarizable_pts = realloc(
+		frag->dynamic_polarizable_pts =
+			(struct dynamic_polarizable_pt *)realloc(
 			frag->dynamic_polarizable_pts,
 			frag->n_dynamic_polarizable_pts * size);
+
 		if (!frag->dynamic_polarizable_pts)
 			return EFP_RESULT_NO_MEMORY;
 
@@ -440,7 +442,7 @@ shell:
 		}
 
 		atom->n_shells++;
-		atom->shells = realloc(atom->shells,
+		atom->shells = (struct shell *)realloc(atom->shells,
 			atom->n_shells * sizeof(struct shell));
 
 		struct shell *shell = atom->shells + atom->n_shells - 1;
@@ -454,8 +456,8 @@ shell:
 
 		efp_stream_next_line(stream);
 
-		shell->coef = malloc((shell->type == 'L' ? 3 : 2) *
-					shell->n_funcs * sizeof(double));
+		size_t cnt = (shell->type == 'L' ? 3 : 2) * shell->n_funcs;
+		shell->coef = (double *)malloc(cnt * sizeof(double));
 
 		double *ptr = shell->coef;
 
@@ -498,7 +500,7 @@ parse_projection_wf(struct frag *frag, struct stream *stream)
 	    !tok_uint(stream, &frag->xr_wf_size))
 		return EFP_RESULT_SYNTAX_ERROR;
 
-	frag->xr_wf = malloc(frag->n_lmo * frag->xr_wf_size * sizeof(double));
+	frag->xr_wf = (double *)malloc(frag->n_lmo * frag->xr_wf_size * sizeof(double));
 	if (!frag->xr_wf)
 		return EFP_RESULT_NO_MEMORY;
 
@@ -539,7 +541,7 @@ parse_fock_mat(struct frag *frag, struct stream *stream)
 	efp_stream_next_line(stream);
 
 	size_t size = frag->n_lmo * (frag->n_lmo + 1) / 2;
-	frag->xr_fock_mat = malloc(size * sizeof(double));
+	frag->xr_fock_mat = (double *)malloc(size * sizeof(double));
 	if (!frag->xr_fock_mat)
 		return EFP_RESULT_NO_MEMORY;
 
@@ -556,7 +558,7 @@ parse_lmo_centroids(struct frag *frag, struct stream *stream)
 {
 	efp_stream_next_line(stream);
 
-	frag->lmo_centroids = malloc(frag->n_lmo * sizeof(vec_t));
+	frag->lmo_centroids = (vec_t *)malloc(frag->n_lmo * sizeof(vec_t));
 	if (!frag->lmo_centroids)
 		return EFP_RESULT_NO_MEMORY;
 
@@ -619,7 +621,7 @@ parse_canonfok(struct frag *frag, struct stream *stream)
 static enum efp_result
 parse_screen(struct frag *frag, struct stream *stream)
 {
-	double *scr = malloc(frag->n_multipole_pts * sizeof(double));
+	double *scr = (double *)malloc(frag->n_multipole_pts * sizeof(double));
 	if (!scr)
 		return EFP_RESULT_NO_MEMORY;
 
@@ -698,8 +700,9 @@ parse_ff_types(struct frag *frag, struct stream *stream)
 		}
 
 		size_t size = (frag->n_ff_atoms + 1) * sizeof(struct ff_atom);
+		frag->ff_atoms = (struct ff_atom *)realloc(frag->ff_atoms, size);
 
-		if ((frag->ff_atoms = realloc(frag->ff_atoms, size)) == NULL)
+		if (frag->ff_atoms == NULL)
 			return EFP_RESULT_NO_MEMORY;
 
 		frag->ff_atoms[frag->n_ff_atoms] = atom;
@@ -743,8 +746,9 @@ parse_ff_bonds(struct frag *frag, struct stream *stream)
 		}
 
 		size_t size = (frag->n_ff_links + 1) * sizeof(struct ff_link);
+		frag->ff_links = (struct ff_link *)realloc(frag->ff_links, size);
 
-		if ((frag->ff_links = realloc(frag->ff_links, size)) == NULL)
+		if (frag->ff_links == NULL)
 			return EFP_RESULT_NO_MEMORY;
 
 		frag->ff_links[frag->n_ff_links] = link;
@@ -835,12 +839,13 @@ parse_file(struct efp *efp, struct stream *stream)
 			return EFP_RESULT_FATAL;
 		}
 
-		struct frag *frag = calloc(1, sizeof(struct frag));
+		struct frag *frag = (struct frag *)calloc(1, sizeof(struct frag));
 		if (!frag)
 			return EFP_RESULT_NO_MEMORY;
 
 		efp->n_lib++;
-		efp->lib = realloc(efp->lib, efp->n_lib * sizeof(struct frag *));
+		efp->lib = (struct frag **)realloc(efp->lib,
+			efp->n_lib * sizeof(struct frag *));
 		if (!efp->lib)
 			return EFP_RESULT_NO_MEMORY;
 

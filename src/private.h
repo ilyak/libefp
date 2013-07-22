@@ -41,6 +41,36 @@
 #define EFP_EXPORT __attribute__((visibility("default")))
 #define ARRAY_SIZE(arr) (sizeof(arr)/sizeof(arr[0]))
 
+struct multipole_pt {
+	double x, y, z;
+	double monopole;
+	vec_t dipole;
+	double quadrupole[6];
+	double octupole[10];
+};
+
+struct polarizable_pt {
+	double x, y, z;
+	mat_t tensor;
+	vec_t elec_field;
+	vec_t elec_field_wf;
+};
+
+struct dynamic_polarizable_pt {
+	double x, y, z;
+	double trace[12];
+};
+
+struct ff_atom {
+	char type[32]; /* atom type in force field */
+	size_t idx;    /* index in atoms array */
+};
+
+struct ff_link {
+	size_t idx1;   /* index in ff_atoms array */
+	size_t idx2;   /* index in ff_atoms array */
+};
+
 struct frag {
 	/* fragment name */
 	char name[32];
@@ -61,13 +91,7 @@ struct frag {
 	struct efp_atom *atoms;
 
 	/* distributed multipoles */
-	struct multipole_pt {
-		double x, y, z;
-		double monopole;
-		vec_t dipole;
-		double quadrupole[6];
-		double octupole[10];
-	} *multipole_pts;
+	struct multipole_pt *multipole_pts;
 
 	/* number of distributed multipole points */
 	size_t n_multipole_pts;
@@ -82,21 +106,13 @@ struct frag {
 	double pol_damp;
 
 	/* distributed polarizability points */
-	struct polarizable_pt {
-		double x, y, z;
-		mat_t tensor;
-		vec_t elec_field;
-		vec_t elec_field_wf;
-	} *polarizable_pts;
+	struct polarizable_pt *polarizable_pts;
 
 	/* number of distributed polarizability points */
 	size_t n_polarizable_pts;
 
 	/* dynamic polarizability points */
-	struct dynamic_polarizable_pt {
-		double x, y, z;
-		double trace[12];
-	} *dynamic_polarizable_pts;
+	struct dynamic_polarizable_pt *dynamic_polarizable_pts;
 
 	/* number of dynamic polarizability points */
 	size_t n_dynamic_polarizable_pts;
@@ -131,19 +147,13 @@ struct frag {
 	/* offset of polarizable points for this fragment */
 	size_t polarizable_offset;
 
-	struct ff_atom {
-		char type[32]; /* atom type in force field */
-		size_t idx;    /* index in atoms array */
-	} *ff_atoms;
-
 	size_t n_ff_atoms;
 
-	struct ff_link {
-		size_t idx1;   /* index in ff_atoms array */
-		size_t idx2;   /* index in ff_atoms array */
-	} *ff_links;
+	struct ff_atom *ff_atoms;
 
 	size_t n_ff_links;
+
+	struct ff_link *ff_links;
 
 	/* offset in array of ff atoms */
 	size_t ff_offset;

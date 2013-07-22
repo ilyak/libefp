@@ -298,35 +298,35 @@ copy_frag(struct frag *dest, const struct frag *src)
 
 	if (src->atoms) {
 		size = src->n_atoms * sizeof(struct efp_atom);
-		dest->atoms = malloc(size);
+		dest->atoms = (struct efp_atom *)malloc(size);
 		if (!dest->atoms)
 			return EFP_RESULT_NO_MEMORY;
 		memcpy(dest->atoms, src->atoms, size);
 	}
 	if (src->multipole_pts) {
 		size = src->n_multipole_pts * sizeof(struct multipole_pt);
-		dest->multipole_pts = malloc(size);
+		dest->multipole_pts = (struct multipole_pt *)malloc(size);
 		if (!dest->multipole_pts)
 			return EFP_RESULT_NO_MEMORY;
 		memcpy(dest->multipole_pts, src->multipole_pts, size);
 	}
 	if (src->screen_params) {
 		size = src->n_multipole_pts * sizeof(double);
-		dest->screen_params = malloc(size);
+		dest->screen_params = (double *)malloc(size);
 		if (!dest->screen_params)
 			return EFP_RESULT_NO_MEMORY;
 		memcpy(dest->screen_params, src->screen_params, size);
 	}
 	if (src->ai_screen_params) {
 		size = src->n_multipole_pts * sizeof(double);
-		dest->ai_screen_params = malloc(size);
+		dest->ai_screen_params = (double *)malloc(size);
 		if (!dest->ai_screen_params)
 			return EFP_RESULT_NO_MEMORY;
 		memcpy(dest->ai_screen_params, src->ai_screen_params, size);
 	}
 	if (src->polarizable_pts) {
 		size = src->n_polarizable_pts * sizeof(struct polarizable_pt);
-		dest->polarizable_pts = malloc(size);
+		dest->polarizable_pts = (struct polarizable_pt *)malloc(size);
 		if (!dest->polarizable_pts)
 			return EFP_RESULT_NO_MEMORY;
 		memcpy(dest->polarizable_pts, src->polarizable_pts, size);
@@ -334,7 +334,8 @@ copy_frag(struct frag *dest, const struct frag *src)
 	if (src->dynamic_polarizable_pts) {
 		size = src->n_dynamic_polarizable_pts *
 				sizeof(struct dynamic_polarizable_pt);
-		dest->dynamic_polarizable_pts = malloc(size);
+		dest->dynamic_polarizable_pts =
+				(struct dynamic_polarizable_pt *)malloc(size);
 		if (!dest->dynamic_polarizable_pts)
 			return EFP_RESULT_NO_MEMORY;
 		memcpy(dest->dynamic_polarizable_pts,
@@ -342,14 +343,14 @@ copy_frag(struct frag *dest, const struct frag *src)
 	}
 	if (src->lmo_centroids) {
 		size = src->n_lmo * sizeof(vec_t);
-		dest->lmo_centroids = malloc(size);
+		dest->lmo_centroids = (vec_t *)malloc(size);
 		if (!dest->lmo_centroids)
 			return EFP_RESULT_NO_MEMORY;
 		memcpy(dest->lmo_centroids, src->lmo_centroids, size);
 	}
 	if (src->xr_atoms) {
 		size = src->n_xr_atoms * sizeof(struct xr_atom);
-		dest->xr_atoms = malloc(size);
+		dest->xr_atoms = (struct xr_atom *)malloc(size);
 		if (!dest->xr_atoms)
 			return EFP_RESULT_NO_MEMORY;
 		memcpy(dest->xr_atoms, src->xr_atoms, size);
@@ -359,7 +360,7 @@ copy_frag(struct frag *dest, const struct frag *src)
 			struct xr_atom *at_dest = dest->xr_atoms + j;
 
 			size = at_src->n_shells * sizeof(struct shell);
-			at_dest->shells = malloc(size);
+			at_dest->shells = (struct shell *)malloc(size);
 			if (!at_dest->shells)
 				return EFP_RESULT_NO_MEMORY;
 			memcpy(at_dest->shells, at_src->shells, size);
@@ -368,7 +369,7 @@ copy_frag(struct frag *dest, const struct frag *src)
 				size = (at_src->shells[i].type == 'L' ? 3 : 2) *
 					at_src->shells[i].n_funcs * sizeof(double);
 
-				at_dest->shells[i].coef = malloc(size);
+				at_dest->shells[i].coef = (double *)malloc(size);
 				if (!at_dest->shells[i].coef)
 					return EFP_RESULT_NO_MEMORY;
 				memcpy(at_dest->shells[i].coef, at_src->shells[i].coef, size);
@@ -377,28 +378,28 @@ copy_frag(struct frag *dest, const struct frag *src)
 	}
 	if (src->xr_fock_mat) {
 		size = src->n_lmo * (src->n_lmo + 1) / 2 * sizeof(double);
-		dest->xr_fock_mat = malloc(size);
+		dest->xr_fock_mat = (double *)malloc(size);
 		if (!dest->xr_fock_mat)
 			return EFP_RESULT_NO_MEMORY;
 		memcpy(dest->xr_fock_mat, src->xr_fock_mat, size);
 	}
 	if (src->xr_wf) {
 		size = src->n_lmo * src->xr_wf_size * sizeof(double);
-		dest->xr_wf = malloc(size);
+		dest->xr_wf = (double *)malloc(size);
 		if (!dest->xr_wf)
 			return EFP_RESULT_NO_MEMORY;
 		memcpy(dest->xr_wf, src->xr_wf, size);
 	}
 	if (src->ff_atoms) {
 		size = src->n_ff_atoms * sizeof(struct ff_atom);
-		dest->ff_atoms = malloc(size);
+		dest->ff_atoms = (struct ff_atom *)malloc(size);
 		if (!dest->ff_atoms)
 			return EFP_RESULT_NO_MEMORY;
 		memcpy(dest->ff_atoms, src->ff_atoms, size);
 	}
 	if (src->ff_links) {
 		size = src->n_ff_links * sizeof(struct ff_link);
-		dest->ff_links = malloc(size);
+		dest->ff_links = (struct ff_link *)malloc(size);
 		if (!dest->ff_links)
 			return EFP_RESULT_NO_MEMORY;
 		memcpy(dest->ff_links, src->ff_links, size);
@@ -534,6 +535,7 @@ static void
 compute_two_body_range(struct efp *efp, size_t frag_from, size_t frag_to, void *data)
 {
 	double e_elec = 0.0, e_disp = 0.0, e_xr = 0.0, e_cp = 0.0;
+	size_t n_lmo_i, n_lmo_j;
 
 	(void)data;
 
@@ -547,10 +549,13 @@ compute_two_body_range(struct efp *efp, size_t frag_from, size_t frag_to, void *
 			size_t fr_j = j % efp->n_frag;
 
 			if (!efp_skip_frag_pair(efp, i, fr_j)) {
-				size_t n_lmo_i = efp->frags[i].n_lmo;
-				size_t n_lmo_j = efp->frags[fr_j].n_lmo;
-				double *s = calloc(n_lmo_i * n_lmo_j, sizeof(double));
-				six_t *ds = calloc(n_lmo_i * n_lmo_j, sizeof(six_t));
+				double *s;
+				six_t *ds;
+
+				n_lmo_i = efp->frags[i].n_lmo;
+				n_lmo_j = efp->frags[fr_j].n_lmo;
+				s = (double *)calloc(n_lmo_i * n_lmo_j, sizeof(double));
+				ds = (six_t *)calloc(n_lmo_i * n_lmo_j, sizeof(six_t));
 
 				if (do_xr(&efp->opts)) {
 					double exr, ecp;
@@ -625,9 +630,9 @@ efp_set_point_charges(struct efp *efp, size_t n_ptc, const double *ptc, const do
 	assert(ptc);
 	assert(xyz);
 
-	efp->ptc = realloc(efp->ptc, n_ptc * sizeof(double));
-	efp->ptc_xyz = realloc(efp->ptc_xyz, n_ptc * sizeof(vec_t));
-	efp->ptc_grad = realloc(efp->ptc_grad, n_ptc * sizeof(vec_t));
+	efp->ptc = (double *)realloc(efp->ptc, n_ptc * sizeof(double));
+	efp->ptc_xyz = (vec_t *)realloc(efp->ptc_xyz, n_ptc * sizeof(vec_t));
+	efp->ptc_grad = (vec_t *)realloc(efp->ptc_grad, n_ptc * sizeof(vec_t));
 
 	memcpy(efp->ptc, ptc, n_ptc * sizeof(double));
 	memcpy(efp->ptc_xyz, xyz, n_ptc * sizeof(vec_t));
@@ -822,9 +827,9 @@ efp_prepare(struct efp *efp)
 		efp->n_polarizable_pts += efp->frags[i].n_polarizable_pts;
 	}
 
-	efp->indip = calloc(efp->n_polarizable_pts, sizeof(vec_t));
-	efp->indipconj = calloc(efp->n_polarizable_pts, sizeof(vec_t));
-	efp->grad = calloc(efp->n_frag, sizeof(six_t));
+	efp->indip = (vec_t *)calloc(efp->n_polarizable_pts, sizeof(vec_t));
+	efp->indipconj = (vec_t *)calloc(efp->n_polarizable_pts, sizeof(vec_t));
+	efp->grad = (six_t *)calloc(efp->n_frag, sizeof(six_t));
 
 	return (EFP_RESULT_SUCCESS);
 }
@@ -1150,7 +1155,8 @@ efp_add_fragment(struct efp *efp, const char *name)
 		return EFP_RESULT_UNKNOWN_FRAGMENT;
 
 	efp->n_frag++;
-	efp->frags = realloc(efp->frags, efp->n_frag * sizeof(struct frag));
+	efp->frags = (struct frag *)realloc(efp->frags,
+		efp->n_frag * sizeof(struct frag));
 
 	if (!efp->frags)
 		return EFP_RESULT_NO_MEMORY;
@@ -1163,7 +1169,7 @@ efp_add_fragment(struct efp *efp, const char *name)
 	for (size_t a = 0; a < 3; a++) {
 		size_t size = frag->xr_wf_size * frag->n_lmo;
 
-		frag->xr_wf_deriv[a] = calloc(size, sizeof(double));
+		frag->xr_wf_deriv[a] = (double *)calloc(size, sizeof(double));
 
 		if (!frag->xr_wf_deriv[a])
 			return EFP_RESULT_NO_MEMORY;
@@ -1226,7 +1232,7 @@ efp_load_topology(struct efp *efp, const char *path)
 EFP_EXPORT struct efp *
 efp_create(void)
 {
-	struct efp *efp = calloc(1, sizeof(struct efp));
+	struct efp *efp = (struct efp *)calloc(1, sizeof(struct efp));
 
 	if (!efp)
 		return NULL;

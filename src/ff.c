@@ -38,65 +38,72 @@
 #define KCALMOL2AU (1.0 / 627.50947)
 #define ANG2BOHR (1.0 / 0.52917721092)
 
+struct atom {
+	char type[16];
+	vec_t pos;
+};
+
+struct bond_fp {
+	char type1[16];
+	char type2[16];
+	double force;
+	double ideal;
+	struct bond_fp *next;
+};
+
+struct bond {
+	size_t idx1;
+	size_t idx2;
+	struct bond_fp *fp;
+	struct bond *next;
+};
+
+struct angle_fp {
+	char type1[16];
+	char type2[16];
+	char type3[16];
+	double force;
+	double ideal;
+	struct angle_fp *next;
+};
+
+struct angle {
+	size_t idx1;
+	size_t idx2;
+	size_t idx3;
+	struct angle_fp *fp;
+	struct angle *next;
+};
+
+struct torsion_fp {
+	char type1[16];
+	char type2[16];
+	char type3[16];
+	char type4[16];
+	double vi[6];
+	double ci[6];
+	double si[6];
+	struct torsion_fp *next;
+};
+
+struct torsion {
+	size_t idx1;
+	size_t idx2;
+	size_t idx3;
+	size_t idx4;
+	struct torsion_fp *fp;
+	struct torsion *next;
+};
+
 struct ff {
 	size_t n_atoms;
-
-	struct atom {
-		char type[16];
-		vec_t pos;
-	} *atoms;
-
-	struct bond_fp {
-		char type1[16];
-		char type2[16];
-		double force;
-		double ideal;
-		struct bond_fp *next;
-	} *bond_fps;
-
-	struct bond {
-		size_t idx1;
-		size_t idx2;
-		struct bond_fp *fp;
-		struct bond *next;
-	} *bonds;
-
-	struct angle_fp {
-		char type1[16];
-		char type2[16];
-		char type3[16];
-		double force;
-		double ideal;
-		struct angle_fp *next;
-	} *angle_fps;
-
-	struct angle {
-		size_t idx1;
-		size_t idx2;
-		size_t idx3;
-		struct angle_fp *fp;
-		struct angle *next;
-	} *angles;
-
-	struct torsion_fp {
-		char type1[16];
-		char type2[16];
-		char type3[16];
-		char type4[16];
-		double vi[6];
-		double ci[6];
-		double si[6];
-		struct torsion_fp *next;
-	} *torsion_fps;
-
-	struct torsion {
-		size_t idx1;
-		size_t idx2;
-		size_t idx3;
-		size_t idx4;
-		struct torsion_fp *fp;
-		struct torsion *next;
-	} *torsions;
+	struct atom *atoms;
+	struct bond_fp *bond_fps;
+	struct bond *bonds;
+	struct angle_fp *angle_fps;
+	struct angle *angles;
+	struct torsion_fp *torsion_fps;
+	struct torsion *torsions;
 };
 
 static const char *str_skip(const char *str, size_t cnt)
@@ -334,7 +341,7 @@ static double torsion_energy(const struct torsion *torsion, const struct atom *a
 
 static enum ff_res parse_bond_fp(struct ff *ff, const char *str)
 {
-	struct bond_fp *fp = malloc(sizeof(struct bond_fp));
+	struct bond_fp *fp = (struct bond_fp *)malloc(sizeof(struct bond_fp));
 
 	int nsc = sscanf(str, "bond %10s %10s %lf %lf", fp->type1, fp->type2,
 				&fp->force, &fp->ideal);
@@ -351,7 +358,7 @@ static enum ff_res parse_bond_fp(struct ff *ff, const char *str)
 
 static enum ff_res parse_angle_fp(struct ff *ff, const char *str)
 {
-	struct angle_fp *fp = malloc(sizeof(struct angle_fp));
+	struct angle_fp *fp = (struct angle_fp *)malloc(sizeof(struct angle_fp));
 
 	int nsc = sscanf(str, "angle %10s %10s %10s %lf %lf", fp->type1, fp->type2,
 				fp->type3, &fp->force, &fp->ideal);
@@ -369,7 +376,7 @@ static enum ff_res parse_angle_fp(struct ff *ff, const char *str)
 
 static enum ff_res parse_torsion_fp(struct ff *ff, const char *str)
 {
-	struct torsion_fp *fp = malloc(sizeof(struct torsion_fp));
+	struct torsion_fp *fp = (struct torsion_fp *)malloc(sizeof(struct torsion_fp));
 
 	int nsc = sscanf(str, "torsion %10s %10s %10s %10s", fp->type1, fp->type2,
 				fp->type3, fp->type4);
@@ -487,7 +494,7 @@ static bool check_torsion(const struct angle *a1, const struct angle *a2,
 
 struct ff *efp_ff_create(void)
 {
-	return calloc(1, sizeof(struct ff));
+	return (struct ff *)calloc(1, sizeof(struct ff));
 }
 
 #define REVERSE_LIST(list, type)                  \
@@ -565,7 +572,8 @@ enum ff_res efp_ff_add_atom(struct ff *ff, const char *type)
 		return FF_STRING_TOO_LONG;
 
 	ff->n_atoms++;
-	ff->atoms = realloc(ff->atoms, ff->n_atoms * sizeof(struct atom));
+	ff->atoms = (struct atom *)realloc(ff->atoms,
+		ff->n_atoms * sizeof(struct atom));
 	atom = ff->atoms + ff->n_atoms - 1;
 	memset(atom, 0, sizeof(struct atom));
 	strcpy(atom->type, type);
@@ -589,7 +597,7 @@ enum ff_res efp_ff_add_bond(struct ff *ff, size_t idx1, size_t idx2)
 		return (FF_NO_PARAMETERS);
 	}
 
-	struct bond *bond = malloc(sizeof(struct bond));
+	struct bond *bond = (struct bond *)malloc(sizeof(struct bond));
 
 	bond->fp = fp;
 	bond->idx1 = idx1;
@@ -619,7 +627,7 @@ enum ff_res efp_ff_add_angle(struct ff *ff, size_t idx1, size_t idx2, size_t idx
 		return (FF_NO_PARAMETERS);
 	}
 
-	struct angle *angle = malloc(sizeof(struct angle));
+	struct angle *angle = (struct angle *)malloc(sizeof(struct angle));
 
 	angle->fp = fp;
 	angle->idx1 = idx1;
@@ -653,7 +661,7 @@ enum ff_res efp_ff_add_torsion(struct ff *ff, size_t idx1, size_t idx2,
 		return (FF_NO_PARAMETERS);
 	}
 
-	struct torsion *torsion = malloc(sizeof(struct torsion));
+	struct torsion *torsion = (struct torsion *)malloc(sizeof(struct torsion));
 
 	torsion->fp = fp;
 	torsion->idx1 = idx1;
