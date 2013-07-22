@@ -277,10 +277,13 @@ free_frag(struct frag *frag)
 	for (size_t i = 0; i < 3; i++)
 		free(frag->xr_wf_deriv[i]);
 
-	for (size_t i = 0; i < frag->n_xr_shells; i++)
-		free(frag->xr_shells[i].coef);
+	for (size_t i = 0; i < frag->n_xr_atoms; i++) {
+		for (size_t j = 0; j < frag->xr_atoms[i].n_shells; j++)
+			free(frag->xr_atoms[i].shells[j].coef);
+		free(frag->xr_atoms[i].shells);
+	}
 
-	free(frag->xr_shells);
+	free(frag->xr_atoms);
 	free(frag->ff_atoms);
 	free(frag->ff_links);
 
@@ -344,22 +347,32 @@ copy_frag(struct frag *dest, const struct frag *src)
 			return EFP_RESULT_NO_MEMORY;
 		memcpy(dest->lmo_centroids, src->lmo_centroids, size);
 	}
-	if (src->xr_shells) {
-		size = src->n_xr_shells * sizeof(struct shell);
-		dest->xr_shells = malloc(size);
-		if (!dest->xr_shells)
+	if (src->xr_atoms) {
+		size = src->n_xr_atoms * sizeof(struct xr_atom);
+		dest->xr_atoms = malloc(size);
+		if (!dest->xr_atoms)
 			return EFP_RESULT_NO_MEMORY;
-		memcpy(dest->xr_shells, src->xr_shells, size);
+		memcpy(dest->xr_atoms, src->xr_atoms, size);
 
-		for (size_t i = 0; i < src->n_xr_shells; i++) {
-			size = (src->xr_shells[i].type == 'L' ? 3 : 2) *
-				src->xr_shells[i].n_funcs * sizeof(double);
+		for (size_t j = 0; j < src->n_xr_atoms; j++) {
+			const struct xr_atom *at_src = src->xr_atoms + j;
+			struct xr_atom *at_dest = dest->xr_atoms + j;
 
-			dest->xr_shells[i].coef = malloc(size);
-			if (!dest->xr_shells[i].coef)
+			size = at_src->n_shells * sizeof(struct shell);
+			at_dest->shells = malloc(size);
+			if (!at_dest->shells)
 				return EFP_RESULT_NO_MEMORY;
-			memcpy(dest->xr_shells[i].coef,
-					src->xr_shells[i].coef, size);
+			memcpy(at_dest->shells, at_src->shells, size);
+
+			for (size_t i = 0; i < at_src->n_shells; i++) {
+				size = (at_src->shells[i].type == 'L' ? 3 : 2) *
+					at_src->shells[i].n_funcs * sizeof(double);
+
+				at_dest->shells[i].coef = malloc(size);
+				if (!at_dest->shells[i].coef)
+					return EFP_RESULT_NO_MEMORY;
+				memcpy(at_dest->shells[i].coef, at_src->shells[i].coef, size);
+			}
 		}
 	}
 	if (src->xr_fock_mat) {
@@ -472,7 +485,7 @@ check_frag_params(const struct efp_opts *opts, const struct frag *frag)
 		}
 	}
 	if (opts->terms & EFP_TERM_XR) {
-		if (!frag->xr_shells ||
+		if (!frag->xr_atoms ||
 		    !frag->xr_fock_mat ||
 		    !frag->xr_wf ||
 		    !frag->lmo_centroids) {

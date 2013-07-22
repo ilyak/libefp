@@ -405,8 +405,6 @@ parse_dynamic_polarizable_pts(struct frag *frag, struct stream *stream)
 static enum efp_result
 parse_projection_basis(struct frag *frag, struct stream *stream)
 {
-	double x, y, z;
-
 	efp_stream_next_line(stream);
 
 	while (!efp_stream_eof(stream)) {
@@ -416,9 +414,17 @@ parse_projection_basis(struct frag *frag, struct stream *stream)
 		if (!efp_stream_advance(stream, 8))
 			return EFP_RESULT_SYNTAX_ERROR;
 
-		if (!tok_double(stream, &x) ||
-		    !tok_double(stream, &y) ||
-		    !tok_double(stream, &z))
+		frag->n_xr_atoms++;
+		frag->xr_atoms = (struct xr_atom *)realloc(frag->xr_atoms,
+			frag->n_xr_atoms * sizeof(struct xr_atom));
+
+		struct xr_atom *atom = frag->xr_atoms + frag->n_xr_atoms - 1;
+		memset(atom, 0, sizeof(struct xr_atom));
+
+		if (!tok_double(stream, &atom->x) ||
+		    !tok_double(stream, &atom->y) ||
+		    !tok_double(stream, &atom->z) ||
+		    !tok_double(stream, &atom->znuc))
 			return EFP_RESULT_SYNTAX_ERROR;
 
 		efp_stream_next_line(stream);
@@ -433,13 +439,11 @@ shell:
 			continue;
 		}
 
-		frag->n_xr_shells++;
-		frag->xr_shells = realloc(frag->xr_shells,
-				frag->n_xr_shells * sizeof(struct shell));
+		atom->n_shells++;
+		atom->shells = realloc(atom->shells,
+			atom->n_shells * sizeof(struct shell));
 
-		struct shell *shell = frag->xr_shells + frag->n_xr_shells - 1;
-
-		shell->x = x, shell->y = y, shell->z = z;
+		struct shell *shell = atom->shells + atom->n_shells - 1;
 		shell->type = efp_stream_get_char(stream);
 
 		if (!strchr("SLPDF", shell->type))

@@ -110,11 +110,11 @@ struct frag {
 	/* spin multiplicity */
 	int multiplicity;
 
-	/* number of exchange repulsion basis shells */
-	size_t n_xr_shells;
+	/* number of exchange repulsion atoms */
+	size_t n_xr_atoms;
 
-	/* exchange repulsion basis shells */
-	struct shell *xr_shells;
+	/* exchange repulsion atoms */
+	struct xr_atom *xr_atoms;
 
 	/* upper triangle of fock matrix, size = n_lmo * (n_lmo + 1) / 2 */
 	double *xr_fock_mat;

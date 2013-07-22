@@ -273,8 +273,8 @@ static void init_ft(size_t count_i, char type_j, double *ft)
 	assert(0);
 }
 
-void efp_st_int(size_t n_shells_i, const struct shell *shells_i,
-		size_t n_shells_j, const struct shell *shells_j,
+void efp_st_int(size_t n_atoms_i, const struct xr_atom *atoms_i,
+		size_t n_atoms_j, const struct xr_atom *atoms_j,
 		size_t stride, double *s, double *t)
 {
 	double xin[90];
@@ -284,9 +284,12 @@ void efp_st_int(size_t n_shells_i, const struct shell *shells_i,
 	double ft[100], dij[100];
 	double sblk[100], tblk[100];
 
+	for (size_t iii = 0, loc_i = 0; iii < n_atoms_i; iii++) {
+		const struct xr_atom *at_i = atoms_i + iii;
+
 	/* shell i */
-	for (size_t ii = 0, loc_i = 0; ii < n_shells_i; ii++) {
-		const struct shell *sh_i = shells_i + ii;
+	for (size_t ii = 0; ii < at_i->n_shells; ii++) {
+		const struct shell *sh_i = at_i->shells + ii;
 
 		size_t type_i = get_shell_idx(sh_i->type);
 		size_t start_i = get_shell_start(type_i);
@@ -294,9 +297,12 @@ void efp_st_int(size_t n_shells_i, const struct shell *shells_i,
 		size_t sl_i = get_shell_sl(type_i);
 		size_t count_i = end_i - start_i;
 
+		for (size_t jjj = 0, loc_j = 0; jjj < n_atoms_j; jjj++) {
+			const struct xr_atom *at_j = atoms_j + jjj;
+
 		/* shell j */
-		for (size_t jj = 0, loc_j = 0; jj < n_shells_j; jj++) {
-			const struct shell *sh_j = shells_j + jj;
+		for (size_t jj = 0; jj < at_j->n_shells; jj++) {
+			const struct shell *sh_j = at_j->shells + jj;
 
 			size_t type_j = get_shell_idx(sh_j->type);
 			size_t start_j = get_shell_start(type_j);
@@ -311,7 +317,7 @@ void efp_st_int(size_t n_shells_i, const struct shell *shells_i,
 
 			init_ft(count_i, sh_j->type, ft);
 
-			double rr = vec_dist_2(CVEC(sh_i->x), CVEC(sh_j->x));
+			double rr = vec_dist_2(CVEC(at_i->x), CVEC(at_j->x));
 
 			const size_t *shift_x = shift_table_x[type_i * 5 + type_j];
 			const size_t *shift_y = shift_table_y[type_i * 5 + type_j];
@@ -355,9 +361,9 @@ void efp_st_int(size_t n_shells_i, const struct shell *shells_i,
 						coef_j++;
 
 					vec_t a = {
-						(ai * sh_i->x + aj * sh_j->x) * aa,
-						(ai * sh_i->y + aj * sh_j->y) * aa,
-						(ai * sh_i->z + aj * sh_j->z) * aa
+						(ai * at_i->x + aj * at_j->x) * aa,
+						(ai * at_i->y + aj * at_j->y) * aa,
+						(ai * at_i->z + aj * at_j->z) * aa
 					};
 
 					double fac = exp(-tmp);
@@ -374,18 +380,18 @@ void efp_st_int(size_t n_shells_i, const struct shell *shells_i,
 						for (size_t j = 0; j < sl_j; j++) {
 							vec_t iout;
 
-							make_int(i, j, taa, &a, CVEC(sh_i->x), CVEC(sh_j->x), &iout);
+							make_int(i, j, taa, &a, CVEC(at_i->x), CVEC(at_j->x), &iout);
 							xin[idx + j] = iout.x * taa;
 							yin[idx + j] = iout.y * taa;
 							zin[idx + j] = iout.z * taa;
 
-							make_int(i, j + 2, taa, &a, CVEC(sh_i->x), CVEC(sh_j->x), &iout);
+							make_int(i, j + 2, taa, &a, CVEC(at_i->x), CVEC(at_j->x), &iout);
 							xin[idx + j + 30] = iout.x * t1;
 							yin[idx + j + 30] = iout.y * t1;
 							zin[idx + j + 30] = iout.z * t1;
 
 							if (j >= 2) {
-								make_int(i, j - 2, taa, &a, CVEC(sh_i->x), CVEC(sh_j->x), &iout);
+								make_int(i, j - 2, taa, &a, CVEC(at_i->x), CVEC(at_j->x), &iout);
 								double t3 = j * (j - 1) * t2;
 								xin[idx + j + 60] = iout.x * t3;
 								yin[idx + j + 60] = iout.y * t3;
@@ -422,13 +428,13 @@ void efp_st_int(size_t n_shells_i, const struct shell *shells_i,
 				}
 			}
 			loc_j += count_j;
-		}
+		}}
 		loc_i += count_i;
-	}
+	}}
 }
 
-void efp_st_int_deriv(size_t n_shells_i, const struct shell *shells_i,
-		      size_t n_shells_j, const struct shell *shells_j,
+void efp_st_int_deriv(size_t n_atoms_i, const struct xr_atom *atoms_i,
+		      size_t n_atoms_j, const struct xr_atom *atoms_j,
 		      const vec_t *com_i, size_t size_i, size_t size_j,
 		      six_t *ds, six_t *dt)
 {
@@ -450,9 +456,12 @@ void efp_st_int_deriv(size_t n_shells_i, const struct shell *shells_i,
 	memset(ds, 0, size_i * size_j * sizeof(six_t));
 	memset(dt, 0, size_i * size_j * sizeof(six_t));
 
+	for (size_t iii = 0, loc_i = 0; iii < n_atoms_i; iii++) {
+		const struct xr_atom *at_i = atoms_i + iii;
+
 	/* shell i */
-	for (size_t ii = 0, loc_i = 0; ii < n_shells_i; ii++) {
-		const struct shell *sh_i = shells_i + ii;
+	for (size_t ii = 0; ii < at_i->n_shells; ii++) {
+		const struct shell *sh_i = at_i->shells + ii;
 
 		size_t type_i = get_shell_idx(sh_i->type);
 		size_t start_i = get_shell_start(type_i);
@@ -460,9 +469,12 @@ void efp_st_int_deriv(size_t n_shells_i, const struct shell *shells_i,
 		size_t sl_i = get_shell_sl(type_i);
 		size_t count_i = end_i - start_i;
 
+		for (size_t jjj = 0, loc_j = 0; jjj < n_atoms_j; jjj++) {
+			const struct xr_atom *at_j = atoms_j + jjj;
+
 		/* shell j */
-		for (size_t jj = 0, loc_j = 0; jj < n_shells_j; jj++) {
-			const struct shell *sh_j = shells_j + jj;
+		for (size_t jj = 0; jj < at_j->n_shells; jj++) {
+			const struct shell *sh_j = at_j->shells + jj;
 
 			size_t type_j = get_shell_idx(sh_j->type);
 			size_t start_j = get_shell_start(type_j);
@@ -470,7 +482,7 @@ void efp_st_int_deriv(size_t n_shells_i, const struct shell *shells_i,
 			size_t sl_j = get_shell_sl(type_j);
 			size_t count_j = end_j - start_j;
 
-			double rr = vec_dist_2(CVEC(sh_i->x), CVEC(sh_j->x));
+			double rr = vec_dist_2(CVEC(at_i->x), CVEC(at_j->x));
 
 			const double *coef_i = sh_i->coef;
 
@@ -518,15 +530,15 @@ void efp_st_int_deriv(size_t n_shells_i, const struct shell *shells_i,
 					double taa = sqrt(aa);
 
 					vec_t a = {
-						(ai * sh_i->x + aj * sh_j->x) * aa,
-						(ai * sh_i->y + aj * sh_j->y) * aa,
-						(ai * sh_i->z + aj * sh_j->z) * aa
+						(ai * at_i->x + aj * at_j->x) * aa,
+						(ai * at_i->y + aj * at_j->y) * aa,
+						(ai * at_i->z + aj * at_j->z) * aa
 					};
 
 					for (size_t i = 0; i < sl_i + 1; i++) {
 						for (size_t j = 0; j < sl_j + 2; j++) {
 							vec_t iout;
-							make_int(i, j, taa, &a, CVEC(sh_i->x), CVEC(sh_j->x), &iout);
+							make_int(i, j, taa, &a, CVEC(at_i->x), CVEC(at_j->x), &iout);
 							xs[i][j] = iout.x * taa;
 							ys[i][j] = iout.y * taa;
 							zs[i][j] = iout.z * taa;
@@ -611,22 +623,22 @@ void efp_st_int_deriv(size_t n_shells_i, const struct shell *shells_i,
 							ds[idx2].x += txs * dij[idx];
 							ds[idx2].y += tys * dij[idx];
 							ds[idx2].z += tzs * dij[idx];
-							ds[idx2].a += (tys * (sh_i->z - com_i->z) - tzs * (sh_i->y - com_i->y)) * dij[idx];
-							ds[idx2].b += (tzs * (sh_i->x - com_i->x) - txs * (sh_i->z - com_i->z)) * dij[idx];
-							ds[idx2].c += (txs * (sh_i->y - com_i->y) - tys * (sh_i->x - com_i->x)) * dij[idx];
+							ds[idx2].a += (tys * (at_i->z - com_i->z) - tzs * (at_i->y - com_i->y)) * dij[idx];
+							ds[idx2].b += (tzs * (at_i->x - com_i->x) - txs * (at_i->z - com_i->z)) * dij[idx];
+							ds[idx2].c += (txs * (at_i->y - com_i->y) - tys * (at_i->x - com_i->x)) * dij[idx];
 
 							dt[idx2].x += txt * dij[idx];
 							dt[idx2].y += tyt * dij[idx];
 							dt[idx2].z += tzt * dij[idx];
-							dt[idx2].a += (tyt * (sh_i->z - com_i->z) - tzt * (sh_i->y - com_i->y)) * dij[idx];
-							dt[idx2].b += (tzt * (sh_i->x - com_i->x) - txt * (sh_i->z - com_i->z)) * dij[idx];
-							dt[idx2].c += (txt * (sh_i->y - com_i->y) - tyt * (sh_i->x - com_i->x)) * dij[idx];
+							dt[idx2].a += (tyt * (at_i->z - com_i->z) - tzt * (at_i->y - com_i->y)) * dij[idx];
+							dt[idx2].b += (tzt * (at_i->x - com_i->x) - txt * (at_i->z - com_i->z)) * dij[idx];
+							dt[idx2].c += (txt * (at_i->y - com_i->y) - tyt * (at_i->x - com_i->x)) * dij[idx];
 						}
 					}
 				}
 			}
 			loc_j += count_j;
-		}
+		}}
 		loc_i += count_i;
-	}
+	}}
 }
