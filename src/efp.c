@@ -33,108 +33,116 @@
 #include "private.h"
 #include "stream.h"
 
-static enum efp_result
-ff_to_efp(enum ff_res res)
-{
-	switch (res) {
-		case FF_OK:
-			return EFP_RESULT_SUCCESS;
-		case FF_FILE_NOT_FOUND:
-			return EFP_RESULT_FILE_NOT_FOUND;
-		case FF_BAD_FORMAT:
-			return EFP_RESULT_SYNTAX_ERROR;
-		case FF_STRING_TOO_LONG:
-			efp_log("force field atom type name is too long");
-			return EFP_RESULT_FATAL;
-		case FF_NO_PARAMETERS:
-			efp_log("some force field parameters are missing");
-			return EFP_RESULT_FATAL;
-	};
-	assert(0);
-}
+//static enum efp_result
+//ff_to_efp(enum ff_res res)
+//{
+//	switch (res) {
+//		case FF_OK:
+//			return EFP_RESULT_SUCCESS;
+//		case FF_FILE_NOT_FOUND:
+//			return EFP_RESULT_FILE_NOT_FOUND;
+//		case FF_BAD_FORMAT:
+//			return EFP_RESULT_SYNTAX_ERROR;
+//		case FF_STRING_TOO_LONG:
+//			efp_log("force field atom type name is too long");
+//			return EFP_RESULT_FATAL;
+//		case FF_NO_PARAMETERS:
+//			efp_log("some force field parameters are missing");
+//			return EFP_RESULT_FATAL;
+//	};
+//	assert(0);
+//}
 
-static void
-update_ff_atoms(struct ff *ff, const struct frag *frag)
-{
-	for (size_t i = 0; i < frag->n_ff_atoms; i++) {
-		const struct efp_atom *atom = frag->atoms + frag->ff_atoms[i].idx;
-		vec_t pos = { atom->x, atom->y, atom->z };
+//static void
+//update_ff_atoms(struct ff *ff, const struct frag *frag)
+//{
+//	for (size_t i = 0; i < frag->n_ff_atoms; i++) {
+//		const struct efp_atom *atom = frag->atoms + frag->ff_atoms[i].idx;
+//		vec_t pos = { atom->x, atom->y, atom->z };
+//
+//		efp_ff_set_atom_pos(ff, frag->ff_offset + i, pos);
+//	}
+//}
 
-		efp_ff_set_atom_pos(ff, frag->ff_offset + i, pos);
-	}
-}
+//static enum efp_result
+//init_ff(struct efp *efp)
+//{
+//	enum ff_res ff_res;
+//
+//	for (size_t i = 0, offset = 0; i < efp->n_frag; i++) {
+//		struct frag *frag = efp->frags + i;
+//
+//		for (size_t j = 0; j < frag->n_ff_atoms; j++) {
+//			const struct ff_atom *at = frag->ff_atoms + j;
+//
+//			if ((ff_res = efp_ff_add_atom(efp->ff, at->type)))
+//				return ff_to_efp(ff_res);
+//		}
+//
+//		frag->ff_offset = offset;
+//		offset += frag->n_ff_atoms;
+//	}
+//
+//	for (size_t i = 0; i < efp->n_frag; i++) {
+//		const struct frag *frag = efp->frags + i;
+//
+//		for (size_t j = 0; j < frag->n_ff_links; j++) {
+//			const struct ff_link *link = frag->ff_links + j;
+//
+//			if ((ff_res = efp_ff_add_bond(efp->ff,
+//					frag->ff_offset + link->idx1,
+//					frag->ff_offset + link->idx2)))
+//				return ff_to_efp(ff_res);
+//		}
+//	}
+//
+//	return EFP_RESULT_SUCCESS;
+//}
 
-static enum efp_result
-init_ff(struct efp *efp)
-{
-	enum ff_res ff_res;
-
-	for (size_t i = 0, offset = 0; i < efp->n_frag; i++) {
-		struct frag *frag = efp->frags + i;
-
-		for (size_t j = 0; j < frag->n_ff_atoms; j++) {
-			const struct ff_atom *at = frag->ff_atoms + j;
-
-			if ((ff_res = efp_ff_add_atom(efp->ff, at->type)))
-				return ff_to_efp(ff_res);
-		}
-
-		frag->ff_offset = offset;
-		offset += frag->n_ff_atoms;
-	}
-
-	for (size_t i = 0; i < efp->n_frag; i++) {
-		const struct frag *frag = efp->frags + i;
-
-		for (size_t j = 0; j < frag->n_ff_links; j++) {
-			const struct ff_link *link = frag->ff_links + j;
-
-			if ((ff_res = efp_ff_add_bond(efp->ff,
-					frag->ff_offset + link->idx1,
-					frag->ff_offset + link->idx2)))
-				return ff_to_efp(ff_res);
-		}
-	}
-
-	return EFP_RESULT_SUCCESS;
-}
-
-static enum efp_result
-get_link_index(const struct efp *efp, size_t fr_idx, const char *name, size_t *link)
-{
-	const struct frag *frag;
-
-	if (fr_idx >= efp->n_frag) {
-		efp_log("fragment index is out of range in topology file");
-		return (EFP_RESULT_FATAL);
-	}
-
-	frag = efp->frags + fr_idx;
-
-	for (size_t i = 0; i < frag->n_ff_atoms; i++) {
-		size_t idx = frag->ff_atoms[i].idx;
-
-		if (strcmp(name, frag->atoms[idx].label) == 0) {
-			*link = frag->ff_offset + i;
-			return (EFP_RESULT_SUCCESS);
-		}
-	}
-
-	efp_log("fragment %s does not have an atom named %s", frag->name, name);
-	return (EFP_RESULT_FATAL);
-}
+//static enum efp_result
+//get_link_index(const struct efp *efp, size_t fr_idx, const char *name, size_t *link)
+//{
+//	const struct frag *frag;
+//
+//	if (fr_idx >= efp->n_frag) {
+//		efp_log("fragment index is out of range in topology file");
+//		return (EFP_RESULT_FATAL);
+//	}
+//
+//	frag = efp->frags + fr_idx;
+//
+//	for (size_t i = 0; i < frag->n_ff_atoms; i++) {
+//		size_t idx = frag->ff_atoms[i].idx;
+//
+//		if (strcmp(name, frag->atoms[idx].label) == 0) {
+//			*link = frag->ff_offset + i;
+//			return (EFP_RESULT_SUCCESS);
+//		}
+//	}
+//
+//	efp_log("fragment %s does not have an atom named %s", frag->name, name);
+//	return (EFP_RESULT_FATAL);
+//}
 
 static enum efp_result
 parse_topology_record(struct efp *efp, const char *str)
 {
 	char name_i[32], name_j[32];
-	size_t idx_i, idx_j, link_i, link_j;
-	enum efp_result res;
-	enum ff_res ff_res;
+	size_t idx_i, idx_j;
 
-	if (sscanf(str, "%zu %zu %32s %32s", &idx_i, &idx_j, name_i, name_j) < 4) {
+//	size_t idx_i, idx_j, link_i, link_j;
+//	enum efp_result res;
+//	enum ff_res ff_res;
+
+	if (sscanf(str, "%zu %zu %31s %31s", &idx_i, &idx_j, name_i, name_j) < 4) {
 		efp_log("bad topology record format");
 		return (EFP_RESULT_SYNTAX_ERROR);
+	}
+
+	if (idx_i < 1 || idx_i > efp->n_frag ||
+	    idx_j < 1 || idx_j > efp->n_frag) {
+		efp_log("fragment index is out of range in topology file");
+		return (EFP_RESULT_FATAL);
 	}
 
 	if (idx_i == idx_j) {
@@ -142,14 +150,14 @@ parse_topology_record(struct efp *efp, const char *str)
 		return (EFP_RESULT_FATAL);
 	}
 
-	if ((res = get_link_index(efp, idx_i - 1, name_i, &link_i)))
-		return (res);
+//	if ((res = get_link_index(efp, idx_i - 1, name_i, &link_i)))
+//		return (res);
 
-	if ((res = get_link_index(efp, idx_j - 1, name_j, &link_j)))
-		return (res);
+//	if ((res = get_link_index(efp, idx_j - 1, name_j, &link_j)))
+//		return (res);
 
-	if ((ff_res = efp_ff_add_bond(efp->ff, link_i, link_j)))
-		return (ff_to_efp(ff_res));
+//	if ((ff_res = efp_ff_add_bond(efp->ff, link_i, link_j)))
+//		return (ff_to_efp(ff_res));
 
 	efp_bvec_set(efp->links_bvec, (idx_i - 1) * efp->n_frag + (idx_j - 1));
 	efp_bvec_set(efp->links_bvec, (idx_j - 1) * efp->n_frag + (idx_i - 1));
@@ -746,8 +754,8 @@ efp_set_frag_coordinates(struct efp *efp, size_t frag_idx,
 			break;
 	}
 
-	if (efp->opts.enable_links)
-		update_ff_atoms(efp->ff, frag);
+//	if (efp->opts.enable_links)
+//		update_ff_atoms(efp->ff, frag);
 
 	return EFP_RESULT_SUCCESS;
 }
@@ -884,27 +892,27 @@ efp_compute(struct efp *efp, int do_gradient)
 		efp_allreduce((double *)&efp->stress, 9);
 	}
 #endif
-	if (efp->opts.enable_links) {
-		size_t n_ff_atoms = efp_ff_get_atom_count(efp->ff);
-		vec_t ff_grad[n_ff_atoms];
-
-		efp->energy.covalent = efp_ff_compute(efp->ff, ff_grad);
-
-		if (do_gradient) {
-			for (size_t i = 0; i < efp->n_frag; i++) {
-				const struct frag *frag = efp->frags + i;
-
-				for (size_t ii = 0; ii < frag->n_ff_atoms; ii++) {
-					const struct efp_atom *at = frag->atoms +
-						frag->ff_atoms[ii].idx;
-
-					efp_add_force(efp->grad + i, CVEC(frag->x),
-						CVEC(at->x), ff_grad + frag->ff_offset + ii,
-						NULL);
-				}
-			}
-		}
-	}
+//	if (efp->opts.enable_links) {
+//		size_t n_ff_atoms = efp_ff_get_atom_count(efp->ff);
+//		vec_t ff_grad[n_ff_atoms];
+//
+//		efp->energy.covalent = efp_ff_compute(efp->ff, ff_grad);
+//
+//		if (do_gradient) {
+//			for (size_t i = 0; i < efp->n_frag; i++) {
+//				const struct frag *frag = efp->frags + i;
+//
+//				for (size_t ii = 0; ii < frag->n_ff_atoms; ii++) {
+//					const struct efp_atom *at = frag->atoms +
+//						frag->ff_atoms[ii].idx;
+//
+//					efp_add_force(efp->grad + i, CVEC(frag->x),
+//						CVEC(at->x), ff_grad + frag->ff_offset + ii,
+//						NULL);
+//				}
+//			}
+//		}
+//	}
 
 	efp->energy.total = efp->energy.electrostatic +
 			    efp->energy.charge_penetration +
@@ -1181,27 +1189,34 @@ efp_add_fragment(struct efp *efp, const char *name)
 EFP_EXPORT enum efp_result
 efp_load_forcefield(struct efp *efp, const char *path)
 {
-	enum ff_res ff_res;
+	(void)efp;
+	(void)path;
 
-	assert(efp);
-	assert(path);
+	efp_log("force field support is not fully implemented");
 
-	if (!efp->opts.enable_links) {
-		efp_log("covalent links are not enabled");
-		return EFP_RESULT_FATAL;
-	}
+	return (EFP_RESULT_FATAL);
 
-	if ((ff_res = efp_ff_parse(efp->ff, path)))
-		return ff_to_efp(ff_res);
-
-	return EFP_RESULT_SUCCESS;
+//	enum ff_res ff_res;
+//
+//	assert(efp);
+//	assert(path);
+//
+//	if (!efp->opts.enable_links) {
+//		efp_log("covalent links are not enabled");
+//		return EFP_RESULT_FATAL;
+//	}
+//
+//	if ((ff_res = efp_ff_parse(efp->ff, path)))
+//		return ff_to_efp(ff_res);
+//
+//	return EFP_RESULT_SUCCESS;
 }
 
 EFP_EXPORT enum efp_result
 efp_load_topology(struct efp *efp, const char *path)
 {
-	enum ff_res ff_res;
 	enum efp_result res;
+//	enum ff_res ff_res;
 
 	assert(efp);
 	assert(path);
@@ -1214,17 +1229,17 @@ efp_load_topology(struct efp *efp, const char *path)
 	if ((efp->links_bvec = efp_bvec_create(efp->n_frag * efp->n_frag)) == NULL)
 		return EFP_RESULT_NO_MEMORY;
 
-	if ((res = init_ff(efp)))
-		return res;
+//	if ((res = init_ff(efp)))
+//		return res;
 
 	if ((res = parse_topology(efp, path)))
 		return res;
 
-	if ((ff_res = efp_ff_auto_angles(efp->ff)))
-		return ff_to_efp(ff_res);
+//	if ((ff_res = efp_ff_auto_angles(efp->ff)))
+//		return ff_to_efp(ff_res);
 
-	if ((ff_res = efp_ff_auto_torsions(efp->ff)))
-		return ff_to_efp(ff_res);
+//	if ((ff_res = efp_ff_auto_torsions(efp->ff)))
+//		return ff_to_efp(ff_res);
 
 	return EFP_RESULT_SUCCESS;
 }
