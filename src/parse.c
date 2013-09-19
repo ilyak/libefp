@@ -542,6 +542,7 @@ parse_fock_mat(struct frag *frag, struct stream *stream)
 
 	size_t size = frag->n_lmo * (frag->n_lmo + 1) / 2;
 	frag->xr_fock_mat = (double *)malloc(size * sizeof(double));
+
 	if (!frag->xr_fock_mat)
 		return EFP_RESULT_NO_MEMORY;
 
@@ -549,7 +550,15 @@ parse_fock_mat(struct frag *frag, struct stream *stream)
 		if (!tok_double(stream, frag->xr_fock_mat + i))
 			return EFP_RESULT_SYNTAX_ERROR;
 
-	efp_stream_next_line(stream);
+	/* work around GAMESS bug */
+	if (size % 4 == 0) {
+		efp_stream_skip_space(stream);
+
+		if (efp_stream_eol(stream))
+			efp_stream_next_line(stream);
+	} else
+		efp_stream_next_line(stream);
+
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -609,13 +618,14 @@ parse_canonfok(struct frag *frag, struct stream *stream)
 
 	efp_stream_next_line(stream);
 
-	while (!efp_stream_eof(stream)) {
-		if (tok_stop(stream))
-			return EFP_RESULT_SUCCESS;
+	if (strstr(efp_stream_get_ptr(stream), "STOP") != NULL) {
 		efp_stream_next_line(stream);
+		return (EFP_RESULT_SUCCESS);
 	}
 
-	return EFP_RESULT_SYNTAX_ERROR;
+	efp_stream_next_line(stream);
+	efp_stream_next_line(stream);
+	return (EFP_RESULT_SUCCESS);
 }
 
 static enum efp_result
