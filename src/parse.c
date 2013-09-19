@@ -691,7 +691,7 @@ parse_ff_types(struct frag *frag, struct stream *stream)
 		char label[32];
 		struct ff_atom atom;
 
-		if (sscanf(efp_stream_get_ptr(stream), "%32s %32s", label, atom.type) < 2)
+		if (sscanf(efp_stream_get_ptr(stream), "%31s %31s", label, atom.type) < 2)
 			return EFP_RESULT_SYNTAX_ERROR;
 
 		for (size_t i = 0; i < frag->n_atoms; i++) {
