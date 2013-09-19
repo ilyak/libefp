@@ -81,14 +81,7 @@ file as a template you can create EFP parameters for arbitrary fragment types.
 
 After you created `.efp` file using GAMESS you should rename the fragment by
 replacing `$FRAGNAME` with your name of choice (e.g. rename `$FRAGNAME` to
-`$MYH2O`). Also note that there is a bug in GAMESS which makes it print
-excessive line continuation mark (which is a '>' sign) at the end of some
-strings. For example if the number of elements in your 'FOCK MATRIX ELEMENTS'
-section is divisible by four then GAMESS will print an unneeded '>' sing at the
-end of last line. If parsing of your newly generated EFP potential fails with
-syntax error then you probably have these extra marks somewhere. Check if
-there are some extra line continuation marks in the last line of sections and
-remove them for the parsing of a potential file to work.
+`$MYH2O`).
 
 For a complete description of EFP data file format consult FRAGNAME section in
 GAMESS manual (see http://www.msg.ameslab.gov/gamess/).
