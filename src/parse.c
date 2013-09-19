@@ -621,26 +621,11 @@ parse_canonfok(struct frag *frag, struct stream *stream)
 static enum efp_result
 parse_screen(struct frag *frag, struct stream *stream)
 {
-	double *scr = (double *)malloc(frag->n_multipole_pts * sizeof(double));
-	if (!scr)
-		return EFP_RESULT_NO_MEMORY;
+	double *scr;
+	char type;
 
-	char type = efp_stream_get_char(stream);
-
-	if (type == '\0' || isspace(type)) {
-		if (frag->ai_screen_params)
-			return EFP_RESULT_SYNTAX_ERROR;
-		frag->ai_screen_params = scr;
-	}
-	else if (type == '2') {
-		if (frag->screen_params)
-			return EFP_RESULT_SYNTAX_ERROR;
-		frag->screen_params = scr;
-	}
-	else {
-		efp_log("unsupported screen group in EFP data file");
-		return EFP_RESULT_FATAL;
-	}
+	scr = (double *)malloc(frag->n_multipole_pts * sizeof(double));
+	type = efp_stream_get_char(stream);
 
 	efp_stream_next_line(stream);
 
@@ -648,15 +633,34 @@ parse_screen(struct frag *frag, struct stream *stream)
 		if (!skip_label(stream) ||
 		    !tok_double(stream, NULL) ||
 		    !tok_double(stream, scr + i))
-			return EFP_RESULT_SYNTAX_ERROR;
+			return (EFP_RESULT_SYNTAX_ERROR);
 
 		efp_stream_next_line(stream);
 	}
 
 	if (!tok_stop(stream))
-		return EFP_RESULT_SYNTAX_ERROR;
+		return (EFP_RESULT_SYNTAX_ERROR);
 
-	return EFP_RESULT_SUCCESS;
+	if (type == '\0' || isspace(type)) {
+		if (frag->ai_screen_params)
+			free(frag->ai_screen_params);
+
+		frag->ai_screen_params = scr;
+		return (EFP_RESULT_SUCCESS);
+	}
+
+	if (type == '2') {
+		if (frag->screen_params)
+			free(frag->screen_params);
+
+		frag->screen_params = scr;
+		return (EFP_RESULT_SUCCESS);
+	}
+
+	efp_log("unsupported screen group in EFP data file");
+	free(scr);
+
+	return (EFP_RESULT_SUCCESS);
 }
 
 static enum efp_result
