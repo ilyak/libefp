@@ -27,7 +27,33 @@
 #ifndef LIBEFP_CLAPACK_H
 #define LIBEFP_CLAPACK_H
 
-int efp_dsyev(char, char, int, double *, int, double *);
-int efp_dgesv(int, int, double *, int, int *, double *, int);
+void efp_dgemm(char,
+	       char,
+	       int,
+	       int,
+	       int,
+	       double,
+	       double *,
+	       int,
+	       double *,
+	       int,
+	       double,
+	       double *,
+	       int);
+
+int efp_dsyev(char,
+	      char,
+	      int,
+	      double *,
+	      int,
+	      double *);
+
+int efp_dgesv(int,
+	      int,
+	      double *,
+	      int,
+	      int *,
+	      double *,
+	      int);
 
 #endif /* LIBEFP_CLAPACK_H */

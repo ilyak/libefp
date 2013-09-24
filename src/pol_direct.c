@@ -27,7 +27,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#include "cblas.h"
 #include "clapack.h"
 #include "private.h"
 

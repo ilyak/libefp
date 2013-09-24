@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "cblas.h"
+#include "clapack.h"
 #include "private.h"
 
 #define INTEGRAL_THRESHOLD 1.0e-7
@@ -108,17 +108,15 @@ charge_penetration_grad(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
 static void
 transform_integrals(size_t n_lmo_i, size_t n_lmo_j,
 		    size_t wf_size_i, size_t wf_size_j,
-		    const double *wf_i, const double *wf_j,
-		    const double *s, double *lmo_s)
+		    double *wf_i, double *wf_j,
+		    double *s, double *lmo_s)
 {
 	double tmp[n_lmo_i * wf_size_j];
 
-	cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-		(int)n_lmo_i, (int)wf_size_j, (int)wf_size_i, 1.0, wf_i,
-		(int)wf_size_i, s, (int)wf_size_j, 0.0, tmp, (int)wf_size_j);
-	cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
-		(int)n_lmo_i, (int)n_lmo_j, (int)wf_size_j, 1.0, tmp,
-		(int)wf_size_j, wf_j, (int)wf_size_j, 0.0, lmo_s, (int)n_lmo_j);
+	efp_dgemm('N', 'N', (int)wf_size_j, (int)n_lmo_i, (int)wf_size_i, 1.0,
+		s, (int)wf_size_j, wf_i, (int)wf_size_i, 0.0, tmp, (int)wf_size_j);
+	efp_dgemm('T', 'N', (int)n_lmo_j, (int)n_lmo_i, (int)wf_size_j, 1.0,
+		wf_j, (int)wf_size_j, tmp, (int)wf_size_j, 0.0, lmo_s, (int)n_lmo_j);
 }
 
 static void

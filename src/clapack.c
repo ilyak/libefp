@@ -28,6 +28,20 @@
 
 #include "clapack.h"
 
+void dgemm_(char *,
+	    char *,
+	    int *,
+	    int *,
+	    int *,
+	    double *,
+	    double *,
+	    int *,
+	    double *,
+	    int *,
+	    double *,
+	    double *,
+	    int *);
+
 void dsyev_(char *,
 	    char *,
 	    int *,
@@ -46,6 +60,11 @@ void dgesv_(int *,
 	    double *,
 	    int *,
 	    int *);
+
+void efp_dgemm(char transa, char transb, int m, int n, int k, double alpha, double *a, int lda, double *b, int ldb, double beta, double *c, int ldc)
+{
+	dgemm_(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
+}
 
 int efp_dsyev(char jobz, char uplo, int n, double *a, int lda, double *w)
 {

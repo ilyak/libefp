@@ -26,7 +26,7 @@ To build LIBEFP from source you need the following:
 
 - POSIX complaint make (BSD make or GNU make will work)
 
-- BLAS/CBLAS/LAPACK libraries (required when linking with libefp)
+- BLAS/LAPACK libraries (required when linking with libefp)
 
 If you are going to compile EFPMD program (required for tests):
 
