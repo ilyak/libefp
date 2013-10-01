@@ -58,7 +58,7 @@ struct polarizable_pt {
 
 struct dynamic_polarizable_pt {
 	double x, y, z;
-	double trace[12];
+	mat_t tensor[12];
 };
 
 struct ff_atom {
@@ -147,12 +147,16 @@ struct frag {
 	/* offset of polarizable points for this fragment */
 	size_t polarizable_offset;
 
+	/*XXX*/
 	size_t n_ff_atoms;
 
+	/*XXX*/
 	struct ff_atom *ff_atoms;
 
+	/*XXX*/
 	size_t n_ff_links;
 
+	/*XXX*/
 	struct ff_link *ff_links;
 
 	/* offset in array of ff atoms */
@@ -213,6 +217,20 @@ struct efp {
 
 	/* total number of polarizable points */
 	size_t n_polarizable_pts;
+
+	/* number of occupied orbitals in ab initio subsystem */
+	size_t n_ai_occ;
+
+	/* number of virtual orbitals in ab initio subsystem */
+	size_t n_ai_vir;
+
+	/* ab initio orbital energies
+	 * size [n_ai_occ + n_ai_vir] */
+	double *ai_orbital_energies;
+
+	/* ab initio dipole moment integrals on polarizable points
+	 * size [3 * (n_ai_occ + n_ai_vir) ^ 2] */
+	double *ai_dipole_integrals;
 
 	/* EFP energy terms */
 	struct efp_energy energy;

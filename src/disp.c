@@ -242,8 +242,12 @@ point_point_disp(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
 
 	double sum = 0.0;
 
-	for (size_t k = 0; k < ARRAY_SIZE(weights); k++)
-		sum += weights[k] * pt_i->trace[k] * pt_j->trace[k];
+	for (size_t k = 0; k < ARRAY_SIZE(weights); k++) {
+		double tr_i = (pt_i->tensor[k].xx + pt_i->tensor[k].yy + pt_i->tensor[k].zz) / 3;
+		double tr_j = (pt_j->tensor[k].xx + pt_j->tensor[k].yy + pt_j->tensor[k].zz) / 3;
+
+		sum += weights[k] * tr_i * tr_j;
+	}
 
 	switch (efp->opts.disp_damp) {
 		case EFP_DISP_DAMP_TT:

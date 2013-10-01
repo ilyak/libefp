@@ -177,6 +177,9 @@ struct efp_energy {
 	 * EFP/EFP dispersion energy. */
 	double dispersion;
 	/**
+	 * AI/EFP dispersion energy. */
+	double ai_dispersion;
+	/**
 	 * EFP/EFP exchange-repulsion energy. */
 	double exchange_repulsion;
 	/**
@@ -545,6 +548,30 @@ enum efp_result efp_get_stress_tensor(struct efp *efp, double *stress);
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
 enum efp_result efp_prepare(struct efp *efp);
+
+/**
+ * Set ab initio orbital energies.
+ *
+ * XXX
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_set_orbital_energies(struct efp *efp,
+					 size_t n_occ,
+					 size_t n_vir,
+					 const double *oe);
+
+/**
+ * Set ab initio dipole integrals.
+ *
+ * XXX
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_set_dipole_integrals(struct efp *efp,
+					 size_t n_occ,
+					 size_t n_vir,
+					 const double *dipint);
 
 /**
  * Update wave function dependent energy terms.

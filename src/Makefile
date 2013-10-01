@@ -5,10 +5,8 @@ include $(TOP)/config.inc
 CFLAGS= $(MYCFLAGS)
 
 LIBEFP_A= libefp.a
-ALL_C= balance.c bvec.c clapack.c disp.c efp.c elec.c elec_terms.c ff.c \
-       int.c log.c parse.c pol.c pol_direct.c stream.c swf.c util.c xr.c
-ALL_O= balance.o bvec.o clapack.o disp.o efp.o elec.o elec_terms.o ff.o \
-       int.o log.o parse.o pol.o pol_direct.o stream.o swf.o util.o xr.o
+ALL_C= ai_disp.c balance.c bvec.c clapack.c disp.c efp.c elec.c elec_terms.c ff.c int.c log.c parse.c pol.c pol_direct.c stream.c swf.c util.c xr.c
+ALL_O= ai_disp.o balance.o bvec.o clapack.o disp.o efp.o elec.o elec_terms.o ff.o int.o log.o parse.o pol.o pol_direct.o stream.o swf.o util.o xr.o
 
 all: $(LIBEFP_A)
 

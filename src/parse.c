@@ -326,6 +326,8 @@ parse_polarizable_pts(struct frag *frag, struct stream *stream)
 static enum efp_result
 parse_dynamic_polarizable_pts(struct frag *frag, struct stream *stream)
 {
+	double m[9];
+
 	efp_stream_next_line(stream);
 
 	while (!efp_stream_eof(stream)) {
@@ -353,13 +355,20 @@ parse_dynamic_polarizable_pts(struct frag *frag, struct stream *stream)
 			return EFP_RESULT_SYNTAX_ERROR;
 
 		efp_stream_next_line(stream);
-		double m[9];
 
 		for (size_t j = 0; j < 9; j++)
 			if (!tok_double(stream, m + j))
 				return EFP_RESULT_SYNTAX_ERROR;
 
-		pt->trace[0] = (m[0] + m[1] + m[2]) / 3.0;
+		pt->tensor[0].xx = m[0];
+		pt->tensor[0].yy = m[1];
+		pt->tensor[0].zz = m[2];
+		pt->tensor[0].xy = m[3];
+		pt->tensor[0].xz = m[4];
+		pt->tensor[0].yz = m[5];
+		pt->tensor[0].yx = m[6];
+		pt->tensor[0].zx = m[7];
+		pt->tensor[0].zy = m[8];
 
 		efp_stream_next_line(stream);
 
@@ -387,13 +396,21 @@ parse_dynamic_polarizable_pts(struct frag *frag, struct stream *stream)
 				return EFP_RESULT_SYNTAX_ERROR;
 
 			efp_stream_next_line(stream);
-			double m[9];
 
 			for (size_t j = 0; j < 9; j++)
 				if (!tok_double(stream, m + j))
 					return EFP_RESULT_SYNTAX_ERROR;
 
-			pt->trace[w] = (m[0] + m[1] + m[2]) / 3.0;
+			pt->tensor[w].xx = m[0];
+			pt->tensor[w].yy = m[1];
+			pt->tensor[w].zz = m[2];
+			pt->tensor[w].xy = m[3];
+			pt->tensor[w].xz = m[4];
+			pt->tensor[w].yz = m[5];
+			pt->tensor[w].yx = m[6];
+			pt->tensor[w].zx = m[7];
+			pt->tensor[w].zy = m[8];
+
 			efp_stream_next_line(stream);
 		}
 	}
