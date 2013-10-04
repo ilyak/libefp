@@ -1,4 +1,4 @@
-V= 1.9.0-beta
+V= 1.2.0-beta
 
 include config.inc
 
