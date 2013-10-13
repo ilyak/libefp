@@ -24,11 +24,11 @@
  * SUCH DAMAGE.
  */
 
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "balance.h"
+#include "compat.h"
 #include "elec.h"
 #include "private.h"
 #include "stream.h"

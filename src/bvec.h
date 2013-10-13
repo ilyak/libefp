@@ -27,8 +27,9 @@
 #ifndef LIBEFP_BVEC_H
 #define LIBEFP_BVEC_H
 
-#include <stdbool.h>
 #include <stddef.h>
+
+#include "compat.h"
 
 struct bvec;
 

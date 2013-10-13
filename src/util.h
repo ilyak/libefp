@@ -27,8 +27,7 @@
 #ifndef LIBEFP_UTIL_H
 #define LIBEFP_UTIL_H
 
-#include <stdbool.h>
-
+#include "compat.h"
 #include "math_util.h"
 
 struct efp;

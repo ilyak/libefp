@@ -24,10 +24,10 @@
  * SUCH DAMAGE.
  */
 
-#include <stdbool.h>
 #include <stdlib.h>
 
 #include "clapack.h"
+#include "compat.h"
 #include "private.h"
 
 double efp_get_pol_damp_tt(double, double, double);
