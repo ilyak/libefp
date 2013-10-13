@@ -38,7 +38,7 @@
 #include "terms.h"
 #include "util.h"
 
-#define EFP_EXPORT __attribute__((visibility("default")))
+#define EFP_EXPORT
 #define ARRAY_SIZE(arr) (sizeof(arr)/sizeof(arr[0]))
 
 struct multipole_pt {
