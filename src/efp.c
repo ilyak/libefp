@@ -960,6 +960,7 @@ efp_compute(struct efp *efp, int do_gradient)
 			    efp->energy.electrostatic_point_charges +
 			    efp->energy.polarization +
 			    efp->energy.dispersion +
+			    efp->energy.ai_dispersion +
 			    efp->energy.exchange_repulsion +
 			    efp->energy.covalent;
 
