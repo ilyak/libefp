@@ -552,7 +552,14 @@ enum efp_result efp_prepare(struct efp *efp);
 /**
  * Set ab initio orbital energies.
  *
- * XXX
+ * \param[in] efp The efp structure.
+ *
+ * \param[in] n_occ Number of occupied orbitals.
+ *
+ * \param[in] n_vir Number of virtual orbitals.
+ *
+ * \param[in] oe Array of orbital energies. The size of this array must be
+ * (n_occ + n_vir) elements.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
@@ -564,7 +571,14 @@ enum efp_result efp_set_orbital_energies(struct efp *efp,
 /**
  * Set ab initio dipole integrals.
  *
- * XXX
+ * \param[in] efp The efp structure.
+ *
+ * \param[in] n_occ Number of occupied orbitals.
+ *
+ * \param[in] n_vir Number of virtual orbitals.
+ *
+ * \param[in] dipint Dipole integral matrices for x,y,z axes. The total size of
+ * this array must be 3 * (n_occ + n_vir) ^ 2 elements.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
