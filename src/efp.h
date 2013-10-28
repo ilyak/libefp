@@ -741,6 +741,51 @@ enum efp_result efp_get_induced_dipole_values(struct efp *efp, double *dip);
 enum efp_result efp_get_induced_dipole_conj_values(struct efp *efp, double *dip);
 
 /**
+ *  Get the number of LMOs in a fragment.
+ *
+ * \param[in] efp The efp structure.
+ *
+ * \param[in] frag_idx Index of a fragment. Must be a value between zero and
+ * the total number of fragments minus one.
+ *
+ * \param[out] n_lmo Number of LMOs.
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_get_lmo_count(struct efp *efp, size_t frag_idx, size_t *n_lmo);
+
+/**
+ * Get coordinates of LMO centroids.
+ *
+ * \param[in] efp The efp structure.
+ *
+ * \param[in] frag_idx Index of a fragment. Must be a value between zero and
+ * the total number of fragments minus one.
+ *
+ * \param[out] xyz Array where the coordinates of LMO centroids will be
+ * stored. The size of the \p xyz array must be at least [3 * \p n_lmo]
+ * elements.
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_get_lmo_coordinates(struct efp *efp, size_t frag_idx, double *xyz);
+
+/**
+ * Get parameters of fitted exchange-repulsion.
+ *
+ * \param[in] efp The efp structure.
+ *
+ * \param[in] frag_idx Index of a fragment. Must be a value between zero and
+ * the total number of fragments minus one.
+ *
+ * \param[out] xrfit Array where the parameters will be stored. The size of the
+ * \p xrfit array must be at least [4 * \p n_lmo] elements.
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_get_xrfit(struct efp *efp, size_t frag_idx, double *xrfit);
+
+/**
  * Get computed energy components.
  *
  * \param[in] efp The efp structure.

@@ -279,6 +279,7 @@ free_frag(struct frag *frag)
 	free(frag->lmo_centroids);
 	free(frag->xr_fock_mat);
 	free(frag->xr_wf);
+	free(frag->xrfit);
 	free(frag->screen_params);
 	free(frag->ai_screen_params);
 
@@ -397,6 +398,13 @@ copy_frag(struct frag *dest, const struct frag *src)
 		if (!dest->xr_wf)
 			return EFP_RESULT_NO_MEMORY;
 		memcpy(dest->xr_wf, src->xr_wf, size);
+	}
+	if (src->xrfit) {
+		size = src->n_lmo * 4 * sizeof(double);
+		dest->xrfit = (double *)malloc(size);
+		if (!dest->xrfit)
+			return EFP_RESULT_NO_MEMORY;
+		memcpy(dest->xrfit, src->xrfit, size);
 	}
 	if (src->ff_atoms) {
 		size = src->n_ff_atoms * sizeof(struct ff_atom);
@@ -1119,6 +1127,60 @@ efp_get_induced_dipole_conj_values(struct efp *efp, double *dip)
 	memcpy(dip, efp->indipconj, efp->n_polarizable_pts * sizeof(vec_t));
 
 	return EFP_RESULT_SUCCESS;
+}
+
+EFP_EXPORT enum efp_result
+efp_get_lmo_count(struct efp *efp, size_t frag_idx, size_t *n_lmo)
+{
+	assert(efp != NULL);
+	assert(frag_idx < efp->n_frag);
+	assert(n_lmo != NULL);
+
+	*n_lmo = efp->frags[frag_idx].n_lmo;
+
+	return (EFP_RESULT_SUCCESS);
+}
+
+EFP_EXPORT enum efp_result
+efp_get_lmo_coordinates(struct efp *efp, size_t frag_idx, double *xyz)
+{
+	struct frag *frag;
+
+	assert(efp != NULL);
+	assert(frag_idx < efp->n_frag);
+	assert(xyz != NULL);
+
+	frag = efp->frags + frag_idx;
+
+	if (frag->lmo_centroids == NULL) {
+		efp_log("no LMO centroids for fragment %s", frag->name);
+		return (EFP_RESULT_FATAL);
+	}
+
+	memcpy(xyz, frag->lmo_centroids, frag->n_lmo * sizeof(vec_t));
+
+	return (EFP_RESULT_SUCCESS);
+}
+
+EFP_EXPORT enum efp_result
+efp_get_xrfit(struct efp *efp, size_t frag_idx, double *xrfit)
+{
+	struct frag *frag;
+
+	assert(efp != NULL);
+	assert(frag_idx < efp->n_frag);
+	assert(xrfit != NULL);
+
+	frag = efp->frags + frag_idx;
+
+	if (frag->xrfit == NULL) {
+		efp_log("no XRFIT parameters for fragment %s", frag->name);
+		return (EFP_RESULT_FATAL);
+	}
+
+	memcpy(xrfit, frag->xrfit, frag->n_lmo * 4 * sizeof(double));
+
+	return (EFP_RESULT_SUCCESS);
 }
 
 EFP_EXPORT void

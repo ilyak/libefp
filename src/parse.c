@@ -691,6 +691,34 @@ parse_screen(struct frag *frag, struct stream *stream)
 }
 
 static enum efp_result
+parse_xrfit(struct frag *frag, struct stream *stream)
+{
+	if (frag->n_lmo == 0) {
+		efp_log("no LMO centroids found before XRFIT group");
+		return (EFP_RESULT_SYNTAX_ERROR);
+	}
+
+	frag->xrfit = malloc(frag->n_lmo * 4 * sizeof(double));
+	efp_stream_next_line(stream);
+
+	for (size_t i = 0; i < frag->n_lmo; i++) {
+		for (int k = 0; k < 4; k++) {
+			if (!tok_double(stream, frag->xrfit + 4 * i + k)) {
+				efp_log("four parameters expected for each LMO in XRFIT group");
+				return (EFP_RESULT_SYNTAX_ERROR);
+			}
+		}
+
+		efp_stream_next_line(stream);
+	}
+
+	if (!tok_stop(stream))
+		return (EFP_RESULT_SYNTAX_ERROR);
+
+	return (EFP_RESULT_SUCCESS);
+}
+
+static enum efp_result
 parse_polab(struct frag *frag, struct stream *stream)
 {
 	if (!tok_double(stream, &frag->pol_damp)) {
@@ -813,6 +841,7 @@ get_parse_fn(struct stream *stream)
 		{ "CANONVEC",                   parse_canonvec                },
 		{ "CANONFOK",                   parse_canonfok                },
 		{ "SCREEN",                     parse_screen                  },
+		{ "XRFIT",                      parse_xrfit                   },
 		{ "POLAB",                      parse_polab                   },
 		{ "FFTYPES",                    parse_ff_types                },
 		{ "FFBONDS",                    parse_ff_bonds                }

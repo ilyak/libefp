@@ -144,6 +144,9 @@ struct frag {
 	/* rotational derivatives of MO coefficients */
 	double *xr_wf_deriv[3];
 
+	/* fitted ai-efp exchange-repulsion parameters */
+	double *xrfit;
+
 	/* offset of polarizable points for this fragment */
 	size_t polarizable_offset;
 
