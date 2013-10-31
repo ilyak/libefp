@@ -38,8 +38,14 @@
 #define KCALMOL2AU (1.0 / 627.50947)
 #define ANG2BOHR (1.0 / 0.52917721092)
 
-struct atom {
+struct nonbond_fp {
 	char type[16];
+	double q, s, e; /* charge, lj sigma, lj epsilon */
+	struct nonbond_fp *next;
+};
+
+struct atom {
+	struct nonbond_fp *fp;
 	vec_t pos;
 };
 
@@ -104,6 +110,7 @@ struct ff {
 	struct angle *angles;
 	struct torsion_fp *torsion_fps;
 	struct torsion *torsions;
+	struct nonbond_fp *nonbond_fps;
 };
 
 static const char *str_skip(const char *str, size_t cnt)
@@ -178,6 +185,18 @@ static struct torsion_fp *find_torsion_fp(struct torsion_fp *fps,
 		is_d = strcmp(fps->type4, "X") == 0 || strcmp(type1, fps->type4) == 0;
 
 		if (is_a && is_b && is_c && is_d)
+			return fps;
+
+		fps = fps->next;
+	}
+
+	return NULL;
+}
+
+static struct nonbond_fp *find_nonbond_fp(struct nonbond_fp *fps, const char *type)
+{
+	while (fps) {
+		if (strcmp(type, fps->type) == 0)
 			return fps;
 
 		fps = fps->next;
@@ -339,6 +358,43 @@ static double torsion_energy(const struct torsion *torsion, const struct atom *a
 	return energy;
 }
 
+static double nonbond_energy(size_t i, size_t j, const struct atom *atoms, vec_t *grad)
+{
+	struct nonbond_fp *fpi, *fpj;
+	double energy, de, p6, p12, r, eps, rv;
+	vec_t dr;
+
+	fpi = atoms[i].fp;
+	fpj = atoms[j].fp;
+
+	dr = vec_sub(&atoms[i].pos, &atoms[j].pos);
+	r = vec_len(&dr);
+
+	rv = fpi->s + fpj->s;
+	eps = sqrt(fpi->e * fpj->e);
+
+	p6 = rv / r;
+	p6 = p6 * p6;
+	p6 = p6 * p6 * p6;
+	p12 = p6 * p6;
+
+	energy = fpi->q * fpj->q / r + eps * (p12 - 2.0 * p6);
+
+	if (grad) {
+		de = -fpi->q * fpj->q / r / r + eps * (p12 - p6) * (-12.0 / r);
+
+		grad[i].x += de * dr.x / r;
+		grad[i].y += de * dr.y / r;
+		grad[i].z += de * dr.z / r;
+
+		grad[j].x -= de * dr.x / r;
+		grad[j].y -= de * dr.y / r;
+		grad[j].z -= de * dr.z / r;
+	}
+
+	return (energy);
+}
+
 static enum ff_res parse_bond_fp(struct ff *ff, const char *str)
 {
 	struct bond_fp *fp = (struct bond_fp *)malloc(sizeof(struct bond_fp));
@@ -417,6 +473,23 @@ static enum ff_res parse_torsion_fp(struct ff *ff, const char *str)
 
 	fp->next = ff->torsion_fps;
 	ff->torsion_fps = fp;
+	return FF_OK;
+}
+
+static enum ff_res parse_nonbond_fp(struct ff *ff, const char *str)
+{
+	struct nonbond_fp *fp = (struct nonbond_fp *)malloc(sizeof(struct nonbond_fp));
+
+	int nsc = sscanf(str, "nonbond %10s %lf %lf %lf", fp->type, &fp->q, &fp->s, &fp->e);
+
+	if (nsc < 4) {
+		free(fp);
+		return FF_BAD_FORMAT;
+	}
+
+	fp->next = ff->nonbond_fps;
+	ff->nonbond_fps = fp;
+
 	return FF_OK;
 }
 
@@ -547,6 +620,11 @@ enum ff_res efp_ff_parse(struct ff *ff, const char *path)
 			if ((res = parse_torsion_fp(ff, efp_stream_get_ptr(stream))))
 				break;
 		}
+		else if (strncmp(efp_stream_get_ptr(stream), "nonbond",
+				strlen("nonbond")) == 0) {
+			if ((res = parse_nonbond_fp(ff, efp_stream_get_ptr(stream))))
+				break;
+		}
 		else {
 			res = FF_BAD_FORMAT;
 			break;
@@ -556,6 +634,7 @@ enum ff_res efp_ff_parse(struct ff *ff, const char *path)
 	REVERSE_LIST(ff->bond_fps, struct bond_fp);
 	REVERSE_LIST(ff->angle_fps, struct angle_fp);
 	REVERSE_LIST(ff->torsion_fps, struct torsion_fp);
+	REVERSE_LIST(ff->nonbond_fps, struct nonbond_fp);
 
 	efp_stream_close(stream);
 	return res;
@@ -564,21 +643,21 @@ enum ff_res efp_ff_parse(struct ff *ff, const char *path)
 enum ff_res efp_ff_add_atom(struct ff *ff, const char *type)
 {
 	struct atom *atom;
+	struct nonbond_fp *fp;
 
 	assert(ff);
 	assert(type);
 
-	if (strlen(type) >= sizeof(atom->type))
-		return FF_STRING_TOO_LONG;
+	if ((fp = find_nonbond_fp(ff->nonbond_fps, type)) == NULL)
+		return (FF_NO_PARAMETERS);
 
 	ff->n_atoms++;
-	ff->atoms = (struct atom *)realloc(ff->atoms,
-		ff->n_atoms * sizeof(struct atom));
+	ff->atoms = (struct atom *)realloc(ff->atoms, ff->n_atoms * sizeof(struct atom));
 	atom = ff->atoms + ff->n_atoms - 1;
 	memset(atom, 0, sizeof(struct atom));
-	strcpy(atom->type, type);
+	atom->fp = fp;
 
-	return FF_OK;
+	return (FF_OK);
 }
 
 enum ff_res efp_ff_add_bond(struct ff *ff, size_t idx1, size_t idx2)
@@ -589,11 +668,11 @@ enum ff_res efp_ff_add_bond(struct ff *ff, size_t idx1, size_t idx2)
 	assert(idx1 != idx2);
 
 	struct bond_fp *fp = find_bond_fp(ff->bond_fps,
-			ff->atoms[idx1].type, ff->atoms[idx2].type);
+			ff->atoms[idx1].fp->type, ff->atoms[idx2].fp->type);
 
 	if (!fp) {
 		efp_log("no parameters for bond %s %s",
-			ff->atoms[idx1].type, ff->atoms[idx2].type);
+			ff->atoms[idx1].fp->type, ff->atoms[idx2].fp->type);
 		return (FF_NO_PARAMETERS);
 	}
 
@@ -617,13 +696,13 @@ enum ff_res efp_ff_add_angle(struct ff *ff, size_t idx1, size_t idx2, size_t idx
 	assert(idx1 != idx2 && idx1 != idx3 && idx2 != idx3);
 
 	struct angle_fp *fp = find_angle_fp(ff->angle_fps,
-			ff->atoms[idx1].type, ff->atoms[idx2].type,
-			ff->atoms[idx3].type);
+			ff->atoms[idx1].fp->type, ff->atoms[idx2].fp->type,
+			ff->atoms[idx3].fp->type);
 
 	if (!fp) {
 		efp_log("no parameters for angle %s %s %s",
-			ff->atoms[idx1].type, ff->atoms[idx2].type,
-			ff->atoms[idx3].type);
+			ff->atoms[idx1].fp->type, ff->atoms[idx2].fp->type,
+			ff->atoms[idx3].fp->type);
 		return (FF_NO_PARAMETERS);
 	}
 
@@ -651,13 +730,13 @@ enum ff_res efp_ff_add_torsion(struct ff *ff, size_t idx1, size_t idx2,
 	assert(idx2 != idx3 && idx2 != idx4 && idx3 != idx4);
 
 	struct torsion_fp *fp = find_torsion_fp(ff->torsion_fps,
-			ff->atoms[idx1].type, ff->atoms[idx2].type,
-			ff->atoms[idx3].type, ff->atoms[idx4].type);
+			ff->atoms[idx1].fp->type, ff->atoms[idx2].fp->type,
+			ff->atoms[idx3].fp->type, ff->atoms[idx4].fp->type);
 
 	if (!fp) {
 		efp_log("no parameters for torsion %s %s %s %s",
-			ff->atoms[idx1].type, ff->atoms[idx2].type,
-			ff->atoms[idx3].type, ff->atoms[idx4].type);
+			ff->atoms[idx1].fp->type, ff->atoms[idx2].fp->type,
+			ff->atoms[idx3].fp->type, ff->atoms[idx4].fp->type);
 		return (FF_NO_PARAMETERS);
 	}
 
@@ -761,6 +840,10 @@ double efp_ff_compute(const struct ff *ff, vec_t *grad)
 	for (struct torsion *torsion = ff->torsions; torsion; torsion = torsion->next)
 		energy += torsion_energy(torsion, ff->atoms, grad);
 
+	for (size_t i = 0; i < ff->n_atoms; i++)
+		for (size_t j = i + 1; j < ff->n_atoms; j++)
+			energy += nonbond_energy(i, j, ff->atoms, grad);
+
 	if (grad)
 		for (size_t i = 0; i < ff->n_atoms; i++)
 			vec_scale(grad + i, KCALMOL2AU / ANG2BOHR);
@@ -784,6 +867,7 @@ void efp_ff_free(struct ff *ff)
 		FREE_LIST(ff->bond_fps, struct bond_fp);
 		FREE_LIST(ff->angle_fps, struct angle_fp);
 		FREE_LIST(ff->torsion_fps, struct torsion_fp);
+		FREE_LIST(ff->nonbond_fps, struct nonbond_fp);
 		free(ff->atoms);
 		free(ff);
 	}

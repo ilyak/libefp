@@ -33,7 +33,6 @@ enum ff_res {
 	FF_OK = 0,
 	FF_FILE_NOT_FOUND,
 	FF_BAD_FORMAT,
-	FF_STRING_TOO_LONG,
 	FF_NO_PARAMETERS
 };
 
