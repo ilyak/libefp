@@ -223,8 +223,8 @@ struct efp {
 	/* EFP energy terms */
 	struct efp_energy energy;
 
-	/* skip-list matrix of fragments */
-	struct bvec *links_bvec;
+	/* skip-list of fragments */
+	struct bvec *skiplist;
 };
 
 #endif /* LIBEFP_PRIVATE_H */

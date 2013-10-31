@@ -55,8 +55,8 @@ parse_skiplist_record(struct efp *efp, const char *str)
 		return (EFP_RESULT_FATAL);
 	}
 
-	efp_bvec_set(efp->links_bvec, (idx_i - 1) * efp->n_frag + (idx_j - 1));
-	efp_bvec_set(efp->links_bvec, (idx_j - 1) * efp->n_frag + (idx_i - 1));
+	efp_bvec_set(efp->skiplist, (idx_i - 1) * efp->n_frag + (idx_j - 1));
+	efp_bvec_set(efp->skiplist, (idx_j - 1) * efp->n_frag + (idx_i - 1));
 
 	return (EFP_RESULT_SUCCESS);
 }
@@ -814,8 +814,7 @@ efp_compute(struct efp *efp, int do_gradient)
 			    efp->energy.polarization +
 			    efp->energy.dispersion +
 			    efp->energy.ai_dispersion +
-			    efp->energy.exchange_repulsion +
-			    efp->energy.covalent;
+			    efp->energy.exchange_repulsion;
 
 	return EFP_RESULT_SUCCESS;
 }
@@ -1052,7 +1051,7 @@ efp_shutdown(struct efp *efp)
 	free(efp->indipconj);
 	free(efp->ai_orbital_energies);
 	free(efp->ai_dipole_integrals);
-	efp_bvec_free(efp->links_bvec);
+	efp_bvec_free(efp->skiplist);
 	free(efp);
 }
 
@@ -1144,13 +1143,18 @@ efp_load_skiplist(struct efp *efp, const char *path)
 	assert(efp);
 	assert(path);
 
-	if ((efp->links_bvec = efp_bvec_create(efp->n_frag * efp->n_frag)) == NULL)
-		return EFP_RESULT_NO_MEMORY;
+	if (!efp->opts.enable_skiplist) {
+		efp_log("skip-list is not enabled");
+		return (EFP_RESULT_FATAL);
+	}
+
+	if ((efp->skiplist = efp_bvec_create(efp->n_frag * efp->n_frag)) == NULL)
+		return (EFP_RESULT_NO_MEMORY);
 
 	if ((res = parse_skiplist(efp, path)))
-		return res;
+		return (res);
 
-	return EFP_RESULT_SUCCESS;
+	return (EFP_RESULT_SUCCESS);
 }
 
 EFP_EXPORT struct efp *

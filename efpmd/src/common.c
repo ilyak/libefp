@@ -152,7 +152,6 @@ void print_energy(struct efp *efp)
 	msg("%30s %16.10lf\n", "EXCHANGE REPULSION ENERGY", energy.exchange_repulsion);
 	msg("%30s %16.10lf\n", "POINT CHARGES ENERGY", energy.electrostatic_point_charges);
 	msg("%30s %16.10lf\n", "CHARGE PENETRATION ENERGY", energy.charge_penetration);
-	msg("%30s %16.10lf\n", "FORCE FIELD ENERGY", energy.covalent);
 	msg("\n");
 	msg("%30s %16.10lf\n", "TOTAL ENERGY", energy.total);
 	msg("\n\n");

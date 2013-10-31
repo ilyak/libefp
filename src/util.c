@@ -31,10 +31,10 @@
 
 bool efp_skip_frag_pair(const struct efp *efp, size_t fr_i_idx, size_t fr_j_idx)
 {
-	if (efp->opts.enable_links) {
+	if (efp->opts.enable_skiplist) {
 		size_t idx = fr_i_idx * efp->n_frag + fr_j_idx;
 
-		if (efp_bvec_is_set(efp->links_bvec, idx))
+		if (efp_bvec_is_set(efp->skiplist, idx))
 			return true;
 	}
 

@@ -102,7 +102,7 @@ static struct cfg *make_cfg(void)
 		(int []) { EFP_POL_DRIVER_ITERATIVE,
 			   EFP_POL_DRIVER_DIRECT });
 
-	cfg_add_bool(cfg, "enable_links", false);
+	cfg_add_bool(cfg, "enable_skiplist", false);
 	cfg_add_string(cfg, "forcefield", FRAGLIB_PATH "/amber99.ff");
 	cfg_add_string(cfg, "skiplist", "skiplist.etp");
 	cfg_add_bool(cfg, "enable_cutoff", false);
@@ -248,7 +248,7 @@ static struct efp *init_sim(const struct cfg *cfg, const struct sys *sys)
 		.enable_pbc = cfg_get_bool(cfg, "enable_pbc"),
 		.enable_cutoff = cfg_get_bool(cfg, "enable_cutoff"),
 		.swf_cutoff = cfg_get_double(cfg, "swf_cutoff"),
-		.enable_links = cfg_get_bool(cfg, "enable_links")
+		.enable_skiplist = cfg_get_bool(cfg, "enable_skiplist")
 	};
 
 	enum efp_coord_type coord_type = cfg_get_enum(cfg, "coord");
@@ -271,7 +271,7 @@ static struct efp *init_sim(const struct cfg *cfg, const struct sys *sys)
 		check_fail(efp_set_periodic_box(efp, box.x, box.y, box.z));
 	}
 
-	if (opts.enable_links) {
+	if (opts.enable_skiplist) {
 		check_fail(efp_load_skiplist(efp, cfg_get_string(cfg, "skiplist")));
 	}
 

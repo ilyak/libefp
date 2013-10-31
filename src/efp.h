@@ -149,8 +149,8 @@ struct efp_opts {
 	/** Enable fragment-fragment interaction cutoff if nonzero. */
 	int enable_cutoff;
 
-	/** Enable fragment-fragment covalent links. */
-	int enable_links;
+	/** Enable fragment-fragment interaction skip-list. */
+	int enable_skiplist;
 
 	/** Cutoff distance for fragment-fragment interactions. */
 	double swf_cutoff;
@@ -182,9 +182,6 @@ struct efp_energy {
 	/**
 	 * EFP/EFP exchange-repulsion energy. */
 	double exchange_repulsion;
-	/**
-	 * Energy of covalent interactions between the fragments. */
-	double covalent;
 	/**
 	 * Sum of all the above energy terms. */
 	double total;
