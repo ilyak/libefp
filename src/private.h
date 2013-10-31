@@ -31,7 +31,6 @@
 
 #include "bvec.h"
 #include "efp.h"
-#include "ff.h"
 #include "int.h"
 #include "log.h"
 #include "swf.h"
@@ -39,6 +38,7 @@
 #include "util.h"
 
 #define EFP_EXPORT
+
 #define ARRAY_SIZE(arr) (sizeof(arr)/sizeof(arr[0]))
 
 struct multipole_pt {
@@ -149,21 +149,6 @@ struct frag {
 
 	/* offset of polarizable points for this fragment */
 	size_t polarizable_offset;
-
-	/*XXX*/
-	size_t n_ff_atoms;
-
-	/*XXX*/
-	struct ff_atom *ff_atoms;
-
-	/*XXX*/
-	size_t n_ff_links;
-
-	/*XXX*/
-	struct ff_link *ff_links;
-
-	/* offset in array of ff atoms */
-	size_t ff_offset;
 };
 
 struct efp {
@@ -238,10 +223,7 @@ struct efp {
 	/* EFP energy terms */
 	struct efp_energy energy;
 
-	/* force field for covalent links */
-	struct ff *ff;
-
-	/* bit matrix of covalent links between fragments */
+	/* skip-list matrix of fragments */
 	struct bvec *links_bvec;
 };
 

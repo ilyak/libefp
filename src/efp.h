@@ -298,26 +298,16 @@ enum efp_result efp_add_potential(struct efp *efp, const char *path);
 enum efp_result efp_add_fragment(struct efp *efp, const char *name);
 
 /**
- * Load force field data from file.
+ * Load skip-list from a file.
  *
  * \param[in] efp The efp structure.
  *
- * \param[in] path Path to the force field data file.
+ * \param[in] path Path to the file with the fragment-fragment interaction
+ * skip-list.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_load_forcefield(struct efp *efp, const char *path);
-
-/**
- * Load topology of a system from file.
- *
- * \param[in] efp The efp structure.
- *
- * \param[in] path Path to the topology file.
- *
- * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
- */
-enum efp_result efp_load_topology(struct efp *efp, const char *path);
+enum efp_result efp_load_skiplist(struct efp *efp, const char *path);
 
 /**
  * Set the callback function which computes electric field from electrons

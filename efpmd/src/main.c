@@ -104,7 +104,7 @@ static struct cfg *make_cfg(void)
 
 	cfg_add_bool(cfg, "enable_links", false);
 	cfg_add_string(cfg, "forcefield", FRAGLIB_PATH "/amber99.ff");
-	cfg_add_string(cfg, "topology", "top.etp");
+	cfg_add_string(cfg, "skiplist", "skiplist.etp");
 	cfg_add_bool(cfg, "enable_cutoff", false);
 	cfg_add_double(cfg, "swf_cutoff", 10.0);
 	cfg_add_int(cfg, "max_steps", 100);
@@ -272,8 +272,7 @@ static struct efp *init_sim(const struct cfg *cfg, const struct sys *sys)
 	}
 
 	if (opts.enable_links) {
-		check_fail(efp_load_forcefield(efp, cfg_get_string(cfg, "forcefield")));
-		check_fail(efp_load_topology(efp, cfg_get_string(cfg, "topology")));
+		check_fail(efp_load_skiplist(efp, cfg_get_string(cfg, "skiplist")));
 	}
 
 	if (sys->n_charges > 0) {
