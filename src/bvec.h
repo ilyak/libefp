@@ -36,7 +36,7 @@ struct bvec;
 struct bvec *efp_bvec_create(size_t);
 void efp_bvec_set(struct bvec *, size_t);
 void efp_bvec_unset(struct bvec *, size_t);
-void efp_bvec_set_val(struct bvec *, size_t, bool);
+void efp_bvec_set_value(struct bvec *, size_t, bool);
 bool efp_bvec_is_set(struct bvec *, size_t);
 void efp_bvec_free(struct bvec *);
 

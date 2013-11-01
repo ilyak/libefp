@@ -77,9 +77,9 @@ void efp_bvec_unset(struct bvec *bvec, size_t n)
 	bvec->data[n / EBITS] &= ~(1ULL << shift);
 }
 
-void efp_bvec_set_val(struct bvec *bvec, size_t n, bool val)
+void efp_bvec_set_value(struct bvec *bvec, size_t n, bool value)
 {
-	val ? efp_bvec_set(bvec, n) : efp_bvec_unset(bvec, n);
+	value ? efp_bvec_set(bvec, n) : efp_bvec_unset(bvec, n);
 }
 
 bool efp_bvec_is_set(struct bvec *bvec, size_t n)

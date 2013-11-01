@@ -31,15 +31,13 @@
 
 bool efp_skip_frag_pair(const struct efp *efp, size_t fr_i_idx, size_t fr_j_idx)
 {
-	if (efp->opts.enable_skiplist) {
-		size_t idx = fr_i_idx * efp->n_frag + fr_j_idx;
+	size_t idx = fr_i_idx * efp->n_frag + fr_j_idx;
 
-		if (efp_bvec_is_set(efp->skiplist, idx))
-			return true;
-	}
+	if (efp_bvec_is_set(efp->skiplist, idx))
+		return (true);
 
 	if (!efp->opts.enable_cutoff)
-		return false;
+		return (false);
 
 	const struct frag *fr_i = efp->frags + fr_i_idx;
 	const struct frag *fr_j = efp->frags + fr_j_idx;
@@ -55,7 +53,7 @@ bool efp_skip_frag_pair(const struct efp *efp, size_t fr_i_idx, size_t fr_j_idx)
 		dr = vec_sub(&dr, &cell);
 	}
 
-	return vec_len_2(&dr) > cutoff2;
+	return (vec_len_2(&dr) > cutoff2);
 }
 
 struct swf efp_make_swf(const struct efp *efp, const struct frag *fr_i,

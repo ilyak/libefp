@@ -33,58 +33,6 @@
 #include "private.h"
 #include "stream.h"
 
-static enum efp_result
-parse_skiplist_record(struct efp *efp, const char *str)
-{
-	char name_i[32], name_j[32];
-	size_t idx_i, idx_j;
-
-	if (sscanf(str, "%zu %zu %31s %31s", &idx_i, &idx_j, name_i, name_j) < 4) {
-		efp_log("bad skip-list file record format");
-		return (EFP_RESULT_SYNTAX_ERROR);
-	}
-
-	if (idx_i < 1 || idx_i > efp->n_frag ||
-	    idx_j < 1 || idx_j > efp->n_frag) {
-		efp_log("fragment index is out of range in skip-list file");
-		return (EFP_RESULT_FATAL);
-	}
-
-	if (idx_i == idx_j) {
-		efp_log("fragment index i is equal to j in skip-list file");
-		return (EFP_RESULT_FATAL);
-	}
-
-	efp_bvec_set(efp->skiplist, (idx_i - 1) * efp->n_frag + (idx_j - 1));
-	efp_bvec_set(efp->skiplist, (idx_j - 1) * efp->n_frag + (idx_i - 1));
-
-	return (EFP_RESULT_SUCCESS);
-}
-
-static enum efp_result
-parse_skiplist(struct efp *efp, const char *path)
-{
-	struct stream *stream;
-	enum efp_result res = EFP_RESULT_SUCCESS;
-
-	if ((stream = efp_stream_open(path)) == NULL)
-		return EFP_RESULT_FILE_NOT_FOUND;
-
-	while (!efp_stream_eof(stream)) {
-		efp_stream_next_line(stream);
-		efp_stream_skip_space(stream);
-
-		if (efp_stream_eol(stream))
-			continue;
-
-		if ((res = parse_skiplist_record(efp, efp_stream_get_ptr(stream))))
-			break;
-	}
-
-	efp_stream_close(stream);
-	return res;
-}
-
 static void
 update_fragment(struct frag *frag)
 {
@@ -714,6 +662,9 @@ efp_prepare(struct efp *efp)
 	efp->indipconj = (vec_t *)calloc(efp->n_polarizable_pts, sizeof(vec_t));
 	efp->grad = (six_t *)calloc(efp->n_frag, sizeof(six_t));
 
+	if ((efp->skiplist = efp_bvec_create(efp->n_frag * efp->n_frag)) == NULL)
+		return (EFP_RESULT_NO_MEMORY);
+
 	return (EFP_RESULT_SUCCESS);
 }
 
@@ -1136,23 +1087,15 @@ efp_add_fragment(struct efp *efp, const char *name)
 }
 
 EFP_EXPORT enum efp_result
-efp_load_skiplist(struct efp *efp, const char *path)
+efp_skip_fragments(struct efp *efp, size_t i, size_t j, int value)
 {
-	enum efp_result res;
-
 	assert(efp);
-	assert(path);
+	assert(efp->skiplist); /* call efp_prepare first */
+	assert(i < efp->n_frag);
+	assert(j < efp->n_frag);
 
-	if (!efp->opts.enable_skiplist) {
-		efp_log("skip-list is not enabled");
-		return (EFP_RESULT_FATAL);
-	}
-
-	if ((efp->skiplist = efp_bvec_create(efp->n_frag * efp->n_frag)) == NULL)
-		return (EFP_RESULT_NO_MEMORY);
-
-	if ((res = parse_skiplist(efp, path)))
-		return (res);
+	efp_bvec_set_value(efp->skiplist, i * efp->n_frag + j, value);
+	efp_bvec_set_value(efp->skiplist, j * efp->n_frag + i, value);
 
 	return (EFP_RESULT_SUCCESS);
 }
@@ -1163,11 +1106,11 @@ efp_create(void)
 	struct efp *efp = (struct efp *)calloc(1, sizeof(struct efp));
 
 	if (!efp)
-		return NULL;
+		return (NULL);
 
 	efp_opts_default(&efp->opts);
 
-	return efp;
+	return (efp);
 }
 
 EFP_EXPORT enum efp_result

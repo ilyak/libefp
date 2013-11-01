@@ -149,9 +149,6 @@ struct efp_opts {
 	/** Enable fragment-fragment interaction cutoff if nonzero. */
 	int enable_cutoff;
 
-	/** Enable fragment-fragment interaction skip-list. */
-	int enable_skiplist;
-
 	/** Cutoff distance for fragment-fragment interactions. */
 	double swf_cutoff;
 };
@@ -295,16 +292,30 @@ enum efp_result efp_add_potential(struct efp *efp, const char *path);
 enum efp_result efp_add_fragment(struct efp *efp, const char *name);
 
 /**
- * Load skip-list from a file.
+ * Prepare the calculation.
+ *
+ * New fragments must NOT be added after a call to this function.
  *
  * \param[in] efp The efp structure.
  *
- * \param[in] path Path to the file with the fragment-fragment interaction
- * skip-list.
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_prepare(struct efp *efp);
+
+/**
+ * Skip interactions between the fragments.
+ *
+ * \param[in] efp The efp structure.
+ *
+ * \param[in] i Index of the first fragment.
+ *
+ * \param[in] j Index of the second fragment.
+ *
+ * \param[in] value Specifies whether to skip i-j interactions (true/false).
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_load_skiplist(struct efp *efp, const char *path);
+enum efp_result efp_skip_fragments(struct efp *efp, size_t i, size_t j, int value);
 
 /**
  * Set the callback function which computes electric field from electrons
@@ -524,17 +535,6 @@ enum efp_result efp_set_periodic_box(struct efp *efp, double x, double y, double
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
 enum efp_result efp_get_stress_tensor(struct efp *efp, double *stress);
-
-/**
- * Prepare the calculation.
- *
- * New fragments must not be added after a call to this function.
- *
- * \param[in] efp The efp structure.
- *
- * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
- */
-enum efp_result efp_prepare(struct efp *efp);
 
 /**
  * Set ab initio orbital energies.
