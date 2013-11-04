@@ -254,18 +254,6 @@ copy_frag(struct frag *dest, const struct frag *src)
 static enum efp_result
 check_opts(const struct efp_opts *opts)
 {
-	unsigned terms = opts->terms;
-
-	if (((terms & EFP_TERM_AI_ELEC) && !(terms & EFP_TERM_ELEC)) ||
-	    ((terms & EFP_TERM_AI_POL) && !(terms & EFP_TERM_POL)) ||
-	    ((terms & EFP_TERM_POL) && !(terms & EFP_TERM_ELEC)) ||
-	    ((terms & EFP_TERM_AI_DISP) && !(terms & EFP_TERM_DISP)) ||
-	    ((terms & EFP_TERM_AI_XR) && !(terms & EFP_TERM_XR)) ||
-	    ((terms & EFP_TERM_AI_CHTR) && !(terms & EFP_TERM_CHTR))) {
-		efp_log("inconsistent EFP terms specified");
-		return EFP_RESULT_FATAL;
-	}
-
 	if (opts->enable_pbc) {
 		if ((opts->terms & EFP_TERM_AI_ELEC) ||
 		    (opts->terms & EFP_TERM_AI_POL) ||
@@ -295,7 +283,7 @@ check_opts(const struct efp_opts *opts)
 static enum efp_result
 check_frag_params(const struct efp_opts *opts, const struct frag *frag)
 {
-	if (opts->terms & EFP_TERM_ELEC) {
+	if ((opts->terms & EFP_TERM_ELEC) || (opts->terms & EFP_TERM_AI_ELEC)) {
 		if (!frag->multipole_pts) {
 			efp_log("electrostatic parameters are missing");
 			return EFP_RESULT_FATAL;
@@ -306,13 +294,13 @@ check_frag_params(const struct efp_opts *opts, const struct frag *frag)
 			return EFP_RESULT_FATAL;
 		}
 	}
-	if (opts->terms & EFP_TERM_POL) {
-		if (!frag->polarizable_pts) {
+	if ((opts->terms & EFP_TERM_POL) || (opts->terms & EFP_TERM_AI_POL)) {
+		if (!frag->polarizable_pts || !frag->multipole_pts) {
 			efp_log("polarization parameters are missing");
 			return EFP_RESULT_FATAL;
 		}
 	}
-	if (opts->terms & EFP_TERM_DISP) {
+	if ((opts->terms & EFP_TERM_DISP) || (opts->terms & EFP_TERM_AI_DISP)) {
 		if (!frag->dynamic_polarizable_pts) {
 			efp_log("dispersion parameters are missing");
 			return EFP_RESULT_FATAL;
@@ -320,11 +308,11 @@ check_frag_params(const struct efp_opts *opts, const struct frag *frag)
 
 		if (opts->disp_damp == EFP_DISP_DAMP_OVERLAP &&
 		    frag->n_lmo != frag->n_dynamic_polarizable_pts) {
-			efp_log("numbers of LMOs and polarization points do not match");
+			efp_log("number of polarization points does not match number of LMOs");
 			return EFP_RESULT_FATAL;
 		}
 	}
-	if (opts->terms & EFP_TERM_XR) {
+	if ((opts->terms & EFP_TERM_XR) || (opts->terms & EFP_TERM_AI_XR)) {
 		if (!frag->xr_atoms ||
 		    !frag->xr_fock_mat ||
 		    !frag->xr_wf ||
