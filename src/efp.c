@@ -600,6 +600,29 @@ efp_get_coordinates(struct efp *efp, double *xyzabc)
 }
 
 EFP_EXPORT enum efp_result
+efp_get_frag_xyzabc(struct efp *efp, size_t frag_idx, double *xyzabc)
+{
+	struct frag *frag;
+	double a, b, c;
+
+	assert(efp);
+	assert(frag_idx < efp->n_frag);
+	assert(xyzabc);
+
+	frag = efp->frags + frag_idx;
+	matrix_to_euler(&frag->rotmat, &a, &b, &c);
+
+	xyzabc[0] = frag->x;
+	xyzabc[1] = frag->y;
+	xyzabc[2] = frag->z;
+	xyzabc[3] = a;
+	xyzabc[4] = b;
+	xyzabc[5] = c;
+
+	return (EFP_RESULT_SUCCESS);
+}
+
+EFP_EXPORT enum efp_result
 efp_set_periodic_box(struct efp *efp, double x, double y, double z)
 {
 	assert(efp);

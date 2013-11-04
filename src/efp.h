@@ -513,6 +513,22 @@ enum efp_result efp_set_frag_coordinates(struct efp *efp,
 enum efp_result efp_get_coordinates(struct efp *efp, double *xyzabc);
 
 /**
+ * Get center of mass position and Euler angles of a fragment.
+ *
+ * \param[in] efp The efp structure.
+ *
+ * \param[in] frag_idx Index of a fragment. Must be a value between zero and
+ * the total number of fragments minus one.
+ *
+ * \param[out] xyzabc Upon return the coordinates of the center of mass and
+ * Euler rotation angles for the fragment will be written to this array. The
+ * size of the \p xyzabc array must be at least [6] elements.
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_get_frag_xyzabc(struct efp *efp, size_t frag_idx, double *xyzabc);
+
+/**
  * Setup periodic box size.
  *
  * \param[in] efp The efp structure.
