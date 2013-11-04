@@ -723,7 +723,7 @@ compute_grad_range(struct efp *efp, size_t from, size_t to, void *data)
 enum efp_result
 efp_compute_pol(struct efp *efp)
 {
-	if (!(efp->opts.terms & EFP_TERM_POL))
+	if (!(efp->opts.terms & EFP_TERM_POL) && !(efp->opts.terms & EFP_TERM_AI_POL))
 		return EFP_RESULT_SUCCESS;
 
 	enum efp_result res;

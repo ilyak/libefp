@@ -700,7 +700,7 @@ efp_get_wavefunction_dependent_energy(struct efp *efp, double *energy)
 	assert(efp);
 	assert(energy);
 
-	if (!(efp->opts.terms & EFP_TERM_POL)) {
+	if (!(efp->opts.terms & EFP_TERM_POL) && !(efp->opts.terms & EFP_TERM_AI_POL)) {
 		*energy = 0.0;
 		return EFP_RESULT_SUCCESS;
 	}
