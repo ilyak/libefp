@@ -507,12 +507,34 @@ efp_get_point_charge_coordinates(struct efp *efp, double *xyz)
 }
 
 EFP_EXPORT enum efp_result
+efp_set_point_charge_coordinates(struct efp *efp, const double *xyz)
+{
+	assert(efp);
+	assert(xyz);
+
+	memcpy(efp->ptc_xyz, xyz, efp->n_ptc * sizeof(vec_t));
+
+	return (EFP_RESULT_SUCCESS);
+}
+
+EFP_EXPORT enum efp_result
 efp_get_point_charge_values(struct efp *efp, double *ptc)
 {
 	assert(efp);
 	assert(ptc);
 
 	memcpy(ptc, efp->ptc, efp->n_ptc * sizeof(double));
+
+	return (EFP_RESULT_SUCCESS);
+}
+
+EFP_EXPORT enum efp_result
+efp_set_point_charge_values(struct efp *efp, const double *ptc)
+{
+	assert(efp);
+	assert(ptc);
+
+	memcpy(efp->ptc, ptc, efp->n_ptc * sizeof(double));
 
 	return (EFP_RESULT_SUCCESS);
 }

@@ -394,6 +394,19 @@ enum efp_result efp_get_point_charge_values(
 			double *ptc);
 
 /**
+ * Set values of point charges.
+ *
+ * \param[in] efp The efp structure.
+ *
+ * \param[in] ptc Array of \p n_ptc elements with charge values.
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_set_point_charge_values(
+			struct efp *efp,
+			const double *ptc);
+
+/**
  * Get coordinates of currently set point charges.
  *
  * \param[in] efp The efp structure.
@@ -407,6 +420,21 @@ enum efp_result efp_get_point_charge_values(
 enum efp_result efp_get_point_charge_coordinates(
 			struct efp *efp,
 			double *xyz);
+
+/**
+ * Set coordinates of point charges.
+ *
+ * \param[in] efp The efp structure.
+ *
+ * \param[in] xyz Array with \a x \a y \a z coordinates of point charges. The
+ * size of the array must be at least [3 * \a n] elements, where \a n is the
+ * total number of point charges.
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_set_point_charge_coordinates(
+			struct efp *efp,
+			const double *xyz);
 
 /**
  * Get gradient on point charges from EFP subsystem.
