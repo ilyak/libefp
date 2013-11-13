@@ -29,7 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "optimizer.h"
+#include "opt.h"
 
 struct opt_state {
 	size_t n;

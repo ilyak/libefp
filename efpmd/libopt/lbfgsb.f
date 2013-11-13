@@ -567,7 +567,7 @@ c        Check the input arguments for errors.
  
 c        Initialize iwhere & project x onto the feasible set.
  
-         call active(n,l,u,nbd,x,iwhere,iprint,prjctd,cnstnd,boxed) 
+         call lbacti(n,l,u,nbd,x,iwhere,iprint,prjctd,cnstnd,boxed) 
 
 c        The end of the initialization.
 
@@ -1001,7 +1001,7 @@ c     Save local variables.
  
 c======================= The end of mainlb =============================
 
-      subroutine active(n, l, u, nbd, x, iwhere, iprint,
+      subroutine lbacti(n, l, u, nbd, x, iwhere, iprint,
      +                  prjctd, cnstnd, boxed)
 
       logical          prjctd, cnstnd, boxed

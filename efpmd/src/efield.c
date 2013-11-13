@@ -26,7 +26,7 @@
 
 #include "common.h"
 
-void sim_efield(struct efp *, const struct cfg *, const struct sys *);
+void sim_efield(struct state *state);
 
 static void
 print_field(size_t frag_idx, const struct efp_atom *atom, const double *field)
@@ -45,19 +45,16 @@ print_field(size_t frag_idx, const struct efp_atom *atom, const double *field)
 }
 
 void
-sim_efield(struct efp *efp, const struct cfg *cfg, const struct sys *sys)
+sim_efield(struct state *state)
 {
 	size_t n_frags;
 
-	(void)cfg;
-	(void)sys;
-
 	msg("ELECTRIC FIELD JOB\n\n\n");
 
-	print_geometry(efp);
-	check_fail(efp_compute(efp, 0));
-	print_energy(efp);
-	check_fail(efp_get_frag_count(efp, &n_frags));
+	print_geometry(state->efp);
+	compute_energy(state, false);
+	print_energy(state);
+	check_fail(efp_get_frag_count(state->efp, &n_frags));
 
 	msg("COORDINATES ARE IN ANGSTROMS\n");
 	msg("ELECTRIC FIELD IS IN ATOMIC UNITS\n\n");
@@ -67,12 +64,12 @@ sim_efield(struct efp *efp, const struct cfg *cfg, const struct sys *sys)
 		struct efp_atom *atoms;
 		size_t n_atoms;
 
-		check_fail(efp_get_frag_atom_count(efp, i, &n_atoms));
+		check_fail(efp_get_frag_atom_count(state->efp, i, &n_atoms));
 		atoms = malloc(n_atoms * sizeof(struct efp_atom));
-		check_fail(efp_get_frag_atoms(efp, i, n_atoms, atoms));
+		check_fail(efp_get_frag_atoms(state->efp, i, n_atoms, atoms));
 
 		for (size_t j = 0; j < n_atoms; j++) {
-			check_fail(efp_get_electric_field(efp, i, &atoms[j].x, field));
+			check_fail(efp_get_electric_field(state->efp, i, &atoms[j].x, field));
 			print_field(i + 1, atoms + j, field);
 		}
 

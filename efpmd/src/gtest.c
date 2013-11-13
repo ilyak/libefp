@@ -26,7 +26,7 @@
 
 #include "common.h"
 
-void sim_gtest(struct efp *, const struct cfg *, const struct sys *);
+void sim_gtest(struct state *state);
 
 static void test_vec(char label, size_t idx, double tol, const double *agrad,
 		const double *ngrad)
@@ -45,77 +45,77 @@ static void test_vec(char label, size_t idx, double tol, const double *agrad,
 	msg(match ? "  MATCH\n" : "  DOES NOT MATCH\n");
 }
 
-static void test_cgrad(struct efp *efp, const struct cfg *cfg, const double *cgrad)
+static void test_cgrad(struct state *state, const double *cgrad)
 {
-	double tol = cfg_get_double(cfg, "gtest_tol");
-	double dstep = cfg_get_double(cfg, "num_step_dist");
+	double tol = cfg_get_double(state->cfg, "gtest_tol");
+	double dstep = cfg_get_double(state->cfg, "num_step_dist");
 
 	size_t n_charges;
-	check_fail(efp_get_point_charge_count(efp, &n_charges));
+	check_fail(efp_get_point_charge_count(state->efp, &n_charges));
 
 	double znuc[n_charges], xyz[3 * n_charges];
-	check_fail(efp_get_point_charge_values(efp, znuc));
-	check_fail(efp_get_point_charge_coordinates(efp, xyz));
+	check_fail(efp_get_point_charge_values(state->efp, znuc));
+	check_fail(efp_get_point_charge_coordinates(state->efp, xyz));
 
 	for (size_t i = 0; i < n_charges; i++) {
 		double ngrad[3];
 
 		for (size_t j = 0; j < 3; j++) {
-			struct efp_energy e1, e2;
+			double e1, e2;
 			double coord = xyz[3 * i + j];
 
 			xyz[3 * i + j] = coord - dstep;
-			check_fail(efp_set_point_charges(efp, n_charges, znuc, xyz));
-			check_fail(efp_compute(efp, 0));
-			check_fail(efp_get_energy(efp, &e1));
+			check_fail(efp_set_point_charges(state->efp, n_charges, znuc, xyz));
+			compute_energy(state, 0);
+			e1 = state->energy;
 
 			xyz[3 * i + j] = coord + dstep;
-			check_fail(efp_set_point_charges(efp, n_charges, znuc, xyz));
-			check_fail(efp_compute(efp, 0));
-			check_fail(efp_get_energy(efp, &e2));
+			check_fail(efp_set_point_charges(state->efp, n_charges, znuc, xyz));
+			compute_energy(state, 0);
+			e2 = state->energy;
 
 			xyz[3 * i + j] = coord;
-			ngrad[j] = (e2.total - e1.total) / (2.0 * dstep);
+			ngrad[j] = (e2 - e1) / (2.0 * dstep);
 		}
 
 		test_vec('Q', i + 1, tol, cgrad + 3 * i, ngrad);
 	}
 
-	check_fail(efp_set_point_charges(efp, n_charges, znuc, xyz));
+	check_fail(efp_set_point_charges(state->efp, n_charges, znuc, xyz));
 }
 
-static void test_fgrad(struct efp *efp, const struct cfg *cfg, const double *fgrad)
+static void test_fgrad(struct state *state, const double *fgrad)
 {
-	double tol = cfg_get_double(cfg, "gtest_tol");
-	double dstep = cfg_get_double(cfg, "num_step_dist");
-	double astep = cfg_get_double(cfg, "num_step_angle");
+	double tol = cfg_get_double(state->cfg, "gtest_tol");
+	double dstep = cfg_get_double(state->cfg, "num_step_dist");
+	double astep = cfg_get_double(state->cfg, "num_step_angle");
 
 	size_t n_frags;
-	check_fail(efp_get_frag_count(efp, &n_frags));
+	check_fail(efp_get_frag_count(state->efp, &n_frags));
 
 	double xyzabc[6 * n_frags];
-	check_fail(efp_get_coordinates(efp, xyzabc));
+	check_fail(efp_get_coordinates(state->efp, xyzabc));
 
 	for (size_t i = 0; i < n_frags; i++) {
 		double deriv[3], ngrad[6];
 
 		for (size_t j = 0; j < 6; j++) {
-			struct efp_energy e1, e2;
+			double e1, e2;
 			double coord = xyzabc[6 * i + j];
 			double step = j < 3 ? dstep : astep;
 
 			xyzabc[6 * i + j] = coord - step;
-			check_fail(efp_set_coordinates(efp, EFP_COORD_TYPE_XYZABC, xyzabc));
-			check_fail(efp_compute(efp, 0));
-			check_fail(efp_get_energy(efp, &e1));
+			check_fail(efp_set_coordinates(state->efp, EFP_COORD_TYPE_XYZABC, xyzabc));
+			compute_energy(state, false);
+			e1 = state->energy;
 
 			xyzabc[6 * i + j] = coord + step;
-			check_fail(efp_set_coordinates(efp, EFP_COORD_TYPE_XYZABC, xyzabc));
-			check_fail(efp_compute(efp, 0));
-			check_fail(efp_get_energy(efp, &e2));
+			check_fail(efp_set_coordinates(state->efp, EFP_COORD_TYPE_XYZABC, xyzabc));
+			compute_energy(state, false);
+			e2 = state->energy;
 
 			xyzabc[6 * i + j] = coord;
-			ngrad[j] = (e2.total - e1.total) / (2.0 * step);
+			ngrad[j] = (e2 - e1) / (2.0 * step);
 		}
 
 		test_vec('F', i + 1, tol, fgrad + 6 * i, ngrad);
@@ -123,54 +123,50 @@ static void test_fgrad(struct efp *efp, const struct cfg *cfg, const double *fgr
 		test_vec('D', i + 1, tol, deriv, ngrad + 3);
 	}
 
-	check_fail(efp_set_coordinates(efp, EFP_COORD_TYPE_XYZABC, xyzabc));
+	check_fail(efp_set_coordinates(state->efp, EFP_COORD_TYPE_XYZABC, xyzabc));
 }
 
-static void test_grad(struct efp *efp, const struct cfg *cfg)
+static void test_grad(struct state *state)
 {
 	size_t n_frags, n_charges;
-	check_fail(efp_get_frag_count(efp, &n_frags));
-	check_fail(efp_get_point_charge_count(efp, &n_charges));
+	check_fail(efp_get_frag_count(state->efp, &n_frags));
+	check_fail(efp_get_point_charge_count(state->efp, &n_charges));
 
 	double fgrad[6 * n_frags];
-	check_fail(efp_get_gradient(efp, fgrad));
+	memcpy(fgrad, state->grad, n_frags * 6 * sizeof(double));
 
 	if (n_charges > 0) {
 		double cgrad[3 * n_charges];
-		check_fail(efp_get_point_charge_gradient(efp, cgrad));
-		test_cgrad(efp, cfg, cgrad);
+		check_fail(efp_get_point_charge_gradient(state->efp, cgrad));
+		test_cgrad(state, cgrad);
 	}
 
-	test_fgrad(efp, cfg, fgrad);
+	test_fgrad(state, fgrad);
 }
 
-static void test_energy(struct efp *efp, const struct cfg *cfg)
+static void test_energy(struct state *state)
 {
 	double eref, tol;
-	struct efp_energy energy;
 
-	eref = cfg_get_double(cfg, "ref_energy");
-	tol = cfg_get_double(cfg, "gtest_tol");
-	check_fail(efp_get_energy(efp, &energy));
+	eref = cfg_get_double(state->cfg, "ref_energy");
+	tol = cfg_get_double(state->cfg, "gtest_tol");
 
 	msg("%30s %16.10lf\n", "REFERENCE ENERGY", eref);
-	msg("%30s %16.10lf", "COMPUTED ENERGY", energy.total);
-	msg(fabs(eref - energy.total) < tol ? "  MATCH\n" : "  DOES NOT MATCH\n");
+	msg("%30s %16.10lf", "COMPUTED ENERGY", state->energy);
+	msg(fabs(eref - state->energy) < tol ? "  MATCH\n" : "  DOES NOT MATCH\n");
 }
 
-void sim_gtest(struct efp *efp, const struct cfg *cfg, const struct sys *sys)
+void sim_gtest(struct state *state)
 {
-	(void)sys;
-
 	msg("GRADIENT TEST JOB\n\n\n");
 
-	print_geometry(efp);
-	check_fail(efp_compute(efp, 1));
-	print_energy(efp);
-	test_energy(efp, cfg);
+	print_geometry(state->efp);
+	compute_energy(state, 1);
+	print_energy(state);
+	test_energy(state);
 
 	msg("\n\n    COMPUTING NUMERICAL GRADIENT\n\n");
-	test_grad(efp, cfg);
+	test_grad(state);
 	msg("\n");
 
 	msg("GRADIENT TEST JOB COMPLETED SUCCESSFULLY\n");

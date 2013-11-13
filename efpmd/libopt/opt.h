@@ -24,8 +24,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef EFPMD_OPTIMIZER_H
-#define EFPMD_OPTIMIZER_H
+#ifndef LIBOPT_OPT_H
+#define LIBOPT_OPT_H
 
 #include <stddef.h>
 
@@ -49,4 +49,4 @@ void opt_get_x(struct opt_state *, size_t, double *);
 void opt_get_gx(struct opt_state *, size_t, double *);
 void opt_shutdown(struct opt_state *);
 
-#endif /* EFPMD_OPTIMIZER_H */
+#endif /* LIBOPT_OPT_H */

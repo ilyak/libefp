@@ -26,18 +26,15 @@
 
 #include "common.h"
 
-void sim_sp(struct efp *, const struct cfg *, const struct sys *);
+void sim_sp(struct state *state);
 
-void sim_sp(struct efp *efp, const struct cfg *cfg, const struct sys *sys)
+void sim_sp(struct state *state)
 {
-	(void)cfg;
-	(void)sys;
-
 	msg("SINGLE POINT ENERGY JOB\n\n\n");
 
-	print_geometry(efp);
-	check_fail(efp_compute(efp, 0));
-	print_energy(efp);
+	print_geometry(state->efp);
+	compute_energy(state, false);
+	print_energy(state);
 
 	msg("SINGLE POINT ENERGY JOB COMPLETED SUCCESSFULLY\n");
 }

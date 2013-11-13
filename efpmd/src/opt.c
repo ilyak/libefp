@@ -25,26 +25,25 @@
  */
 
 #include "common.h"
-#include "optimizer.h"
+#include "opt.h"
 
-void sim_opt(struct efp *, const struct cfg *, const struct sys *);
+void sim_opt(struct state *state);
 
 static double compute_efp(size_t n, const double *x, double *gx, void *data)
 {
-	struct efp *efp = (struct efp *)data;
+	size_t n_frags, n_charge;
+	struct state *state = (struct state *)data;
 
-	size_t n_frags;
-	check_fail(efp_get_frag_count(efp, &n_frags));
+	check_fail(efp_get_frag_count(state->efp, &n_frags));
+	check_fail(efp_get_point_charge_count(state->efp, &n_charge));
 
-	assert(n == 6 * n_frags);
+	assert(n == (6 * n_frags + 3 * n_charge));
 
-	check_fail(efp_set_coordinates(efp, EFP_COORD_TYPE_XYZABC, x));
-	check_fail(efp_compute(efp, 1));
+	check_fail(efp_set_coordinates(state->efp, EFP_COORD_TYPE_XYZABC, x));
+	check_fail(efp_set_point_charge_coordinates(state->efp, x + 6 * n_frags));
 
-	struct efp_energy energy;
-	check_fail(efp_get_energy(efp, &energy));
-
-	check_fail(efp_get_gradient(efp, gx));
+	compute_energy(state, true);
+	memcpy(gx, state->grad, (6 * n_frags + 3 * n_charge) * sizeof(double));
 
 	for (size_t i = 0; i < n_frags; i++) {
 		const double *euler = x + 6 * i + 3;
@@ -53,7 +52,7 @@ static double compute_efp(size_t n, const double *x, double *gx, void *data)
 		efp_torque_to_derivative(euler, gradptr, gradptr);
 	}
 
-	return energy.total;
+	return (state->energy);
 }
 
 static void print_restart(struct efp *efp)
@@ -122,12 +121,11 @@ static void get_grad_info(size_t n_coord, const double *grad, double *rms_grad_o
 	*max_grad_out = max_grad;
 }
 
-static void print_status(struct efp *efp, double e_diff, double rms_grad,
-				double max_grad)
+static void print_status(struct state *state, double e_diff, double rms_grad, double max_grad)
 {
-	print_geometry(efp);
-	print_restart(efp);
-	print_energy(efp);
+	print_geometry(state->efp);
+	print_restart(state->efp);
+	print_energy(state);
 
 	msg("%30s %16.10lf\n", "ENERGY CHANGE", e_diff);
 	msg("%30s %16.10lf\n", "RMS GRADIENT", rms_grad);
@@ -137,60 +135,61 @@ static void print_status(struct efp *efp, double e_diff, double rms_grad,
 	fflush(stdout);
 }
 
-void sim_opt(struct efp *efp, const struct cfg *cfg, const struct sys *sys)
+void sim_opt(struct state *state)
 {
-	(void)sys;
-
 	msg("ENERGY MINIMIZATION JOB\n\n\n");
 
-	size_t n_frags, n_coord;
+	size_t n_frags, n_charge, n_coord;
 	double rms_grad, max_grad;
 
-	check_fail(efp_get_frag_count(efp, &n_frags));
-	n_coord = 6 * n_frags;
+	check_fail(efp_get_frag_count(state->efp, &n_frags));
+	check_fail(efp_get_point_charge_count(state->efp, &n_charge));
 
-	struct opt_state *state = opt_create(n_coord);
-	if (!state)
+	n_coord = 6 * n_frags + 3 * n_charge;
+
+	struct opt_state *opt_state = opt_create(n_coord);
+	if (!opt_state)
 		error("unable to create an optimizer");
 
-	opt_set_func(state, compute_efp);
-	opt_set_user_data(state, efp);
+	opt_set_func(opt_state, compute_efp);
+	opt_set_user_data(opt_state, state);
 
 	double coord[n_coord], grad[n_coord];
-	check_fail(efp_get_coordinates(efp, coord));
+	check_fail(efp_get_coordinates(state->efp, coord));
+	check_fail(efp_get_point_charge_coordinates(state->efp, coord + 6 * n_frags));
 
-	if (opt_init(state, n_coord, coord))
+	if (opt_init(opt_state, n_coord, coord))
 		error("unable to initialize an optimizer");
 
-	double e_old = opt_get_fx(state);
-	opt_get_gx(state, n_coord, grad);
+	double e_old = opt_get_fx(opt_state);
+	opt_get_gx(opt_state, n_coord, grad);
 	get_grad_info(n_coord, grad, &rms_grad, &max_grad);
 
 	msg("    INITIAL STATE\n\n");
-	print_status(efp, 0.0, rms_grad, max_grad);
+	print_status(state, 0.0, rms_grad, max_grad);
 
-	for (int step = 1; step <= cfg_get_int(cfg, "max_steps"); step++) {
-		if (opt_step(state))
+	for (int step = 1; step <= cfg_get_int(state->cfg, "max_steps"); step++) {
+		if (opt_step(opt_state))
 			error("unable to make an optimization step");
 
-		double e_new = opt_get_fx(state);
-		opt_get_gx(state, n_coord, grad);
+		double e_new = opt_get_fx(opt_state);
+		opt_get_gx(opt_state, n_coord, grad);
 		get_grad_info(n_coord, grad, &rms_grad, &max_grad);
 
-		if (check_conv(rms_grad, max_grad, cfg_get_double(cfg, "opt_tol"))) {
+		if (check_conv(rms_grad, max_grad, cfg_get_double(state->cfg, "opt_tol"))) {
 			msg("    FINAL STATE\n\n");
-			print_status(efp, e_new - e_old, rms_grad, max_grad);
+			print_status(state, e_new - e_old, rms_grad, max_grad);
 			msg("OPTIMIZATION CONVERGED\n");
 			break;
 		}
 
 		msg("    STATE AFTER %d STEPS\n\n", step);
-		print_status(efp, e_new - e_old, rms_grad, max_grad);
+		print_status(state, e_new - e_old, rms_grad, max_grad);
 
 		e_old = e_new;
 	}
 
-	opt_shutdown(state);
+	opt_shutdown(opt_state);
 
 	msg("ENERGY MINIMIZATION JOB COMPLETED SUCCESSFULLY\n");
 }

@@ -28,15 +28,15 @@
 
 #include "common.h"
 
-typedef void (*sim_fn_t)(struct efp *, const struct cfg *, const struct sys *);
+typedef void (*sim_fn_t)(struct state *);
 
-void sim_sp(struct efp *, const struct cfg *, const struct sys *);
-void sim_grad(struct efp *, const struct cfg *, const struct sys *);
-void sim_hess(struct efp *, const struct cfg *, const struct sys *);
-void sim_opt(struct efp *, const struct cfg *, const struct sys *);
-void sim_md(struct efp *, const struct cfg *, const struct sys *);
-void sim_efield(struct efp *, const struct cfg *, const struct sys *);
-void sim_gtest(struct efp *, const struct cfg *, const struct sys *);
+void sim_sp(struct state *);
+void sim_grad(struct state *);
+void sim_hess(struct state *);
+void sim_opt(struct state *);
+void sim_md(struct state *);
+void sim_efield(struct state *);
+void sim_gtest(struct state *);
 
 #define USAGE_STRING \
 	"usage: efpmd [-d | -v | -h | input]\n" \
@@ -102,9 +102,9 @@ static struct cfg *make_cfg(void)
 		(int []) { EFP_POL_DRIVER_ITERATIVE,
 			   EFP_POL_DRIVER_DIRECT });
 
-	cfg_add_bool(cfg, "enable_skiplist", false);
-	cfg_add_string(cfg, "forcefield", FRAGLIB_PATH "/amber99.ff");
-	cfg_add_string(cfg, "skiplist", "skiplist.etp");
+	cfg_add_bool(cfg, "enable_ff", false);
+	cfg_add_string(cfg, "ff_geometry", "ff.xyz");
+	cfg_add_string(cfg, "ff_parameters", FRAGLIB_PATH "/params/amber99.prm");
 	cfg_add_bool(cfg, "enable_cutoff", false);
 	cfg_add_double(cfg, "swf_cutoff", 10.0);
 	cfg_add_int(cfg, "max_steps", 100);
@@ -237,7 +237,7 @@ next:
 	return terms;
 }
 
-static struct efp *init_sim(const struct cfg *cfg, const struct sys *sys)
+static struct efp *create_efp(const struct cfg *cfg, const struct sys *sys)
 {
 	struct efp_opts opts = {
 		.terms = get_terms(cfg_get_string(cfg, "terms")),
@@ -247,8 +247,7 @@ static struct efp *init_sim(const struct cfg *cfg, const struct sys *sys)
 		.pol_driver = cfg_get_enum(cfg, "pol_driver"),
 		.enable_pbc = cfg_get_bool(cfg, "enable_pbc"),
 		.enable_cutoff = cfg_get_bool(cfg, "enable_cutoff"),
-		.swf_cutoff = cfg_get_double(cfg, "swf_cutoff"),
-		.enable_skiplist = cfg_get_bool(cfg, "enable_skiplist")
+		.swf_cutoff = cfg_get_double(cfg, "swf_cutoff")
 	};
 
 	enum efp_coord_type coord_type = cfg_get_enum(cfg, "coord");
@@ -258,22 +257,10 @@ static struct efp *init_sim(const struct cfg *cfg, const struct sys *sys)
 		error("unable to create efp object");
 
 	efp_set_error_log(log_cb);
-	check_fail(efp_set_opts(efp, &opts));
 	add_potentials(efp, cfg, sys);
 
 	for (size_t i = 0; i < sys->n_frags; i++)
 		check_fail(efp_add_fragment(efp, sys->frags[i].name));
-
-	check_fail(efp_prepare(efp));
-
-	if (opts.enable_pbc) {
-		vec_t box = box_from_str(cfg_get_string(cfg, "periodic_box"));
-		check_fail(efp_set_periodic_box(efp, box.x, box.y, box.z));
-	}
-
-	if (opts.enable_skiplist) {
-		check_fail(efp_load_skiplist(efp, cfg_get_string(cfg, "skiplist")));
-	}
 
 	if (sys->n_charges > 0) {
 		double q[sys->n_charges];
@@ -292,14 +279,55 @@ static struct efp *init_sim(const struct cfg *cfg, const struct sys *sys)
 		if (opts.terms & EFP_TERM_POL)
 			opts.terms |= EFP_TERM_AI_POL;
 
-		check_fail(efp_set_opts(efp, &opts));
 		check_fail(efp_set_point_charges(efp, sys->n_charges, q, pos));
+	}
+
+	if (cfg_get_bool(cfg, "enable_ff"))
+		opts.terms &= ~(EFP_TERM_ELEC | EFP_TERM_POL | EFP_TERM_DISP | EFP_TERM_XR);
+
+	check_fail(efp_set_opts(efp, &opts));
+	check_fail(efp_prepare(efp));
+
+	if (opts.enable_pbc) {
+		vec_t box = box_from_str(cfg_get_string(cfg, "periodic_box"));
+		check_fail(efp_set_periodic_box(efp, box.x, box.y, box.z));
 	}
 
 	for (size_t i = 0; i < sys->n_frags; i++)
 		check_fail(efp_set_frag_coordinates(efp, i, coord_type, sys->frags[i].coord));
 
-	return efp;
+	return (efp);
+}
+
+static void state_init(struct state *state, const struct cfg *cfg, const struct sys *sys)
+{
+	size_t ntotal, ifrag, nfrag, natom;
+
+	state->efp = create_efp(cfg, sys);
+	state->energy = 0;
+	state->grad = calloc(sys->n_frags * 6 + sys->n_charges * 3, sizeof(double));
+	state->ff = NULL;
+
+	if (cfg_get_bool(cfg, "enable_ff")) {
+		if ((state->ff = ff_create()) == NULL)
+			error("cannot create ff object");
+
+		if (!ff_load_geometry(state->ff, cfg_get_string(cfg, "ff_geometry")))
+			error("cannot load ff geometry");
+
+		if (!ff_load_parameters(state->ff, cfg_get_string(cfg, "ff_parameters")))
+			error("cannot load ff parameters");
+
+		check_fail(efp_get_frag_count(state->efp, &nfrag));
+
+		for (ifrag = 0, ntotal = 0; ifrag < nfrag; ifrag++) {
+			check_fail(efp_get_frag_atom_count(state->efp, ifrag, &natom));
+			ntotal += natom;
+		}
+
+		if (ff_get_atom_count(state->ff) != (int)ntotal)
+			error("total fragment number of atoms does not match .xyz file");
+	}
 }
 
 static void print_banner(void)
@@ -387,15 +415,12 @@ static void sys_free(struct sys *sys)
 
 int main(int argc, char **argv)
 {
-	struct cfg *cfg;
-	struct efp *efp;
-	struct sys *sys;
+	struct state state;
 	time_t start_time, end_time;
 
 #ifdef WITH_MPI
 	MPI_Init(&argc, &argv);
 #endif
-
 	if (argc < 2) {
 		msg(USAGE_STRING);
 		goto exit;
@@ -407,9 +432,9 @@ int main(int argc, char **argv)
 			print_banner();
 			goto exit;
 		case 'd':
-			cfg = make_cfg();
-			print_config(cfg);
-			cfg_free(cfg);
+			state.cfg = make_cfg();
+			print_config(state.cfg);
+			cfg_free(state.cfg);
 			goto exit;
 		default:
 			msg(USAGE_STRING);
@@ -423,22 +448,22 @@ int main(int argc, char **argv)
 	print_proc_info();
 	print_time(&start_time);
 	msg("\n");
-	cfg = make_cfg();
-	sys = parse_input(cfg, argv[1]);
+	state.cfg = make_cfg();
+	state.sys = parse_input(state.cfg, argv[1]);
 	msg("SIMULATION SETTINGS\n\n");
-	print_config(cfg);
+	print_config(state.cfg);
 	msg("\n\n");
-	convert_units(cfg, sys);
-	efp = init_sim(cfg, sys);
-	sim_fn_t sim_fn = get_sim_fn(cfg_get_enum(cfg, "run_type"));
-	sim_fn(efp, cfg, sys);
+	convert_units(state.cfg, state.sys);
+	state_init(&state, state.cfg, state.sys);
+	sim_fn_t sim_fn = get_sim_fn(cfg_get_enum(state.cfg, "run_type"));
+	sim_fn(&state);
 	end_time = time(NULL);
 	print_time(&end_time);
 	msg("TOTAL RUN TIME IS %d SECONDS\n", (int)(difftime(end_time, start_time)));
-	efp_shutdown(efp);
-	sys_free(sys);
-	cfg_free(cfg);
-
+	efp_shutdown(state.efp);
+	ff_free(state.ff);
+	sys_free(state.sys);
+	cfg_free(state.cfg);
 exit:
 #ifdef WITH_MPI
 	MPI_Finalize();

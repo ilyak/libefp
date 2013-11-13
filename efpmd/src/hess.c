@@ -29,14 +29,14 @@
 #include "clapack.h"
 #include "common.h"
 
-void sim_hess(struct efp *, const struct cfg *, const struct sys *);
+void sim_hess(struct state *state);
 
-static void compute_gradient(struct efp *efp, size_t n_frags,
-		const double *xyzabc, double *grad)
+static void compute_gradient(struct state *state, size_t n_frags,
+			     const double *xyzabc, double *grad)
 {
-	check_fail(efp_set_coordinates(efp, EFP_COORD_TYPE_XYZABC, xyzabc));
-	check_fail(efp_compute(efp, 1));
-	check_fail(efp_get_gradient(efp, grad));
+	check_fail(efp_set_coordinates(state->efp, EFP_COORD_TYPE_XYZABC, xyzabc));
+	compute_energy(state, true);
+	memcpy(grad, state->grad, n_frags * 6 * sizeof(double));
 
 	for (size_t i = 0; i < n_frags; i++) {
 		const double *euler = xyzabc + 6 * i + 3;
@@ -52,23 +52,23 @@ static void show_progress(size_t disp, size_t total, const char *dir)
 	fflush(stdout);
 }
 
-static void compute_hessian(struct efp *efp, const struct cfg *cfg, double *hess)
+static void compute_hessian(struct state *state, double *hess)
 {
 	size_t n_frags, n_coord;
 	double *xyzabc, *grad_f, *grad_b;
-	bool central = cfg_get_bool(cfg, "hess_central");
+	bool central = cfg_get_bool(state->cfg, "hess_central");
 
-	check_fail(efp_get_frag_count(efp, &n_frags));
+	check_fail(efp_get_frag_count(state->efp, &n_frags));
 	n_coord = 6 * n_frags;
 
 	xyzabc = xmalloc(n_coord * sizeof(double));
 	grad_f = xmalloc(n_coord * sizeof(double));
 	grad_b = xmalloc(n_coord * sizeof(double));
 
-	check_fail(efp_get_coordinates(efp, xyzabc));
+	check_fail(efp_get_coordinates(state->efp, xyzabc));
 
 	if (!central) {
-		check_fail(efp_get_gradient(efp, grad_b));
+		memcpy(grad_b, state->grad, n_frags * 6 * sizeof(double));
 
 		for (size_t i = 0; i < n_frags; i++) {
 			const double *euler = xyzabc + 6 * i + 3;
@@ -80,17 +80,17 @@ static void compute_hessian(struct efp *efp, const struct cfg *cfg, double *hess
 
 	for (size_t i = 0; i < n_coord; i++) {
 		double save = xyzabc[i];
-		double step = i % 6 < 3 ? cfg_get_double(cfg, "num_step_dist") :
-				cfg_get_double(cfg, "num_step_angle");
+		double step = i % 6 < 3 ? cfg_get_double(state->cfg, "num_step_dist") :
+					  cfg_get_double(state->cfg, "num_step_angle");
 
 		show_progress(i + 1, n_coord, "FORWARD");
 		xyzabc[i] = save + step;
-		compute_gradient(efp, n_frags, xyzabc, grad_f);
+		compute_gradient(state, n_frags, xyzabc, grad_f);
 
 		if (central) {
 			show_progress(i + 1, n_coord, "BACKWARD");
 			xyzabc[i] = save - step;
-			compute_gradient(efp, n_frags, xyzabc, grad_b);
+			compute_gradient(state, n_frags, xyzabc, grad_b);
 		}
 
 		double delta = central ? 2.0 * step : step;
@@ -102,7 +102,7 @@ static void compute_hessian(struct efp *efp, const struct cfg *cfg, double *hess
 	}
 
 	/* restore original coordinates */
-	check_fail(efp_set_coordinates(efp, EFP_COORD_TYPE_XYZABC, xyzabc));
+	check_fail(efp_set_coordinates(state->efp, EFP_COORD_TYPE_XYZABC, xyzabc));
 
 	/* reduce error by computing the average of H(i,j) and H(j,i) */
 	for (size_t i = 0; i < n_coord; i++) {
@@ -141,8 +141,7 @@ static void get_inertia_factor(const double *inertia, const mat_t *rotmat,
 	}
 }
 
-static void get_weight_factor(struct efp *efp, double *mass_fact,
-				mat_t *inertia_fact)
+static void get_weight_factor(struct efp *efp, double *mass_fact, mat_t *inertia_fact)
 {
 	size_t n_frags;
 	check_fail(efp_get_frag_count(efp, &n_frags));
@@ -274,31 +273,29 @@ static void print_mode(size_t mode, double eigen)
 	msg("    MODE %4zu    FREQUENCY %10.3lf cm-1\n\n", mode, eigen);
 }
 
-void sim_hess(struct efp *efp, const struct cfg *cfg, const struct sys *sys)
+void sim_hess(struct state *state)
 {
-	(void)sys;
-
 	msg("HESSIAN JOB\n\n\n");
 
-	print_geometry(efp);
-	check_fail(efp_compute(efp, 1));
-	print_energy(efp);
-	print_gradient(efp);
+	print_geometry(state->efp);
+	compute_energy(state, true);
+	print_energy(state);
+	print_gradient(state);
 
 	size_t n_frags, n_coord;
 	double *hess, *mass_hess, *eigen;
 
-	check_fail(efp_get_frag_count(efp, &n_frags));
+	check_fail(efp_get_frag_count(state->efp, &n_frags));
 	n_coord = 6 * n_frags;
 
 	hess = xmalloc(n_coord * n_coord * sizeof(double));
-	compute_hessian(efp, cfg, hess);
+	compute_hessian(state, hess);
 
 	msg("    HESSIAN MATRIX\n\n");
 	print_matrix(n_coord, n_coord, hess);
 
 	mass_hess = xmalloc(n_coord * n_coord * sizeof(double));
-	mass_weight_hessian(efp, hess, mass_hess);
+	mass_weight_hessian(state->efp, hess, mass_hess);
 
 	msg("    MASS-WEIGHTED HESSIAN MATRIX\n\n");
 	print_matrix(n_coord, n_coord, mass_hess);

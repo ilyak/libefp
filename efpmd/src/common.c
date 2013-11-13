@@ -140,10 +140,11 @@ void print_geometry(struct efp *efp)
 	msg("\n\n");
 }
 
-void print_energy(struct efp *efp)
+void print_energy(struct state *state)
 {
 	struct efp_energy energy;
-	check_fail(efp_get_energy(efp, &energy));
+
+	check_fail(efp_get_energy(state->efp, &energy));
 
 	msg("    ENERGY COMPONENTS (ATOMIC UNITS)\n\n");
 	msg("%30s %16.10lf\n", "ELECTROSTATIC ENERGY", energy.electrostatic);
@@ -153,36 +154,39 @@ void print_energy(struct efp *efp)
 	msg("%30s %16.10lf\n", "POINT CHARGES ENERGY", energy.electrostatic_point_charges);
 	msg("%30s %16.10lf\n", "CHARGE PENETRATION ENERGY", energy.charge_penetration);
 	msg("\n");
-	msg("%30s %16.10lf\n", "TOTAL ENERGY", energy.total);
+
+	if (state->ff) {
+		msg("%30s %16.10lf\n", "FORCE-FIELD ENERGY", ff_get_energy(state->ff));
+		msg("\n");
+	}
+
+	msg("%30s %16.10lf\n", "TOTAL ENERGY", state->energy);
 	msg("\n\n");
 }
 
-void print_gradient(struct efp *efp)
+void print_gradient(struct state *state)
 {
 	size_t n_frags;
-	check_fail(efp_get_frag_count(efp, &n_frags));
-
-	double grad[6 * n_frags];
-	check_fail(efp_get_gradient(efp, grad));
+	check_fail(efp_get_frag_count(state->efp, &n_frags));
 
 	for (size_t i = 0; i < n_frags; i++) {
 		char name[64];
-		check_fail(efp_get_frag_name(efp, i, sizeof(name), name));
+		check_fail(efp_get_frag_name(state->efp, i, sizeof(name), name));
 
 		msg("    GRADIENT ON FRAGMENT %zu (%s)\n", i + 1, name);
 		msg("\nFORCE  ");
-		print_vec(grad + 6 * i);
+		print_vec(state->grad + 6 * i);
 		msg("\nTORQUE ");
-		print_vec(grad + 6 * i + 3);
+		print_vec(state->grad + 6 * i + 3);
 		msg("\n\n");
 	}
 
 	size_t n_charges;
-	check_fail(efp_get_point_charge_count(efp, &n_charges));
+	check_fail(efp_get_point_charge_count(state->efp, &n_charges));
 
 	if (n_charges > 0) {
 		double cgrad[3 * n_charges];
-		check_fail(efp_get_point_charge_gradient(efp, cgrad));
+		check_fail(efp_get_point_charge_gradient(state->efp, cgrad));
 		msg("    GRADIENT ON POINT CHARGES\n\n");
 
 		for (size_t i = 0; i < n_charges; i++) {
@@ -214,7 +218,7 @@ void print_fragment(const char *name, const double *xyzabc, const double *vel)
 
 void print_charge(double q, double x, double y, double z)
 {
-	msg("charge %10.3g %14.6e %14.6e %14.6e\n", q, x, y, z);
+	msg("charge %5.2g %14.6e %14.6e %14.6e\n", q, x, y, z);
 }
 
 void print_vector(size_t len, const double *vec)

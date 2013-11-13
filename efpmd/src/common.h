@@ -42,6 +42,7 @@
 #endif
 
 #include <efp.h>
+#include <ff.h>
 #include <math_util.h>
 
 #include "cfg.h"
@@ -85,6 +86,15 @@ struct sys {
 	struct charge *charges;
 };
 
+struct state {
+	struct efp *efp;
+	struct ff *ff;
+	struct cfg *cfg;
+	struct sys *sys;
+	double energy;
+	double *grad;
+};
+
 void NORETURN die(const char *, ...);
 void NORETURN error(const char *, ...);
 
@@ -94,14 +104,15 @@ void *xrealloc(void *, size_t);
 
 void print_vec(const double *);
 void print_geometry(struct efp *);
-void print_energy(struct efp *);
-void print_gradient(struct efp *);
+void print_energy(struct state *);
+void print_gradient(struct state *);
 void print_fragment(const char *, const double *, const double *);
 void print_charge(double, double, double, double);
 void print_vector(size_t, const double *);
 void print_matrix(size_t, size_t, const double *);
 
 void check_fail(enum efp_result);
+void compute_energy(struct state *, bool);
 struct sys *parse_input(struct cfg *, const char *);
 vec_t box_from_str(const char *);
 int efp_strcasecmp(const char *, const char *);

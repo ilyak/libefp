@@ -24,18 +24,21 @@
  * SUCH DAMAGE.
  */
 
-#include "common.h"
+#ifndef LIBFF_FF_H
+#define LIBFF_FF_H
 
-void sim_grad(struct state *state);
+/* force-field based calculations */
+struct ff;
 
-void sim_grad(struct state *state)
-{
-	msg("ENERGY GRADIENT JOB\n\n\n");
+struct ff *ff_create(void);
+int ff_load_geometry(struct ff *, const char *);
+int ff_load_parameters(struct ff *, const char *);
+int ff_get_atom_count(struct ff *);
+void ff_get_atom_xyz(struct ff *, int, double *);
+void ff_set_atom_xyz(struct ff *, int, const double *);
+void ff_compute(struct ff *, int);
+double ff_get_energy(struct ff *);
+void ff_get_atom_gradient(struct ff *, int, double *);
+void ff_free(struct ff *);
 
-	print_geometry(state->efp);
-	compute_energy(state, true);
-	print_energy(state);
-	print_gradient(state);
-
-	msg("ENERGY GRADIENT JOB COMPLETED SUCCESSFULLY\n");
-}
+#endif /* LIBFF_FF_H */

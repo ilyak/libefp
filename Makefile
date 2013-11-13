@@ -5,6 +5,8 @@ include config.inc
 all: efpmd
 
 efpmd: libefp
+	cd efpmd/libff && $(MAKE)
+	cd efpmd/libopt && $(MAKE)
 	cd efpmd/src && $(MAKE)
 
 libefp:
@@ -16,8 +18,10 @@ tags:
 
 clean:
 	cd src && $(MAKE) $@
-	cd efpmd/src && $(MAKE) $@
 	cd tests && $(MAKE) $@
+	cd efpmd/libff && $(MAKE) $@
+	cd efpmd/libopt && $(MAKE) $@
+	cd efpmd/src && $(MAKE) $@
 
 check check-omp check-mpi: efpmd
 	cd tests && $(MAKE) $@
