@@ -105,6 +105,8 @@ static struct cfg *make_cfg(void)
 	cfg_add_bool(cfg, "enable_ff", false);
 	cfg_add_string(cfg, "ff_geometry", "ff.xyz");
 	cfg_add_string(cfg, "ff_parameters", FRAGLIB_PATH "/params/amber99.prm");
+	cfg_add_bool(cfg, "single_params_file", false);
+	cfg_add_string(cfg, "efp_params_file", "params.efp");
 	cfg_add_bool(cfg, "enable_cutoff", false);
 	cfg_add_double(cfg, "swf_cutoff", 10.0);
 	cfg_add_int(cfg, "max_steps", 100);
@@ -257,7 +259,11 @@ static struct efp *create_efp(const struct cfg *cfg, const struct sys *sys)
 		error("unable to create efp object");
 
 	efp_set_error_log(log_cb);
-	add_potentials(efp, cfg, sys);
+
+	if (cfg_get_bool(cfg, "single_params_file"))
+		check_fail(efp_add_potential(efp, cfg_get_string(cfg, "efp_params_file")));
+	else
+		add_potentials(efp, cfg, sys);
 
 	for (size_t i = 0; i < sys->n_frags; i++)
 		check_fail(efp_add_fragment(efp, sys->frags[i].name));
