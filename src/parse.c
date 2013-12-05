@@ -40,7 +40,7 @@ tok(struct stream *stream, const char *id)
 	if (efp_stream_eol(stream))
 		return 0;
 
-	if (strncmp(efp_stream_get_ptr(stream), id, strlen(id)) == 0)
+	if (efp_strncasecmp(efp_stream_get_ptr(stream), id, strlen(id)) == 0)
 		return efp_stream_advance(stream, strlen(id));
 
 	return 0;
