@@ -702,17 +702,19 @@ efp_prepare(struct efp *efp)
 }
 
 EFP_EXPORT enum efp_result
-efp_set_orbital_energies(struct efp *efp, size_t n_occ, size_t n_vir, const double *oe)
+efp_set_orbital_energies(struct efp *efp, size_t n_core, size_t n_act,
+				size_t n_vir, const double *oe)
 {
 	size_t size;
 
 	assert(efp);
 	assert(oe);
 
-	efp->n_ai_occ = n_occ;
+	efp->n_ai_core = n_core;
+	efp->n_ai_act = n_act;
 	efp->n_ai_vir = n_vir;
 
-	size = (n_occ + n_vir) * sizeof(double);
+	size = (n_core + n_act + n_vir) * sizeof(double);
 
 	efp->ai_orbital_energies = (double *)realloc(efp->ai_orbital_energies, size);
 	memcpy(efp->ai_orbital_energies, oe, size);
@@ -721,17 +723,19 @@ efp_set_orbital_energies(struct efp *efp, size_t n_occ, size_t n_vir, const doub
 }
 
 EFP_EXPORT enum efp_result
-efp_set_dipole_integrals(struct efp *efp, size_t n_occ, size_t n_vir, const double *dipint)
+efp_set_dipole_integrals(struct efp *efp, size_t n_core, size_t n_act,
+				size_t n_vir, const double *dipint)
 {
 	size_t size;
 
 	assert(efp);
 	assert(dipint);
 
-	efp->n_ai_occ = n_occ;
+	efp->n_ai_core = n_core;
+	efp->n_ai_act = n_act;
 	efp->n_ai_vir = n_vir;
 
-	size = 3 * (n_occ + n_vir) * (n_occ + n_vir) * sizeof(double);
+	size = 3 * (n_core + n_act + n_vir) * (n_core + n_act + n_vir) * sizeof(double);
 
 	efp->ai_dipole_integrals = (double *)realloc(efp->ai_dipole_integrals, size);
 	memcpy(efp->ai_dipole_integrals, dipint, size);

@@ -53,12 +53,12 @@ quadrature(const mat_t *tensor, size_t i, size_t j, double de)
 }
 
 static double
-get_dip_int(struct efp *efp, size_t i_occ, size_t i_vir, size_t axis)
+get_dip_int(struct efp *efp, size_t i_act, size_t i_vir, size_t axis)
 {
 	size_t idx, size;
 
-	size = efp->n_ai_occ + efp->n_ai_vir;
-	idx = axis * size * size + i_occ * size + efp->n_ai_occ + i_vir;
+	size = efp->n_ai_core + efp->n_ai_act + efp->n_ai_vir;
+	idx = axis * size * size + (efp->n_ai_core + i_act) * size + efp->n_ai_core + efp->n_ai_act + i_vir;
 
 	return (efp->ai_dipole_integrals[idx]);
 }
@@ -75,16 +75,16 @@ compute_ai_disp_pt(struct efp *efp, size_t fr_idx, size_t pt_idx)
 	sum = 0.0;
 
 	for (size_t i_vir = 0; i_vir < efp->n_ai_vir; i_vir++) {
-		double e_vir = efp->ai_orbital_energies[efp->n_ai_occ + i_vir];
+		double e_vir = efp->ai_orbital_energies[efp->n_ai_core + efp->n_ai_act + i_vir];
 
-		for (size_t i_occ = 0; i_occ < efp->n_ai_occ; i_occ++) {
-			double e_occ = efp->ai_orbital_energies[i_occ];
+		for (size_t i_act = 0; i_act < efp->n_ai_act; i_act++) {
+			double e_occ = efp->ai_orbital_energies[efp->n_ai_core + i_act];
 
 			for (size_t i = 0; i < 3; i++) {
-				double dipint_i = get_dip_int(efp, i_occ, i_vir, i);
+				double dipint_i = get_dip_int(efp, i_act, i_vir, i);
 
 				for (size_t j = 0; j < 3; j++) {
-					double dipint_j = get_dip_int(efp, i_occ, i_vir, j);
+					double dipint_j = get_dip_int(efp, i_act, i_vir, j);
 
 					sum += dipint_i * dipint_j * quadrature(pt->tensor, i, j, e_vir - e_occ);
 				}

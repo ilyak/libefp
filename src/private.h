@@ -206,8 +206,11 @@ struct efp {
 	/* total number of polarizable points */
 	size_t n_polarizable_pts;
 
-	/* number of occupied orbitals in ab initio subsystem */
-	size_t n_ai_occ;
+	/* number of core orbitals in ab initio subsystem */
+	size_t n_ai_core;
+
+	/* number of active orbitals in ab initio subsystem */
+	size_t n_ai_act;
 
 	/* number of virtual orbitals in ab initio subsystem */
 	size_t n_ai_vir;
