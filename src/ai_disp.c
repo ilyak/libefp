@@ -24,6 +24,7 @@
  * SUCH DAMAGE.
  */
 
+#include "balance.h"
 #include "private.h"
 
 static const double quad_fact[12] = {
@@ -94,6 +95,26 @@ compute_ai_disp_pt(struct efp *efp, size_t fr_idx, size_t pt_idx)
 	return (-sum / PI);
 }
 
+static void
+compute_ai_disp_range(struct efp *efp, size_t from, size_t to, void *data)
+{
+	double energy = 0.0;
+
+	(void)data;
+
+#ifdef _OPENMP
+#pragma omp parallel for schedule(dynamic, 4) reduction(+:energy)
+#endif
+	for (size_t i = from; i < to; i++) {
+		size_t n_pt = efp->frags[i].n_dynamic_polarizable_pts;
+
+		for (size_t j = 0; j < n_pt; j++)
+			energy += compute_ai_disp_pt(efp, i, j);
+	}
+
+	efp->energy.ai_dispersion += energy;
+}
+
 enum efp_result
 efp_compute_ai_disp(struct efp *efp)
 {
@@ -105,14 +126,8 @@ efp_compute_ai_disp(struct efp *efp)
 		return (EFP_RESULT_FATAL);
 	}
 
-	efp->energy.ai_dispersion = 0.0;
-
-	for (size_t i = 0; i < efp->n_frag; i++) {
-		size_t n_pt = efp->frags[i].n_dynamic_polarizable_pts;
-
-		for (size_t j = 0; j < n_pt; j++)
-			efp->energy.ai_dispersion += compute_ai_disp_pt(efp, i, j);
-	}
+	efp_balance_work(efp, compute_ai_disp_range, NULL);
+	efp_allreduce(&efp->energy.ai_dispersion, 1);
 
 	return (EFP_RESULT_SUCCESS);
 }
