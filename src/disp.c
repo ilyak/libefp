@@ -315,5 +315,12 @@ efp_update_disp(struct frag *frag)
 					frag->dynamic_polarizable_pts + i;
 
 		efp_move_pt(CVEC(frag->x), &frag->rotmat, CVEC(pt_in->x), VEC(pt_out->x));
+
+		for (size_t j = 0; j < 12; j++) {
+			const mat_t *in = pt_in->tensor + j;
+			mat_t *out = pt_out->tensor + j;
+
+			efp_rotate_t2(&frag->rotmat, (const double *)in, (double *)out);
+		}
 	}
 }
