@@ -1,4 +1,4 @@
-V= 1.2.0-git
+V= 1.2.0
 
 include config.inc
 
