@@ -114,6 +114,7 @@ enum efp_coord_type {
 	EFP_COORD_TYPE_ROTMAT
 };
 
+/** Driver used for solving polarization equations. */
 enum efp_pol_driver {
 	/** Iterative solution of polarization equations. */
 	EFP_POL_DRIVER_ITERATIVE = 0,
@@ -210,8 +211,7 @@ struct efp_atom {
  *
  * \param[in] user_data User data which was specified during initialization.
  *
- * \return ::EFP_RESULT_CALLBACK_FAILED on error or ::EFP_RESULT_SUCCESS
- *         otherwise.
+ * \return ::EFP_RESULT_FATAL on error or ::EFP_RESULT_SUCCESS otherwise.
  */
 typedef enum efp_result (*efp_electron_density_field_fn)(
 				size_t n_pt,
