@@ -4,7 +4,7 @@ include $(TOP)/config.inc
 
 CFLAGS= -DFRAGLIB_PATH="\"$(FRAGLIB)\"" -I$(TOP)/src -I$(TOP)/efpmd/libopt -I$(TOP)/efpmd/libff $(MYCFLAGS)
 LDFLAGS= -L$(TOP)/src -L$(TOP)/efpmd/libopt -L$(TOP)/efpmd/libff $(MYLDFLAGS)
-LIBS= $(MYLIBS) -lefp -lopt -lff -ltinker -lm
+LIBS= $(MYLIBS) -lefp -lopt -lff -lm
 
 PROG= efpmd
 ALL_C= cfg.c common.c efield.c energy.c grad.c gtest.c hess.c main.c \

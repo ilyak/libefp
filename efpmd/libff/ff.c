@@ -30,6 +30,8 @@
 
 #include "ff.h"
 
+#ifdef WITH_TINKER
+
 #define KCALMOL_TO_AU (1.0 / 627.50947)
 #define ANGSTROM_TO_BOHR (1.0 / 0.52917721092)
 
@@ -192,3 +194,92 @@ ff_free(struct ff *ff)
 		final_();
 	}
 }
+
+#else /* WITH_TINKER */
+
+struct ff {
+	int dummy;
+};
+
+struct ff *
+ff_create(void)
+{
+	struct ff *ff;
+
+	ff = calloc(1, sizeof(struct ff));
+
+	return (ff);
+}
+
+int
+ff_load_geometry(struct ff *ff, const char *path)
+{
+	(void)ff;
+	(void)path;
+
+	return (0);
+}
+
+int
+ff_load_parameters(struct ff *ff, const char *path)
+{
+	(void)ff;
+	(void)path;
+
+	return (0);
+}
+
+int
+ff_get_atom_count(struct ff *ff)
+{
+	(void)ff;
+
+	return (0);
+}
+
+void
+ff_get_atom_xyz(struct ff *ff, int idx, double *xyz)
+{
+	(void)ff;
+	(void)idx;
+	(void)xyz;
+}
+
+void
+ff_set_atom_xyz(struct ff *ff, int idx, const double *xyz)
+{
+	(void)ff;
+	(void)idx;
+	(void)xyz;
+}
+
+void
+ff_compute(struct ff *ff, int do_grad)
+{
+	(void)ff;
+	(void)do_grad;
+}
+
+double
+ff_get_energy(struct ff *ff)
+{
+	(void)ff;
+
+	return (0.0);
+}
+
+void
+ff_get_atom_gradient(struct ff *ff, int idx, double *xyz)
+{
+	(void)ff;
+	(void)idx;
+	(void)xyz;
+}
+
+void
+ff_free(struct ff *ff)
+{
+	free(ff);
+}
+
+#endif /* WITH_TINKER */
