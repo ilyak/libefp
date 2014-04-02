@@ -130,23 +130,35 @@ parallelized.
 
 Default value: `iterative`
 
-##### Enable covalent links between fragments
+##### Enable molecular-mechanics force-field for flexible EFP links
 
-`enable_links [true|false]`
+`enable_ff [true|false]`
 
 Default value: `false`
 
-##### Path to the molecular mechanics force-field
+##### Geometry of the molecular-mechanics part
 
-`forcefield <path>`
+`ff_geometry <path>`
 
-Default value: `fraglib/amber99.ff`
+Default value: `ff.xyz`
 
-##### Path to the topology file
+##### Molecular-mechanics force-field parameters file
 
-`topology <path>`
+`ff_parameters <path>`
 
-Default value: `top.etp`
+Default value: `fraglib/params/amber99.prm`
+
+##### Use single EFP parameters file
+
+`single_params_file [true|false]`
+
+Default value: `false`
+
+##### Single EFP parameters file path
+
+`efp_params_file <path>`
+
+Default value: `params.efp`
 
 ##### Enable cutoff for fragment/fragment interactions
 
