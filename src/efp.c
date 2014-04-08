@@ -763,10 +763,16 @@ efp_compute(struct efp *efp, int do_gradient)
 	enum efp_result res;
 
 	assert(efp);
+
+	if (efp->grad == NULL) {
+		efp_log("call efp_prepare after all fragments are added");
+		return (EFP_RESULT_FATAL);
+	}
+
 	efp->do_gradient = do_gradient;
 
 	if ((res = check_params(efp)))
-		return res;
+		return (res);
 
 	memset(&efp->energy, 0, sizeof(struct efp_energy));
 	memset(&efp->stress, 0, sizeof(mat_t));
