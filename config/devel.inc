@@ -17,7 +17,7 @@ MYLIBS= -lalapack -lcblas -lf77blas -latlas -lgfortran -lmpi
 MYLDFLAGS= -L/usr/local/lib -L/usr/local/lib/gcc46 -L/usr/local/mpi/openmpi/lib
 
 # additional C flags
-MYCFLAGS= -DWITH_MPI -std=c99 -g -Weverything -Wno-c11-extensions -Wno-vla -Wno-sign-conversion -Wno-padded -Wno-format-nonliteral -Wno-disabled-macro-expansion -Wno-cast-align -I/usr/local/include -I/usr/local/mpi/openmpi/include
+MYCFLAGS= -DWITH_MPI -std=c99 -g -Weverything -Wno-unreachable-code -Wno-c11-extensions -Wno-vla -Wno-sign-conversion -Wno-padded -Wno-format-nonliteral -Wno-disabled-macro-expansion -Wno-cast-align -I/usr/local/include -I/usr/local/mpi/openmpi/include
 
 # additional Fortran flags
 MYFFLAGS= -g
