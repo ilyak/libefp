@@ -570,32 +570,28 @@ efp_set_coordinates(struct efp *efp, enum efp_coord_type coord_type,
 
 EFP_EXPORT enum efp_result
 efp_set_frag_coordinates(struct efp *efp, size_t frag_idx,
-	enum efp_coord_type coord_type, const double *coord)
+		enum efp_coord_type coord_type, const double *coord)
 {
-	enum efp_result res;
+	struct frag *frag;
 
 	assert(efp);
 	assert(coord);
 	assert(frag_idx < efp->n_frag);
 
-	struct frag *frag = efp->frags + frag_idx;
+	frag = efp->frags + frag_idx;
 
 	switch (coord_type) {
 		case EFP_COORD_TYPE_XYZABC:
-			if ((res = set_coord_xyzabc(frag, coord)))
-				return res;
-			break;
+			return (set_coord_xyzabc(frag, coord));
 		case EFP_COORD_TYPE_POINTS:
-			if ((res = set_coord_points(frag, coord)))
-				return res;
-			break;
+			return (set_coord_points(frag, coord));
 		case EFP_COORD_TYPE_ROTMAT:
-			if ((res = set_coord_rotmat(frag, coord)))
-				return res;
-			break;
+			return (set_coord_rotmat(frag, coord));
 	}
 
-	return EFP_RESULT_SUCCESS;
+	/* unreachable */
+
+	return (EFP_RESULT_FATAL);
 }
 
 EFP_EXPORT enum efp_result
