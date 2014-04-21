@@ -656,7 +656,11 @@ efp_frag_frag_xr(struct efp *efp, size_t frag_i, size_t frag_j, double *lmo_s,
 	six_atomic_sub_xyz(efp->grad + frag_j, &force);
 	efp_add_stress(&swf.dr, &force, &efp->stress);
 
-	free(s), free(ds), free(t), free(dt), free(lmo_dt);
+	free(s);
+	free(ds);
+	free(t);
+	free(dt);
+	free(lmo_dt);
 }
 
 static inline size_t
