@@ -32,28 +32,42 @@
 #include "private.h"
 
 #ifdef WITH_MPI
-#define MPI_CHUNK_SIZE 128
-#endif
+struct master {
+	int total, range[2];
+};
 
-#ifdef WITH_MPI
+#define MPI_CHUNK_SIZE 128
+
+static int
+master_get_work(struct master *master, int range[2])
+{
+#ifdef _OPENMP
+#pragma omp critical
+#endif
+	{
+		master->range[0] = master->range[1];
+		master->range[1] += MPI_CHUNK_SIZE;
+
+		if (master->range[1] > master->total)
+			master->range[1] = master->total;
+
+		range[0] = master->range[0];
+		range[1] = master->range[1];
+	}
+
+	return (range[1] > range[0]);
+}
+
 static void
-master(struct efp *efp, int size)
+master_on_master(struct master *master)
 {
 	MPI_Status status;
-	int n_frags, range[2];
+	int size, range[2];
 
-	n_frags = (int)efp->n_frag;
-	range[1] = 0;
+	MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-	while (range[1] < n_frags) {
+	while (master_get_work(master, range)) {
 		MPI_Recv(NULL, 0, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
-
-		range[0] = range[1];
-		range[1] += MPI_CHUNK_SIZE;
-
-		if (range[1] > n_frags)
-			range[1] = n_frags;
-
 		MPI_Send(range, 2, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD);
 	}
 
@@ -64,11 +78,45 @@ master(struct efp *efp, int size)
 		MPI_Send(range, 2, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD);
 	}
 }
-#endif
 
-#ifdef WITH_MPI
 static void
-slave(struct efp *efp, work_fn fn, void *data)
+slave_on_master(struct master *master, struct efp *efp, work_fn fn, void *data)
+{
+	int range[2];
+
+	while (master_get_work(master, range))
+		fn(efp, range[0], range[1], data);
+}
+
+#ifndef _OPENMP
+static int
+omp_get_thread_num(void)
+{
+	return (0);
+}
+#endif /* _OPENMP */
+
+static void
+do_master(struct efp *efp, work_fn fn, void *data)
+{
+	struct master master;
+
+	master.total = (int)efp->n_frag;
+	master.range[0] = master.range[1] = 0;
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+	{
+		if (omp_get_thread_num() == 0)
+			master_on_master(&master);
+		else
+			slave_on_master(&master, efp, fn, data);
+	}
+}
+
+static void
+do_slave(struct efp *efp, work_fn fn, void *data)
 {
 	int range[2];
 
@@ -83,7 +131,7 @@ slave(struct efp *efp, work_fn fn, void *data)
 		fn(efp, range[0], range[1], data);
 	}
 }
-#endif
+#endif /* WITH_MPI */
 
 void
 efp_allreduce(double *x, size_t n)
@@ -111,9 +159,9 @@ efp_balance_work(struct efp *efp, work_fn fn, void *data)
 		MPI_Barrier(MPI_COMM_WORLD);
 
 		if (rank == 0)
-			master(efp, size);
+			do_master(efp, fn, data);
 		else
-			slave(efp, fn, data);
+			do_slave(efp, fn, data);
 
 		MPI_Barrier(MPI_COMM_WORLD);
 	}
