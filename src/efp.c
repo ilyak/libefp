@@ -362,7 +362,6 @@ static void
 compute_two_body_range(struct efp *efp, size_t frag_from, size_t frag_to, void *data)
 {
 	double e_elec = 0.0, e_disp = 0.0, e_xr = 0.0, e_cp = 0.0;
-	size_t n_lmo_i, n_lmo_j;
 
 	(void)data;
 
@@ -379,8 +378,9 @@ compute_two_body_range(struct efp *efp, size_t frag_from, size_t frag_to, void *
 				double *s;
 				six_t *ds;
 
-				n_lmo_i = efp->frags[i].n_lmo;
-				n_lmo_j = efp->frags[fr_j].n_lmo;
+				size_t n_lmo_i = efp->frags[i].n_lmo;
+				size_t n_lmo_j = efp->frags[fr_j].n_lmo;
+
 				s = (double *)calloc(n_lmo_i * n_lmo_j, sizeof(double));
 				ds = (six_t *)calloc(n_lmo_i * n_lmo_j, sizeof(six_t));
 
