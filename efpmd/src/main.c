@@ -353,12 +353,7 @@ static void print_proc_info(void)
 #ifdef _OPENMP
 	n_omp = omp_get_max_threads();
 #endif
-
-	if (n_mpi > 1)
-		msg("RUNNING 1 MASTER AND %d SLAVE PROCESSES WITH %d OPENMP THREADS EACH\n",
-					n_mpi - 1, n_omp);
-	else
-		msg("RUNNING 1 PROCESS WITH %d OPENMP THREADS\n", n_omp);
+	msg("RUNNING %d MPI PROCESSES WITH %d OPENMP THREADS EACH\n", n_mpi, n_omp);
 }
 
 static void print_time(const time_t *t)
