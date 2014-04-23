@@ -103,7 +103,7 @@ compute_ai_disp_range(struct efp *efp, size_t from, size_t to, void *data)
 	(void)data;
 
 #ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic, 4) reduction(+:energy)
+#pragma omp parallel for schedule(dynamic) reduction(+:energy)
 #endif
 	for (size_t i = from; i < to; i++) {
 		size_t n_pt = efp->frags[i].n_dynamic_polarizable_pts;

@@ -366,7 +366,7 @@ compute_two_body_range(struct efp *efp, size_t frag_from, size_t frag_to, void *
 	(void)data;
 
 #ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic, 4) reduction(+:e_elec,e_disp,e_xr,e_cp)
+#pragma omp parallel for schedule(dynamic) reduction(+:e_elec,e_disp,e_xr,e_cp)
 #endif
 	for (size_t i = frag_from; i < frag_to; i++) {
 		size_t cnt = efp_inner_count(i, efp->n_frag);

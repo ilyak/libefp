@@ -239,7 +239,7 @@ compute_elec_field_range(struct efp *efp, size_t from, size_t to, void *data)
 	vec_t *elec_field = (vec_t *)data;
 
 #ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic, 4)
+#pragma omp parallel for schedule(dynamic)
 #endif
 	for (size_t i = from; i < to; i++) {
 		const struct frag *frag = efp->frags + i;
@@ -260,7 +260,7 @@ compute_elec_field(struct efp *efp)
 	efp_allreduce((double *)elec_field, 3 * efp->n_polarizable_pts);
 
 #ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic, 4)
+#pragma omp parallel for schedule(dynamic)
 #endif
 	for (size_t i = 0; i < efp->n_frag; i++) {
 		struct frag *frag = efp->frags + i;
@@ -348,7 +348,7 @@ compute_id_range(struct efp *efp, size_t from, size_t to, void *data)
 	id_conj_new = ((struct id_work_data *)data)->id_conj_new;
 
 #ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic, 4) reduction(+:conv)
+#pragma omp parallel for schedule(dynamic) reduction(+:conv)
 #endif
 	for (size_t i = from; i < to; i++) {
 		struct frag *frag = efp->frags + i;
@@ -411,7 +411,7 @@ compute_energy_range(struct efp *efp, size_t from, size_t to, void *data)
 	double energy = 0.0;
 
 #ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic, 4) reduction(+:energy)
+#pragma omp parallel for schedule(dynamic) reduction(+:energy)
 #endif
 	for (size_t i = from; i < to; i++) {
 		struct frag *frag = efp->frags + i;
@@ -713,7 +713,7 @@ compute_grad_range(struct efp *efp, size_t from, size_t to, void *data)
 	(void)data;
 
 #ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic, 4)
+#pragma omp parallel for schedule(dynamic)
 #endif
 	for (size_t i = from; i < to; i++)
 		for (size_t j = 0; j < efp->frags[i].n_polarizable_pts; j++)

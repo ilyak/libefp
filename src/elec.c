@@ -606,7 +606,7 @@ compute_ai_elec_range(struct efp *efp, size_t from, size_t to, void *data)
 	(void)data;
 
 #ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic, 4) reduction(+:energy)
+#pragma omp parallel for schedule(dynamic) reduction(+:energy)
 #endif
 	for (size_t i = from; i < to; i++) {
 		energy += compute_ai_elec_frag(efp, i);
