@@ -40,7 +40,7 @@ struct master {
 	int total, range[2];
 };
 
-#define MPI_CHUNK_SIZE 128
+#define MPI_CHUNK_SIZE 16
 
 static int
 master_get_work(struct master *master, int range[2])
