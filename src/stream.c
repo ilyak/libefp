@@ -38,6 +38,19 @@ struct stream {
 	char split;
 };
 
+static void skip_newline2(FILE *in)
+{
+	int ch = getc(in);
+
+	if (feof(in)) {
+		clearerr(in);
+		return;
+	}
+
+	if (ch != '\n' && ch != '\r')
+		ungetc(ch, in);
+}
+
 static char *read_line(FILE *in, char split)
 {
 	size_t size = 128;
@@ -53,7 +66,8 @@ static char *read_line(FILE *in, char split)
 		if (split != '\0' && ch == split) {
 			ch = getc(in);
 
-			if (ch == '\n') {
+			if (ch == '\n' || ch == '\r') {
+				skip_newline2(in);
 				continue;
 			}
 			else {
@@ -72,6 +86,9 @@ static char *read_line(FILE *in, char split)
 			/* FALL THROUGH */
 
 		case '\n':
+		case '\r':
+			skip_newline2(in);
+
 			if (i == size)
 				buffer = (char *)realloc(buffer, size + 1);
 
