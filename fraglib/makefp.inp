@@ -3,7 +3,7 @@
 !
  $contrl units=angs local=boys runtyp=makefp coord=cart icut=11 $end
  $system timlim=99999 mwords=200 $end
- $scf soscf=.f. diis=.t. conv=1.0d-06 $end
+ $scf dirscf=.t. soscf=.f. diis=.t. conv=1.0d-06 $end
  $basis gbasis=n311 ngauss=6 npfunc=2 ndfunc=3 nffunc=1
    diffs=.t. diffsp=.t. $end
  $stone
