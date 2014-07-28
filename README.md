@@ -62,7 +62,7 @@ Finally, to install everything issue:
 ## How to use the library
 
 For the description of the public API functions and structures provided by the
-library see the Documentation section at project's web site
+library see the "Documentation" section at project's web site
 http://www.libefp.org/.
 
 
