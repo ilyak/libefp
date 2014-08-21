@@ -3,15 +3,21 @@ an existing quantum chemistry package to get a working QM/EFP interface.
 
 1. Initialization
 
-	a. Create a EFP object: efp_create
-	b. Setup your EFP options: efp_set_opts
-	c. Load EFP parameters from ".efp" files: efp_add_potential
-	d. Add your EFP fragments: efp_add_fragment
-	e. Setup a callback function which computes electric field from
+	a. Print the libefp banner: efp_banner
+	b. Create a EFP object: efp_create
+	c. Setup your EFP options: efp_set_opts
+	d. Load EFP parameters from ".efp" files: efp_add_potential
+	e. Add your EFP fragments: efp_add_fragment
+	f. Setup a callback function which computes electric field from
 	   ab initio electrons: efp_set_electron_density_field_fn
-	f. Setup a callback function to get better error messages (optional):
-	   efp_set_error_log
-	g. Print the libefp banner: efp_banner
+	g. (optional)
+	   Setup a callback function to get better error
+	   messages: efp_set_error_log
+	h. Call efp_prepare
+	i. (optional, EFP-only)
+	   Setup periodic box size. If you have enabled periodic
+	   boundary conditions (options.enable_pbc = true), you should
+	   call efp_set_periodic_box
 
 2. Optimization or molecular dynamics step
 
