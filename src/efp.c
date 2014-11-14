@@ -69,9 +69,9 @@ set_coord_points(struct frag *frag, const double *coord)
 	}
 
 	double ref[9] = {
-		frag->lib->atoms[0].x, frag->lib->atoms[0].y, frag->lib->atoms[0].z,
-		frag->lib->atoms[1].x, frag->lib->atoms[1].y, frag->lib->atoms[1].z,
-		frag->lib->atoms[2].x, frag->lib->atoms[2].y, frag->lib->atoms[2].z
+	    frag->lib->atoms[0].x, frag->lib->atoms[0].y, frag->lib->atoms[0].z,
+	    frag->lib->atoms[1].x, frag->lib->atoms[1].y, frag->lib->atoms[1].z,
+	    frag->lib->atoms[2].x, frag->lib->atoms[2].y, frag->lib->atoms[2].z
 	};
 
 	vec_t p1;
