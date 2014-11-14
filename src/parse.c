@@ -157,7 +157,8 @@ parse_coordinates(struct frag *frag, struct stream *stream)
 		}
 
 		frag->n_multipole_pts++;
-		frag->multipole_pts = (struct multipole_pt *)realloc(frag->multipole_pts,
+		frag->multipole_pts = (struct multipole_pt *)realloc(
+			frag->multipole_pts,
 			frag->n_multipole_pts * sizeof(struct multipole_pt));
 		if (!frag->multipole_pts)
 			return EFP_RESULT_NO_MEMORY;
@@ -517,7 +518,8 @@ parse_projection_wf(struct frag *frag, struct stream *stream)
 	    !tok_uint(stream, &frag->xr_wf_size))
 		return EFP_RESULT_SYNTAX_ERROR;
 
-	frag->xr_wf = (double *)malloc(frag->n_lmo * frag->xr_wf_size * sizeof(double));
+	frag->xr_wf = (double *)malloc(frag->n_lmo *
+		frag->xr_wf_size * sizeof(double));
 	if (!frag->xr_wf)
 		return EFP_RESULT_NO_MEMORY;
 
