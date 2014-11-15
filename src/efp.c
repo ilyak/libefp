@@ -63,15 +63,23 @@ set_coord_xyzabc(struct frag *frag, const double *coord)
 static enum efp_result
 set_coord_points(struct frag *frag, const double *coord)
 {
-	if (frag->n_atoms < 3) {
+	/* allow fragments with less than 3 atoms by using multipole points of
+	 * ghost atoms; multipole points have the same coordinates as atoms */
+	if (frag->n_multipole_pts < 3) {
 		efp_log("fragment must contain at least three atoms");
 		return EFP_RESULT_FATAL;
 	}
 
 	double ref[9] = {
-	    frag->lib->atoms[0].x, frag->lib->atoms[0].y, frag->lib->atoms[0].z,
-	    frag->lib->atoms[1].x, frag->lib->atoms[1].y, frag->lib->atoms[1].z,
-	    frag->lib->atoms[2].x, frag->lib->atoms[2].y, frag->lib->atoms[2].z
+		frag->lib->multipole_pts[0].x,
+		frag->lib->multipole_pts[0].y,
+		frag->lib->multipole_pts[0].z,
+		frag->lib->multipole_pts[1].x,
+		frag->lib->multipole_pts[1].y,
+		frag->lib->multipole_pts[1].z,
+		frag->lib->multipole_pts[2].x,
+		frag->lib->multipole_pts[2].y,
+		frag->lib->multipole_pts[2].z
 	};
 
 	vec_t p1;
@@ -81,7 +89,7 @@ set_coord_points(struct frag *frag, const double *coord)
 	efp_points_to_matrix(ref, &rot2);
 	rot2 = mat_transpose(&rot2);
 	frag->rotmat = mat_mat(&rot1, &rot2);
-	p1 = mat_vec(&frag->rotmat, VEC(frag->lib->atoms[0].x));
+	p1 = mat_vec(&frag->rotmat, VEC(frag->lib->multipole_pts[0].x));
 
 	/* center of mass */
 	frag->x = coord[0] - p1.x;
