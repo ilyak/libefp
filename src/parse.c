@@ -816,15 +816,18 @@ parse_file(struct efp *efp, struct stream *stream)
 			return EFP_RESULT_FATAL;
 		}
 
-		struct frag *frag = (struct frag *)calloc(1, sizeof(struct frag));
+		struct frag *frag = (struct frag *)calloc(1,
+		    sizeof(struct frag));
 		if (!frag)
 			return EFP_RESULT_NO_MEMORY;
 
 		efp->n_lib++;
 		efp->lib = (struct frag **)realloc(efp->lib,
-			efp->n_lib * sizeof(struct frag *));
-		if (!efp->lib)
+		    efp->n_lib * sizeof(struct frag *));
+		if (!efp->lib) {
+			free(frag);
 			return EFP_RESULT_NO_MEMORY;
+		}
 
 		frag->lib = frag;
 		strcpy(frag->name, name);
