@@ -1106,8 +1106,10 @@ efp_add_fragment(struct efp *efp, const char *name)
 	enum efp_result res;
 	const struct frag *lib = efp_find_lib(efp, name);
 
-	if (!lib)
+	if (!lib) {
+		efp_log("unknown fragment \"%s\"; check its .efp file", name);
 		return EFP_RESULT_UNKNOWN_FRAGMENT;
+	}
 
 	efp->n_frag++;
 	efp->frags = (struct frag *)realloc(efp->frags,
