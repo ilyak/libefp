@@ -783,7 +783,8 @@ parse_fragment(struct frag *frag, struct stream *stream)
 			if (tok_end(stream))
 				return EFP_RESULT_SUCCESS;
 
-			efp_log("unknown keyword in EFP potential data file");
+			efp_log("unexpected string \"%s\" in .efp file",
+			    efp_stream_get_ptr(stream));
 			return EFP_RESULT_SYNTAX_ERROR;
 		}
 
@@ -808,11 +809,14 @@ parse_file(struct efp *efp, struct stream *stream)
 			continue;
 		}
 
-		if (!tok_label(stream, sizeof(name), name))
+		if (!tok_label(stream, sizeof(name), name)) {
+			efp_log("missing fragment name after $ sign");
 			return EFP_RESULT_SYNTAX_ERROR;
+		}
 
 		if (efp_find_lib(efp, name)) {
-			efp_log("parameters for fragment %s are already loaded", name);
+			efp_log("parameters for fragment \"%s\" are "
+			    "already loaded", name);
 			return EFP_RESULT_FATAL;
 		}
 
