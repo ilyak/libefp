@@ -700,7 +700,7 @@ parse_xrfit(struct frag *frag, struct stream *stream)
 		return (EFP_RESULT_SYNTAX_ERROR);
 	}
 
-	frag->xrfit = malloc(frag->n_lmo * 4 * sizeof(double));
+	frag->xrfit = (double *)malloc(frag->n_lmo * 4 * sizeof(double));
 	efp_stream_next_line(stream);
 
 	for (size_t i = 0; i < frag->n_lmo; i++) {
