@@ -609,7 +609,7 @@ parse_lmo_centroids(struct frag *frag, struct stream *stream)
 }
 
 static enum efp_result
-parse_canonvec(struct frag *frag, struct stream *stream)
+skip_canonvec(struct frag *frag, struct stream *stream)
 {
 	(void)frag;
 
@@ -617,7 +617,7 @@ parse_canonvec(struct frag *frag, struct stream *stream)
 
 	if (!tok_uint(stream, NULL) ||
 	    !tok_uint(stream, &wf_size))
-		return EFP_RESULT_SYNTAX_ERROR;
+		return (EFP_RESULT_SYNTAX_ERROR);
 
 	efp_stream_next_line(stream);
 
@@ -627,11 +627,50 @@ parse_canonvec(struct frag *frag, struct stream *stream)
 		}
 	}
 
-	return EFP_RESULT_SUCCESS;
+	return (EFP_RESULT_SUCCESS);
 }
 
 static enum efp_result
-parse_canonfok(struct frag *frag, struct stream *stream)
+skip_canonfok(struct frag *frag, struct stream *stream)
+{
+	(void)frag;
+
+	efp_stream_next_line(stream);
+
+	if (strstr(efp_stream_get_ptr(stream), "STOP") != NULL) {
+		efp_stream_next_line(stream);
+		return (EFP_RESULT_SUCCESS);
+	}
+
+	efp_stream_next_line(stream);
+	efp_stream_next_line(stream);
+	return (EFP_RESULT_SUCCESS);
+}
+
+static enum efp_result
+skip_ctvec(struct frag *frag, struct stream *stream)
+{
+	size_t wf_size;
+
+	assert(frag->xr_wf_size > 0);
+
+	if (!tok_uint(stream, NULL) ||
+	    !tok_uint(stream, &wf_size))
+		return (EFP_RESULT_SYNTAX_ERROR);
+
+	efp_stream_next_line(stream);
+
+	for (size_t j = 0; j < wf_size; j++) {
+		for (size_t i = 0; i <= (frag->xr_wf_size - 1) / 5; i++) {
+			efp_stream_next_line(stream);
+		}
+	}
+
+	return (EFP_RESULT_SUCCESS);
+}
+
+static enum efp_result
+skip_ctfok(struct frag *frag, struct stream *stream)
 {
 	(void)frag;
 
@@ -757,8 +796,10 @@ get_parse_fn(struct stream *stream)
 		{ "PROJECTION WAVEFUNCTION",    parse_projection_wf           },
 		{ "FOCK MATRIX ELEMENTS",       parse_fock_mat                },
 		{ "LMO CENTROIDS",              parse_lmo_centroids           },
-		{ "CANONVEC",                   parse_canonvec                },
-		{ "CANONFOK",                   parse_canonfok                },
+		{ "CANONVEC",                   skip_canonvec                 },
+		{ "CANONFOK",                   skip_canonfok                 },
+		{ "CTVEC",                      skip_ctvec                    },
+		{ "CTFOK",                      skip_ctfok                    },
 		{ "SCREEN",                     parse_screen                  },
 		{ "XRFIT",                      parse_xrfit                   },
 		{ "POLAB",                      parse_polab                   }
