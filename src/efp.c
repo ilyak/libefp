@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2012-2014 Ilya Kaliman
+ * Copyright (c) 2012-2015 Ilya Kaliman
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -1303,7 +1303,7 @@ efp_banner(void)
 {
 	static const char banner[] =
 		"LIBEFP ver. " LIBEFP_VERSION_STRING "\n"
-		"Copyright (c) 2012-2014 Ilya Kaliman\n"
+		"Copyright (c) 2012-2015 Ilya Kaliman\n"
 		"\n"
 		"Journal Reference:\n"
 		"    Kaliman and Slipchenko, JCC 2013.\n"
