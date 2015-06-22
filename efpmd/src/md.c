@@ -323,7 +323,8 @@ static void compute_forces(struct md *md)
 		memcpy(crd, &md->bodies[i].pos, 3 * sizeof(double));
 		memcpy(crd + 3, &md->bodies[i].rotmat, 9 * sizeof(double));
 
-		check_fail(efp_set_frag_coordinates(md->state->efp, i, EFP_COORD_TYPE_ROTMAT, crd));
+		check_fail(efp_set_frag_coordinates(md->state->efp, i,
+		    EFP_COORD_TYPE_ROTMAT, crd));
 	}
 
 	compute_energy(md->state, true);
@@ -346,7 +347,8 @@ static void compute_forces(struct md *md)
 	}
 }
 
-static void set_body_mass_and_inertia(struct efp *efp, size_t idx, struct body *body)
+static void set_body_mass_and_inertia(struct efp *efp, size_t idx,
+    struct body *body)
 {
 	double mass, inertia[3];
 
@@ -359,12 +361,16 @@ static void set_body_mass_and_inertia(struct efp *efp, size_t idx, struct body *
 	body->inertia.y = AMU_TO_AU * inertia[1];
 	body->inertia.z = AMU_TO_AU * inertia[2];
 
-	body->inertia_inv.x = body->inertia.x < EPSILON ? 0.0 : 1.0 / body->inertia.x;
-	body->inertia_inv.y = body->inertia.y < EPSILON ? 0.0 : 1.0 / body->inertia.y;
-	body->inertia_inv.z = body->inertia.z < EPSILON ? 0.0 : 1.0 / body->inertia.z;
+	body->inertia_inv.x = body->inertia.x < EPSILON ? 0.0 :
+	    1.0 / body->inertia.x;
+	body->inertia_inv.y = body->inertia.y < EPSILON ? 0.0 :
+	    1.0 / body->inertia.y;
+	body->inertia_inv.z = body->inertia.z < EPSILON ? 0.0 :
+	    1.0 / body->inertia.z;
 }
 
-static void rotate_step(size_t a1, size_t a2, double angle, vec_t *angmom, mat_t *rotmat)
+static void rotate_step(size_t a1, size_t a2, double angle, vec_t *angmom,
+    mat_t *rotmat)
 {
 	mat_t rot = { 1.0, 0.0, 0.0,
 		      0.0, 1.0, 0.0,
@@ -523,12 +529,15 @@ static void update_step_nvt(struct md *md)
 		for (size_t i = 0; i < md->n_bodies; i++) {
 			struct body *body = md->bodies + i;
 
-			body->vel.x = vel_init[i].x + 0.5 * dt *
-				(body->force.x / body->mass - vel_init[i].x * data->chi);
-			body->vel.y = vel_init[i].y + 0.5 * dt *
-				(body->force.y / body->mass - vel_init[i].y * data->chi);
-			body->vel.z = vel_init[i].z + 0.5 * dt *
-				(body->force.z / body->mass - vel_init[i].z * data->chi);
+			body->vel.x = vel_init[i].x +
+			    0.5 * dt * (body->force.x / body->mass -
+				vel_init[i].x * data->chi);
+			body->vel.y = vel_init[i].y +
+			    0.5 * dt * (body->force.y / body->mass -
+				vel_init[i].y * data->chi);
+			body->vel.z = vel_init[i].z +
+			    0.5 * dt * (body->force.z / body->mass -
+				vel_init[i].z * data->chi);
 
 			body->angmom.x = angmom_init[i].x + 0.5 * dt *
 				(body->torque.x - angmom_init[i].x * data->chi);
@@ -636,7 +645,8 @@ static void update_step_npt(struct md *md)
 	}
 
 	vec_scale(&md->box, exp(dt * data->eta));
-	check_fail(efp_set_periodic_box(md->state->efp, md->box.x, md->box.y, md->box.z));
+	check_fail(efp_set_periodic_box(md->state->efp,
+	    md->box.x, md->box.y, md->box.z));
 
 	compute_forces(md);
 
@@ -655,22 +665,23 @@ static void update_step_npt(struct md *md)
 		double p_cur = get_pressure(md);
 		double v_cur = get_volume(md);
 
-		data->chi = chi_init + 0.5 * dt * (t_cur / t_target - 1.0) / t_tau2;
+		data->chi = chi_init +
+		    0.5 * dt * (t_cur / t_target - 1.0) / t_tau2;
 		data->eta = eta_init + 0.5 * dt * v_cur * (p_cur - p_target) /
-							md->n_bodies / kbt / p_tau2;
+		    md->n_bodies / kbt / p_tau2;
 
 		for (size_t i = 0; i < md->n_bodies; i++) {
 			struct body *body = md->bodies + i;
 
 			body->vel.x = vel_init[i].x + 0.5 * dt *
-				(body->force.x / body->mass -
-					vel_init[i].x * (data->chi + data->eta));
+			    (body->force.x / body->mass -
+				vel_init[i].x * (data->chi + data->eta));
 			body->vel.y = vel_init[i].y + 0.5 * dt *
-				(body->force.y / body->mass -
-					vel_init[i].y * (data->chi + data->eta));
+			    (body->force.y / body->mass -
+				vel_init[i].y * (data->chi + data->eta));
 			body->vel.z = vel_init[i].z + 0.5 * dt *
-				(body->force.z / body->mass -
-					vel_init[i].z * (data->chi + data->eta));
+			    (body->force.z / body->mass -
+				vel_init[i].z * (data->chi + data->eta));
 
 			body->angmom.x = angmom_init[i].x + 0.5 * dt *
 				(body->torque.x - angmom_init[i].x * data->chi);
@@ -728,13 +739,15 @@ static void print_restart(const struct md *md)
 		struct body *body = md->bodies + i;
 
 		char name[64];
-		check_fail(efp_get_frag_name(md->state->efp, i, sizeof(name), name));
+		check_fail(efp_get_frag_name(md->state->efp, i,
+		    sizeof(name), name));
 
 		double xyzabc[6] = { body->pos.x * BOHR_RADIUS,
 				     body->pos.y * BOHR_RADIUS,
 				     body->pos.z * BOHR_RADIUS };
 
-		matrix_to_euler(&body->rotmat, xyzabc + 3, xyzabc + 4, xyzabc + 5);
+		matrix_to_euler(&body->rotmat,
+		    xyzabc + 3, xyzabc + 4, xyzabc + 5);
 
 		double vel[6] = { body->vel.x,
 				  body->vel.y,
@@ -800,9 +813,12 @@ static struct md *md_create(struct state *state)
 
 		set_body_mass_and_inertia(state->efp, i, body);
 
-		body->angmom.x = md->state->sys->frags[i].vel[3] * body->inertia.x;
-		body->angmom.y = md->state->sys->frags[i].vel[4] * body->inertia.y;
-		body->angmom.z = md->state->sys->frags[i].vel[5] * body->inertia.z;
+		body->angmom.x = md->state->sys->frags[i].vel[3] *
+		    body->inertia.x;
+		body->angmom.y = md->state->sys->frags[i].vel[4] *
+		    body->inertia.y;
+		body->angmom.z = md->state->sys->frags[i].vel[5] *
+		    body->inertia.z;
 
 		md->n_freedom += 3;
 
@@ -822,7 +838,8 @@ static void velocitize(struct md *md)
 	rand_init();
 
 	double temperature = cfg_get_double(md->state->cfg, "temperature");
-	double ke = temperature * BOLTZMANN * md->n_freedom / (2.0 * 6.0 * md->n_bodies);
+	double ke = temperature * BOLTZMANN *
+	    md->n_freedom / (2.0 * 6.0 * md->n_bodies);
 
 	for (size_t i = 0; i < md->n_bodies; i++) {
 		struct body *body = md->bodies + i;
@@ -833,9 +850,12 @@ static void velocitize(struct md *md)
 		body->vel.y = vel * rand_normal();
 		body->vel.z = vel * rand_normal();
 
-		body->angmom.x = sqrt(2.0 * ke * body->inertia.x) * rand_normal();
-		body->angmom.y = sqrt(2.0 * ke * body->inertia.y) * rand_normal();
-		body->angmom.z = sqrt(2.0 * ke * body->inertia.z) * rand_normal();
+		body->angmom.x = sqrt(2.0 * ke * body->inertia.x) *
+		    rand_normal();
+		body->angmom.y = sqrt(2.0 * ke * body->inertia.y) *
+		    rand_normal();
+		body->angmom.z = sqrt(2.0 * ke * body->inertia.z) *
+		    rand_normal();
 	}
 }
 
