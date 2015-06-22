@@ -147,8 +147,8 @@ disp_overlap(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
 		double t1 = -8.0 * sum / r6 / r2 * damp;
 		double t2 = -16.0 / 3.0 * sum / r6 * ln_s * ln_s * s_ij;
 
-		vec_t dr_i = vec_sub(CVEC(pt_i->x), VEC(fr_i->x));
-		vec_t dr_j = vec_sub(CVEC(pt_j->x), VEC(fr_j->x));
+		vec_t dr_i = vec_sub(CVEC(pt_i->x), CVEC(fr_i->x));
+		vec_t dr_j = vec_sub(CVEC(pt_j->x), CVEC(fr_j->x));
 
 		force.x = (t1 * dr.x - t2 * ds_ij.x) * swf->swf;
 		force.y = (t1 * dr.y - t2 * ds_ij.y) * swf->swf;
