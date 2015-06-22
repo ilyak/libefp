@@ -396,9 +396,12 @@ static void convert_units(struct cfg *cfg, struct sys *sys)
 		[EFP_COORD_TYPE_POINTS] = 9,
 		[EFP_COORD_TYPE_ROTMAT] = 3 }[cfg_get_enum(cfg, "coord")];
 
-	for (size_t i = 0; i < sys->n_frags; i++)
+	for (size_t i = 0; i < sys->n_frags; i++) {
+		vec_scale(&sys->frags[i].constraint_xyz, 1.0 / BOHR_RADIUS);
+
 		for (size_t j = 0; j < n_convert; j++)
 			sys->frags[i].coord[j] /= BOHR_RADIUS;
+	}
 
 	for (size_t i = 0; i < sys->n_charges; i++)
 		vec_scale(&sys->charges[i].pos, 1.0 / BOHR_RADIUS);

@@ -415,6 +415,18 @@ The numbers are coordinates of three points belonging to a fragment in Angstroms
 The numbers are coordinates of the center of mass of a fragment in Angstroms
 and a 3 x 3 rotation matrix.
 
+#### Fragment velocities
+
+Fragment velocities for MD simulations can be specified using `velocity`
+keyword with the center of mass velocity and angular velocity in atomic units
+specified on the next line.
+
+#### Fragment constraints
+
+Quadratic constraint on the fragment center of mass can be specified using
+`constraint` keyword with the force constant k and constraint position xyz on
+the next line.
+
 ### Input of point charges
 
 Additionally to fragments a system can contain a set of point charges. They

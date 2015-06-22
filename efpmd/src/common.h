@@ -72,6 +72,9 @@ struct frag {
 	char *name;
 	double coord[12];
 	double vel[6];
+	bool constraint_enable;
+	vec_t constraint_xyz;
+	double constraint_k;
 };
 
 struct charge {

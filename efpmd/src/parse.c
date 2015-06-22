@@ -89,7 +89,6 @@ static void parse_frag(struct stream *stream, enum efp_coord_type coord_type,
 	}
 
 	efp_stream_skip_space(stream);
-
 	if (efp_stream_eol(stream))
 		return;
 
@@ -100,6 +99,27 @@ static void parse_frag(struct stream *stream, enum efp_coord_type coord_type,
 		for (int i = 0; i < 6; i++)
 			if (!efp_stream_parse_double(stream, frag->vel + i))
 				error("incorrect fragment velocities format");
+
+		efp_stream_next_line(stream);
+	}
+
+	efp_stream_skip_space(stream);
+	if (efp_stream_eol(stream))
+		return;
+
+	if (efp_strncasecmp(efp_stream_get_ptr(stream), "constraint",
+			strlen("constraint")) == 0) {
+		efp_stream_next_line(stream);
+
+		frag->constraint_enable = true;
+		if (!efp_stream_parse_double(stream, &frag->constraint_k))
+			error("incorrect fragment constraint format");
+		if (!efp_stream_parse_double(stream, &frag->constraint_xyz.x))
+			error("incorrect fragment constraint format");
+		if (!efp_stream_parse_double(stream, &frag->constraint_xyz.y))
+			error("incorrect fragment constraint format");
+		if (!efp_stream_parse_double(stream, &frag->constraint_xyz.z))
+			error("incorrect fragment constraint format");
 
 		efp_stream_next_line(stream);
 	}

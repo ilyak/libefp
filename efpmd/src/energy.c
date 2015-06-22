@@ -35,17 +35,45 @@ void compute_energy(struct state *state, bool do_grad)
 	size_t ifrag, nfrag, iatom, natom;
 	int itotal;
 
+	/* EFP part */
 	check_fail(efp_compute(state->efp, do_grad));
 	check_fail(efp_get_energy(state->efp, &efp_energy));
 	check_fail(efp_get_frag_count(state->efp, &nfrag));
 
 	if (do_grad) {
 		check_fail(efp_get_gradient(state->efp, state->grad));
-		check_fail(efp_get_point_charge_gradient(state->efp, state->grad + 6 * nfrag));
+		check_fail(efp_get_point_charge_gradient(state->efp,
+		    state->grad + 6 * nfrag));
 	}
 
 	state->energy = efp_energy.total;
 
+	/* constraints */
+	for (ifrag = 0; ifrag < nfrag; ifrag++) {
+		const struct frag *frag = state->sys->frags + ifrag;
+
+		check_fail(efp_get_frag_xyzabc(state->efp, ifrag, xyzabc));
+
+		if (frag->constraint_enable) {
+			double dr2, drx, dry, drz;
+
+			drx = xyzabc[0] - frag->constraint_xyz.x;
+			dry = xyzabc[1] - frag->constraint_xyz.y;
+			drz = xyzabc[2] - frag->constraint_xyz.z;
+
+			dr2 = drx * drx + dry * dry + drz * drz;
+			state->energy += 0.5 * frag->constraint_k * dr2;
+
+			if (do_grad) {
+				grad = state->grad + 6 * ifrag;
+				grad[0] += frag->constraint_k * drx;
+				grad[1] += frag->constraint_k * dry;
+				grad[2] += frag->constraint_k * drz;
+			}
+		}
+	}
+
+	/* MM force field part */
 	if (state->ff == NULL)
 		return;
 
