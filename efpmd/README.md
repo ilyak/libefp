@@ -424,8 +424,8 @@ specified on the next line.
 #### Fragment constraints
 
 Quadratic constraint on the fragment center of mass can be specified using
-`constraint` keyword with the force constant k and constraint position xyz on
-the next line.
+`constraint` keyword with the force constant `k` (in a.u.) and constraint
+position `xyz` (in angstroms) specified on the next line.
 
 ### Input of point charges
 
