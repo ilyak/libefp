@@ -709,15 +709,15 @@ static void print_info(const struct md *md)
 	double invariant = md->get_invariant(md);
 	double temperature = get_temperature(md);
 
-	msg("%30s %16.10lf\n", "POTENTIAL ENERGY", e_pot);
-	msg("%30s %16.10lf\n", "KINETIC ENERGY", e_kin);
-	msg("%30s %16.10lf\n", "INVARIANT", invariant);
-	msg("%30s %16.10lf\n", "TEMPERATURE", temperature);
+	msg("%30s %16.10lf au\n", "POTENTIAL ENERGY", e_pot);
+	msg("%30s %16.10lf au\n", "KINETIC ENERGY", e_kin);
+	msg("%30s %16.10lf au\n", "INVARIANT", invariant);
+	msg("%30s %16.10lf K\n", "TEMPERATURE", temperature);
 
 	if (cfg_get_enum(md->state->cfg, "ensemble") == ENSEMBLE_TYPE_NPT) {
 		double pressure = get_pressure(md) / BAR_TO_AU;
 
-		msg("%30s %16.10lf\n", "PRESSURE", pressure);
+		msg("%30s %16.10lf bar\n", "PRESSURE", pressure);
 	}
 
 	if (cfg_get_bool(md->state->cfg, "enable_pbc")) {
@@ -725,7 +725,8 @@ static void print_info(const struct md *md)
 		double y = md->box.y * BOHR_RADIUS;
 		double z = md->box.z * BOHR_RADIUS;
 
-		msg("%30s %9.3lf %9.3lf %9.3lf\n", "PERIODIC BOX SIZE", x, y, z);
+		msg("%30s %9.3lf %9.3lf %9.3lf A^3\n",
+		    "PERIODIC BOX SIZE", x, y, z);
 	}
 
 	msg("\n\n");
