@@ -325,7 +325,8 @@ enum efp_result efp_prepare(struct efp *efp);
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_skip_fragments(struct efp *efp, size_t i, size_t j, int value);
+enum efp_result efp_skip_fragments(struct efp *efp, size_t i, size_t j,
+    int value);
 
 /**
  * Set the callback function which computes electric field from electrons
@@ -564,7 +565,8 @@ enum efp_result efp_get_coordinates(struct efp *efp, double *xyzabc);
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_frag_xyzabc(struct efp *efp, size_t frag_idx, double *xyzabc);
+enum efp_result efp_get_frag_xyzabc(struct efp *efp, size_t frag_idx,
+    double *xyzabc);
 
 /**
  * Setup periodic box size.
@@ -576,7 +578,8 @@ enum efp_result efp_get_frag_xyzabc(struct efp *efp, size_t frag_idx, double *xy
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_set_periodic_box(struct efp *efp, double x, double y, double z);
+enum efp_result efp_set_periodic_box(struct efp *efp, double x, double y,
+    double z);
 
 /**
  * Get the stress tensor.
@@ -673,7 +676,8 @@ enum efp_result efp_compute(struct efp *efp, int do_gradient);
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_frag_charge(struct efp *efp, size_t frag_idx, double *charge);
+enum efp_result efp_get_frag_charge(struct efp *efp, size_t frag_idx,
+    double *charge);
 
 /**
  * Get spin multiplicity of a fragment.
@@ -687,7 +691,8 @@ enum efp_result efp_get_frag_charge(struct efp *efp, size_t frag_idx, double *ch
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_frag_multiplicity(struct efp *efp, size_t frag_idx, int *mult);
+enum efp_result efp_get_frag_multiplicity(struct efp *efp, size_t frag_idx,
+    int *mult);
 
 /**
  * Get total number of multipoles from EFP electrostatics.
@@ -761,7 +766,8 @@ enum efp_result efp_get_induced_dipole_count(struct efp *efp, size_t *n_dip);
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_induced_dipole_coordinates(struct efp *efp, double *xyz);
+enum efp_result efp_get_induced_dipole_coordinates(struct efp *efp,
+    double *xyz);
 
 /**
  * Get values of polarization induced dipoles.
@@ -785,7 +791,8 @@ enum efp_result efp_get_induced_dipole_values(struct efp *efp, double *dip);
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_induced_dipole_conj_values(struct efp *efp, double *dip);
+enum efp_result efp_get_induced_dipole_conj_values(struct efp *efp,
+    double *dip);
 
 /**
  *  Get the number of LMOs in a fragment.
@@ -799,7 +806,8 @@ enum efp_result efp_get_induced_dipole_conj_values(struct efp *efp, double *dip)
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_lmo_count(struct efp *efp, size_t frag_idx, size_t *n_lmo);
+enum efp_result efp_get_lmo_count(struct efp *efp, size_t frag_idx,
+    size_t *n_lmo);
 
 /**
  * Get coordinates of LMO centroids.
@@ -815,7 +823,8 @@ enum efp_result efp_get_lmo_count(struct efp *efp, size_t frag_idx, size_t *n_lm
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_lmo_coordinates(struct efp *efp, size_t frag_idx, double *xyz);
+enum efp_result efp_get_lmo_coordinates(struct efp *efp, size_t frag_idx,
+    double *xyz);
 
 /**
  * Get parameters of fitted exchange-repulsion.
@@ -987,7 +996,8 @@ enum efp_result efp_get_electric_field(struct efp *efp,
  * Euler angles will be stored. This can point to the same memory location as
  * the \p torque argument.
  */
-void efp_torque_to_derivative(const double *euler, const double *torque, double *deriv);
+void efp_torque_to_derivative(const double *euler, const double *torque,
+    double *deriv);
 
 /**
  * Release all resources used by this \a efp.
