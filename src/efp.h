@@ -594,6 +594,22 @@ enum efp_result efp_set_periodic_box(struct efp *efp, double x, double y,
 enum efp_result efp_get_stress_tensor(struct efp *efp, double *stress);
 
 /**
+ * Get the ab initio screening parameters.
+ *
+ * \param[in] efp The efp structure.
+ *
+ * \param[in] frag_idx Index of a fragment. Must be a value between zero and
+ * the total number of fragments minus one.
+ *
+ * \param[out] screen Array of N elements where screening parameters will be
+ * stored. N is the total number of multipole points.
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_get_ai_screen(struct efp *efp, size_t frag_idx,
+    double *screen);
+
+/**
  * Set ab initio orbital energies.
  *
  * \param[in] efp The efp structure.

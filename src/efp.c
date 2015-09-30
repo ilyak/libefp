@@ -684,6 +684,29 @@ efp_get_stress_tensor(struct efp *efp, double *stress)
 }
 
 EFP_EXPORT enum efp_result
+efp_get_ai_screen(struct efp *efp, size_t frag_idx, double *screen)
+{
+	const struct frag *frag;
+	size_t size;
+
+	assert(efp);
+	assert(screen);
+	assert(frag_idx < efp->n_frag);
+
+	frag = &efp->frags[frag_idx];
+
+	if (frag->ai_screen_params == NULL) {
+		efp_log("no screening parameters found for %s", frag->name);
+		return (EFP_RESULT_FATAL);
+	}
+
+	size = frag->n_multipole_pts * sizeof(double);
+	memcpy(screen, frag->ai_screen_params, size);
+
+	return (EFP_RESULT_SUCCESS);
+}
+
+EFP_EXPORT enum efp_result
 efp_prepare(struct efp *efp)
 {
 	assert(efp);
