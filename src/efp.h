@@ -711,6 +711,21 @@ enum efp_result efp_get_frag_multiplicity(struct efp *efp, size_t frag_idx,
     int *mult);
 
 /**
+ * Get number of electrostatic multipole points for a particular fragment.
+ *
+ * \param[in] efp The efp structure.
+ *
+ * \param[in] frag_idx Index of a fragment. Must be a value between zero and
+ * the total number of fragments minus one.
+ *
+ * \param[out] n_mult Number of electrostatic multipole points.
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_get_frag_multipole_count(struct efp *efp, size_t frag_idx,
+    size_t *n_mult);
+
+/**
  * Get total number of multipoles from EFP electrostatics.
  *
  * \param[in] efp The efp structure.

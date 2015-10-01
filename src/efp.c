@@ -872,6 +872,18 @@ efp_get_frag_multiplicity(struct efp *efp, size_t frag_idx, int *mult)
 }
 
 EFP_EXPORT enum efp_result
+efp_get_frag_multipole_count(struct efp *efp, size_t frag_idx, size_t *n_mult)
+{
+	assert(efp);
+	assert(n_mult);
+	assert(frag_idx < efp->n_frag);
+
+	*n_mult = efp->frags[frag_idx].n_multipole_pts;
+
+	return EFP_RESULT_SUCCESS;
+}
+
+EFP_EXPORT enum efp_result
 efp_get_multipole_count(struct efp *efp, size_t *n_mult)
 {
 	size_t sum = 0;
