@@ -110,7 +110,7 @@ enum efp_coord_type {
 	EFP_COORD_TYPE_XYZABC = 0,
 	/** Coordinates of three points belonging to a fragment. */
 	EFP_COORD_TYPE_POINTS,
-	/** Coordinates of the center of mass of a fragment and rotation matrix. */
+	/** Coordinates of fragment center of mass and its rotation matrix. */
 	EFP_COORD_TYPE_ROTMAT
 };
 
