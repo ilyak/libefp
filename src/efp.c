@@ -1314,7 +1314,8 @@ efp_opts_get_swf_cutoff(struct efp_opts *opts)
 }
 
 EFP_EXPORT enum efp_result
-efp_set_electron_density_field_fn(struct efp *efp, efp_electron_density_field_fn fn)
+efp_set_electron_density_field_fn(struct efp *efp,
+    efp_electron_density_field_fn fn)
 {
 	assert(efp);
 
