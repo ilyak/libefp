@@ -150,13 +150,17 @@ void print_energy(struct state *state)
 	msg("%30s %16.10lf\n", "ELECTROSTATIC ENERGY", energy.electrostatic);
 	msg("%30s %16.10lf\n", "POLARIZATION ENERGY", energy.polarization);
 	msg("%30s %16.10lf\n", "DISPERSION ENERGY", energy.dispersion);
-	msg("%30s %16.10lf\n", "EXCHANGE REPULSION ENERGY", energy.exchange_repulsion);
-	msg("%30s %16.10lf\n", "POINT CHARGES ENERGY", energy.electrostatic_point_charges);
-	msg("%30s %16.10lf\n", "CHARGE PENETRATION ENERGY", energy.charge_penetration);
+	msg("%30s %16.10lf\n", "EXCHANGE REPULSION ENERGY",
+	    energy.exchange_repulsion);
+	msg("%30s %16.10lf\n", "POINT CHARGES ENERGY",
+	    energy.electrostatic_point_charges);
+	msg("%30s %16.10lf\n", "CHARGE PENETRATION ENERGY",
+	    energy.charge_penetration);
 	msg("\n");
 
 	if (state->ff) {
-		msg("%30s %16.10lf\n", "FORCE-FIELD ENERGY", ff_get_energy(state->ff));
+		msg("%30s %16.10lf\n", "FORCE-FIELD ENERGY",
+		    ff_get_energy(state->ff));
 		msg("\n");
 	}
 
