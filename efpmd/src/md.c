@@ -704,15 +704,14 @@ static void update_step_npt(struct md *md)
 
 static void print_info(const struct md *md)
 {
-	double e_pot = md->potential_energy;
 	double e_kin = get_kinetic_energy(md);
 	double invariant = md->get_invariant(md);
 	double temperature = get_temperature(md);
 
-	msg("%30s %16.10lf au\n", "POTENTIAL ENERGY", e_pot);
-	msg("%30s %16.10lf au\n", "KINETIC ENERGY", e_kin);
-	msg("%30s %16.10lf au\n", "INVARIANT", invariant);
-	msg("%30s %16.10lf K\n", "TEMPERATURE", temperature);
+	print_energy(md->state);
+	msg("%30s %16.10lf\n", "KINETIC ENERGY", e_kin);
+	msg("%30s %16.10lf\n", "INVARIANT", invariant);
+	msg("%30s %16.10lf\n", "TEMPERATURE (K)", temperature);
 
 	if (cfg_get_enum(md->state->cfg, "ensemble") == ENSEMBLE_TYPE_NPT) {
 		double pressure = get_pressure(md) / BAR_TO_AU;
