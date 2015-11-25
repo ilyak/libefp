@@ -138,6 +138,7 @@ parse_coordinates(struct frag *frag, struct stream *stream)
 
 		struct efp_atom atom;
 
+		memset(&atom, 0, sizeof(atom));
 		if (!tok_label(stream, sizeof(atom.label), atom.label) ||
 		    !tok_double(stream, &atom.x) ||
 		    !tok_double(stream, &atom.y) ||

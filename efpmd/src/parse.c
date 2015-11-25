@@ -166,6 +166,7 @@ struct sys *parse_input(struct cfg *cfg, const char *path)
 		else if (is_keyword(efp_stream_get_ptr(stream), "charge")) {
 			struct charge charge;
 
+			memset(&charge, 0, sizeof(charge));
 			efp_stream_advance(stream, strlen("charge"));
 
 			if (!efp_stream_parse_double(stream, &charge.q) ||

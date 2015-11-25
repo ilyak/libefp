@@ -89,8 +89,16 @@ static char *read_line(FILE *in, char split)
 		case '\r':
 			skip_newline2(in);
 
-			if (i == size)
-				buffer = (char *)realloc(buffer, size + 1);
+			if (i == size) {
+				char *tmp;
+
+				tmp = (char *)realloc(buffer, size + 1);
+				if (tmp == NULL) {
+					free(buffer);
+					abort();
+				}
+				buffer = tmp;
+			}
 
 			buffer[i] = '\0';
 			return buffer;
@@ -99,8 +107,15 @@ static char *read_line(FILE *in, char split)
 			buffer[i++] = (char)ch;
 
 			if (i == size) {
+				char *tmp;
+
 				size *= 2;
-				buffer = (char *)realloc(buffer, size);
+				tmp = (char *)realloc(buffer, size);
+				if (tmp == NULL) {
+					free(buffer);
+					abort();
+				}
+				buffer = tmp;
 			}
 		}
 	}
