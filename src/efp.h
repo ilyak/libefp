@@ -213,11 +213,8 @@ struct efp_atom {
  *
  * \return ::EFP_RESULT_FATAL on error or ::EFP_RESULT_SUCCESS otherwise.
  */
-typedef enum efp_result (*efp_electron_density_field_fn)(
-				size_t n_pt,
-				const double *xyz,
-				double *field,
-				void *user_data);
+typedef enum efp_result (*efp_electron_density_field_fn)(size_t n_pt,
+    const double *xyz, double *field, void *user_data);
 
 /**
  * Get a human readable banner string with information about the library.
@@ -369,9 +366,8 @@ enum efp_result efp_skip_fragments(struct efp *efp, size_t i, size_t j,
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_set_electron_density_field_fn(
-			struct efp *efp,
-			efp_electron_density_field_fn fn);
+enum efp_result efp_set_electron_density_field_fn(struct efp *efp,
+    efp_electron_density_field_fn fn);
 
 /**
  * Set user data to be passed to ::efp_electron_density_field_fn.
@@ -383,9 +379,8 @@ enum efp_result efp_set_electron_density_field_fn(
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_set_electron_density_field_user_data(
-			struct efp *efp,
-			void *user_data);
+enum efp_result efp_set_electron_density_field_user_data(struct efp *efp,
+    void *user_data);
 
 /**
  * Setup arbitrary point charges interacting with EFP subsystem.
@@ -403,11 +398,8 @@ enum efp_result efp_set_electron_density_field_user_data(
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_set_point_charges(
-			struct efp *efp,
-			size_t n_ptc,
-			const double *ptc,
-			const double *xyz);
+enum efp_result efp_set_point_charges(struct efp *efp, size_t n_ptc,
+    const double *ptc, const double *xyz);
 
 /**
  * Get the number of currently set point charges.
@@ -418,9 +410,7 @@ enum efp_result efp_set_point_charges(
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_point_charge_count(
-			struct efp *efp,
-			size_t *n_ptc);
+enum efp_result efp_get_point_charge_count(struct efp *efp, size_t *n_ptc);
 
 /**
  * Get values of currently set point charges.
@@ -431,9 +421,7 @@ enum efp_result efp_get_point_charge_count(
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_point_charge_values(
-			struct efp *efp,
-			double *ptc);
+enum efp_result efp_get_point_charge_values(struct efp *efp, double *ptc);
 
 /**
  * Set values of point charges.
@@ -444,9 +432,7 @@ enum efp_result efp_get_point_charge_values(
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_set_point_charge_values(
-			struct efp *efp,
-			const double *ptc);
+enum efp_result efp_set_point_charge_values(struct efp *efp, const double *ptc);
 
 /**
  * Get coordinates of currently set point charges.
@@ -459,9 +445,7 @@ enum efp_result efp_set_point_charge_values(
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_point_charge_coordinates(
-			struct efp *efp,
-			double *xyz);
+enum efp_result efp_get_point_charge_coordinates(struct efp *efp, double *xyz);
 
 /**
  * Set coordinates of point charges.
@@ -474,9 +458,8 @@ enum efp_result efp_get_point_charge_coordinates(
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_set_point_charge_coordinates(
-			struct efp *efp,
-			const double *xyz);
+enum efp_result efp_set_point_charge_coordinates(struct efp *efp,
+    const double *xyz);
 
 /**
  * Get gradient on point charges from EFP subsystem.
@@ -489,9 +472,7 @@ enum efp_result efp_set_point_charge_coordinates(
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_point_charge_gradient(
-			struct efp *efp,
-			double *grad);
+enum efp_result efp_get_point_charge_gradient(struct efp *efp, double *grad);
 
 /**
  * Update positions and orientations of effective fragments.
@@ -527,8 +508,7 @@ enum efp_result efp_get_point_charge_gradient(
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
 enum efp_result efp_set_coordinates(struct efp *efp,
-				    enum efp_coord_type coord_type,
-				    const double *coord);
+    enum efp_coord_type coord_type, const double *coord);
 
 /**
  * Update position and orientation of the specified effective fragment.
@@ -564,9 +544,7 @@ enum efp_result efp_set_coordinates(struct efp *efp,
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
 enum efp_result efp_set_frag_coordinates(struct efp *efp,
-					 size_t frag_idx,
-					 enum efp_coord_type coord_type,
-					 const double *coord);
+    size_t frag_idx, enum efp_coord_type coord_type, const double *coord);
 
 /**
  * Get center of mass positions and Euler angles of the effective fragments.
@@ -657,10 +635,7 @@ enum efp_result efp_get_ai_screen(struct efp *efp, size_t frag_idx,
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
 enum efp_result efp_set_orbital_energies(struct efp *efp,
-					 size_t n_core,
-					 size_t n_act,
-					 size_t n_vir,
-					 const double *oe);
+    size_t n_core, size_t n_act, size_t n_vir, const double *oe);
 
 /**
  * Set ab initio dipole integrals.
@@ -679,10 +654,7 @@ enum efp_result efp_set_orbital_energies(struct efp *efp,
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
 enum efp_result efp_set_dipole_integrals(struct efp *efp,
-					 size_t n_core,
-					 size_t n_act,
-					 size_t n_vir,
-					 const double *dipint);
+    size_t n_core, size_t n_act, size_t n_vir, const double *dipint);
 
 /**
  * Update wave function dependent energy terms.
@@ -695,9 +667,8 @@ enum efp_result efp_set_dipole_integrals(struct efp *efp,
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_wavefunction_dependent_energy(
-			struct efp *efp,
-			double *energy);
+enum efp_result efp_get_wavefunction_dependent_energy(struct efp *efp,
+    double *energy);
 
 /**
  * Perform the EFP computation.
@@ -779,9 +750,7 @@ enum efp_result efp_get_multipole_count(struct efp *efp, size_t *n_mult);
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_multipole_coordinates(
-			struct efp *efp,
-			double *xyz);
+enum efp_result efp_get_multipole_coordinates(struct efp *efp, double *xyz);
 
 /**
  * Get electrostatics multipoles from EFP fragments.
@@ -952,10 +921,8 @@ enum efp_result efp_get_frag_count(struct efp *efp, size_t *n_frag);
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_frag_name(struct efp *efp,
-				  size_t frag_idx,
-				  size_t size,
-				  char *frag_name);
+enum efp_result efp_get_frag_name(struct efp *efp, size_t frag_idx,
+    size_t size, char *frag_name);
 
 /**
  * Get total mass of a fragment.
@@ -969,9 +936,8 @@ enum efp_result efp_get_frag_name(struct efp *efp,
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_frag_mass(struct efp *efp,
-				  size_t frag_idx,
-				  double *mass_out);
+enum efp_result efp_get_frag_mass(struct efp *efp, size_t frag_idx,
+    double *mass_out);
 
 /**
  * Get fragment principal moments of inertia.
@@ -986,9 +952,8 @@ enum efp_result efp_get_frag_mass(struct efp *efp,
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_frag_inertia(struct efp *efp,
-				     size_t frag_idx,
-				     double *inertia_out);
+enum efp_result efp_get_frag_inertia(struct efp *efp, size_t frag_idx,
+    double *inertia_out);
 
 /**
  * Get the number of atoms in the specified fragment.
@@ -1002,9 +967,8 @@ enum efp_result efp_get_frag_inertia(struct efp *efp,
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_frag_atom_count(struct efp *efp,
-					size_t frag_idx,
-					size_t *n_atoms);
+enum efp_result efp_get_frag_atom_count(struct efp *efp, size_t frag_idx,
+    size_t *n_atoms);
 
 /**
  * Get atoms comprising the specified fragment.
@@ -1021,10 +985,8 @@ enum efp_result efp_get_frag_atom_count(struct efp *efp,
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_frag_atoms(struct efp *efp,
-				   size_t frag_idx,
-				   size_t size,
-				   struct efp_atom *atoms);
+enum efp_result efp_get_frag_atoms(struct efp *efp, size_t frag_idx,
+    size_t size, struct efp_atom *atoms);
 
 /**
  * Get electric field for a point on a fragment.
@@ -1041,10 +1003,8 @@ enum efp_result efp_get_frag_atoms(struct efp *efp,
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_electric_field(struct efp *efp,
-				       size_t frag_idx,
-				       const double *xyz,
-				       double *field);
+enum efp_result efp_get_electric_field(struct efp *efp, size_t frag_idx,
+    const double *xyz, double *field);
 
 /**
  * Convert rigid body torque to derivatives of energy by Euler angles.
