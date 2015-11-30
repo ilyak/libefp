@@ -1,7 +1,38 @@
 ! Fortran interface for libefp
 
 module efp
+use iso_c_binding
 implicit none
+
+type, bind(c) :: efp_opts
+  integer(kind=c_int) terms
+  integer(kind=c_int) disp_damp
+  integer(kind=c_int) elec_damp
+  integer(kind=c_int) pol_damp
+  integer(kind=c_int) pol_driver
+  integer(kind=c_int) enable_pbc
+  integer(kind=c_int) enable_cutoff
+  real(kind=c_double) swf_cutoff
+end type efp_opts
+
+type, bind(c) :: efp_energy
+  real(kind=c_double) :: electrostatic
+  real(kind=c_double) :: charge_penetration
+  real(kind=c_double) :: electrostatic_point_charges
+  real(kind=c_double) :: polarization
+  real(kind=c_double) :: dispersion
+  real(kind=c_double) :: ai_dispersion
+  real(kind=c_double) :: exchange_repulsion
+  real(kind=c_double) :: total
+end type efp_energy
+
+type, bind(c) :: efp_atom
+  character(kind=c_char) :: label(32)
+  real(kind=c_double) :: x, y, z
+  real(kind=c_double) :: mass
+  real(kind=c_double) :: znuc
+end type efp_atom
+
 interface
 
 ! const char *efp_banner(void);
