@@ -224,37 +224,6 @@ const char *efp_banner(void);
 struct efp *efp_create(void);
 
 /**
- * Create a new efp opts object.
- *
- * \return A new efp opts object or NULL on error.
- */
-struct efp_opts *efp_opts_create(void);
-
-/**
- * Release all resources used by this \a opts object.
- *
- * \param[in] opts The efp opts structure to be released.
- */
-void efp_opts_free(struct efp_opts *opts);
-
-void efp_opts_set_terms(struct efp_opts *opts, unsigned value);
-unsigned efp_opts_get_terms(struct efp_opts *opts);
-void efp_opts_set_disp_damp(struct efp_opts *opts, int value);
-int efp_opts_get_disp_damp(struct efp_opts *opts);
-void efp_opts_set_elec_damp(struct efp_opts *opts, int value);
-int efp_opts_get_elec_damp(struct efp_opts *opts);
-void efp_opts_set_pol_damp(struct efp_opts *opts, int value);
-int efp_opts_get_pol_damp(struct efp_opts *opts);
-void efp_opts_set_pol_driver(struct efp_opts *opts, int value);
-int efp_opts_get_pol_driver(struct efp_opts *opts);
-void efp_opts_set_enable_pbc(struct efp_opts *opts, int value);
-int efp_opts_get_enable_pbc(struct efp_opts *opts);
-void efp_opts_set_enable_cutoff(struct efp_opts *opts, int value);
-int efp_opts_get_enable_cutoff(struct efp_opts *opts);
-void efp_opts_set_swf_cutoff(struct efp_opts *opts, double value);
-double efp_opts_get_swf_cutoff(struct efp_opts *opts);
-
-/**
  * Get default values of simulation options.
  *
  * \param[out] opts Structure to store the defaults. See ::efp_opts.
