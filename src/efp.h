@@ -131,25 +131,18 @@ struct efp;
 struct efp_opts {
 	/** Specifies which energy terms to compute. */
 	unsigned terms;
-
 	/** Dispersion damping type (see #efp_disp_damp). */
 	enum efp_disp_damp disp_damp;
-
 	/** Electrostatic damping type (see #efp_elec_damp). */
 	enum efp_elec_damp elec_damp;
-
 	/** Polarization damping type (see #efp_pol_damp). */
 	enum efp_pol_damp pol_damp;
-
 	/** Driver used to find polarization induced dipoles. */
 	enum efp_pol_driver pol_driver;
-
 	/** Enable periodic boundary conditions if nonzero. */
 	int enable_pbc;
-
 	/** Enable fragment-fragment interaction cutoff if nonzero. */
 	int enable_cutoff;
-
 	/** Cutoff distance for fragment-fragment interactions. */
 	double swf_cutoff;
 };
