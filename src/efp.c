@@ -112,7 +112,7 @@ set_coord_rotmat(struct frag *frag, const double *coord)
 	frag->y = coord[1];
 	frag->z = coord[2];
 
-	memcpy(&frag->rotmat, coord + 3, sizeof(mat_t));
+	memcpy(&frag->rotmat, coord + 3, sizeof(frag->rotmat));
 
 	update_fragment(frag);
 	return EFP_RESULT_SUCCESS;
@@ -153,7 +153,8 @@ static enum efp_result
 copy_frag(struct frag *dest, const struct frag *src)
 {
 	size_t size;
-	memcpy(dest, src, sizeof(struct frag));
+
+	memcpy(dest, src, sizeof(*dest));
 
 	if (src->atoms) {
 		size = src->n_atoms * sizeof(struct efp_atom);
@@ -226,12 +227,13 @@ copy_frag(struct frag *dest, const struct frag *src)
 
 			for (size_t i = 0; i < at_src->n_shells; i++) {
 				size = (at_src->shells[i].type == 'L' ? 3 : 2) *
-					at_src->shells[i].n_funcs * sizeof(double);
-
-				at_dest->shells[i].coef = (double *)malloc(size);
+				    at_src->shells[i].n_funcs * sizeof(double);
+				at_dest->shells[i].coef =
+				    (double *)malloc(size);
 				if (!at_dest->shells[i].coef)
 					return EFP_RESULT_NO_MEMORY;
-				memcpy(at_dest->shells[i].coef, at_src->shells[i].coef, size);
+				memcpy(at_dest->shells[i].coef,
+				    at_src->shells[i].coef, size);
 			}
 		}
 	}
@@ -801,8 +803,8 @@ efp_compute(struct efp *efp, int do_gradient)
 	if ((res = check_params(efp)))
 		return (res);
 
-	memset(&efp->energy, 0, sizeof(struct efp_energy));
-	memset(&efp->stress, 0, sizeof(mat_t));
+	memset(&efp->energy, 0, sizeof(efp->energy));
+	memset(&efp->stress, 0, sizeof(efp->stress));
 	memset(efp->grad, 0, efp->n_frag * sizeof(six_t));
 	memset(efp->ptc_grad, 0, efp->n_ptc * sizeof(vec_t));
 
@@ -1120,10 +1122,10 @@ efp_opts_default(struct efp_opts *opts)
 {
 	assert(opts);
 
-	memset(opts, 0, sizeof(struct efp_opts));
+	memset(opts, 0, sizeof(*opts));
 
 	opts->terms = EFP_TERM_ELEC | EFP_TERM_POL | EFP_TERM_DISP |
-		EFP_TERM_XR | EFP_TERM_AI_ELEC | EFP_TERM_AI_POL;
+	    EFP_TERM_XR | EFP_TERM_AI_ELEC | EFP_TERM_AI_POL;
 }
 
 EFP_EXPORT void

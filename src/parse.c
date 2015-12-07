@@ -150,11 +150,10 @@ parse_coordinates(struct frag *frag, struct stream *stream)
 		if (!eq(atom.mass, 0.0)) {
 			frag->n_atoms++;
 			frag->atoms = (struct efp_atom *)realloc(frag->atoms,
-				frag->n_atoms * sizeof(struct efp_atom));
+			    frag->n_atoms * sizeof(struct efp_atom));
 			if (!frag->atoms)
 				return EFP_RESULT_NO_MEMORY;
-			memcpy(frag->atoms + frag->n_atoms - 1, &atom,
-				sizeof(struct efp_atom));
+			frag->atoms[frag->n_atoms - 1] = atom;
 		}
 
 		frag->n_multipole_pts++;
@@ -167,7 +166,7 @@ parse_coordinates(struct frag *frag, struct stream *stream)
 		struct multipole_pt *last_pt =
 			frag->multipole_pts + frag->n_multipole_pts - 1;
 
-		memset(last_pt, 0, sizeof(struct multipole_pt));
+		memset(last_pt, 0, sizeof(*last_pt));
 		last_pt->x = atom.x, last_pt->y = atom.y, last_pt->z = atom.z;
 
 		efp_stream_next_line(stream);
@@ -440,7 +439,7 @@ parse_projection_basis(struct frag *frag, struct stream *stream)
 			frag->n_xr_atoms * sizeof(struct xr_atom));
 
 		struct xr_atom *atom = frag->xr_atoms + frag->n_xr_atoms - 1;
-		memset(atom, 0, sizeof(struct xr_atom));
+		memset(atom, 0, sizeof(*atom));
 
 		if (!tok_double(stream, &atom->x) ||
 		    !tok_double(stream, &atom->y) ||

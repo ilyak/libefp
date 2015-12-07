@@ -61,7 +61,7 @@ struct swf efp_make_swf(const struct efp *efp, const struct frag *fr_i,
 {
 	struct swf swf;
 
-	memset(&swf, 0, sizeof(struct swf));
+	memset(&swf, 0, sizeof(swf));
 	swf.swf = 1.0;
 	swf.dr = vec_sub(CVEC(fr_j->x), CVEC(fr_i->x));
 
