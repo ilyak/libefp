@@ -11,7 +11,7 @@ PREFIX= /usr/local
 FRAGLIB= $(PREFIX)/share/libefp/fraglib
 
 # additional link libraries
-MYLIBS= -lblas -lcblas -llapack -lgfortran
+MYLIBS= -lblas -llapack -lgfortran
 
 # additional linker flags
 MYLDFLAGS=
