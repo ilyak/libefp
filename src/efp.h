@@ -189,10 +189,13 @@ struct efp_atom {
 };
 
 /**
- * Callback used to compute electric field in the specified points.
+ * Callback function which is called by libefp to obtain electric field in the
+ * specified points.
  *
- * This can be used to provide electric field from electrons in \a ab \a initio
- * subsystem. This callback is used during polarization calculation.
+ * This function is used to obtain the electric field from electrons
+ * in the \a ab \a initio part. This callback is called by libefp during
+ * polarization calculation. Libefp supplies the \p xyz array with
+ * coordinates of the points where the field should be computed.
  *
  * \param[in] n_pt Number of points in \p xyz array.
  *
@@ -204,7 +207,8 @@ struct efp_atom {
  *
  * \param[in] user_data User data which was specified during initialization.
  *
- * \return ::EFP_RESULT_FATAL on error or ::EFP_RESULT_SUCCESS otherwise.
+ * \return The implemented function should return ::EFP_RESULT_FATAL on error
+ * and ::EFP_RESULT_SUCCESS if the calculation has succeeded.
  */
 typedef enum efp_result (*efp_electron_density_field_fn)(size_t n_pt,
     const double *xyz, double *field, void *user_data);
