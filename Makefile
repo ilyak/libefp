@@ -1,5 +1,3 @@
-V= 1.3.0
-
 include config.inc
 
 all: efpmd
@@ -39,6 +37,6 @@ install: all
 	install -m 0644 fraglib/* $(FRAGLIB)
 
 dist:
-	git archive --format=tar.gz --prefix=libefp-$V/ -o libefp-$V.tar.gz HEAD
+	git archive --format=tar.gz --prefix=libefp/ -o libefp.tar.gz HEAD
 
 .PHONY: all efpmd libefp tags clean check check-omp check-mpi install dist
