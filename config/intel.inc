@@ -17,7 +17,7 @@ MYLIBS= -lifcore
 MYLDFLAGS=
 
 # additional C flags
-MYCFLAGS= -std=c99 -O3 -g -mkl=sequential -openmp
+MYCFLAGS= -std=c99 -O3 -g -mkl=sequential -qopenmp
 
 # additional Fortran flags
 MYFFLAGS= -g
