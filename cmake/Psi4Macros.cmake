@@ -85,7 +85,9 @@ endmacro(psi4_add_binary libname sources)
 
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
-include(CheckFortranCompilerFlag)  # CMake >= 3.3, so local copy in cmake/
+if(CMAKE_Fortran_COMPILER)
+    include(CheckFortranCompilerFlag)  # CMake >= 3.3, so local copy in cmake/
+endif()
 
 #The guts of the next two functions, use the wrappers please
 #
