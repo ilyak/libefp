@@ -2,11 +2,9 @@
 
 #### Building
 
-```bash
-cmake -H. -Bobjdir
-cd objdir && make
-make install
-```
+    cmake -H. -Bobjdir
+    cd objdir && make
+    make install
 
 The build is also responsive to
 
