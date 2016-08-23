@@ -25,7 +25,7 @@ This project installs with `libefpConfig.cmake`, `libefpConfigVersion.cmake`, an
 
 See [libefpConfig.cmake.in](libefpConfig.cmake.in) for details of how to detect the Config file and what CMake variables and targets are exported to your project.
 
-#### Using in CMake-based project
+#### Using in CMake-based projects
 
 After `find_package(libefp ...)`,
 
