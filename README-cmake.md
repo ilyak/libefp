@@ -11,7 +11,8 @@ The build is also responsive to
 - static/shared toggle `BUILD_SHARED_LIBS`
 - install location `CMAKE_INSTALL_PREFIX`
 - `name/name_L` in library fragments toggle `FRAGLIB_UNDERSCORE_L`
-- `CMAKE_Fortran_COMPILER`, `CMAKE_C_COMPILER`, and `CMAKE_Fortran_FLAGS`
+- shallow/deep library fragments directory structure toggle `FRAGLIB_DEEP`
+- `CMAKE_C_COMPILER` and `CMAKE_C_FLAGS`
 
 See [CMakeLists.txt](CMakeLists.txt) for options details and additional options.
 All these build options should be passed as `cmake -DOPTION`.
