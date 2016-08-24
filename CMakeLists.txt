@@ -44,27 +44,34 @@ string(REGEX REPLACE "([^;]+)" "${src_prefix}\\1" sources_list "${raw_sources_li
 add_library(efp ${sources_list})
 set_target_properties(efp PROPERTIES POSITION_INDEPENDENT_CODE ${BUILD_FPIC}
                                      COMPILE_FLAGS "-std=c99")
-set_source_files_properties(src/int.c PROPERTIES COMPILE_FLAGS -O1)
+set_source_files_properties(${src_prefix}int.c PROPERTIES COMPILE_FLAGS -O1)
 if(${BUILD_SHARED_LIBS})
     target_link_libraries(efp PRIVATE ${LIBC_INTERJECT})
 endif()
 
+set(FRAGLIB_DATADIRS "")
 file(GLOB_RECURSE _dotefps RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "fraglib/*.efp")
 foreach(_dotefp ${_dotefps})
+    get_filename_component(_efpdir ${_dotefp} DIRECTORY)
     get_filename_component(_efpfile ${_dotefp} NAME)
     file(READ ${_dotefp} _strefpL)
     string(REPLACE "_L" "" _strefp ${_strefpL})
 
-    if(FRAGLIB_DEEP AND FRAGLIB_UNDERSCORE_L)  # normal libefp
-        file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${_dotefp} ${_strefpL})
-    elseif(FRAGLIB_DEEP AND NOT FRAGLIB_UNDERSCORE_L)
-        file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${_dotefp} ${_strefp})
-    elseif(NOT FRAGLIB_DEEP AND FRAGLIB_UNDERSCORE_L)
-        file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/fraglib/${_efpfile} ${_strefpL})
-    elseif(NOT FRAGLIB_DEEP AND NOT FRAGLIB_UNDERSCORE_L)  # normal Psi4
-        file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/fraglib/${_efpfile} ${_strefp})
+    if(FRAGLIB_DEEP)
+        set(_destdir ${_efpdir})
+    else()
+        set(_destdir fraglib)
     endif()
+    if(FRAGLIB_UNDERSCORE_L)
+        set(_destcontents ${_strefpL})
+    else()
+        set(_destcontents ${_strefp})
+    endif()
+
+    list(APPEND FRAGLIB_DATADIRS ${_destdir})
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${_destdir}/${_efpfile} ${_destcontents})
 endforeach()
+list(REMOVE_DUPLICATES FRAGLIB_DATADIRS)
 
 # <<<  Install  >>>
 
