@@ -15,6 +15,7 @@ option_with_print(ENABLE_GENERIC "Enable mostly static linking in shared library
 option_with_flags(ENABLE_XHOST "Enable processor-specific optimization" ON
                   "-xHost" "-march=native")
 option_with_print(FRAGLIB_UNDERSCORE_L "Installed fragment library has names ending in _L. Psi4 wants OFF" ON)
+option_with_print(FRAGLIB_DEEP "Installed fragment libary has hierarchical, not flat, filestructure. Psi4 wants OFF" ON)
 # CODE_COVERAGE should be tested and probably propagated to external projects
 #option_with_flags(ENABLE_CODE_COVERAGE "Enables details on code coverage" OFF
 #                  "-ftest-coverage")
@@ -43,31 +44,41 @@ string(REGEX REPLACE "([^;]+)" "${src_prefix}\\1" sources_list "${raw_sources_li
 add_library(efp ${sources_list})
 set_target_properties(efp PROPERTIES POSITION_INDEPENDENT_CODE ${BUILD_FPIC}
                                      COMPILE_FLAGS "-std=c99")
-set_source_files_properties(src/int.c PROPERTIES COMPILE_FLAGS -O1)
+set_source_files_properties(${src_prefix}int.c PROPERTIES COMPILE_FLAGS -O1)
 if(${BUILD_SHARED_LIBS})
     target_link_libraries(efp PRIVATE ${LIBC_INTERJECT})
 endif()
 
-if(NOT FRAGLIB_UNDERSCORE_L)
-    file(GLOB _dotefps RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "fraglib/*.efp")
-    foreach(_dotefp ${_dotefps})
-        file(READ ${_dotefp} _strefpL)
-        string(REPLACE "_L" "" _strefp ${_strefpL})
-        file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${_dotefp} ${_strefp})
-    endforeach()
-endif()
+set(FRAGLIB_DATADIRS "")
+file(GLOB_RECURSE _dotefps RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "fraglib/*.efp")
+foreach(_dotefp ${_dotefps})
+    get_filename_component(_efpdir ${_dotefp} DIRECTORY)
+    get_filename_component(_efpfile ${_dotefp} NAME)
+    file(READ ${_dotefp} _strefpL)
+    string(REPLACE "_L" "" _strefp ${_strefpL})
+
+    if(FRAGLIB_DEEP)
+        set(_destdir ${_efpdir})
+    else()
+        set(_destdir fraglib)
+    endif()
+    if(FRAGLIB_UNDERSCORE_L)
+        set(_destcontents ${_strefpL})
+    else()
+        set(_destcontents ${_strefp})
+    endif()
+
+    list(APPEND FRAGLIB_DATADIRS ${_destdir})
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${_destdir}/${_efpfile} ${_destcontents})
+endforeach()
+list(REMOVE_DUPLICATES FRAGLIB_DATADIRS)
 
 # <<<  Install  >>>
 
-if(FRAGLIB_UNDERSCORE_L)
-    install(DIRECTORY fraglib
-            DESTINATION ${CMAKE_INSTALL_DATADIR}/${PN})
-else()
-    install(FILES fraglib/makefp.inp
-            DESTINATION ${CMAKE_INSTALL_DATADIR}/${PN})
-    install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/fraglib
-            DESTINATION ${CMAKE_INSTALL_DATADIR}/${PN})
-endif()
+install(FILES fraglib/makefp.inp
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/${PN})
+install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/fraglib
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/${PN})
 
     # headers NOT namespace protected
 install(FILES ${src_prefix}/efp.h 
@@ -102,4 +113,7 @@ install(EXPORT "${PN}Targets"
 # Notes on CMake: CMake builds libefp, the shared or static library,
 #   but not efpmd because math detection would add a whole lot of extra code,
 #   and Psi4 doesn't use it. Also not implemented is testing with CTest.
+#   Another implication of no MKL math detection is that when libefp is
+#   compiled statically with OpenMP, will need to compile consuming
+#   application with OpenMP, too, or supply link library.
 

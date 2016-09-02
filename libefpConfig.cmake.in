@@ -13,6 +13,7 @@
 #   libefp_DEFINITIONS: Definitions necessary to use libefp, namely USING_libefp.
 #   libefp_LIBRARIES - libefp library to link against.
 #   libefp_LIBRARY - same as LIBRARIES
+#   libefp_FRAGLIB_DIRS - Directories (list) where EFP fragments are located
 #
 #
 # Available components: shared static
@@ -21,6 +22,7 @@
 #
 #   shared - search for only shared library
 #   static - search for only static library
+#   shallow - search for only fragment library where directory structure has been collapsed
 #
 #
 # Exported targets:
@@ -58,9 +60,11 @@ set(PN libefp)
 set (_valid_components
     static
     shared
+    shallow
 )
 
 # find includes
+unset(_temp_h CACHE)
 find_path(_temp_h
           NAMES efp.h
           PATHS ${PACKAGE_PREFIX_DIR}/@CMAKE_INSTALL_INCLUDEDIR@
@@ -84,6 +88,7 @@ if(_seek_shared GREATER -1)
 elseif(_seek_static GREATER -1)
     set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX})
 endif()
+unset(_temp CACHE)
 find_library(_temp
              NAMES efp
              PATHS ${PACKAGE_PREFIX_DIR}/@CMAKE_INSTALL_LIBDIR@
@@ -113,6 +118,20 @@ else()
 endif()
 set(CMAKE_FIND_LIBRARY_SUFFIXES ${_hold_library_suffixes})
 set(${PN}_LIBRARIES ${${PN}_LIBRARY})
+
+# find fraglibs
+list(FIND ${PN}_FIND_COMPONENTS "shallow" _seek_shallow)
+string(REGEX REPLACE "([^;]+)" "${PACKAGE_PREFIX_DIR}/@CMAKE_INSTALL_DATADIR@/${PN}/\\1" ${PN}_FRAGLIB_DIRS "@FRAGLIB_DATADIRS@")
+if(_seek_shallow GREATER -1)
+    list(LENGTH ${PN}_FRAGLIB_DIRS _temp_len)
+    if(_temp_len EQUAL 1)
+        set(${PN}_shallow_FOUND 1)
+    else()
+        if(NOT CMAKE_REQUIRED_QUIET)
+            message(STATUS "${PN}Config missing component: shallow fraglib (${PN}: ${${PN}_FRAGLIB_DIRS})")
+        endif()
+    endif()
+endif()
 
 check_required_components(${PN})
 
