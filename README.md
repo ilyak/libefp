@@ -12,8 +12,8 @@ favourite quantum chemistry package.
 Detailed description of methods and algorithms can be found in
 the libefp journal articles:
 
-- [Kaliman & Slipchenko, JCC 2013](http://dx.doi.org/10.1002/jcc.23375)
-- [Kaliman & Slipchenko, JCC 2015](http://dx.doi.org/10.1002/jcc.23772)
+- [Kaliman and Slipchenko, JCC 2013](http://dx.doi.org/10.1002/jcc.23375)
+- [Kaliman and Slipchenko, JCC 2015](http://dx.doi.org/10.1002/jcc.23772)
 
 ## EFPMD
 
