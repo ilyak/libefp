@@ -57,6 +57,10 @@ set_source_files_properties(${src_prefix}int.c PROPERTIES COMPILE_FLAGS -O1)
 if(${BUILD_SHARED_LIBS})
     target_link_libraries(efp PRIVATE ${LIBC_INTERJECT})
 endif()
+if(APPLE)
+    # defer linking to BLAS
+    target_link_libraries(efp PRIVATE "-undefined dynamic_lookup")
+endif()
 
 set(FRAGLIB_DATADIRS "")
 file(GLOB_RECURSE _dotefps RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "fraglib/*.efp")
