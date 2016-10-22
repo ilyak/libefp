@@ -56,10 +56,10 @@ set_target_properties(efp PROPERTIES POSITION_INDEPENDENT_CODE ${BUILD_FPIC}
 set_source_files_properties(${src_prefix}int.c PROPERTIES COMPILE_FLAGS -O1)
 if(${BUILD_SHARED_LIBS})
     target_link_libraries(efp PRIVATE ${LIBC_INTERJECT})
-endif()
-if(APPLE)
-    # defer linking to BLAS
-    target_link_libraries(efp PRIVATE "-undefined dynamic_lookup")
+
+    if(APPLE)
+        set_target_properties(efp PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
+    endif()
 endif()
 
 set(FRAGLIB_DATADIRS "")
