@@ -24,7 +24,7 @@ This project installs with `libefpConfig.cmake`, `libefpConfigVersion.cmake`, an
 - `find_package(libefp)` - find any libefp libraries and headers
 - `find_package(libefp 1.3.0 EXACT CONFIG REQUIRED COMPONENTS static)` - find libefp exactly version 1.3.0 built with static libraries; abort on failure
 
-See [libefpConfig.cmake.in](libefpConfig.cmake.in) for details of how to detect the Config file and what CMake variables and targets are exported to your project.
+See [libefpConfig.cmake.in](cmake/libefpConfig.cmake.in) for details of how to detect the Config file and what CMake variables and targets are exported to your project.
 
 #### Using in CMake-based projects
 
