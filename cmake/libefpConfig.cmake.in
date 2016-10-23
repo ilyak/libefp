@@ -7,7 +7,7 @@
 # ::
 #
 #   libefp_FOUND - true if libefp and all required components found on the system
-#   libefp_VERSION - liberp version in format Major.Minor.Release
+#   libefp_VERSION - libefp version in format Major.Minor.Release
 #   libefp_INCLUDE_DIRS - Directory where libefp header is located.
 #   libefp_INCLUDE_DIR - same as DIRS
 #   libefp_DEFINITIONS: Definitions necessary to use libefp, namely USING_libefp.
