@@ -34,6 +34,13 @@ include(autocmake_safeguards)
 include(autocmake_omp)
 include(autocmake_static_library)
 
+if (LAPACK_INTERJECT)
+    message (STATUS "LAPACK detection suppressed. Using: ${LAPACK_INTERJECT}")
+else()
+    find_package (LAPACK REQUIRED)
+    message (STATUS "LAPACK detected. Using: ${LAPACK_LIBRARIES}")
+endif()
+
 ################################# Main Project #################################
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
@@ -56,7 +63,9 @@ set_target_properties(efp PROPERTIES POSITION_INDEPENDENT_CODE ${BUILD_FPIC}
 set_source_files_properties(${src_prefix}int.c PROPERTIES COMPILE_FLAGS -O1)
 if(${BUILD_SHARED_LIBS})
     target_link_libraries(efp PRIVATE ${LIBC_INTERJECT})
-
+    if(LAPACK_INTERJECT)
+        target_link_libraries(efp PRIVATE ${LAPACK_INTERJECT})
+    endif()
     if(APPLE)
         set_target_properties(efp PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
     endif()
@@ -104,6 +113,9 @@ install(TARGETS efp
 # <<<  Export Interface  >>>
 
 target_compile_definitions(efp INTERFACE USING_${PN})
+if(LAPACK_LIBRARIES)
+    target_link_libraries(efp INTERFACE ${LAPACK_LIBRARIES})
+endif()
 target_include_directories(efp INTERFACE
                            $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 

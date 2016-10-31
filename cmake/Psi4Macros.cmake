@@ -39,6 +39,12 @@ if(NOT DEFINED ${variable} OR "${${variable}}" STREQUAL "")
 endif()
 endmacro(option_with_default)
 
+include(CheckCCompilerFlag)
+include(CheckCXXCompilerFlag)
+if(CMAKE_Fortran_COMPILER)
+    include(CheckFortranCompilerFlag)  # CMake >= 3.3, so local copy in cmake/
+endif()
+
 #The guts of the next two functions, use the wrappers please
 #
 #Syntax: add_C_or_CXX_flags(<True for C, False for CXX>)
