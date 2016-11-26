@@ -2,12 +2,10 @@
 # ------------------
 #
 # LIBEFP cmake module.
-# This module sets the following variables in your project:
-#
-# ::
+# This module sets the following variables in your project::
 #
 #   libefp_FOUND - true if libefp and all required components found on the system
-#   libefp_VERSION - liberp version in format Major.Minor.Release
+#   libefp_VERSION - libefp version in format Major.Minor.Release
 #   libefp_INCLUDE_DIRS - Directory where libefp header is located.
 #   libefp_INCLUDE_DIR - same as DIRS
 #   libefp_DEFINITIONS: Definitions necessary to use libefp, namely USING_libefp.
@@ -16,18 +14,14 @@
 #   libefp_FRAGLIB_DIRS - Directories (list) where EFP fragments are located
 #
 #
-# Available components: shared static
-#
-# ::
+# Available components: shared static ::
 #
 #   shared - search for only shared library
 #   static - search for only static library
 #   shallow - search for only fragment library where directory structure has been collapsed
 #
 #
-# Exported targets:
-#
-# ::
+# Exported targets::
 #
 # If libefp is found, this module defines the following :prop_tgt:`IMPORTED`
 # target. Target is shared _or_ static, so, for both, use separate, not
@@ -36,17 +30,13 @@
 #   libefp::efp - the main libefp library with header & defs attached.
 #
 #
-# Suggested usage:
-#
-# ::
+# Suggested usage::
 #
 #   find_package(libefp)
 #   find_package(libefp 1.3.0 EXACT CONFIG REQUIRED COMPONENTS shared)
 #
 #
-# The following variables can be set to guide the search for this package:
-#
-# ::
+# The following variables can be set to guide the search for this package::
 #
 #   libefp_DIR - CMake variable, set to directory containing this Config file
 #   CMAKE_PREFIX_PATH - CMake variable, set to root directory of this package
@@ -118,6 +108,7 @@ else()
 endif()
 set(CMAKE_FIND_LIBRARY_SUFFIXES ${_hold_library_suffixes})
 set(${PN}_LIBRARIES ${${PN}_LIBRARY})
+set(${PN}_DEFINITIONS USING_${PN})
 
 # find fraglibs
 list(FIND ${PN}_FIND_COMPONENTS "shallow" _seek_shallow)

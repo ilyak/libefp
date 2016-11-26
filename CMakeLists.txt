@@ -1,5 +1,14 @@
+cmake_policy(SET CMP0048 NEW)  # project_VERSION* variables populated from project(... VERSION x.x.x) string
+project(libefp
+        VERSION 1.3.0
+        LANGUAGES C)
+set(libefp_AUTHORS      "Ilya A. Kaliman")
+set(libefp_DESCRIPTION  "Parallel implementation of the Effective Fragment Potential (EFP) method")
+#set(libefp_EMAIL
+set(libefp_URL          "https://libefp.github.io/")
+set(libefp_LICENSE      "BSD 2-clause")
+
 cmake_minimum_required(VERSION 3.0)
-project(libefp LANGUAGES C)
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 ################################### Options ####################################
@@ -10,7 +19,7 @@ option_with_default(BUILD_FPIC "Libraries will be compiled with position indepen
 if(${BUILD_SHARED_LIBS} AND NOT ${BUILD_FPIC})
     message(FATAL_ERROR "BUILD_SHARED_LIBS ON and BUILD_FPIC OFF are incompatible, as shared library requires position independent code")
 endif()
-option_with_print(ENABLE_OPENMP "Enable OpenMP parallelization" ON)
+option_with_print(ENABLE_OPENMP "Enable OpenMP parallelization. Psi4 wants OFF" ON)
 option_with_print(ENABLE_GENERIC "Enable mostly static linking in shared library" OFF)
 option_with_flags(ENABLE_XHOST "Enable processor-specific optimization" ON
                   "-xHost" "-march=native")
@@ -24,6 +33,13 @@ option_with_print(FRAGLIB_DEEP "Installed fragment libary has hierarchical, not 
 include(autocmake_safeguards)
 include(autocmake_omp)
 include(autocmake_static_library)
+
+if (LAPACK_INTERJECT)
+    message (STATUS "LAPACK detection suppressed. Using: ${LAPACK_INTERJECT}")
+else()
+    find_package (LAPACK REQUIRED)
+    message (STATUS "LAPACK detected. Using: ${LAPACK_LIBRARIES}")
+endif()
 
 ################################# Main Project #################################
 include(GNUInstallDirs)
@@ -47,6 +63,12 @@ set_target_properties(efp PROPERTIES POSITION_INDEPENDENT_CODE ${BUILD_FPIC}
 set_source_files_properties(${src_prefix}int.c PROPERTIES COMPILE_FLAGS -O1)
 if(${BUILD_SHARED_LIBS})
     target_link_libraries(efp PRIVATE ${LIBC_INTERJECT})
+    if(LAPACK_INTERJECT)
+        target_link_libraries(efp PRIVATE ${LAPACK_INTERJECT})
+    endif()
+    if(APPLE)
+        set_target_properties(efp PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
+    endif()
 endif()
 
 set(FRAGLIB_DATADIRS "")
@@ -82,7 +104,7 @@ install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/fraglib
 
     # headers NOT namespace protected
 install(FILES ${src_prefix}/efp.h 
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR})
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(TARGETS efp
         EXPORT "${PN}Targets"
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -91,17 +113,21 @@ install(TARGETS efp
 # <<<  Export Interface  >>>
 
 target_compile_definitions(efp INTERFACE USING_${PN})
+if(LAPACK_LIBRARIES)
+    target_link_libraries(efp INTERFACE ${LAPACK_LIBRARIES})
+endif()
 target_include_directories(efp INTERFACE
                            $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 # <<<  Export Config  >>>
 
-set(CMAKECONFIG_INSTALL_DIR "${CMAKE_INSTALL_DATADIR}/cmake/${PN}")
-configure_package_config_file(${PN}Config.cmake.in
+    # explicit "share" not "DATADIR" for CMake search path
+set(CMAKECONFIG_INSTALL_DIR "share/cmake/${PN}")
+configure_package_config_file(cmake/${PN}Config.cmake.in
                               "${CMAKE_CURRENT_BINARY_DIR}/${PN}Config.cmake"
                               INSTALL_DESTINATION ${CMAKECONFIG_INSTALL_DIR})
 write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/${PN}ConfigVersion.cmake
-                                 VERSION 1.3.0
+                                 VERSION ${${PN}_VERSION}
                                  COMPATIBILITY SameMajorVersion)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PN}Config.cmake
               ${CMAKE_CURRENT_BINARY_DIR}/${PN}ConfigVersion.cmake
