@@ -1,10 +1,9 @@
 cmake_policy(SET CMP0048 NEW)  # project_VERSION* variables populated from project(... VERSION x.x.x) string
 project(libefp
-        VERSION 1.3.0
+        VERSION 1.3.1
         LANGUAGES C)
 set(libefp_AUTHORS      "Ilya A. Kaliman")
 set(libefp_DESCRIPTION  "Parallel implementation of the Effective Fragment Potential (EFP) method")
-#set(libefp_EMAIL
 set(libefp_URL          "https://libefp.github.io/")
 set(libefp_LICENSE      "BSD 2-clause")
 
