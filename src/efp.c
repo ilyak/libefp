@@ -1341,13 +1341,15 @@ efp_banner(void)
 {
 	static const char banner[] =
 		"LIBEFP ver. " LIBEFP_VERSION_STRING "\n"
-		"Copyright (c) 2012-2015 Ilya Kaliman\n"
+		"Copyright (c) 2012-2016 Ilya Kaliman\n"
 		"\n"
-		"Journal Reference:\n"
-		"    Kaliman and Slipchenko, JCC 2013.\n"
+		"Journal References:\n"
+		"  - Kaliman and Slipchenko, JCC 2013.\n"
 		"    DOI: http://dx.doi.org/10.1002/jcc.23375\n"
+		"  - Kaliman and Slipchenko, JCC 2015.\n"
+		"    DOI: http://dx.doi.org/10.1002/jcc.23772\n"
 		"\n"
-		"Project web site: http://www.libefp.org/\n";
+		"Project web site: https://libefp.github.io/\n";
 
 	return banner;
 }
