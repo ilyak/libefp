@@ -23,7 +23,7 @@ MYCFLAGS= -DWITH_MPI -std=c99 -g -fcolor-diagnostics -Weverything -Wno-unreachab
 MYFFLAGS= -g
 
 # ar command
-AR= ar rcu
+AR= ar rc
 
 # ranlib command
 RANLIB= ranlib
