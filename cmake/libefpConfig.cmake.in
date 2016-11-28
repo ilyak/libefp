@@ -33,7 +33,7 @@
 # Suggested usage::
 #
 #   find_package(libefp)
-#   find_package(libefp 1.3.0 EXACT CONFIG REQUIRED COMPONENTS shared)
+#   find_package(libefp 1.4.1 EXACT CONFIG REQUIRED COMPONENTS shared)
 #
 #
 # The following variables can be set to guide the search for this package::

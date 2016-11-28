@@ -22,7 +22,7 @@ All these build options should be passed as `cmake -DOPTION`.
 This project installs with `libefpConfig.cmake`, `libefpConfigVersion.cmake`, and `libefpTargets.cmake` files suitable for use with CMake [`find_package()`](https://cmake.org/cmake/help/v3.2/command/find_package.html) in `CONFIG` mode.
 
 - `find_package(libefp)` - find any libefp libraries and headers
-- `find_package(libefp 1.3.0 EXACT CONFIG REQUIRED COMPONENTS static)` - find libefp exactly version 1.3.0 built with static libraries; abort on failure
+- `find_package(libefp 1.4.1 EXACT CONFIG REQUIRED COMPONENTS static)` - find libefp exactly version 1.4.1 built with static libraries; abort on failure
 
 See [libefpConfig.cmake.in](cmake/libefpConfig.cmake.in) for details of how to detect the Config file and what CMake variables and targets are exported to your project.
 
