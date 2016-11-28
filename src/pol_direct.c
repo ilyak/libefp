@@ -27,7 +27,6 @@
 #include <stdlib.h>
 
 #include "clapack.h"
-#include "compat.h"
 #include "private.h"
 
 double efp_get_pol_damp_tt(double, double, double);
@@ -96,7 +95,7 @@ get_int_mat(const struct efp *efp, size_t i, size_t j, size_t ii, size_t jj)
 }
 
 static void
-compute_lhs(const struct efp *efp, double *c, bool conj)
+compute_lhs(const struct efp *efp, double *c, int conj)
 {
 	size_t n = 3 * efp->n_polarizable_pts;
 
@@ -127,7 +126,7 @@ compute_lhs(const struct efp *efp, double *c, bool conj)
 }
 
 static void
-compute_rhs(const struct efp *efp, vec_t *id, bool conj)
+compute_rhs(const struct efp *efp, vec_t *id, int conj)
 {
 	for (size_t i = 0, idx = 0; i < efp->n_frag; i++) {
 		const struct frag *frag = efp->frags + i;
@@ -162,8 +161,8 @@ efp_compute_id_direct(struct efp *efp)
 	}
 
 	/* induced dipoles */
-	compute_lhs(efp, c, false);
-	compute_rhs(efp, efp->indip, false);
+	compute_lhs(efp, c, 0);
+	compute_rhs(efp, efp->indip, 0);
 	transpose_matrix(c, n);
 
 	if (efp_dgesv((int)n, 1, c, (int)n, ipiv, (double *)efp->indip, (int)n) != 0) {
@@ -173,8 +172,8 @@ efp_compute_id_direct(struct efp *efp)
 	}
 
 	/* conjugate induced dipoles */
-	compute_lhs(efp, c, true);
-	compute_rhs(efp, efp->indipconj, true);
+	compute_lhs(efp, c, 1);
+	compute_rhs(efp, efp->indipconj, 1);
 	transpose_matrix(c, n);
 
 	if (efp_dgesv((int)n, 1, c, (int)n, ipiv, (double *)efp->indipconj, (int)n) != 0) {

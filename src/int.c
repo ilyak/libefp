@@ -24,7 +24,7 @@
  * SUCH DAMAGE.
  */
 
-#include <assert.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "int.h"
@@ -136,7 +136,7 @@ static void make_int(size_t ni, size_t nj, double tt, const vec_t *p,
 					pz *= az;
 					break;
 				default:
-					assert(0);
+					abort();
 			}
 		}
 
@@ -169,7 +169,7 @@ static void make_int(size_t ni, size_t nj, double tt, const vec_t *p,
 					pz *= bz;
 					break;
 				default:
-					assert(0);
+					abort();
 			}
 		}
 
@@ -192,7 +192,7 @@ static size_t get_shell_idx(char type)
 		case 'D': return 3;
 		case 'F': return 4;
 	}
-	assert(0);
+	abort();
 }
 
 static size_t get_shell_start(size_t shell_idx)
@@ -270,7 +270,7 @@ static void init_ft(size_t count_i, char type_j, double *ft)
 			}
 			return;
 	}
-	assert(0);
+	abort();
 }
 
 void efp_st_int(size_t n_atoms_i, const struct xr_atom *atoms_i,

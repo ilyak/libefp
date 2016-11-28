@@ -29,15 +29,13 @@
 
 #include <stddef.h>
 
-#include "compat.h"
-
 struct bvec;
 
 struct bvec *efp_bvec_create(size_t);
 void efp_bvec_set(struct bvec *, size_t);
 void efp_bvec_unset(struct bvec *, size_t);
-void efp_bvec_set_value(struct bvec *, size_t, bool);
-bool efp_bvec_is_set(struct bvec *, size_t);
+void efp_bvec_set_value(struct bvec *, size_t, int);
+int efp_bvec_is_set(struct bvec *, size_t);
 void efp_bvec_free(struct bvec *);
 
 #endif /* LIBEFP_BVEC_H */

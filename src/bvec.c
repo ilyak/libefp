@@ -77,19 +77,19 @@ void efp_bvec_unset(struct bvec *bvec, size_t n)
 	bvec->data[n / EBITS] &= ~(1ULL << shift);
 }
 
-void efp_bvec_set_value(struct bvec *bvec, size_t n, bool value)
+void efp_bvec_set_value(struct bvec *bvec, size_t n, int value)
 {
 	value ? efp_bvec_set(bvec, n) : efp_bvec_unset(bvec, n);
 }
 
-bool efp_bvec_is_set(struct bvec *bvec, size_t n)
+int efp_bvec_is_set(struct bvec *bvec, size_t n)
 {
 	assert(bvec);
 	assert(n < bvec->len);
 
 	int shift = n % EBITS;
 
-	return bvec->data[n / EBITS] & (1ULL << shift);
+	return (bvec->data[n / EBITS] & (1ULL << shift)) != 0ULL;
 }
 
 void efp_bvec_free(struct bvec *bvec)

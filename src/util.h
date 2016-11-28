@@ -27,15 +27,14 @@
 #ifndef LIBEFP_UTIL_H
 #define LIBEFP_UTIL_H
 
-#include "compat.h"
 #include "math_util.h"
 
 struct efp;
 struct frag;
 
-bool efp_skip_frag_pair(const struct efp *, size_t, size_t);
+int efp_skip_frag_pair(const struct efp *, size_t, size_t);
 struct swf efp_make_swf(const struct efp *, const struct frag *, const struct frag *);
-bool efp_check_rotation_matrix(const mat_t *);
+int efp_check_rotation_matrix(const mat_t *);
 void efp_points_to_matrix(const double *, mat_t *);
 const struct frag *efp_find_lib(struct efp *, const char *);
 void efp_add_stress(const vec_t *, const vec_t *, mat_t *);

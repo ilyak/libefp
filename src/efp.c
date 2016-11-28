@@ -28,7 +28,6 @@
 #include <stdlib.h>
 
 #include "balance.h"
-#include "compat.h"
 #include "elec.h"
 #include "private.h"
 #include "stream.h"
@@ -346,24 +345,24 @@ check_params(struct efp *efp)
 	return EFP_RESULT_SUCCESS;
 }
 
-static bool
+static int
 do_elec(const struct efp_opts *opts)
 {
 	return (opts->terms & EFP_TERM_ELEC);
 }
 
-static bool
+static int
 do_disp(const struct efp_opts *opts)
 {
 	return (opts->terms & EFP_TERM_DISP);
 }
 
-static bool
+static int
 do_xr(const struct efp_opts *opts)
 {
-	bool xr = (opts->terms & EFP_TERM_XR);
-	bool cp = (opts->terms & EFP_TERM_ELEC) && (opts->elec_damp == EFP_ELEC_DAMP_OVERLAP);
-	bool dd = (opts->terms & EFP_TERM_DISP) && (opts->disp_damp == EFP_DISP_DAMP_OVERLAP);
+	int xr = (opts->terms & EFP_TERM_XR);
+	int cp = (opts->terms & EFP_TERM_ELEC) && (opts->elec_damp == EFP_ELEC_DAMP_OVERLAP);
+	int dd = (opts->terms & EFP_TERM_DISP) && (opts->disp_damp == EFP_DISP_DAMP_OVERLAP);
 
 	return (xr || cp || dd);
 }
