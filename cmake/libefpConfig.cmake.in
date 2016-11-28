@@ -8,7 +8,7 @@
 #   libefp_VERSION - libefp version in format Major.Minor.Release
 #   libefp_INCLUDE_DIRS - Directory where libefp header is located.
 #   libefp_INCLUDE_DIR - same as DIRS
-#   libefp_DEFINITIONS: Definitions necessary to use libefp, namely USING_libefp.
+#   libefp_DEFINITIONS - Definitions necessary to use libefp, namely USING_libefp.
 #   libefp_LIBRARIES - libefp library to link against.
 #   libefp_LIBRARY - same as LIBRARIES
 #   libefp_FRAGLIB_DIRS - Directories (list) where EFP fragments are located
