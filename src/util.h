@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2012-2015 Ilya Kaliman
+ * Copyright (c) 2012-2016 Ilya Kaliman
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,13 +33,16 @@ struct efp;
 struct frag;
 
 int efp_skip_frag_pair(const struct efp *, size_t, size_t);
-struct swf efp_make_swf(const struct efp *, const struct frag *, const struct frag *);
+struct swf efp_make_swf(const struct efp *, const struct frag *,
+    const struct frag *);
 int efp_check_rotation_matrix(const mat_t *);
 void efp_points_to_matrix(const double *, mat_t *);
 const struct frag *efp_find_lib(struct efp *, const char *);
 void efp_add_stress(const vec_t *, const vec_t *, mat_t *);
-void efp_add_force(six_t *, const vec_t *, const vec_t *, const vec_t *, const vec_t *);
-void efp_sub_force(six_t *, const vec_t *, const vec_t *, const vec_t *, const vec_t *);
+void efp_add_force(six_t *, const vec_t *, const vec_t *,
+    const vec_t *, const vec_t *);
+void efp_sub_force(six_t *, const vec_t *, const vec_t *,
+    const vec_t *, const vec_t *);
 void efp_move_pt(const vec_t *, const mat_t *, const vec_t *, vec_t *);
 void efp_rotate_t2(const mat_t *, const double *, double *);
 void efp_rotate_t3(const mat_t *, const double *, double *);
