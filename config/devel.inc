@@ -17,7 +17,7 @@ MYLIBS= -llapack -lblas -lg2c -lgfortran -lmpi
 MYLDFLAGS= -L/usr/local/lib -L/usr/local/lib/openmpi
 
 # additional C flags
-MYCFLAGS= -DWITH_MPI -g -fcolor-diagnostics -Weverything -Wno-unreachable-code -Wno-c11-extensions -Wno-vla -Wno-sign-conversion -Wno-padded -Wno-format-nonliteral -Wno-disabled-macro-expansion -Wno-cast-align -Wno-cast-qual -I/usr/local/include
+MYCFLAGS= -DWITH_MPI -g -fcolor-diagnostics -Weverything -Wno-unreachable-code -Wno-vla -Wno-sign-conversion -Wno-padded -Wno-format-nonliteral -Wno-disabled-macro-expansion -Wno-cast-align -Wno-cast-qual -I/usr/local/include
 
 # additional Fortran flags
 MYFFLAGS= -g
