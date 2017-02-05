@@ -57,7 +57,7 @@ int efp_skip_frag_pair(const struct efp *efp, size_t fr_i_idx, size_t fr_j_idx)
 }
 
 struct swf efp_make_swf(const struct efp *efp, const struct frag *fr_i,
-				const struct frag *fr_j)
+    const struct frag *fr_j)
 {
 	struct swf swf;
 
@@ -176,7 +176,7 @@ void efp_add_stress(const vec_t *dr, const vec_t *force, mat_t *stress)
 }
 
 void efp_add_force(six_t *grad, const vec_t *com, const vec_t *pt,
-		const vec_t *force, const vec_t *add)
+    const vec_t *force, const vec_t *add)
 {
 	vec_t dr = vec_sub(CVEC(pt->x), com);
 	vec_t torque = vec_cross(&dr, force);
@@ -192,7 +192,7 @@ void efp_add_force(six_t *grad, const vec_t *com, const vec_t *pt,
 }
 
 void efp_sub_force(six_t *grad, const vec_t *com, const vec_t *pt,
-		const vec_t *force, const vec_t *add)
+    const vec_t *force, const vec_t *add)
 {
 	vec_t dr = vec_sub(CVEC(pt->x), com);
 	vec_t torque = vec_cross(&dr, force);
@@ -207,7 +207,8 @@ void efp_sub_force(six_t *grad, const vec_t *com, const vec_t *pt,
 	six_atomic_sub_abc(grad, &torque);
 }
 
-void efp_move_pt(const vec_t *com, const mat_t *rotmat, const vec_t *pos_int, vec_t *out)
+void efp_move_pt(const vec_t *com, const mat_t *rotmat,
+    const vec_t *pos_int, vec_t *out)
 {
 	*out = mat_vec(rotmat, pos_int);
 	out->x += com->x;
