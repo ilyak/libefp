@@ -127,8 +127,10 @@ static char *xstrtostr(const char *str, const char **endptr)
 	if (*str == '"') {
 		ptr = ++str;
 
-		while (*ptr && *ptr != '"')
-			ptr++, cnt++;
+		while (*ptr && *ptr != '"') {
+			ptr++;
+			cnt++;
+		}
 
 		if (!*ptr)
 			return NULL;

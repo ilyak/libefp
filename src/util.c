@@ -137,9 +137,15 @@ void efp_points_to_matrix(const double *pts, mat_t *rotmat)
 	vec_normalize(&r13);
 	vec_normalize(&cross);
 
-	rotmat->xx = r12.x, rotmat->xy = r13.x, rotmat->xz = cross.x;
-	rotmat->yx = r12.y, rotmat->yy = r13.y, rotmat->yz = cross.y;
-	rotmat->zx = r12.z, rotmat->zy = r13.z, rotmat->zz = cross.z;
+	rotmat->xx = r12.x;
+	rotmat->yx = r12.y;
+	rotmat->zx = r12.z;
+	rotmat->xy = r13.x;
+	rotmat->yy = r13.y;
+	rotmat->zy = r13.z;
+	rotmat->xz = cross.x;
+	rotmat->yz = cross.y;
+	rotmat->zz = cross.z;
 }
 
 const struct frag *efp_find_lib(struct efp *efp, const char *name)
@@ -204,7 +210,9 @@ void efp_sub_force(six_t *grad, const vec_t *com, const vec_t *pt,
 void efp_move_pt(const vec_t *com, const mat_t *rotmat, const vec_t *pos_int, vec_t *out)
 {
 	*out = mat_vec(rotmat, pos_int);
-	out->x += com->x, out->y += com->y, out->z += com->z;
+	out->x += com->x;
+	out->y += com->y;
+	out->z += com->z;
 }
 
 void efp_rotate_t2(const mat_t *rotmat, const double *in, double *out)

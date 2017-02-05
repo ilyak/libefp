@@ -167,7 +167,9 @@ parse_coordinates(struct frag *frag, struct stream *stream)
 			frag->multipole_pts + frag->n_multipole_pts - 1;
 
 		memset(last_pt, 0, sizeof(*last_pt));
-		last_pt->x = atom.x, last_pt->y = atom.y, last_pt->z = atom.z;
+		last_pt->x = atom.x;
+		last_pt->y = atom.y;
+		last_pt->z = atom.z;
 
 		efp_stream_next_line(stream);
 	}

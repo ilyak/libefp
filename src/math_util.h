@@ -82,7 +82,9 @@ vec_set(vec_t *vec, size_t idx, double val)
 static inline void
 vec_negate(vec_t *vec)
 {
-	vec->x = -vec->x, vec->y = -vec->y, vec->z = -vec->z;
+	vec->x = -vec->x;
+	vec->y = -vec->y;
+	vec->z = -vec->z;
 }
 
 static inline void
@@ -375,7 +377,9 @@ matrix_to_euler(const mat_t *rotmat, double *ea, double *eb, double *ec)
 		c = atan2(rotmat->zx, rotmat->zy);
 	}
 
-	*ea = a, *eb = b, *ec = c;
+	*ea = a;
+	*eb = b;
+	*ec = c;
 }
 
 #endif /* LIBEFP_MATH_UTIL_H */
