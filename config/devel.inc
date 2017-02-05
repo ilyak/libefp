@@ -2,7 +2,7 @@
 CC= clang
 
 # Fortran compiler
-FC= egfortran
+FC= gfortran
 
 # install prefix
 PREFIX= /home/ilya/libefp
