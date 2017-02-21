@@ -11,7 +11,7 @@ cmake_minimum_required(VERSION 3.0)
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 ################################### Options ####################################
-include(Psi4Macros)
+include(psi4OptionsTools)
 option_with_default(CMAKE_BUILD_TYPE "Build type" Release)
 option_with_print(BUILD_SHARED_LIBS "Build final library as shared, not static" OFF)
 option_with_default(BUILD_FPIC "Libraries will be compiled with position independent code" ON)
@@ -24,14 +24,11 @@ option_with_flags(ENABLE_XHOST "Enable processor-specific optimization" ON
                   "-xHost" "-march=native")
 option_with_print(FRAGLIB_UNDERSCORE_L "Installed fragment library has names ending in _L. Psi4 wants OFF" ON)
 option_with_print(FRAGLIB_DEEP "Installed fragment libary has hierarchical, not flat, filestructure. Psi4 wants OFF" ON)
-# CODE_COVERAGE should be tested and probably propagated to external projects
-#option_with_flags(ENABLE_CODE_COVERAGE "Enables details on code coverage" OFF
-#                  "-ftest-coverage")
 
 ######################### Process & Validate Options ###########################
 include(autocmake_safeguards)
 include(autocmake_omp)
-include(autocmake_static_library)
+include(custom_static_library)
 
 find_package(TargetLAPACK REQUIRED)
 
@@ -110,14 +107,14 @@ target_include_directories(efp INTERFACE
 
 # <<<  Export Config  >>>
 
-    # explicit "share" not "DATADIR" for CMake search path
+# GNUInstallDirs "DATADIR" wrong here; CMake search path wants "share".
 set(CMAKECONFIG_INSTALL_DIR "share/cmake/${PN}")
 configure_package_config_file(cmake/${PN}Config.cmake.in
                               "${CMAKE_CURRENT_BINARY_DIR}/${PN}Config.cmake"
                               INSTALL_DESTINATION ${CMAKECONFIG_INSTALL_DIR})
 write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/${PN}ConfigVersion.cmake
                                  VERSION ${${PN}_VERSION}
-                                 COMPATIBILITY SameMajorVersion)
+                                 COMPATIBILITY AnyNewerVersion)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PN}Config.cmake
               ${CMAKE_CURRENT_BINARY_DIR}/${PN}ConfigVersion.cmake
         DESTINATION ${CMAKECONFIG_INSTALL_DIR})
@@ -126,9 +123,7 @@ install(EXPORT "${PN}Targets"
         DESTINATION ${CMAKECONFIG_INSTALL_DIR})
 
 # Notes on CMake: CMake builds libefp, the shared or static library,
-#   but not efpmd because math detection would add a whole lot of extra code,
-#   and Psi4 doesn't use it. Also not implemented is testing with CTest.
-#   Another implication of no MKL math detection is that when libefp is
+#   but not efpmd because Psi4 doesn't use it. Also not implemented
+#   is testing with CTest. Also, when libefp is
 #   compiled statically with OpenMP, will need to compile consuming
 #   application with OpenMP, too, or supply link library.
-
