@@ -469,7 +469,6 @@ efp_get_atomic_gradient(struct efp *efp, double *grad)
 
 	assert(efp);
 	assert(grad);
-
 	pgrad = (vec_t *)grad;
 	
 	if (!efp->do_gradient) {
