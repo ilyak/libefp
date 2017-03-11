@@ -863,22 +863,22 @@ enum efp_result efp_get_energy(struct efp *efp, struct efp_energy *energy);
 enum efp_result efp_get_gradient(struct efp *efp, double *grad);
 
 /**
- * Get computed EFP energy gradient.
+ * Get computed EFP energy gradient on individual atoms.
  *
  * \param[in] efp The efp structure.
  *
- * \param[out] grad For each atom fragments \a x \a y \a z components of negative
- * force will be written to this array. The size of this array must
- * be at least [3 * \a n] elements, where \a n is the total number of atoms ia all
- * fragments. Atom is a point inside fragment with non-zero mass.
- * Any gradients from that array at the begining will be gathered on the fragments  
- * and then redistributed back to atoms. Use this for other interactions than EFP
- * i.e. bonded forces from MM forcefield
+ * \param[out] grad For each atom, \a x \a y \a z components of negative force
+ * will be added to this array. The size of this array must be at least
+ * [3 * \a n] elements, where \a n is the total number of atoms from all
+ * fragments. An atom is a point with non-zero mass inside a fragment.
+ * Any initial gradient from this array will be gathered on fragments at the
+ * beginning and then redistributed back to the atoms. This can be used to
+ * account for other interactions, e.g., bonded forces from MM forcefield.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
 enum efp_result efp_get_atomic_gradient(struct efp *efp, double *grad);
-	
+
 /**
  * Get the number of fragments in this computation.
  *
