@@ -91,8 +91,8 @@ install(FILES fraglib/makefp.inp
 install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/fraglib
         DESTINATION ${CMAKE_INSTALL_DATADIR}/${PN})
 
-    # headers NOT namespace protected
-install(FILES ${src_prefix}/efp.h 
+# headers NOT namespace protected
+install(FILES ${src_prefix}/efp.h
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(TARGETS efp
         EXPORT "${PN}Targets"
