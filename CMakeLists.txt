@@ -1,4 +1,7 @@
-cmake_policy(SET CMP0048 NEW)  # project_VERSION* variables populated from project(... VERSION x.x.x) string
+cmake_minimum_required(VERSION 3.0)
+# project_VERSION* variables populated from project(... VERSION x.x.x) string
+cmake_policy(SET CMP0048 NEW)
+
 project(libefp
         VERSION 1.4.1
         LANGUAGES C)
@@ -7,7 +10,6 @@ set(libefp_DESCRIPTION  "Parallel implementation of the Effective Fragment Poten
 set(libefp_URL          "https://libefp.github.io/")
 set(libefp_LICENSE      "BSD 2-clause")
 
-cmake_minimum_required(VERSION 3.0)
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 ################################### Options ####################################
@@ -47,7 +49,7 @@ set(raw_sources_list ai_disp.c balance.c bvec.c clapack.c disp.c
 set(src_prefix "src/")
 string(REGEX REPLACE "([^;]+)" "${src_prefix}\\1" sources_list "${raw_sources_list}")
 
-    # STATIC/SHARED on below governed by BUILD_SHARED_LIBS
+# STATIC/SHARED on below governed by BUILD_SHARED_LIBS
 add_library(efp ${sources_list})
 set_target_properties(efp PROPERTIES POSITION_INDEPENDENT_CODE ${BUILD_FPIC}
                                      COMPILE_FLAGS "-std=c99")
