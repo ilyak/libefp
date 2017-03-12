@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2012-2015 Ilya Kaliman
+ * Copyright (c) 2012-2017 Ilya Kaliman
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -78,20 +78,22 @@ skip_label(struct stream *stream)
 static int
 tok_label(struct stream *stream, size_t size, char *val)
 {
+	const char *start, *end;
+
 	efp_stream_skip_space(stream);
 
 	if (efp_stream_eol(stream))
 		return 0;
 
-	const char *start = efp_stream_get_ptr(stream);
+	start = efp_stream_get_ptr(stream);
 	efp_stream_skip_nonspace(stream);
-	const char *end = efp_stream_get_ptr(stream);
+	end = efp_stream_get_ptr(stream);
 	memset(val, 0, size);
 
 	for (size_t i = 0; start < end && i < size - 1; i++)
 		*val++ = *start++;
 
-	return start == end;
+	return (start == end);
 }
 
 static int
@@ -158,13 +160,13 @@ parse_coordinates(struct frag *frag, struct stream *stream)
 
 		frag->n_multipole_pts++;
 		frag->multipole_pts = (struct multipole_pt *)realloc(
-			frag->multipole_pts,
-			frag->n_multipole_pts * sizeof(struct multipole_pt));
+		    frag->multipole_pts,
+		    frag->n_multipole_pts * sizeof(struct multipole_pt));
 		if (!frag->multipole_pts)
 			return EFP_RESULT_NO_MEMORY;
 
 		struct multipole_pt *last_pt =
-			frag->multipole_pts + frag->n_multipole_pts - 1;
+		    frag->multipole_pts + frag->n_multipole_pts - 1;
 
 		memset(last_pt, 0, sizeof(*last_pt));
 		last_pt->x = atom.x;
@@ -286,14 +288,14 @@ parse_polarizable_pts(struct frag *frag, struct stream *stream)
 
 		frag->n_polarizable_pts++;
 		frag->polarizable_pts = (struct polarizable_pt *)realloc(
-			frag->polarizable_pts,
-			frag->n_polarizable_pts * sizeof(struct polarizable_pt));
+		    frag->polarizable_pts,
+		    frag->n_polarizable_pts * sizeof(struct polarizable_pt));
 
 		if (!frag->polarizable_pts)
 			return EFP_RESULT_NO_MEMORY;
 
 		struct polarizable_pt *pt =
-			frag->polarizable_pts + frag->n_polarizable_pts - 1;
+		    frag->polarizable_pts + frag->n_polarizable_pts - 1;
 
 		if (!efp_stream_advance(stream, 4))
 			return EFP_RESULT_SYNTAX_ERROR;
@@ -338,16 +340,16 @@ parse_dynamic_polarizable_pts(struct frag *frag, struct stream *stream)
 
 		size_t size = sizeof(struct dynamic_polarizable_pt);
 		frag->dynamic_polarizable_pts =
-			(struct dynamic_polarizable_pt *)realloc(
-			frag->dynamic_polarizable_pts,
-			frag->n_dynamic_polarizable_pts * size);
+		    (struct dynamic_polarizable_pt *)realloc(
+		    frag->dynamic_polarizable_pts,
+		    frag->n_dynamic_polarizable_pts * size);
 
 		if (!frag->dynamic_polarizable_pts)
 			return EFP_RESULT_NO_MEMORY;
 
 		struct dynamic_polarizable_pt *pt =
-			frag->dynamic_polarizable_pts +
-			frag->n_dynamic_polarizable_pts - 1;
+		    frag->dynamic_polarizable_pts +
+		    frag->n_dynamic_polarizable_pts - 1;
 
 		if (!efp_stream_advance(stream, 5))
 			return EFP_RESULT_SYNTAX_ERROR;
@@ -388,7 +390,7 @@ parse_dynamic_polarizable_pts(struct frag *frag, struct stream *stream)
 	for (size_t w = 1; w < 12; w++) {
 		for (size_t i = 0; i < frag->n_dynamic_polarizable_pts; i++) {
 			struct dynamic_polarizable_pt *pt =
-				frag->dynamic_polarizable_pts + i;
+			    frag->dynamic_polarizable_pts + i;
 
 			if (!efp_stream_advance(stream, 5))
 				return EFP_RESULT_SYNTAX_ERROR;
@@ -438,7 +440,7 @@ parse_projection_basis(struct frag *frag, struct stream *stream)
 
 		frag->n_xr_atoms++;
 		frag->xr_atoms = (struct xr_atom *)realloc(frag->xr_atoms,
-			frag->n_xr_atoms * sizeof(struct xr_atom));
+		    frag->n_xr_atoms * sizeof(struct xr_atom));
 
 		struct xr_atom *atom = frag->xr_atoms + frag->n_xr_atoms - 1;
 		memset(atom, 0, sizeof(*atom));
@@ -463,7 +465,7 @@ shell:
 
 		atom->n_shells++;
 		atom->shells = (struct shell *)realloc(atom->shells,
-			atom->n_shells * sizeof(struct shell));
+		    atom->n_shells * sizeof(struct shell));
 
 		struct shell *shell = atom->shells + atom->n_shells - 1;
 		shell->type = efp_stream_get_char(stream);
@@ -520,8 +522,8 @@ parse_projection_wf(struct frag *frag, struct stream *stream)
 	    !tok_uint(stream, &frag->xr_wf_size))
 		return EFP_RESULT_SYNTAX_ERROR;
 
-	frag->xr_wf = (double *)malloc(frag->n_lmo *
-		frag->xr_wf_size * sizeof(double));
+	frag->xr_wf = (double *)malloc(
+	    frag->n_lmo * frag->xr_wf_size * sizeof(double));
 	if (!frag->xr_wf)
 		return EFP_RESULT_NO_MEMORY;
 
@@ -663,9 +665,8 @@ skip_ctvec(struct frag *frag, struct stream *stream)
 	efp_stream_next_line(stream);
 
 	for (size_t j = 0; j < wf_size; j++) {
-		for (size_t i = 0; i <= (frag->xr_wf_size - 1) / 5; i++) {
+		for (size_t i = 0; i <= (frag->xr_wf_size - 1) / 5; i++)
 			efp_stream_next_line(stream);
-		}
 	}
 
 	return (EFP_RESULT_SUCCESS);
@@ -747,11 +748,11 @@ parse_xrfit(struct frag *frag, struct stream *stream)
 	for (size_t i = 0; i < frag->n_lmo; i++) {
 		for (int k = 0; k < 4; k++) {
 			if (!tok_double(stream, frag->xrfit + 4 * i + k)) {
-				efp_log("four parameters expected for each LMO in XRFIT group");
+				efp_log(
+"four parameters are expected for each LMO in XRFIT group");
 				return (EFP_RESULT_SYNTAX_ERROR);
 			}
 		}
-
 		efp_stream_next_line(stream);
 	}
 
@@ -765,7 +766,8 @@ static enum efp_result
 parse_polab(struct frag *frag, struct stream *stream)
 {
 	if (!tok_double(stream, &frag->pol_damp)) {
-		efp_log("error parsing fragment polarization damping parameter");
+		efp_log(
+"error parsing fragment polarization damping parameter");
 		return (EFP_RESULT_SYNTAX_ERROR);
 	}
 
@@ -804,7 +806,7 @@ get_parse_fn(struct stream *stream)
 		{ "CTFOK",                      skip_ctfok                    },
 		{ "SCREEN",                     parse_screen                  },
 		{ "XRFIT",                      parse_xrfit                   },
-		{ "POLAB",                      parse_polab                   }
+		{ "POLAB",                      parse_polab                   },
 	};
 
 	for (size_t i = 0; i < ARRAY_SIZE(funcs); i++)
