@@ -362,14 +362,16 @@ static int
 do_xr(const struct efp_opts *opts)
 {
 	int xr = (opts->terms & EFP_TERM_XR);
-	int cp = (opts->terms & EFP_TERM_ELEC) && (opts->elec_damp == EFP_ELEC_DAMP_OVERLAP);
-	int dd = (opts->terms & EFP_TERM_DISP) && (opts->disp_damp == EFP_DISP_DAMP_OVERLAP);
-
+	int cp = (opts->terms & EFP_TERM_ELEC) &&
+		 (opts->elec_damp == EFP_ELEC_DAMP_OVERLAP);
+	int dd = (opts->terms & EFP_TERM_DISP) &&
+		 (opts->disp_damp == EFP_DISP_DAMP_OVERLAP);
 	return (xr || cp || dd);
 }
 
 static void
-compute_two_body_range(struct efp *efp, size_t frag_from, size_t frag_to, void *data)
+compute_two_body_range(struct efp *efp, size_t frag_from, size_t frag_to,
+    void *data)
 {
 	double e_elec = 0.0, e_disp = 0.0, e_xr = 0.0, e_cp = 0.0;
 
@@ -715,7 +717,7 @@ efp_set_point_charge_values(struct efp *efp, const double *ptc)
 
 EFP_EXPORT enum efp_result
 efp_set_coordinates(struct efp *efp, enum efp_coord_type coord_type,
-			const double *coord)
+    const double *coord)
 {
 	assert(efp);
 	assert(coord);
@@ -744,7 +746,7 @@ efp_set_coordinates(struct efp *efp, enum efp_coord_type coord_type,
 
 EFP_EXPORT enum efp_result
 efp_set_frag_coordinates(struct efp *efp, size_t frag_idx,
-		enum efp_coord_type coord_type, const double *coord)
+    enum efp_coord_type coord_type, const double *coord)
 {
 	struct frag *frag;
 
@@ -896,7 +898,7 @@ efp_prepare(struct efp *efp)
 
 EFP_EXPORT enum efp_result
 efp_set_orbital_energies(struct efp *efp, size_t n_core, size_t n_act,
-				size_t n_vir, const double *oe)
+    size_t n_vir, const double *oe)
 {
 	size_t size;
 
@@ -909,7 +911,8 @@ efp_set_orbital_energies(struct efp *efp, size_t n_core, size_t n_act,
 
 	size = (n_core + n_act + n_vir) * sizeof(double);
 
-	efp->ai_orbital_energies = (double *)realloc(efp->ai_orbital_energies, size);
+	efp->ai_orbital_energies = (double *)realloc(efp->ai_orbital_energies,
+	    size);
 	memcpy(efp->ai_orbital_energies, oe, size);
 
 	return (EFP_RESULT_SUCCESS);
@@ -917,7 +920,7 @@ efp_set_orbital_energies(struct efp *efp, size_t n_core, size_t n_act,
 
 EFP_EXPORT enum efp_result
 efp_set_dipole_integrals(struct efp *efp, size_t n_core, size_t n_act,
-				size_t n_vir, const double *dipint)
+    size_t n_vir, const double *dipint)
 {
 	size_t size;
 
@@ -928,10 +931,10 @@ efp_set_dipole_integrals(struct efp *efp, size_t n_core, size_t n_act,
 	efp->n_ai_act = n_act;
 	efp->n_ai_vir = n_vir;
 
-	size = 3 * (n_core + n_act + n_vir) * (n_core + n_act + n_vir) * sizeof(double);
-
-	efp->ai_dipole_integrals = (double *)realloc(efp->ai_dipole_integrals, size);
-	memcpy(efp->ai_dipole_integrals, dipint, size);
+	size = 3 * (n_core + n_act + n_vir) * (n_core + n_act + n_vir);
+	efp->ai_dipole_integrals = (double *)realloc(efp->ai_dipole_integrals,
+	    size * sizeof(double));
+	memcpy(efp->ai_dipole_integrals, dipint, size * sizeof(double));
 
 	return (EFP_RESULT_SUCCESS);
 }
@@ -1396,7 +1399,8 @@ efp_get_frag_count(struct efp *efp, size_t *n_frag)
 }
 
 EFP_EXPORT enum efp_result
-efp_get_frag_name(struct efp *efp, size_t frag_idx, size_t size, char *frag_name)
+efp_get_frag_name(struct efp *efp, size_t frag_idx, size_t size,
+    char *frag_name)
 {
 	assert(efp);
 	assert(frag_name);
@@ -1440,9 +1444,9 @@ efp_get_frag_inertia(struct efp *efp, size_t frag_idx, double *inertia_out)
 	for (size_t i = 0; i < frag->n_atoms; i++) {
 		const struct efp_atom *atom = frag->atoms + i;
 
-		inertia.x += atom->mass * (atom->y * atom->y + atom->z * atom->z);
-		inertia.y += atom->mass * (atom->x * atom->x + atom->z * atom->z);
-		inertia.z += atom->mass * (atom->x * atom->x + atom->y * atom->y);
+		inertia.x += atom->mass * (atom->y*atom->y + atom->z*atom->z);
+		inertia.y += atom->mass * (atom->x*atom->x + atom->z*atom->z);
+		inertia.z += atom->mass * (atom->x*atom->x + atom->y*atom->y);
 	}
 
 	inertia_out[0] = inertia.x;
@@ -1465,7 +1469,8 @@ efp_get_frag_atom_count(struct efp *efp, size_t frag_idx, size_t *n_atoms)
 }
 
 EFP_EXPORT enum efp_result
-efp_get_frag_atoms(struct efp *efp, size_t frag_idx, size_t size, struct efp_atom *atoms)
+efp_get_frag_atoms(struct efp *efp, size_t frag_idx, size_t size,
+    struct efp_atom *atoms)
 {
 	assert(efp);
 	assert(atoms);
@@ -1480,7 +1485,8 @@ efp_get_frag_atoms(struct efp *efp, size_t frag_idx, size_t size, struct efp_ato
 }
 
 EFP_EXPORT void
-efp_torque_to_derivative(const double *euler, const double *torque, double *deriv)
+efp_torque_to_derivative(const double *euler, const double *torque,
+    double *deriv)
 {
 	assert(euler);
 	assert(torque);
