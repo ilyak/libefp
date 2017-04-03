@@ -475,7 +475,8 @@ efp_get_atomic_gradient(struct efp *efp, double *grad)
 	pgrad = (vec_t *)grad;
 
 	/* Copy computed efp->grad */
-	efpgrad = (six_t *)malloc(efp->n_frag * sizeof(*efpgrad));
+	if ((efpgrad = (six_t *)malloc(efp->n_frag * sizeof(*efpgrad))) == NULL)
+		return EFP_RESULT_NO_MEMORY;
 	memcpy(efpgrad, efp->grad, efp->n_frag * sizeof(*efpgrad));
 
 	/* Calculate maximum size of a fragment */
@@ -486,9 +487,12 @@ efp_get_atomic_gradient(struct efp *efp, double *grad)
 	}
 
 	/* Create and initialize some arrays for work */
-	r = (vec_t *)malloc(maxa * sizeof(*r));
-	m = (double *)malloc(maxa * sizeof(*m));
-	Ia = (double *)malloc(maxa * sizeof(*Ia));
+	if ((r = (vec_t *)malloc(maxa * sizeof(*r))) == NULL)
+		return EFP_RESULT_NO_MEMORY;
+	if ((m = (double *)malloc(maxa * sizeof(*m))) == NULL)
+		return EFP_RESULT_NO_MEMORY;
+	if ((Ia = (double *)malloc(maxa * sizeof(*Ia))) == NULL)
+		return EFP_RESULT_NO_MEMORY;
 
 	/* Main cycle (iterate fragments, distribute forces and torques) */
 	for (k = 0, j = 0; j < efp->n_frag; j++) {
