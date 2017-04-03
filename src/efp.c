@@ -1505,7 +1505,7 @@ efp_banner(void)
 {
 	static const char banner[] =
 		"LIBEFP ver. " LIBEFP_VERSION_STRING "\n"
-		"Copyright (c) 2012-2016 Ilya Kaliman\n"
+		"Copyright (c) 2012-2017 Ilya Kaliman\n"
 		"\n"
 		"Journal References:\n"
 		"  - Kaliman and Slipchenko, JCC 2013.\n"
