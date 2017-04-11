@@ -452,20 +452,21 @@ efp_get_gradient(struct efp *efp, double *grad)
 EFP_EXPORT enum efp_result
 efp_get_atomic_gradient(struct efp *efp, double *grad)
 {
-	six_t *efpgrad; /* Calculated EFP gradient */
+	six_t *efpgrad = NULL; /* Calculated EFP gradient */
 	vec_t *pgrad; /* Conversion of grad to vec_t type */
 	size_t i, j, k, l;
 	size_t nr; /* Number of atoms in the current fragment */
 	size_t maxa; /* Maximum number of size of m, Ia, r arrays */
-	vec_t *r; /* Radius-vector of each atom inside current fragment with
-		     respect to CoM of that fragment */
-	double M, *m; /* Total Mass of fragments and of individual atoms */
-	double I, *Ia; /* Inertia along axis and contribution of each
-			  individual atom */
+	vec_t *r = NULL; /* Radius-vector of each atom inside current fragment
+			    with respect to CoM of that fragment */
+	double M, *m = NULL; /* Total Mass of fragments and individual atoms */
+	double I, *Ia = NULL; /* Inertia along axis and contribution of each
+				 individual atom */
 	mat_t Id; /* Total inertia tensor of fragment */
 	vec_t V, G; /* Principal axis and Inertia along that axis */
 	vec_t rbuf, rbuf2, tq, ri, rt;
 	double dist, sina, ft, norm;
+	enum efp_result res;
 
 	assert(efp);
 	assert(grad);
@@ -476,11 +477,6 @@ efp_get_atomic_gradient(struct efp *efp, double *grad)
 	}
 	pgrad = (vec_t *)grad;
 
-	/* Copy computed efp->grad */
-	if ((efpgrad = (six_t *)malloc(efp->n_frag * sizeof(*efpgrad))) == NULL)
-		return EFP_RESULT_NO_MEMORY;
-	memcpy(efpgrad, efp->grad, efp->n_frag * sizeof(*efpgrad));
-
 	/* Calculate maximum size of a fragment */
 	maxa = 0;
 	for (j = 0; j < efp->n_frag; j++) {
@@ -488,13 +484,19 @@ efp_get_atomic_gradient(struct efp *efp, double *grad)
 			maxa = efp->frags[j].n_atoms;
 	}
 
+	res = EFP_RESULT_NO_MEMORY;
 	/* Create and initialize some arrays for work */
 	if ((r = (vec_t *)malloc(maxa * sizeof(*r))) == NULL)
-		return EFP_RESULT_NO_MEMORY;
+		goto error;
 	if ((m = (double *)malloc(maxa * sizeof(*m))) == NULL)
-		return EFP_RESULT_NO_MEMORY;
+		goto error;
 	if ((Ia = (double *)malloc(maxa * sizeof(*Ia))) == NULL)
-		return EFP_RESULT_NO_MEMORY;
+		goto error;
+
+	/* Copy computed efp->grad */
+	if ((efpgrad = (six_t *)malloc(efp->n_frag * sizeof(*efpgrad))) == NULL)
+		goto error;
+	memcpy(efpgrad, efp->grad, efp->n_frag * sizeof(*efpgrad));
 
 	/* Main cycle (iterate fragments, distribute forces and torques) */
 	for (k = 0, j = 0; j < efp->n_frag; j++) {
@@ -529,11 +531,8 @@ efp_get_atomic_gradient(struct efp *efp, double *grad)
 		/* Try to diagonalize Id and get principal axis */
 		if (efp_dsyev('V', 'U', 3, (double *)&Id, 3, (double *)&G)) {
 			efp_log("inertia tensor diagonalization failed");
-			free(r);
-			free(m);
-			free(Ia);
-			free(efpgrad);
-			return (EFP_RESULT_FATAL);
+			res = EFP_RESULT_FATAL;
+			goto error;
 		}
 
 		/* Add any additional forces from grad array to efpgrad array */
@@ -585,7 +584,6 @@ efp_get_atomic_gradient(struct efp *efp, double *grad)
 				if (eq(Ia[i], 0.0))
 					continue;
 				/* If atom is not on the current axis */
-				/* XXX make this more efficient */
 				rbuf = tq;
 				vec_scale(&rbuf, Ia[i]/I);
 				ft = vec_len(&rbuf);
@@ -604,12 +602,13 @@ efp_get_atomic_gradient(struct efp *efp, double *grad)
 		}
 		k += nr;
 	}
-
+	res = EFP_RESULT_SUCCESS;
+error:
 	free(r);
 	free(m);
 	free(Ia);
 	free(efpgrad);
-	return (EFP_RESULT_SUCCESS);
+	return (res);
 }
 
 EFP_EXPORT enum efp_result
@@ -888,10 +887,9 @@ efp_prepare(struct efp *efp)
 	efp->indip = (vec_t *)calloc(efp->n_polarizable_pts, sizeof(vec_t));
 	efp->indipconj = (vec_t *)calloc(efp->n_polarizable_pts, sizeof(vec_t));
 	efp->grad = (six_t *)calloc(efp->n_frag, sizeof(six_t));
-
-	if ((efp->skiplist = efp_bvec_create(efp->n_frag * efp->n_frag)) == NULL)
+	efp->skiplist = efp_bvec_create(efp->n_frag * efp->n_frag);
+	if (efp->skiplist == NULL)
 		return (EFP_RESULT_NO_MEMORY);
-
 	return (EFP_RESULT_SUCCESS);
 }
 

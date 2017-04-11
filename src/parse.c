@@ -703,19 +703,21 @@ parse_screen(struct frag *frag, struct stream *stream)
 	for (size_t i = 0; i < frag->n_multipole_pts; i++) {
 		if (!skip_label(stream) ||
 		    !tok_double(stream, NULL) ||
-		    !tok_double(stream, scr + i))
+		    !tok_double(stream, scr + i)) {
+			free(scr);
 			return (EFP_RESULT_SYNTAX_ERROR);
-
+		}
 		efp_stream_next_line(stream);
 	}
 
-	if (!tok_stop(stream))
+	if (!tok_stop(stream)) {
+		free(scr);
 		return (EFP_RESULT_SYNTAX_ERROR);
+	}
 
 	if (type == '\0' || isspace(type)) {
 		if (frag->ai_screen_params)
 			free(frag->ai_screen_params);
-
 		frag->ai_screen_params = scr;
 		return (EFP_RESULT_SUCCESS);
 	}
@@ -723,14 +725,12 @@ parse_screen(struct frag *frag, struct stream *stream)
 	if (type == '2') {
 		if (frag->screen_params)
 			free(frag->screen_params);
-
 		frag->screen_params = scr;
 		return (EFP_RESULT_SUCCESS);
 	}
 
 	efp_log("unsupported screen group in EFP data file");
 	free(scr);
-
 	return (EFP_RESULT_SUCCESS);
 }
 
