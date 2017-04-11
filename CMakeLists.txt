@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.0)
 cmake_policy(SET CMP0048 NEW)
 
 project(libefp
-        VERSION 1.4.1
+        VERSION 1.4.2
         LANGUAGES C)
 set(libefp_AUTHORS      "Ilya A. Kaliman")
 set(libefp_DESCRIPTION  "Parallel implementation of the Effective Fragment Potential (EFP) method")
