@@ -503,7 +503,6 @@ efp_get_atomic_gradient(struct efp *efp, double *grad)
 		memset(m, 0, maxa * sizeof(*m));
 		memset(Ia, 0, maxa * sizeof(*Ia));
 		M = 0.0;
-		I = 0.0;
 		Id = mat_zero;
 		V = vec_zero;
 		G = vec_zero;
