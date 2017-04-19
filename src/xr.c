@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2012-2015 Ilya Kaliman
+ * Copyright (c) 2012-2017 Ilya Kaliman
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -35,26 +35,26 @@
 static inline size_t
 fock_idx(size_t i, size_t j)
 {
-	return i < j ?
-		j * (j + 1) / 2 + i :
-		i * (i + 1) / 2 + j;
+	return i < j ? (j * (j + 1) / 2 + i) : (i * (i + 1) / 2 + j);
 }
 
 static double
 charge_penetration_energy(double s_ij, double r_ij)
 {
+	double ln_s;
+
 	if (fabs(s_ij) < INTEGRAL_THRESHOLD)
 		return 0.0;
 
-	double ln_s = log(fabs(s_ij));
+	ln_s = log(fabs(s_ij));
 
 	return -s_ij * s_ij / r_ij / sqrt(-2.0 * ln_s);
 }
 
 static void
 charge_penetration_grad(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
-			size_t lmo_i_idx, size_t lmo_j_idx, double s_ij,
-			const six_t ds_ij, const struct swf *swf)
+    size_t lmo_i_idx, size_t lmo_j_idx, double s_ij, const six_t ds_ij,
+    const struct swf *swf)
 {
 	if (fabs(s_ij) < INTEGRAL_THRESHOLD)
 		return;
@@ -83,12 +83,12 @@ charge_penetration_grad(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
 	force.y = (t2 * ds_ij.y - t1 * dr.y) * swf->swf;
 	force.z = (t2 * ds_ij.z - t1 * dr.z) * swf->swf;
 
-	torque_i.x = swf->swf * (-t2 * ds_ij.a + t1 * (dr.y * (ct_i->z - fr_i->z) -
-					dr.z * (ct_i->y - fr_i->y)));
-	torque_i.y = swf->swf * (-t2 * ds_ij.b + t1 * (dr.z * (ct_i->x - fr_i->x) -
-					dr.x * (ct_i->z - fr_i->z)));
-	torque_i.z = swf->swf * (-t2 * ds_ij.c + t1 * (dr.x * (ct_i->y - fr_i->y) -
-					dr.y * (ct_i->x - fr_i->x)));
+	torque_i.x = swf->swf * (-t2 * ds_ij.a +
+	    t1 * (dr.y * (ct_i->z - fr_i->z) - dr.z * (ct_i->y - fr_i->y)));
+	torque_i.y = swf->swf * (-t2 * ds_ij.b +
+	    t1 * (dr.z * (ct_i->x - fr_i->x) - dr.x * (ct_i->z - fr_i->z)));
+	torque_i.z = swf->swf * (-t2 * ds_ij.c +
+	    t1 * (dr.x * (ct_i->y - fr_i->y) - dr.y * (ct_i->x - fr_i->x)));
 
 	torque_j.x = torque_i.x + force.y * (fr_j->z - fr_i->z - swf->cell.z) -
 				  force.z * (fr_j->y - fr_i->y - swf->cell.y);
@@ -106,24 +106,23 @@ charge_penetration_grad(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
 }
 
 static void
-transform_integrals(size_t n_lmo_i, size_t n_lmo_j,
-		    size_t wf_size_i, size_t wf_size_j,
-		    double *wf_i, double *wf_j,
-		    double *s, double *lmo_s)
+transform_integrals(size_t n_lmo_i, size_t n_lmo_j, size_t wf_size_i,
+    size_t wf_size_j, double *wf_i, double *wf_j, double *s, double *lmo_s)
 {
 	double tmp[n_lmo_i * wf_size_j];
 
-	efp_dgemm('N', 'N', (int)wf_size_j, (int)n_lmo_i, (int)wf_size_i, 1.0,
-		s, (int)wf_size_j, wf_i, (int)wf_size_i, 0.0, tmp, (int)wf_size_j);
-	efp_dgemm('T', 'N', (int)n_lmo_j, (int)n_lmo_i, (int)wf_size_j, 1.0,
-		wf_j, (int)wf_size_j, tmp, (int)wf_size_j, 0.0, lmo_s, (int)n_lmo_j);
+	efp_dgemm('N', 'N', (int)wf_size_j, (int)n_lmo_i, (int)wf_size_i,
+	    1.0, s, (int)wf_size_j, wf_i, (int)wf_size_i, 0.0, tmp,
+	    (int)wf_size_j);
+	efp_dgemm('T', 'N', (int)n_lmo_j, (int)n_lmo_i, (int)wf_size_j,
+	    1.0, wf_j, (int)wf_size_j, tmp, (int)wf_size_j, 0.0, lmo_s,
+	    (int)n_lmo_j);
 }
 
 static void
-transform_integral_derivatives(size_t n_lmo_i, size_t n_lmo_j,
-			       size_t wf_size_i, size_t wf_size_j,
-			       const double *wf_i, const double *wf_j,
-			       const six_t *ds, six_t *lmo_ds)
+transform_integral_derivatives(size_t n_lmo_i, size_t n_lmo_j, size_t wf_size_i,
+    size_t wf_size_j, const double *wf_i, const double *wf_j, const six_t *ds,
+    six_t *lmo_ds)
 {
 	six_t tmp[n_lmo_i * wf_size_j];
 	const six_t *p_ds;
@@ -132,46 +131,42 @@ transform_integral_derivatives(size_t n_lmo_i, size_t n_lmo_j,
 	p_tmp = tmp;
 
 	for (size_t i = 0; i < n_lmo_i; i++) {
-		for (size_t j = 0; j < wf_size_j; j++, p_tmp++) {
-			six_t sum = six_zero;
-			p_ds = ds + j;
+	for (size_t j = 0; j < wf_size_j; j++, p_tmp++) {
+		six_t sum = six_zero;
+		p_ds = ds + j;
 
-			for (size_t k = 0; k < wf_size_i; k++, p_ds += wf_size_j) {
-				double w = wf_i[wf_size_i * i + k];
+		for (size_t k = 0; k < wf_size_i; k++, p_ds += wf_size_j) {
+			double w = wf_i[wf_size_i * i + k];
 
-				sum.x += p_ds->x * w;
-				sum.y += p_ds->y * w;
-				sum.z += p_ds->z * w;
-				sum.a += p_ds->a * w;
-				sum.b += p_ds->b * w;
-				sum.c += p_ds->c * w;
-			}
-
-			*p_tmp = sum;
+			sum.x += p_ds->x * w;
+			sum.y += p_ds->y * w;
+			sum.z += p_ds->z * w;
+			sum.a += p_ds->a * w;
+			sum.b += p_ds->b * w;
+			sum.c += p_ds->c * w;
 		}
-	}
+		*p_tmp = sum;
+	} }
 
 	p_lmo_ds = lmo_ds;
 
 	for (size_t i = 0; i < n_lmo_i; i++) {
-		for (size_t j = 0; j < n_lmo_j; j++, p_lmo_ds++) {
-			six_t sum = six_zero;
-			p_tmp = tmp + i * wf_size_j;
+	for (size_t j = 0; j < n_lmo_j; j++, p_lmo_ds++) {
+		six_t sum = six_zero;
+		p_tmp = tmp + i * wf_size_j;
 
-			for (size_t k = 0; k < wf_size_j; k++, p_tmp++) {
-				double w = wf_j[wf_size_j * j + k];
+		for (size_t k = 0; k < wf_size_j; k++, p_tmp++) {
+			double w = wf_j[wf_size_j * j + k];
 
-				sum.x += p_tmp->x * w;
-				sum.y += p_tmp->y * w;
-				sum.z += p_tmp->z * w;
-				sum.a += p_tmp->a * w;
-				sum.b += p_tmp->b * w;
-				sum.c += p_tmp->c * w;
-			}
-
-			*p_lmo_ds = sum;
+			sum.x += p_tmp->x * w;
+			sum.y += p_tmp->y * w;
+			sum.z += p_tmp->z * w;
+			sum.a += p_tmp->a * w;
+			sum.b += p_tmp->b * w;
+			sum.c += p_tmp->c * w;
 		}
-	}
+		*p_lmo_ds = sum;
+	} }
 }
 
 static void
@@ -195,8 +190,8 @@ add_six_vec(size_t el, size_t size, const double *vec, six_t *six)
  */
 static void
 lmo_lmo_xr_grad(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
-		size_t i, size_t j, const double *lmo_s, const double *lmo_t,
-		const six_t *lmo_ds, const six_t *lmo_dt, const struct swf *swf)
+    size_t i, size_t j, const double *lmo_s, const double *lmo_t,
+    const six_t *lmo_ds, const six_t *lmo_dt, const struct swf *swf)
 {
 	const struct frag *fr_i = efp->frags + fr_i_idx;
 	const struct frag *fr_j = efp->frags + fr_j_idx;
@@ -226,7 +221,8 @@ lmo_lmo_xr_grad(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
 	if (fabs(s_ij) > INTEGRAL_THRESHOLD) {
 		double ln_s = log(fabs(s_ij));
 
-		t1 = s_ij / r_ij * (-sqrt(-2.0 / PI / ln_s) + 4.0 * sqrt(-2.0 / PI * ln_s));
+		t1 = s_ij / r_ij * (-sqrt(-2.0 / PI / ln_s) +
+		    4.0 * sqrt(-2.0 / PI * ln_s));
 		t2 = 2.0 * sqrt(-2.0 / PI * ln_s) * s_ij * s_ij / r_ij3;
 
 		force.x += -t1 * ds_ij.x - t2 * dr.x;
@@ -393,19 +389,19 @@ lmo_lmo_xr_grad(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
 
 	t1 = 2.0 * s_ij * (vib + vja - 1.0 / r_ij);
 
-	force.x += t1 * ds_ij.x + s_ij * s_ij * (dvib.x + dvja.x - dr.x / r_ij3);
-	force.y += t1 * ds_ij.y + s_ij * s_ij * (dvib.y + dvja.y - dr.y / r_ij3);
-	force.z += t1 * ds_ij.z + s_ij * s_ij * (dvib.z + dvja.z - dr.z / r_ij3);
+	force.x += t1 * ds_ij.x +
+	    s_ij * s_ij * (dvib.x + dvja.x - dr.x / r_ij3);
+	force.y += t1 * ds_ij.y +
+	    s_ij * s_ij * (dvib.y + dvja.y - dr.y / r_ij3);
+	force.z += t1 * ds_ij.z +
+	    s_ij * s_ij * (dvib.z + dvja.z - dr.z / r_ij3);
 
 	torque_i.x += -t1 * ds_ij.a - s_ij * s_ij * (dvib.a + dvja.a -
-			(dr.y * (ct_i->z - fr_i->z) -
-			 dr.z * (ct_i->y - fr_i->y)) / r_ij3);
+	    (dr.y * (ct_i->z - fr_i->z) - dr.z * (ct_i->y - fr_i->y)) / r_ij3);
 	torque_i.y += -t1 * ds_ij.b - s_ij * s_ij * (dvib.b + dvja.b -
-			(dr.z * (ct_i->x - fr_i->x) -
-			 dr.x * (ct_i->z - fr_i->z)) / r_ij3);
+	    (dr.z * (ct_i->x - fr_i->x) - dr.x * (ct_i->z - fr_i->z)) / r_ij3);
 	torque_i.z += -t1 * ds_ij.c - s_ij * s_ij * (dvib.c + dvja.c -
-			(dr.x * (ct_i->y - fr_i->y) -
-			 dr.y * (ct_i->x - fr_i->x)) / r_ij3);
+	    (dr.x * (ct_i->y - fr_i->y) - dr.y * (ct_i->x - fr_i->x)) / r_ij3);
 
 	force.x *= 2.0 * swf->swf;
 	force.y *= 2.0 * swf->swf;
@@ -417,11 +413,11 @@ lmo_lmo_xr_grad(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
 
 	vec_t torque_j = {
 		torque_i.x + force.y * (fr_j->z - fr_i->z - swf->cell.z) -
-			force.z * (fr_j->y - fr_i->y - swf->cell.y),
+		    force.z * (fr_j->y - fr_i->y - swf->cell.y),
 		torque_i.y + force.z * (fr_j->x - fr_i->x - swf->cell.x) -
-			force.x * (fr_j->z - fr_i->z - swf->cell.z),
+		    force.x * (fr_j->z - fr_i->z - swf->cell.z),
 		torque_i.z + force.x * (fr_j->y - fr_i->y - swf->cell.y) -
-			force.y * (fr_j->x - fr_i->x - swf->cell.x)
+		    force.y * (fr_j->x - fr_i->x - swf->cell.x)
 	};
 
 	six_atomic_add_xyz(efp->grad + fr_i_idx, &force);
@@ -434,7 +430,7 @@ lmo_lmo_xr_grad(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
 
 static double
 lmo_lmo_xr_energy(struct frag *fr_i, struct frag *fr_j, size_t i, size_t j,
-		  const double *lmo_s, const double *lmo_t, const struct swf *swf)
+    const double *lmo_s, const double *lmo_t, const struct swf *swf)
 {
 	double s_ij = lmo_s[i * fr_j->n_lmo + j];
 	double t_ij = lmo_t[i * fr_j->n_lmo + j];
@@ -452,17 +448,19 @@ lmo_lmo_xr_energy(struct frag *fr_i, struct frag *fr_j, size_t i, size_t j,
 	double exr = 0.0;
 
 	/* xr - first part */
-	if (fabs(s_ij) > INTEGRAL_THRESHOLD)
-		exr += -2.0 * sqrt(-2.0 * log(fabs(s_ij)) / PI) * s_ij * s_ij / r_ij;
+	if (fabs(s_ij) > INTEGRAL_THRESHOLD) {
+		exr += -2.0 * sqrt(-2.0 * log(fabs(s_ij)) / PI) *
+		    s_ij * s_ij / r_ij;
+	}
 
 	/* xr - second part */
 	for (size_t k = 0; k < fr_i->n_lmo; k++) {
 		exr -= s_ij * lmo_s[k * fr_j->n_lmo + j] *
-				fr_i->xr_fock_mat[fock_idx(i, k)];
+		    fr_i->xr_fock_mat[fock_idx(i, k)];
 	}
 	for (size_t l = 0; l < fr_j->n_lmo; l++) {
 		exr -= s_ij * lmo_s[i * fr_j->n_lmo + l] *
-				fr_j->xr_fock_mat[fock_idx(j, l)];
+		    fr_j->xr_fock_mat[fock_idx(j, l)];
 	}
 	exr += 2.0 * s_ij * t_ij;
 
@@ -490,7 +488,6 @@ lmo_lmo_xr_energy(struct frag *fr_i, struct frag *fr_j, size_t i, size_t j,
 		};
 
 		double r = vec_len(&dr_a);
-
 		exr += 2.0 * s_ij * s_ij / r;
 	}
 	for (size_t ii = 0; ii < fr_i->n_xr_atoms; ii++) {
@@ -503,7 +500,6 @@ lmo_lmo_xr_energy(struct frag *fr_i, struct frag *fr_j, size_t i, size_t j,
 		};
 
 		double r = vec_len(&dr_a);
-
 		exr -= s_ij * s_ij * at_i->znuc / r;
 	}
 	for (size_t ii = 0; ii < fr_i->n_lmo; ii++) {
@@ -516,7 +512,6 @@ lmo_lmo_xr_energy(struct frag *fr_i, struct frag *fr_j, size_t i, size_t j,
 		};
 
 		double r = vec_len(&dr_a);
-
 		exr += 2.0 * s_ij * s_ij / r;
 	}
 	exr -= s_ij * s_ij / r_ij;
@@ -526,13 +521,15 @@ lmo_lmo_xr_energy(struct frag *fr_i, struct frag *fr_j, size_t i, size_t j,
 
 void
 efp_frag_frag_xr(struct efp *efp, size_t frag_i, size_t frag_j, double *lmo_s,
-			six_t *lmo_ds, double *exr_out, double *ecp_out)
+    six_t *lmo_ds, double *exr_out, double *ecp_out)
 {
 	struct frag *fr_i = efp->frags + frag_i;
 	struct frag *fr_j = efp->frags + frag_j;
 
-	double *s = (double *)malloc(fr_i->xr_wf_size * fr_j->xr_wf_size * sizeof(double));
-	double *t = (double *)malloc(fr_i->xr_wf_size * fr_j->xr_wf_size * sizeof(double));
+	size_t ij_wf_size = fr_i->xr_wf_size * fr_j->xr_wf_size;
+	size_t ij_nlmo = fr_i->n_lmo * fr_j->n_lmo;
+	double *s = (double *)malloc(ij_wf_size * sizeof(double));
+	double *t = (double *)malloc(ij_wf_size * sizeof(double));
 	double lmo_t[fr_i->n_lmo * fr_j->n_lmo];
 
 	struct swf swf = efp_make_swf(efp, fr_i, fr_j);
@@ -568,11 +565,11 @@ efp_frag_frag_xr(struct efp *efp, size_t frag_i, size_t frag_j, double *lmo_s,
 
 			vec_t dr = {
 				fr_j->lmo_centroids[j].x -
-					fr_i->lmo_centroids[i].x - swf.cell.x,
+				    fr_i->lmo_centroids[i].x - swf.cell.x,
 				fr_j->lmo_centroids[j].y -
-					fr_i->lmo_centroids[i].y - swf.cell.y,
+				    fr_i->lmo_centroids[i].y - swf.cell.y,
 				fr_j->lmo_centroids[j].z -
-					fr_i->lmo_centroids[i].z - swf.cell.z
+				    fr_i->lmo_centroids[i].z - swf.cell.z
 			};
 
 			double r_ij = vec_len(&dr);
@@ -580,9 +577,9 @@ efp_frag_frag_xr(struct efp *efp, size_t frag_i, size_t frag_j, double *lmo_s,
 			if ((efp->opts.terms & EFP_TERM_ELEC) &&
 			    (efp->opts.elec_damp == EFP_ELEC_DAMP_OVERLAP))
 				ecp += charge_penetration_energy(s_ij, r_ij);
-
 			if (efp->opts.terms & EFP_TERM_XR)
-				exr += lmo_lmo_xr_energy(fr_i, fr_j, i, j, lmo_s, lmo_t, &swf);
+				exr += lmo_lmo_xr_energy(fr_i, fr_j, i, j,
+				    lmo_s, lmo_t, &swf);
 		}
 	}
 
@@ -597,9 +594,9 @@ efp_frag_frag_xr(struct efp *efp, size_t frag_i, size_t frag_j, double *lmo_s,
 
 	/* compute gradient */
 
-	six_t *ds = (six_t *)malloc(fr_i->xr_wf_size * fr_j->xr_wf_size * sizeof(six_t));
-	six_t *dt = (six_t *)malloc(fr_i->xr_wf_size * fr_j->xr_wf_size * sizeof(six_t));
-	six_t *lmo_dt = (six_t *)malloc(fr_i->n_lmo * fr_j->n_lmo * sizeof(six_t));
+	six_t *ds = (six_t *)malloc(ij_wf_size * sizeof(six_t));
+	six_t *dt = (six_t *)malloc(ij_wf_size * sizeof(six_t));
+	six_t *lmo_dt = (six_t *)malloc(ij_nlmo * sizeof(six_t));
 
 	efp_st_int_deriv(fr_i->n_xr_atoms, fr_i->xr_atoms,
 			 fr_j->n_xr_atoms, atoms_j,
@@ -637,12 +634,12 @@ efp_frag_frag_xr(struct efp *efp, size_t frag_i, size_t frag_j, double *lmo_s,
 
 			if ((efp->opts.terms & EFP_TERM_ELEC) &&
 			    (efp->opts.elec_damp == EFP_ELEC_DAMP_OVERLAP))
-				charge_penetration_grad(efp, frag_i, frag_j, i, j,
-							lmo_s[ij], lmo_ds[ij], &swf);
+				charge_penetration_grad(efp, frag_i, frag_j,
+				    i, j, lmo_s[ij], lmo_ds[ij], &swf);
 
 			if (efp->opts.terms & EFP_TERM_XR)
-				lmo_lmo_xr_grad(efp, frag_i, frag_j, i, j, lmo_s, lmo_t,
-						lmo_ds, lmo_dt, &swf);
+				lmo_lmo_xr_grad(efp, frag_i, frag_j, i, j,
+				    lmo_s, lmo_t, lmo_ds, lmo_dt, &swf);
 		}
 	}
 
@@ -865,15 +862,15 @@ efp_update_xr(struct frag *frag)
 	const mat_t *rotmat = &frag->rotmat;
 
 	/* update LMO centroids */
-	for (size_t i = 0; i < frag->n_lmo; i++)
-		efp_move_pt(CVEC(frag->x), rotmat, frag->lib->lmo_centroids + i,
-				frag->lmo_centroids + i);
-
+	for (size_t i = 0; i < frag->n_lmo; i++) {
+		efp_move_pt(CVEC(frag->x), rotmat,
+		    frag->lib->lmo_centroids + i, frag->lmo_centroids + i);
+	}
 	/* update xr atoms */
-	for (size_t i = 0; i < frag->n_xr_atoms; i++)
-		efp_move_pt(CVEC(frag->x), rotmat, CVEC(frag->lib->xr_atoms[i].x),
-				VEC(frag->xr_atoms[i].x));
-
+	for (size_t i = 0; i < frag->n_xr_atoms; i++) {
+		efp_move_pt(CVEC(frag->x), rotmat,
+		    CVEC(frag->lib->xr_atoms[i].x), VEC(frag->xr_atoms[i].x));
+	}
 	/* rotate wavefunction */
 	for (size_t k = 0; k < frag->n_lmo; k++) {
 		double *deriv[3];
@@ -896,32 +893,34 @@ efp_update_xr(struct frag *frag)
 					func++;
 					/* fall through */
 				case 'P': {
-					vec_t r = mat_vec(rotmat, (const vec_t *)(in + func));
-
+					vec_t r = mat_vec(rotmat,
+					    (const vec_t *)(in + func));
 					out[func + 0] = r.x;
 					out[func + 1] = r.y;
 					out[func + 2] = r.z;
-
-					for (size_t a = 0; a < 3; a++)
-						coef_deriv_p(a, out + func, deriv[a] + func);
-
+					for (size_t a = 0; a < 3; a++) {
+						coef_deriv_p(a, out + func,
+						    deriv[a] + func);
+					}
 					func += 3;
 					break;
 				}
 				case 'D':
-					rotate_func_d(rotmat, in + func, out + func);
-
-					for (size_t a = 0; a < 3; a++)
-						coef_deriv_d(a, out + func, deriv[a] + func);
-
+					rotate_func_d(rotmat, in + func,
+					    out + func);
+					for (size_t a = 0; a < 3; a++) {
+						coef_deriv_d(a, out + func,
+						    deriv[a] + func);
+					}
 					func += 6;
 					break;
 				case 'F':
-					rotate_func_f(rotmat, in + func, out + func);
-
-					for (size_t a = 0; a < 3; a++)
-						coef_deriv_f(a, out + func, deriv[a] + func);
-
+					rotate_func_f(rotmat, in + func,
+					    out + func);
+					for (size_t a = 0; a < 3; a++) {
+						coef_deriv_f(a, out + func,
+						    deriv[a] + func);
+					}
 					func += 10;
 					break;
 				}
