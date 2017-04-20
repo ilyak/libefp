@@ -58,7 +58,6 @@ master_get_work(struct master *master, int range[2])
 		range[0] = master->range[0];
 		range[1] = master->range[1];
 	}
-
 	return (range[1] > range[0]);
 }
 
@@ -71,15 +70,19 @@ master_on_master(struct master *master)
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
 
 	while (master_get_work(master, range)) {
-		MPI_Recv(NULL, 0, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
-		MPI_Send(range, 2, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD);
+		MPI_Recv(NULL, 0, MPI_INT, MPI_ANY_SOURCE, 0,
+		    MPI_COMM_WORLD, &status);
+		MPI_Send(range, 2, MPI_INT, status.MPI_SOURCE, 0,
+		    MPI_COMM_WORLD);
 	}
 
 	range[0] = range[1] = -1;
 
 	for (int i = 1; i < size; i++) {
-		MPI_Recv(NULL, 0, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
-		MPI_Send(range, 2, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD);
+		MPI_Recv(NULL, 0, MPI_INT, MPI_ANY_SOURCE, 0,
+		    MPI_COMM_WORLD, &status);
+		MPI_Send(range, 2, MPI_INT, status.MPI_SOURCE, 0,
+		    MPI_COMM_WORLD);
 	}
 }
 
@@ -126,7 +129,8 @@ do_slave(struct efp *efp, work_fn fn, void *data)
 
 	for (;;) {
 		MPI_Send(NULL, 0, MPI_INT, 0, 0, MPI_COMM_WORLD);
-		MPI_Recv(range, 2, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		MPI_Recv(range, 2, MPI_INT, 0, 0, MPI_COMM_WORLD,
+		    MPI_STATUS_IGNORE);
 
 		if (range[0] == -1 ||
 		    range[1] == -1)
@@ -141,7 +145,8 @@ void
 efp_allreduce(double *x, size_t n)
 {
 #ifdef WITH_MPI
-	MPI_Allreduce(MPI_IN_PLACE, x, (int)n, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	MPI_Allreduce(MPI_IN_PLACE, x, (int)n, MPI_DOUBLE,
+	    MPI_SUM, MPI_COMM_WORLD);
 #else
 	(void)x;
 	(void)n;
