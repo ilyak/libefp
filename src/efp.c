@@ -887,9 +887,8 @@ efp_prepare(struct efp *efp)
 	efp->indip = (vec_t *)calloc(efp->n_polarizable_pts, sizeof(vec_t));
 	efp->indipconj = (vec_t *)calloc(efp->n_polarizable_pts, sizeof(vec_t));
 	efp->grad = (six_t *)calloc(efp->n_frag, sizeof(six_t));
-	efp->skiplist = efp_bvec_create(efp->n_frag * efp->n_frag);
-	if (efp->skiplist == NULL)
-		return (EFP_RESULT_NO_MEMORY);
+	efp->skiplist = (char *)calloc(efp->n_frag * efp->n_frag, 1);
+
 	return (EFP_RESULT_SUCCESS);
 }
 
@@ -1250,7 +1249,7 @@ efp_shutdown(struct efp *efp)
 	free(efp->indipconj);
 	free(efp->ai_orbital_energies);
 	free(efp->ai_dipole_integrals);
-	efp_bvec_free(efp->skiplist);
+	free(efp->skiplist);
 	free(efp);
 }
 
@@ -1344,8 +1343,8 @@ efp_skip_fragments(struct efp *efp, size_t i, size_t j, int value)
 	assert(i < efp->n_frag);
 	assert(j < efp->n_frag);
 
-	efp_bvec_set_value(efp->skiplist, i * efp->n_frag + j, value);
-	efp_bvec_set_value(efp->skiplist, j * efp->n_frag + i, value);
+	efp->skiplist[i * efp->n_frag + j] = value ? 1 : 0;
+	efp->skiplist[j * efp->n_frag + i] = value ? 1 : 0;
 
 	return (EFP_RESULT_SUCCESS);
 }

@@ -29,7 +29,6 @@
 
 #include <assert.h>
 
-#include "bvec.h"
 #include "efp.h"
 #include "int.h"
 #include "log.h"
@@ -227,7 +226,7 @@ struct efp {
 	struct efp_energy energy;
 
 	/* skip-list of fragments */
-	struct bvec *skiplist;
+	char *skiplist;
 };
 
 #endif /* LIBEFP_PRIVATE_H */

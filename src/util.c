@@ -33,7 +33,7 @@ int efp_skip_frag_pair(const struct efp *efp, size_t fr_i_idx, size_t fr_j_idx)
 {
 	size_t idx = fr_i_idx * efp->n_frag + fr_j_idx;
 
-	if (efp_bvec_is_set(efp->skiplist, idx))
+	if (efp->skiplist[idx])
 		return (1);
 
 	if (!efp->opts.enable_cutoff)
