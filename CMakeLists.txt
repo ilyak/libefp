@@ -42,10 +42,9 @@ set(PN ${PROJECT_NAME})
 
 # <<<  Build  >>>
 
-set(raw_sources_list ai_disp.c balance.c bvec.c clapack.c disp.c
-                     efp.c elec.c elec_terms.c int.c log.c
-                     parse.c pol.c pol_direct.c stream.c swf.c
-                     util.c xr.c)
+set(raw_sources_list ai_disp.c balance.c clapack.c disp.c efp.c elec.c
+                     elec_terms.c int.c log.c parse.c pol.c pol_direct.c
+                     stream.c swf.c util.c xr.c)
 set(src_prefix "src/")
 string(REGEX REPLACE "([^;]+)" "${src_prefix}\\1" sources_list "${raw_sources_list}")
 
