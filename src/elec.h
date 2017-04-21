@@ -98,15 +98,24 @@ double efp_charge_dipole_energy(double, const vec_t *, const vec_t *);
 double efp_charge_quadrupole_energy(double, const double *, const vec_t *);
 double efp_charge_octupole_energy(double, const double *, const vec_t *);
 double efp_dipole_dipole_energy(const vec_t *, const vec_t *, const vec_t *);
-double efp_dipole_quadrupole_energy(const vec_t *, const double *, const vec_t *);
-double efp_quadrupole_quadrupole_energy(const double *, const double *, const vec_t *);
+double efp_dipole_quadrupole_energy(const vec_t *, const double *,
+    const vec_t *);
+double efp_quadrupole_quadrupole_energy(const double *, const double *,
+    const vec_t *);
 
-void efp_charge_charge_grad(double, double, const vec_t *, vec_t *, vec_t *, vec_t *);
-void efp_charge_dipole_grad(double, const vec_t *, const vec_t *, vec_t *, vec_t *, vec_t *);
-void efp_charge_quadrupole_grad(double, const double *, const vec_t *, vec_t *, vec_t *, vec_t *);
-void efp_charge_octupole_grad(double, const double *, const vec_t *, vec_t *, vec_t *, vec_t *);
-void efp_dipole_dipole_grad(const vec_t *, const vec_t *, const vec_t *, vec_t *, vec_t *, vec_t *);
-void efp_dipole_quadrupole_grad(const vec_t *, const double *, const vec_t *, vec_t *, vec_t *, vec_t *);
-void efp_quadrupole_quadrupole_grad(const double *, const double *, const vec_t *, vec_t *, vec_t *, vec_t *);
+void efp_charge_charge_grad(double, double, const vec_t *, vec_t *, vec_t *,
+    vec_t *);
+void efp_charge_dipole_grad(double, const vec_t *, const vec_t *, vec_t *,
+    vec_t *, vec_t *);
+void efp_charge_quadrupole_grad(double, const double *, const vec_t *, vec_t *,
+    vec_t *, vec_t *);
+void efp_charge_octupole_grad(double, const double *, const vec_t *, vec_t *,
+    vec_t *, vec_t *);
+void efp_dipole_dipole_grad(const vec_t *, const vec_t *, const vec_t *,
+    vec_t *, vec_t *, vec_t *);
+void efp_dipole_quadrupole_grad(const vec_t *, const double *, const vec_t *,
+    vec_t *, vec_t *, vec_t *);
+void efp_quadrupole_quadrupole_grad(const double *, const double *,
+    const vec_t *, vec_t *, vec_t *, vec_t *);
 
 #endif /* LIBEFP_ELEC_H */
