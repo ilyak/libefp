@@ -129,7 +129,8 @@ struct stream *efp_stream_open(const char *path)
 
 	assert(path);
 
-	if ((stream = (struct stream *)calloc(1, sizeof(struct stream))) == NULL)
+	stream = (struct stream *)calloc(1, sizeof(struct stream));
+	if (stream == NULL)
 		return NULL;
 
 	stream->in = fopen(path, "r");
@@ -138,7 +139,6 @@ struct stream *efp_stream_open(const char *path)
 		free(stream);
 		return NULL;
 	}
-
 	return stream;
 }
 
