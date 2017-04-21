@@ -225,7 +225,7 @@ struct efp {
 	/* EFP energy terms */
 	struct efp_energy energy;
 
-	/* skip-list of fragments */
+	/* skip-list of fragments - boolean array of nfrag^2 elements */
 	char *skiplist;
 };
 
