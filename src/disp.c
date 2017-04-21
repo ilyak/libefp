@@ -48,7 +48,7 @@ get_damp_tt(double r)
 	double ra6 = ra5 * ra;
 
 	return 1.0 - exp(-ra) * (1.0 + ra + ra2 / 2.0 + ra3 / 6.0 +
-			ra4 / 24.0 + ra5 / 120.0 + ra6 / 720.0);
+	    ra4 / 24.0 + ra5 / 120.0 + ra6 / 720.0);
 }
 
 static double
@@ -64,16 +64,16 @@ get_damp_tt_grad(double r)
 }
 
 static double
-disp_tt(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
-	size_t pt_i_idx, size_t pt_j_idx, double sum, const struct swf *swf)
+disp_tt(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx, size_t pt_i_idx,
+    size_t pt_j_idx, double sum, const struct swf *swf)
 {
 	const struct frag *fr_i = efp->frags + fr_i_idx;
 	const struct frag *fr_j = efp->frags + fr_j_idx;
 
 	const struct dynamic_polarizable_pt *pt_i =
-				fr_i->dynamic_polarizable_pts + pt_i_idx;
+	    fr_i->dynamic_polarizable_pts + pt_i_idx;
 	const struct dynamic_polarizable_pt *pt_j =
-				fr_j->dynamic_polarizable_pts + pt_j_idx;
+	    fr_j->dynamic_polarizable_pts + pt_j_idx;
 
 	vec_t dr = {
 		pt_j->x - pt_i->x - swf->cell.x,
@@ -99,27 +99,26 @@ disp_tt(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
 		};
 
 		efp_add_force(efp->grad + fr_i_idx, CVEC(fr_i->x),
-				CVEC(pt_i->x), &force, NULL);
+		    CVEC(pt_i->x), &force, NULL);
 		efp_sub_force(efp->grad + fr_j_idx, CVEC(fr_j->x),
-				CVEC(pt_j->x), &force, NULL);
+		    CVEC(pt_j->x), &force, NULL);
 		efp_add_stress(&swf->dr, &force, &efp->stress);
 	}
-
 	return energy;
 }
 
 static double
 disp_overlap(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
-	     size_t pt_i_idx, size_t pt_j_idx, double s_ij, six_t ds_ij,
-	     double sum, const struct swf *swf)
+    size_t pt_i_idx, size_t pt_j_idx, double s_ij, six_t ds_ij,
+    double sum, const struct swf *swf)
 {
 	const struct frag *fr_i = efp->frags + fr_i_idx;
 	const struct frag *fr_j = efp->frags + fr_j_idx;
 
 	const struct dynamic_polarizable_pt *pt_i =
-				fr_i->dynamic_polarizable_pts + pt_i_idx;
+	    fr_i->dynamic_polarizable_pts + pt_i_idx;
 	const struct dynamic_polarizable_pt *pt_j =
-				fr_j->dynamic_polarizable_pts + pt_j_idx;
+	    fr_j->dynamic_polarizable_pts + pt_j_idx;
 
 	vec_t dr = {
 		pt_j->x - pt_i->x - swf->cell.x,
@@ -136,7 +135,8 @@ disp_overlap(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
 
 	if (fabs(s_ij) > 1.0e-5) {
 		ln_s = log(fabs(s_ij));
-		damp = 1.0 - s_ij * s_ij * (1.0 - 2.0 * ln_s + 2.0 * ln_s * ln_s);
+		damp = 1.0 - s_ij * s_ij * (1.0 - 2.0 * ln_s +
+		    2.0 * ln_s * ln_s);
 	}
 
 	double energy = -4.0 / 3.0 * sum * damp / r6;
@@ -155,45 +155,42 @@ disp_overlap(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
 		force.z = (t1 * dr.z - t2 * ds_ij.z) * swf->swf;
 
 		torque_i.x = swf->swf * (t1 * (dr.z * dr_i.y - dr.y * dr_i.z) +
-						t2 * ds_ij.a);
+		    t2 * ds_ij.a);
 		torque_i.y = swf->swf * (t1 * (dr.x * dr_i.z - dr.z * dr_i.x) +
-						t2 * ds_ij.b);
+		    t2 * ds_ij.b);
 		torque_i.z = swf->swf * (t1 * (dr.y * dr_i.x - dr.x * dr_i.y) +
-						t2 * ds_ij.c);
+		    t2 * ds_ij.c);
 
 		torque_j.x = swf->swf * (t1 * (dr.z * dr_j.y - dr.y * dr_j.z) +
-			     t2 * (ds_ij.z * swf->dr.y - ds_ij.y * swf->dr.z) +
-			     t2 * ds_ij.a);
+		    t2 * (ds_ij.z * swf->dr.y - ds_ij.y * swf->dr.z) +
+		    t2 * ds_ij.a);
 		torque_j.y = swf->swf * (t1 * (dr.x * dr_j.z - dr.z * dr_j.x) +
-			     t2 * (ds_ij.x * swf->dr.z - ds_ij.z * swf->dr.x) +
-			     t2 * ds_ij.b);
+		    t2 * (ds_ij.x * swf->dr.z - ds_ij.z * swf->dr.x) +
+		    t2 * ds_ij.b);
 		torque_j.z = swf->swf * (t1 * (dr.y * dr_j.x - dr.x * dr_j.y) +
-			     t2 * (ds_ij.y * swf->dr.x - ds_ij.x * swf->dr.y) +
-			     t2 * ds_ij.c);
+		    t2 * (ds_ij.y * swf->dr.x - ds_ij.x * swf->dr.y) +
+		    t2 * ds_ij.c);
 
 		six_atomic_add_xyz(efp->grad + fr_i_idx, &force);
 		six_atomic_add_abc(efp->grad + fr_i_idx, &torque_i);
-
 		six_atomic_sub_xyz(efp->grad + fr_j_idx, &force);
 		six_atomic_sub_abc(efp->grad + fr_j_idx, &torque_j);
-
 		efp_add_stress(&swf->dr, &force, &efp->stress);
 	}
-
 	return energy;
 }
 
 static double
-disp_off(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
-	 size_t pt_i_idx, size_t pt_j_idx, double sum, const struct swf *swf)
+disp_off(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx, size_t pt_i_idx,
+    size_t pt_j_idx, double sum, const struct swf *swf)
 {
 	const struct frag *fr_i = efp->frags + fr_i_idx;
 	const struct frag *fr_j = efp->frags + fr_j_idx;
 
 	const struct dynamic_polarizable_pt *pt_i =
-				fr_i->dynamic_polarizable_pts + pt_i_idx;
+	    fr_i->dynamic_polarizable_pts + pt_i_idx;
 	const struct dynamic_polarizable_pt *pt_j =
-				fr_j->dynamic_polarizable_pts + pt_j_idx;
+	    fr_j->dynamic_polarizable_pts + pt_j_idx;
 
 	vec_t dr = {
 		pt_j->x - pt_i->x - swf->cell.x,
@@ -218,47 +215,48 @@ disp_off(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
 		};
 
 		efp_add_force(efp->grad + fr_i_idx, CVEC(fr_i->x),
-				CVEC(pt_i->x), &force, NULL);
+		    CVEC(pt_i->x), &force, NULL);
 		efp_sub_force(efp->grad + fr_j_idx, CVEC(fr_j->x),
-				CVEC(pt_j->x), &force, NULL);
+		    CVEC(pt_j->x), &force, NULL);
 		efp_add_stress(&swf->dr, &force, &efp->stress);
 	}
-
 	return energy;
 }
 
 static double
 point_point_disp(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
-		 size_t pt_i_idx, size_t pt_j_idx, double s, six_t ds,
-		 const struct swf *swf)
+    size_t pt_i_idx, size_t pt_j_idx, double s, six_t ds, const struct swf *swf)
 {
 	struct frag *fr_i = efp->frags + fr_i_idx;
 	struct frag *fr_j = efp->frags + fr_j_idx;
 
 	const struct dynamic_polarizable_pt *pt_i =
-				fr_i->dynamic_polarizable_pts + pt_i_idx;
+	    fr_i->dynamic_polarizable_pts + pt_i_idx;
 	const struct dynamic_polarizable_pt *pt_j =
-				fr_j->dynamic_polarizable_pts + pt_j_idx;
+	    fr_j->dynamic_polarizable_pts + pt_j_idx;
 
 	double sum = 0.0;
 
 	for (size_t k = 0; k < ARRAY_SIZE(weights); k++) {
-		double tr_i = (pt_i->tensor[k].xx + pt_i->tensor[k].yy + pt_i->tensor[k].zz) / 3;
-		double tr_j = (pt_j->tensor[k].xx + pt_j->tensor[k].yy + pt_j->tensor[k].zz) / 3;
-
+		double tr_i = (pt_i->tensor[k].xx +
+			       pt_i->tensor[k].yy +
+			       pt_i->tensor[k].zz) / 3;
+		double tr_j = (pt_j->tensor[k].xx +
+			       pt_j->tensor[k].yy +
+			       pt_j->tensor[k].zz) / 3;
 		sum += weights[k] * tr_i * tr_j;
 	}
 
 	switch (efp->opts.disp_damp) {
 		case EFP_DISP_DAMP_TT:
 			return disp_tt(efp, fr_i_idx, fr_j_idx,
-				pt_i_idx, pt_j_idx, sum, swf);
+			    pt_i_idx, pt_j_idx, sum, swf);
 		case EFP_DISP_DAMP_OVERLAP:
 			return disp_overlap(efp, fr_i_idx, fr_j_idx,
-				pt_i_idx, pt_j_idx, s, ds, sum, swf);
+			    pt_i_idx, pt_j_idx, s, ds, sum, swf);
 		case EFP_DISP_DAMP_OFF:
 			return disp_off(efp, fr_i_idx, fr_j_idx,
-				pt_i_idx, pt_j_idx, sum, swf);
+			    pt_i_idx, pt_j_idx, sum, swf);
 	}
 	assert(0);
 }
@@ -275,7 +273,7 @@ point_point_disp(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
  */
 double
 efp_frag_frag_disp(struct efp *efp, size_t frag_i, size_t frag_j,
-			const double *s, const six_t *ds)
+    const double *s, const six_t *ds)
 {
 	double energy = 0.0;
 
@@ -290,7 +288,7 @@ efp_frag_frag_disp(struct efp *efp, size_t frag_i, size_t frag_j,
 	for (size_t ii = 0, idx = 0; ii < n_disp_i; ii++)
 		for (size_t jj = 0; jj < n_disp_j; jj++, idx++)
 			energy += point_point_disp(efp, frag_i, frag_j, ii, jj,
-						   s[idx], ds[idx], &swf);
+			    s[idx], ds[idx], &swf);
 
 	vec_t force = {
 		swf.dswf.x * energy,
@@ -310,17 +308,18 @@ efp_update_disp(struct frag *frag)
 {
 	for (size_t i = 0; i < frag->n_dynamic_polarizable_pts; i++) {
 		const struct dynamic_polarizable_pt *pt_in =
-					frag->lib->dynamic_polarizable_pts + i;
+		    frag->lib->dynamic_polarizable_pts + i;
 		struct dynamic_polarizable_pt *pt_out =
-					frag->dynamic_polarizable_pts + i;
+		    frag->dynamic_polarizable_pts + i;
 
-		efp_move_pt(CVEC(frag->x), &frag->rotmat, CVEC(pt_in->x), VEC(pt_out->x));
-
+		efp_move_pt(CVEC(frag->x), &frag->rotmat,
+		    CVEC(pt_in->x), VEC(pt_out->x));
 		for (size_t j = 0; j < 12; j++) {
 			const mat_t *in = pt_in->tensor + j;
 			mat_t *out = pt_out->tensor + j;
 
-			efp_rotate_t2(&frag->rotmat, (const double *)in, (double *)out);
+			efp_rotate_t2(&frag->rotmat, (const double *)in,
+			    (double *)out);
 		}
 	}
 }
