@@ -75,30 +75,33 @@ compute_ai_disp_pt(struct efp *efp, size_t fr_idx, size_t pt_idx)
 {
 	struct frag *frag;
 	struct dynamic_polarizable_pt *pt;
-	double sum;
+	double sum = 0.0;
+	size_t ncoreact;
 
 	frag = efp->frags + fr_idx;
 	pt = frag->dynamic_polarizable_pts + pt_idx;
-	sum = 0.0;
+	ncoreact = efp->n_ai_core + efp->n_ai_act;
 
 	for (size_t i_vir = 0; i_vir < efp->n_ai_vir; i_vir++) {
-		double e_vir = efp->ai_orbital_energies[efp->n_ai_core + efp->n_ai_act + i_vir];
+		double e_vir = efp->ai_orbital_energies[ncoreact + i_vir];
 
-		for (size_t i_occ = 0; i_occ < efp->n_ai_core + efp->n_ai_act; i_occ++) {
+		for (size_t i_occ = 0; i_occ < ncoreact; i_occ++) {
 			double e_occ = efp->ai_orbital_energies[i_occ];
 
 			for (size_t i = 0; i < 3; i++) {
-				double dipint_i = get_dip_int(efp, i_occ, i_vir, i);
+				double di = get_dip_int(efp,
+				    i_occ, i_vir, i);
 
 				for (size_t j = 0; j < 3; j++) {
-					double dipint_j = get_dip_int(efp, i_occ, i_vir, j);
+					double dj = get_dip_int(efp,
+					    i_occ, i_vir, j);
 
-					sum += dipint_i * dipint_j * quadrature(pt->tensor, i, j, e_vir - e_occ);
+					sum += di * dj * quadrature(pt->tensor,
+					    i, j, e_vir - e_occ);
 				}
 			}
 		}
 	}
-
 	return (-sum / PI);
 }
 
@@ -118,7 +121,6 @@ compute_ai_disp_range(struct efp *efp, size_t from, size_t to, void *data)
 		for (size_t j = 0; j < n_pt; j++)
 			energy += compute_ai_disp_pt(efp, i, j);
 	}
-
 	efp->energy.ai_dispersion += energy;
 }
 

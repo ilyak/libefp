@@ -270,19 +270,22 @@ check_opts(const struct efp_opts *opts)
 		    (opts->terms & EFP_TERM_AI_DISP) ||
 		    (opts->terms & EFP_TERM_AI_XR) ||
 		    (opts->terms & EFP_TERM_AI_CHTR)) {
-			efp_log("periodic calculations are not supported for QM/EFP");
+			efp_log(
+"periodic calculations are not supported for QM/EFP");
 			return EFP_RESULT_FATAL;
 		}
 
 		if (!opts->enable_cutoff) {
-			efp_log("periodic calculations require interaction cutoff");
+			efp_log(
+"periodic calculations require interaction cutoff");
 			return EFP_RESULT_FATAL;
 		}
 	}
 
 	if (opts->enable_cutoff) {
 		if (opts->swf_cutoff < 1.0) {
-			efp_log("interaction cutoff is too small");
+			efp_log(
+"interaction cutoff is too small");
 			return EFP_RESULT_FATAL;
 		}
 	}
@@ -298,8 +301,8 @@ check_frag_params(const struct efp_opts *opts, const struct frag *frag)
 			efp_log("electrostatic parameters are missing");
 			return EFP_RESULT_FATAL;
 		}
-
-		if (opts->elec_damp == EFP_ELEC_DAMP_SCREEN && !frag->screen_params) {
+		if (opts->elec_damp == EFP_ELEC_DAMP_SCREEN &&
+		    frag->screen_params == NULL) {
 			efp_log("screening parameters are missing");
 			return EFP_RESULT_FATAL;
 		}
@@ -311,14 +314,14 @@ check_frag_params(const struct efp_opts *opts, const struct frag *frag)
 		}
 	}
 	if ((opts->terms & EFP_TERM_DISP) || (opts->terms & EFP_TERM_AI_DISP)) {
-		if (!frag->dynamic_polarizable_pts) {
+		if (frag->dynamic_polarizable_pts == NULL) {
 			efp_log("dispersion parameters are missing");
 			return EFP_RESULT_FATAL;
 		}
-
 		if (opts->disp_damp == EFP_DISP_DAMP_OVERLAP &&
 		    frag->n_lmo != frag->n_dynamic_polarizable_pts) {
-			efp_log("number of polarization points does not match number of LMOs");
+			efp_log(
+"number of polarization points does not match number of LMOs");
 			return EFP_RESULT_FATAL;
 		}
 	}
@@ -389,33 +392,33 @@ compute_two_body_range(struct efp *efp, size_t frag_from, size_t frag_to,
 			if (!efp_skip_frag_pair(efp, i, fr_j)) {
 				double *s;
 				six_t *ds;
+				size_t n_lmo_ij = efp->frags[i].n_lmo *
+				    efp->frags[fr_j].n_lmo;
 
-				size_t n_lmo_i = efp->frags[i].n_lmo;
-				size_t n_lmo_j = efp->frags[fr_j].n_lmo;
-
-				s = (double *)calloc(n_lmo_i * n_lmo_j, sizeof(double));
-				ds = (six_t *)calloc(n_lmo_i * n_lmo_j, sizeof(six_t));
+				s = (double *)calloc(n_lmo_ij, sizeof(double));
+				ds = (six_t *)calloc(n_lmo_ij, sizeof(six_t));
 
 				if (do_xr(&efp->opts)) {
 					double exr, ecp;
 
-					efp_frag_frag_xr(efp, i, fr_j, s, ds, &exr, &ecp);
+					efp_frag_frag_xr(efp, i, fr_j,
+					    s, ds, &exr, &ecp);
 					e_xr += exr;
 					e_cp += ecp;
 				}
-
-				if (do_elec(&efp->opts))
-					e_elec += efp_frag_frag_elec(efp, i, fr_j);
-
-				if (do_disp(&efp->opts))
-					e_disp += efp_frag_frag_disp(efp, i, fr_j, s, ds);
-
+				if (do_elec(&efp->opts)) {
+					e_elec += efp_frag_frag_elec(efp,
+					    i, fr_j);
+				}
+				if (do_disp(&efp->opts)) {
+					e_disp += efp_frag_frag_disp(efp,
+					    i, fr_j, s, ds);
+				}
 				free(s);
 				free(ds);
 			}
 		}
 	}
-
 	efp->energy.electrostatic += e_elec;
 	efp->energy.dispersion += e_disp;
 	efp->energy.exchange_repulsion += e_xr;
@@ -822,7 +825,8 @@ efp_set_periodic_box(struct efp *efp, double x, double y, double z)
 	if (x < 2.0 * efp->opts.swf_cutoff ||
 	    y < 2.0 * efp->opts.swf_cutoff ||
 	    z < 2.0 * efp->opts.swf_cutoff) {
-		efp_log("periodic box dimensions must be at least twice the cutoff");
+		efp_log(
+"periodic box dimensions must be at least twice the cutoff");
 		return EFP_RESULT_FATAL;
 	}
 
@@ -941,7 +945,8 @@ efp_get_wavefunction_dependent_energy(struct efp *efp, double *energy)
 	assert(efp);
 	assert(energy);
 
-	if (!(efp->opts.terms & EFP_TERM_POL) && !(efp->opts.terms & EFP_TERM_AI_POL)) {
+	if (!(efp->opts.terms & EFP_TERM_POL) &&
+	    !(efp->opts.terms & EFP_TERM_AI_POL)) {
 		*energy = 0.0;
 		return EFP_RESULT_SUCCESS;
 	}
@@ -1313,7 +1318,7 @@ efp_add_fragment(struct efp *efp, const char *name)
 
 	efp->n_frag++;
 	efp->frags = (struct frag *)realloc(efp->frags,
-		efp->n_frag * sizeof(struct frag));
+	    efp->n_frag * sizeof(struct frag));
 
 	if (!efp->frags)
 		return EFP_RESULT_NO_MEMORY;
