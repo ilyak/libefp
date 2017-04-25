@@ -72,10 +72,9 @@ charge_penetration_grad(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
 
 	double r_ij = vec_len(&dr);
 	double ln_s = log(fabs(s_ij));
-
 	double t1 = s_ij * s_ij / (r_ij * r_ij * r_ij) / sqrt(-2.0 * ln_s);
 	double t2 = -s_ij / r_ij / sqrt(2.0) * (2.0 / sqrt(-ln_s) +
-				0.5 / sqrt(-ln_s * ln_s * ln_s));
+	    0.5 / sqrt(-ln_s * ln_s * ln_s));
 
 	vec_t force, torque_i, torque_j;
 
