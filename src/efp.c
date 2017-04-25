@@ -384,7 +384,9 @@ compute_two_body_range(struct efp *efp, size_t frag_from, size_t frag_to,
 #pragma omp parallel for schedule(dynamic) reduction(+:e_elec,e_disp,e_xr,e_cp)
 #endif
 	for (size_t i = frag_from; i < frag_to; i++) {
-		size_t cnt = efp_inner_count(i, efp->n_frag);
+		size_t cnt = efp->n_frag % 2 ? (efp->n_frag - 1) / 2 :
+		    i < efp->n_frag / 2 ? efp->n_frag / 2 :
+		    efp->n_frag / 2 - 1;
 
 		for (size_t j = i + 1; j < i + 1 + cnt; j++) {
 			size_t fr_j = j % efp->n_frag;
