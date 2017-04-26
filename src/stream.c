@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2012-2015 Ilya Kaliman
+ * Copyright (c) 2012-2017 Ilya Kaliman
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -38,7 +38,8 @@ struct stream {
 	char split;
 };
 
-static void skip_newline2(FILE *in)
+static void
+skip_newline2(FILE *in)
 {
 	int ch = getc(in);
 
@@ -51,7 +52,8 @@ static void skip_newline2(FILE *in)
 		ungetc(ch, in);
 }
 
-static char *read_line(FILE *in, char split)
+static char *
+read_line(FILE *in, char split)
 {
 	size_t size = 128;
 	size_t i = 0;
@@ -123,7 +125,8 @@ static char *read_line(FILE *in, char split)
 	assert(0);
 }
 
-struct stream *efp_stream_open(const char *path)
+struct stream *
+efp_stream_open(const char *path)
 {
 	struct stream *stream;
 
@@ -142,28 +145,32 @@ struct stream *efp_stream_open(const char *path)
 	return stream;
 }
 
-void efp_stream_set_split_char(struct stream *stream, char c)
+void
+efp_stream_set_split_char(struct stream *stream, char c)
 {
 	assert(stream);
 
 	stream->split = c;
 }
 
-char efp_stream_get_split_char(struct stream *stream)
+char
+efp_stream_get_split_char(struct stream *stream)
 {
 	assert(stream);
 
 	return stream->split;
 }
 
-const char *efp_stream_get_ptr(struct stream *stream)
+const char *
+efp_stream_get_ptr(struct stream *stream)
 {
 	assert(stream);
 
 	return stream->ptr;
 }
 
-void efp_stream_next_line(struct stream *stream)
+void
+efp_stream_next_line(struct stream *stream)
 {
 	assert(stream);
 
@@ -174,28 +181,32 @@ void efp_stream_next_line(struct stream *stream)
 	stream->ptr = stream->buffer;
 }
 
-void efp_stream_reset_line(struct stream *stream)
+void
+efp_stream_reset_line(struct stream *stream)
 {
 	assert(stream);
 
 	stream->ptr = stream->buffer;
 }
 
-char efp_stream_get_char(struct stream *stream)
+char
+efp_stream_get_char(struct stream *stream)
 {
 	assert(stream);
 
 	return stream->ptr && *stream->ptr ? *stream->ptr++ : '\0';
 }
 
-char efp_stream_current_char(struct stream *stream)
+char
+efp_stream_current_char(struct stream *stream)
 {
 	assert(stream);
 
 	return stream->ptr ? *stream->ptr : '\0';
 }
 
-int efp_stream_parse_int(struct stream *stream, int *out)
+int
+efp_stream_parse_int(struct stream *stream, int *out)
 {
 	assert(stream);
 
@@ -212,7 +223,8 @@ int efp_stream_parse_int(struct stream *stream, int *out)
 	return 1;
 }
 
-int efp_stream_parse_double(struct stream *stream, double *out)
+int
+efp_stream_parse_double(struct stream *stream, double *out)
 {
 	assert(stream);
 
@@ -229,7 +241,8 @@ int efp_stream_parse_double(struct stream *stream, double *out)
 	return 1;
 }
 
-int efp_stream_advance(struct stream *stream, size_t cnt)
+int
+efp_stream_advance(struct stream *stream, size_t cnt)
 {
 	assert(stream);
 
@@ -240,7 +253,8 @@ int efp_stream_advance(struct stream *stream, size_t cnt)
 	return 1;
 }
 
-void efp_stream_skip_space(struct stream *stream)
+void
+efp_stream_skip_space(struct stream *stream)
 {
 	assert(stream);
 
@@ -251,7 +265,8 @@ void efp_stream_skip_space(struct stream *stream)
 		stream->ptr++;
 }
 
-void efp_stream_skip_nonspace(struct stream *stream)
+void
+efp_stream_skip_nonspace(struct stream *stream)
 {
 	assert(stream);
 
@@ -262,21 +277,24 @@ void efp_stream_skip_nonspace(struct stream *stream)
 		stream->ptr++;
 }
 
-int efp_stream_eol(struct stream *stream)
+int
+efp_stream_eol(struct stream *stream)
 {
 	assert(stream);
 
 	return stream->ptr == NULL || *stream->ptr == '\0';
 }
 
-int efp_stream_eof(struct stream *stream)
+int
+efp_stream_eof(struct stream *stream)
 {
 	assert(stream);
 
 	return feof(stream->in);
 }
 
-void efp_stream_close(struct stream *stream)
+void
+efp_stream_close(struct stream *stream)
 {
 	if (!stream)
 		return;
