@@ -248,15 +248,15 @@ point_point_disp(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx,
 	}
 
 	switch (efp->opts.disp_damp) {
-		case EFP_DISP_DAMP_TT:
-			return disp_tt(efp, fr_i_idx, fr_j_idx,
-			    pt_i_idx, pt_j_idx, sum, swf);
-		case EFP_DISP_DAMP_OVERLAP:
-			return disp_overlap(efp, fr_i_idx, fr_j_idx,
-			    pt_i_idx, pt_j_idx, s, ds, sum, swf);
-		case EFP_DISP_DAMP_OFF:
-			return disp_off(efp, fr_i_idx, fr_j_idx,
-			    pt_i_idx, pt_j_idx, sum, swf);
+	case EFP_DISP_DAMP_TT:
+		return disp_tt(efp, fr_i_idx, fr_j_idx,
+		    pt_i_idx, pt_j_idx, sum, swf);
+	case EFP_DISP_DAMP_OVERLAP:
+		return disp_overlap(efp, fr_i_idx, fr_j_idx,
+		    pt_i_idx, pt_j_idx, s, ds, sum, swf);
+	case EFP_DISP_DAMP_OFF:
+		return disp_off(efp, fr_i_idx, fr_j_idx,
+		    pt_i_idx, pt_j_idx, sum, swf);
 	}
 	assert(0);
 }

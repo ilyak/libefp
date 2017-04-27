@@ -78,7 +78,7 @@ read_line(FILE *in, char split)
 			}
 		}
 
-		switch(ch) {
+		switch (ch) {
 		case EOF:
 			if (i == 0) {
 				free(buffer);
@@ -121,7 +121,6 @@ read_line(FILE *in, char split)
 			}
 		}
 	}
-
 	assert(0);
 }
 

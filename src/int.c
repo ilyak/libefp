@@ -47,24 +47,24 @@ static const double int_norm[] = {
 static void set_coef(double *con, char type, const double *coef)
 {
 	switch (type) {
-		case 'S':
-			con[0] = *coef;
-			return;
-		case 'L':
-			con[0] = *coef++;
-			/* fall through */
-		case 'P':
-			for (size_t i = 1; i < 4; i++)
-				con[i] = *coef;
-			return;
-		case 'D':
-			for (size_t i = 4; i < 10; i++)
-				con[i] = *coef;
-			return;
-		case 'F':
-			for (size_t i = 10; i < 20; i++)
-				con[i] = *coef;
-			return;
+	case 'S':
+		con[0] = *coef;
+		return;
+	case 'L':
+		con[0] = *coef++;
+		/* fall through */
+	case 'P':
+		for (size_t i = 1; i < 4; i++)
+			con[i] = *coef;
+		return;
+	case 'D':
+		for (size_t i = 4; i < 10; i++)
+			con[i] = *coef;
+		return;
+	case 'F':
+		for (size_t i = 10; i < 20; i++)
+			con[i] = *coef;
+		return;
 	}
 }
 
@@ -116,27 +116,27 @@ static void make_int(size_t ni, size_t nj, double tt, const vec_t *p,
 			double ay = tmp + p->y - p_i->y;
 			double az = tmp + p->z - p_i->z;
 
-			/* fancy loop unrolling */
+			/* loop unrolling */
 			switch (ni) {
-				case 4:
-					px *= ax;
-					py *= ay;
-					pz *= az;
-				case 3:
-					px *= ax;
-					py *= ay;
-					pz *= az;
-				case 2:
-					px *= ax;
-					py *= ay;
-					pz *= az;
-				case 1:
-					px *= ax;
-					py *= ay;
-					pz *= az;
-					break;
-				default:
-					abort();
+			case 4:
+				px *= ax;
+				py *= ay;
+				pz *= az;
+			case 3:
+				px *= ax;
+				py *= ay;
+				pz *= az;
+			case 2:
+				px *= ax;
+				py *= ay;
+				pz *= az;
+			case 1:
+				px *= ax;
+				py *= ay;
+				pz *= az;
+				break;
+			default:
+				abort();
 			}
 		}
 
@@ -145,31 +145,31 @@ static void make_int(size_t ni, size_t nj, double tt, const vec_t *p,
 			double by = tmp + p->y - p_j->y;
 			double bz = tmp + p->z - p_j->z;
 
-			/* fancy loop unrolling */
+			/* loop unrolling */
 			switch (nj) {
-				case 5:
-					px *= bx;
-					py *= by;
-					pz *= bz;
-				case 4:
-					px *= bx;
-					py *= by;
-					pz *= bz;
-				case 3:
-					px *= bx;
-					py *= by;
-					pz *= bz;
-				case 2:
-					px *= bx;
-					py *= by;
-					pz *= bz;
-				case 1:
-					px *= bx;
-					py *= by;
-					pz *= bz;
-					break;
-				default:
-					abort();
+			case 5:
+				px *= bx;
+				py *= by;
+				pz *= bz;
+			case 4:
+				px *= bx;
+				py *= by;
+				pz *= bz;
+			case 3:
+				px *= bx;
+				py *= by;
+				pz *= bz;
+			case 2:
+				px *= bx;
+				py *= by;
+				pz *= bz;
+			case 1:
+				px *= bx;
+				py *= by;
+				pz *= bz;
+				break;
+			default:
+				abort();
 			}
 		}
 
@@ -186,11 +186,16 @@ static void make_int(size_t ni, size_t nj, double tt, const vec_t *p,
 static size_t get_shell_idx(char type)
 {
 	switch (type) {
-		case 'S': return 0;
-		case 'L': return 1;
-		case 'P': return 2;
-		case 'D': return 3;
-		case 'F': return 4;
+	case 'S':
+		return 0;
+	case 'L':
+		return 1;
+	case 'P':
+		return 2;
+	case 'D':
+		return 3;
+	case 'F':
+		return 4;
 	}
 	abort();
 }
@@ -225,50 +230,50 @@ static size_t get_shell_sl(size_t shell_idx)
 static void init_ft(size_t count_i, char type_j, double *ft)
 {
 	switch (type_j) {
-		case 'S':
-			for (size_t i = 0; i < count_i; i++) {
-				*ft++ = 3.0;
-			}
-			return;
-		case 'L':
-			for (size_t i = 0; i < count_i; i++) {
-				*ft++ = 3.0;
-				*ft++ = 5.0;
-				*ft++ = 5.0;
-				*ft++ = 5.0;
-			}
-			return;
-		case 'P':
-			for (size_t i = 0; i < count_i; i++) {
-				*ft++ = 5.0;
-				*ft++ = 5.0;
-				*ft++ = 5.0;
-			}
-			return;
-		case 'D':
-			for (size_t i = 0; i < count_i; i++) {
-				*ft++ = 7.0;
-				*ft++ = 7.0;
-				*ft++ = 7.0;
-				*ft++ = 7.0;
-				*ft++ = 7.0;
-				*ft++ = 7.0;
-			}
-			return;
-		case 'F':
-			for (size_t i = 0; i < count_i; i++) {
-				*ft++ = 9.0;
-				*ft++ = 9.0;
-				*ft++ = 9.0;
-				*ft++ = 9.0;
-				*ft++ = 9.0;
-				*ft++ = 9.0;
-				*ft++ = 9.0;
-				*ft++ = 9.0;
-				*ft++ = 9.0;
-				*ft++ = 9.0;
-			}
-			return;
+	case 'S':
+		for (size_t i = 0; i < count_i; i++) {
+			*ft++ = 3.0;
+		}
+		return;
+	case 'L':
+		for (size_t i = 0; i < count_i; i++) {
+			*ft++ = 3.0;
+			*ft++ = 5.0;
+			*ft++ = 5.0;
+			*ft++ = 5.0;
+		}
+		return;
+	case 'P':
+		for (size_t i = 0; i < count_i; i++) {
+			*ft++ = 5.0;
+			*ft++ = 5.0;
+			*ft++ = 5.0;
+		}
+		return;
+	case 'D':
+		for (size_t i = 0; i < count_i; i++) {
+			*ft++ = 7.0;
+			*ft++ = 7.0;
+			*ft++ = 7.0;
+			*ft++ = 7.0;
+			*ft++ = 7.0;
+			*ft++ = 7.0;
+		}
+		return;
+	case 'F':
+		for (size_t i = 0; i < count_i; i++) {
+			*ft++ = 9.0;
+			*ft++ = 9.0;
+			*ft++ = 9.0;
+			*ft++ = 9.0;
+			*ft++ = 9.0;
+			*ft++ = 9.0;
+			*ft++ = 9.0;
+			*ft++ = 9.0;
+			*ft++ = 9.0;
+			*ft++ = 9.0;
+		}
+		return;
 	}
 	abort();
 }

@@ -729,15 +729,15 @@ efp_set_coordinates(struct efp *efp, enum efp_coord_type coord_type,
 	enum efp_result res;
 
 	switch (coord_type) {
-		case EFP_COORD_TYPE_XYZABC:
-			stride = 6;
-			break;
-		case EFP_COORD_TYPE_POINTS:
-			stride = 9;
-			break;
-		case EFP_COORD_TYPE_ROTMAT:
-			stride = 12;
-			break;
+	case EFP_COORD_TYPE_XYZABC:
+		stride = 6;
+		break;
+	case EFP_COORD_TYPE_POINTS:
+		stride = 9;
+		break;
+	case EFP_COORD_TYPE_ROTMAT:
+		stride = 12;
+		break;
 	}
 
 	for (size_t i = 0; i < efp->n_frag; i++, coord += stride)
@@ -760,12 +760,12 @@ efp_set_frag_coordinates(struct efp *efp, size_t frag_idx,
 	frag = efp->frags + frag_idx;
 
 	switch (coord_type) {
-		case EFP_COORD_TYPE_XYZABC:
-			return (set_coord_xyzabc(frag, coord));
-		case EFP_COORD_TYPE_POINTS:
-			return (set_coord_points(frag, coord));
-		case EFP_COORD_TYPE_ROTMAT:
-			return (set_coord_rotmat(frag, coord));
+	case EFP_COORD_TYPE_XYZABC:
+		return (set_coord_xyzabc(frag, coord));
+	case EFP_COORD_TYPE_POINTS:
+		return (set_coord_points(frag, coord));
+	case EFP_COORD_TYPE_ROTMAT:
+		return (set_coord_rotmat(frag, coord));
 	}
 
 	/* unreachable */
