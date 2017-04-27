@@ -65,7 +65,7 @@ sim_efield(struct state *state)
 		size_t n_atoms;
 
 		check_fail(efp_get_frag_atom_count(state->efp, i, &n_atoms));
-		atoms = malloc(n_atoms * sizeof(struct efp_atom));
+		atoms = xmalloc(n_atoms * sizeof(struct efp_atom));
 		check_fail(efp_get_frag_atoms(state->efp, i, n_atoms, atoms));
 
 		for (size_t j = 0; j < n_atoms; j++) {

@@ -79,7 +79,7 @@ void compute_energy(struct state *state, bool do_grad)
 
 	for (ifrag = 0, itotal = 0; ifrag < nfrag; ifrag++) {
 		check_fail(efp_get_frag_atom_count(state->efp, ifrag, &natom));
-		atoms = malloc(natom * sizeof(struct efp_atom));
+		atoms = xmalloc(natom * sizeof(struct efp_atom));
 		check_fail(efp_get_frag_atoms(state->efp, ifrag, natom, atoms));
 
 		for (iatom = 0; iatom < natom; iatom++, itotal++)
@@ -94,7 +94,7 @@ void compute_energy(struct state *state, bool do_grad)
 		for (ifrag = 0, itotal = 0, grad = state->grad; ifrag < nfrag; ifrag++, grad += 6) {
 			check_fail(efp_get_frag_xyzabc(state->efp, ifrag, xyzabc));
 			check_fail(efp_get_frag_atom_count(state->efp, ifrag, &natom));
-			atoms = malloc(natom * sizeof(struct efp_atom));
+			atoms = xmalloc(natom * sizeof(struct efp_atom));
 			check_fail(efp_get_frag_atoms(state->efp, ifrag, natom, atoms));
 
 			for (iatom = 0; iatom < natom; iatom++, itotal++) {

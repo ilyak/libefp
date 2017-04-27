@@ -311,7 +311,7 @@ static void state_init(struct state *state, const struct cfg *cfg, const struct 
 
 	state->efp = create_efp(cfg, sys);
 	state->energy = 0;
-	state->grad = calloc(sys->n_frags * 6 + sys->n_charges * 3, sizeof(double));
+	state->grad = xcalloc(sys->n_frags * 6 + sys->n_charges * 3, sizeof(double));
 	state->ff = NULL;
 
 	if (cfg_get_bool(cfg, "enable_ff")) {

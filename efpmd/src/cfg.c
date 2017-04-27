@@ -32,6 +32,9 @@
 
 #include "cfg.h"
 
+void *xmalloc(size_t);
+void *xcalloc(size_t, size_t);
+
 enum node_type {
 	NODE_TYPE_INT,
 	NODE_TYPE_DOUBLE,
@@ -65,7 +68,7 @@ struct cfg {
 
 static char *xstrdup(const char *str)
 {
-	char *dup = malloc(strlen(str) + 1);
+	char *dup = xmalloc(strlen(str) + 1);
 	return strcpy(dup, str);
 }
 
@@ -73,7 +76,7 @@ static char *xstrndup(const char *str, size_t len)
 {
 	char *dup;
 
-	dup = malloc(len + 1);
+	dup = xmalloc(len + 1);
 	dup[len] = '\0';
 
 	return strncpy(dup, str, len);
@@ -232,7 +235,7 @@ static void add_node(struct cfg *cfg, const char *name, enum node_type type)
 
 	assert(node_find(cfg->nodes, name) == NULL);
 
-	node = calloc(1, sizeof(struct node));
+	node = xcalloc(1, sizeof(struct node));
 	node->name = xstrdup(name);
 	node->type = type;
 	node->next = cfg->nodes;
@@ -241,7 +244,7 @@ static void add_node(struct cfg *cfg, const char *name, enum node_type type)
 
 struct cfg *cfg_create(void)
 {
-	return calloc(1, sizeof(struct cfg));
+	return xcalloc(1, sizeof(struct cfg));
 }
 
 void cfg_add_int(struct cfg *cfg, const char *name, int def)
@@ -293,7 +296,7 @@ void cfg_add_enum(struct cfg *cfg, const char *name, int def,
 	struct node *node = cfg->nodes;
 
 	while (*keys) {
-		struct esv *esv = malloc(sizeof(struct esv));
+		struct esv *esv = xmalloc(sizeof(struct esv));
 		const char *nxt = strchr(keys, '\n');
 		assert(nxt);
 
