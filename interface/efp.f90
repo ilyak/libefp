@@ -41,6 +41,10 @@ function efp_banner() bind(c)
   type(c_ptr) :: efp_banner
 end function
 
+! void efp_print_banner(void);
+subroutine efp_print_banner() bind(c)
+end subroutine
+
 ! efp_t *efp_create(void);
 function efp_create() bind(c)
   use iso_c_binding, only: c_ptr
