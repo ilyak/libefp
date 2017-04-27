@@ -1527,6 +1527,12 @@ efp_banner(void)
 	return banner;
 }
 
+EFP_EXPORT void
+efp_print_banner(void)
+{
+	printf("%s", efp_banner());
+}
+
 EFP_EXPORT const char *
 efp_result_to_string(enum efp_result res)
 {

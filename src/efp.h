@@ -220,6 +220,8 @@ typedef enum efp_result (*efp_electron_density_field_fn)(size_t n_pt,
  */
 const char *efp_banner(void);
 
+void efp_print_banner(void);
+
 /**
  * Create a new efp object.
  *
