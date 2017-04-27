@@ -20,7 +20,7 @@ option_with_default(BUILD_FPIC "Libraries will be compiled with position indepen
 if(${BUILD_SHARED_LIBS} AND NOT ${BUILD_FPIC})
     message(FATAL_ERROR "BUILD_SHARED_LIBS ON and BUILD_FPIC OFF are incompatible, as shared library requires position independent code")
 endif()
-option_with_print(ENABLE_OPENMP "Enable OpenMP parallelization. Psi4 wants OFF" ON)
+option_with_print(ENABLE_OPENMP "Enable OpenMP parallelization. Psi4 wants OFF" OFF)
 option_with_print(ENABLE_GENERIC "Enable mostly static linking in shared library" OFF)
 option_with_flags(ENABLE_XHOST "Enable processor-specific optimization" ON
                   "-xHost" "-march=native")
