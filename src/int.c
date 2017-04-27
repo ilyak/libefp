@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2012-2015 Ilya Kaliman
+ * Copyright (c) 2012-2017 Ilya Kaliman
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -37,14 +37,20 @@ static const double int_tol = 46.051701859881;
 
 /* Normalization constants */
 static const double int_norm[] = {
-	1.0000000000000000, 1.0000000000000000, 1.0000000000000000, 1.0000000000000000,
-	1.0000000000000000, 1.0000000000000000, 1.0000000000000000, 1.7320508075688801,
-	1.7320508075688801, 1.7320508075688801, 1.0000000000000000, 1.0000000000000000,
-	1.0000000000000000, 2.2360679774997898, 2.2360679774997898, 2.2360679774997898,
-	2.2360679774997898, 2.2360679774997898, 2.2360679774997898, 3.8729833462074232
+	1.0000000000000000, 1.0000000000000000,
+	1.0000000000000000, 1.0000000000000000,
+	1.0000000000000000, 1.0000000000000000,
+	1.0000000000000000, 1.7320508075688801,
+	1.7320508075688801, 1.7320508075688801,
+	1.0000000000000000, 1.0000000000000000,
+	1.0000000000000000, 2.2360679774997898,
+	2.2360679774997898, 2.2360679774997898,
+	2.2360679774997898, 2.2360679774997898,
+	2.2360679774997898, 3.8729833462074232
 };
 
-static void set_coef(double *con, char type, const double *coef)
+static void
+set_coef(double *con, char type, const double *coef)
 {
 	switch (type) {
 	case 'S':
@@ -68,8 +74,9 @@ static void set_coef(double *con, char type, const double *coef)
 	}
 }
 
-static void make_int(size_t ni, size_t nj, double tt, const vec_t *p,
-		     const vec_t *p_i, const vec_t *p_j, vec_t *out)
+static void
+make_int(size_t ni, size_t nj, double tt, const vec_t *p, const vec_t *p_i,
+    const vec_t *p_j, vec_t *out)
 {
 	static const size_t imin[] = { 0, 1, 3,  6, 10, 15, 21, 28, 36, 45 };
 	static const size_t imax[] = { 1, 3, 6, 10, 15, 21, 28, 36, 45, 55 };
@@ -86,7 +93,6 @@ static void make_int(size_t ni, size_t nj, double tt, const vec_t *p,
 		 0.0000000000000000,  0.8162878828589647,  1.6735516287674714,
 		 2.6519613568352334
 	};
-
 	static const double w[] = {
 		 1.7724538509055161,  0.8862269254527580,  0.8862269254527580,
 		 0.2954089751509193,  1.1816359006036774,  0.2954089751509193,
@@ -101,14 +107,12 @@ static void make_int(size_t ni, size_t nj, double tt, const vec_t *p,
 	};
 
 	size_t npts = (ni + nj) / 2;
-
 	double xint = 0.0, yint = 0.0, zint = 0.0;
 
 	for (size_t i = imin[npts]; i < imax[npts]; i++) {
 		double px = w[i];
 		double py = w[i];
 		double pz = w[i];
-
 		double tmp = h[i] * tt;
 
 		if(ni > 0) {
@@ -172,18 +176,17 @@ static void make_int(size_t ni, size_t nj, double tt, const vec_t *p,
 				abort();
 			}
 		}
-
 		xint += px;
 		yint += py;
 		zint += pz;
 	}
-
 	out->x = xint;
 	out->y = yint;
 	out->z = zint;
 }
 
-static size_t get_shell_idx(char type)
+static size_t
+get_shell_idx(char type)
 {
 	switch (type) {
 	case 'S':
@@ -200,34 +203,35 @@ static size_t get_shell_idx(char type)
 	abort();
 }
 
-static size_t get_shell_start(size_t shell_idx)
+static size_t
+get_shell_start(size_t shell_idx)
 {
 	static const size_t start[] = {
 		0, 0, 1, 4, 10
 	};
-
 	return start[shell_idx];
 }
 
-static size_t get_shell_end(size_t shell_idx)
+static size_t
+get_shell_end(size_t shell_idx)
 {
 	static const size_t end[] = {
 		1, 4, 4, 10, 20
 	};
-
 	return end[shell_idx];
 }
 
-static size_t get_shell_sl(size_t shell_idx)
+static size_t
+get_shell_sl(size_t shell_idx)
 {
 	static const size_t sl[] = {
 		1, 2, 2, 3, 4
 	};
-
 	return sl[shell_idx];
 }
 
-static void init_ft(size_t count_i, char type_j, double *ft)
+static void
+init_ft(size_t count_i, char type_j, double *ft)
 {
 	switch (type_j) {
 	case 'S':
@@ -278,16 +282,12 @@ static void init_ft(size_t count_i, char type_j, double *ft)
 	abort();
 }
 
-void efp_st_int(size_t n_atoms_i, const struct xr_atom *atoms_i,
-		size_t n_atoms_j, const struct xr_atom *atoms_j,
-		size_t stride, double *s, double *t)
+void
+efp_st_int(size_t n_atoms_i, const struct xr_atom *atoms_i, size_t n_atoms_j,
+    const struct xr_atom *atoms_j, size_t stride, double *s, double *t)
 {
-	double xin[90];
-	double yin[90];
-	double zin[90];
-
-	double ft[100], dij[100];
-	double sblk[100], tblk[100];
+	double ft[100], dij[100], sblk[100], tblk[100];
+	double xin[90], yin[90], zin[90];
 
 	for (size_t iii = 0, loc_i = 0; iii < n_atoms_i; iii++) {
 		const struct xr_atom *at_i = atoms_i + iii;
@@ -295,7 +295,6 @@ void efp_st_int(size_t n_atoms_i, const struct xr_atom *atoms_i,
 	/* shell i */
 	for (size_t ii = 0; ii < at_i->n_shells; ii++) {
 		const struct shell *sh_i = at_i->shells + ii;
-
 		size_t type_i = get_shell_idx(sh_i->type);
 		size_t start_i = get_shell_start(type_i);
 		size_t end_i = get_shell_end(type_i);
@@ -308,13 +307,11 @@ void efp_st_int(size_t n_atoms_i, const struct xr_atom *atoms_i,
 		/* shell j */
 		for (size_t jj = 0; jj < at_j->n_shells; jj++) {
 			const struct shell *sh_j = at_j->shells + jj;
-
 			size_t type_j = get_shell_idx(sh_j->type);
 			size_t start_j = get_shell_start(type_j);
 			size_t end_j = get_shell_end(type_j);
 			size_t sl_j = get_shell_sl(type_j);
 			size_t count_j = end_j - start_j;
-
 			size_t count = count_i * count_j;
 
 			memset(sblk, 0, count * sizeof(double));
@@ -322,21 +319,18 @@ void efp_st_int(size_t n_atoms_i, const struct xr_atom *atoms_i,
 
 			init_ft(count_i, sh_j->type, ft);
 
-			double rr = vec_dist_2(CVEC(at_i->x), CVEC(at_j->x));
-
-			const size_t *shift_x = shift_table_x[type_i * 5 + type_j];
-			const size_t *shift_y = shift_table_y[type_i * 5 + type_j];
-			const size_t *shift_z = shift_table_z[type_i * 5 + type_j];
-
+			const size_t *shift_x = shift_table_x[type_i*5+type_j];
+			const size_t *shift_y = shift_table_y[type_i*5+type_j];
+			const size_t *shift_z = shift_table_z[type_i*5+type_j];
 			const double *coef_i = sh_i->coef;
+			double rr = vec_dist_2(CVEC(at_i->x), CVEC(at_j->x));
 
 			/* primitive i */
 			for (size_t ig = 0; ig < sh_i->n_funcs; ig++) {
 				double ai = *coef_i++;
+				double con_i[20], con_j[20];
 
-				double con_i[20];
 				set_coef(con_i, sh_i->type, coef_i);
-
 				coef_i++;
 				if (sh_i->type == 'L')
 					coef_i++;
@@ -346,7 +340,6 @@ void efp_st_int(size_t n_atoms_i, const struct xr_atom *atoms_i,
 				/* primitive j */
 				for (size_t jg = 0; jg < sh_j->n_funcs; jg++) {
 					double aj = *coef_j++;
-
 					double aa = 1.0 / (ai + aj);
 					double tmp = aj * ai * rr * aa;
 
@@ -354,21 +347,18 @@ void efp_st_int(size_t n_atoms_i, const struct xr_atom *atoms_i,
 						coef_j++;
 						if (sh_j->type == 'L')
 							coef_j++;
-
 						continue;
 					}
 
-					double con_j[20];
 					set_coef(con_j, sh_j->type, coef_j);
-
 					coef_j++;
 					if (sh_j->type == 'L')
 						coef_j++;
 
 					vec_t a = {
-						(ai * at_i->x + aj * at_j->x) * aa,
-						(ai * at_i->y + aj * at_j->y) * aa,
-						(ai * at_i->z + aj * at_j->z) * aa
+						(ai*at_i->x + aj*at_j->x) * aa,
+						(ai*at_i->y + aj*at_j->y) * aa,
+						(ai*at_i->z + aj*at_j->z) * aa
 					};
 
 					double fac = exp(-tmp);
@@ -438,20 +428,17 @@ void efp_st_int(size_t n_atoms_i, const struct xr_atom *atoms_i,
 	}}
 }
 
-void efp_st_int_deriv(size_t n_atoms_i, const struct xr_atom *atoms_i,
-		      size_t n_atoms_j, const struct xr_atom *atoms_j,
-		      const vec_t *com_i, size_t size_i, size_t size_j,
-		      six_t *ds, six_t *dt)
+void
+efp_st_int_deriv(size_t n_atoms_i, const struct xr_atom *atoms_i,
+    size_t n_atoms_j, const struct xr_atom *atoms_j, const vec_t *com_i,
+    size_t size_i, size_t size_j, six_t *ds, six_t *dt)
 {
 	static const size_t shift_x[] = { 0, 1, 0, 0, 2, 0, 0, 1, 1, 0,
 					  3, 0, 0, 2, 2, 1, 0, 1, 0, 1 };
-
 	static const size_t shift_y[] = { 0, 0, 1, 0, 0, 2, 0, 1, 0, 1,
 					  0, 3, 0, 1, 0, 2, 2, 0, 1, 1 };
-
 	static const size_t shift_z[] = { 0, 0, 0, 1, 0, 0, 2, 0, 1, 1,
 					  0, 0, 3, 0, 1, 0, 1, 2, 2, 1 };
-
 	double dij[100];
 	double xs[5][6], ys[5][6], zs[5][6];
 	double xt[5][4], yt[5][4], zt[5][4];
@@ -467,7 +454,6 @@ void efp_st_int_deriv(size_t n_atoms_i, const struct xr_atom *atoms_i,
 	/* shell i */
 	for (size_t ii = 0; ii < at_i->n_shells; ii++) {
 		const struct shell *sh_i = at_i->shells + ii;
-
 		size_t type_i = get_shell_idx(sh_i->type);
 		size_t start_i = get_shell_start(type_i);
 		size_t end_i = get_shell_end(type_i);
@@ -480,24 +466,20 @@ void efp_st_int_deriv(size_t n_atoms_i, const struct xr_atom *atoms_i,
 		/* shell j */
 		for (size_t jj = 0; jj < at_j->n_shells; jj++) {
 			const struct shell *sh_j = at_j->shells + jj;
-
 			size_t type_j = get_shell_idx(sh_j->type);
 			size_t start_j = get_shell_start(type_j);
 			size_t end_j = get_shell_end(type_j);
 			size_t sl_j = get_shell_sl(type_j);
 			size_t count_j = end_j - start_j;
-
-			double rr = vec_dist_2(CVEC(at_i->x), CVEC(at_j->x));
-
 			const double *coef_i = sh_i->coef;
+			double rr = vec_dist_2(CVEC(at_i->x), CVEC(at_j->x));
 
 			/* primitive i */
 			for (size_t ig = 0; ig < sh_i->n_funcs; ig++) {
 				double ai = *coef_i++;
+				double con_i[20], con_j[20];
 
-				double con_i[20];
 				set_coef(con_i, sh_i->type, coef_i);
-
 				coef_i++;
 				if (sh_i->type == 'L')
 					coef_i++;
@@ -507,7 +489,6 @@ void efp_st_int_deriv(size_t n_atoms_i, const struct xr_atom *atoms_i,
 				/* primitive j */
 				for (size_t jg = 0; jg < sh_j->n_funcs; jg++) {
 					double aj = *coef_j++;
-
 					double aa = 1.0 / (ai + aj);
 					double tmp = ai * aj * rr * aa;
 
@@ -519,9 +500,7 @@ void efp_st_int_deriv(size_t n_atoms_i, const struct xr_atom *atoms_i,
 						continue;
 					}
 
-					double con_j[20];
 					set_coef(con_j, sh_j->type, coef_j);
-
 					coef_j++;
 					if (sh_j->type == 'L')
 						coef_j++;
