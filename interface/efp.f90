@@ -4,6 +4,46 @@ module efp
 use iso_c_binding
 implicit none
 
+! efp_result
+integer(kind=c_int), parameter :: EFP_RESULT_SUCCESS = 0
+integer(kind=c_int), parameter :: EFP_RESULT_FATAL = 1
+integer(kind=c_int), parameter :: EFP_RESULT_NO_MEMORY = 2
+integer(kind=c_int), parameter :: EFP_RESULT_FILE_NOT_FOUND = 3
+integer(kind=c_int), parameter :: EFP_RESULT_SYNTAX_ERROR = 4
+integer(kind=c_int), parameter :: EFP_RESULT_UNKNOWN_FRAGMENT = 5
+integer(kind=c_int), parameter :: EFP_RESULT_POL_NOT_CONVERGED = 6
+
+! efp_term
+integer(kind=c_int), parameter :: EFP_TERM_ELEC = 1
+integer(kind=c_int), parameter :: EFP_TERM_POL = 2
+integer(kind=c_int), parameter :: EFP_TERM_DISP = 4
+integer(kind=c_int), parameter :: EFP_TERM_XR = 8
+integer(kind=c_int), parameter :: EFP_TERM_CHTR = 16
+integer(kind=c_int), parameter :: EFP_TERM_AI_ELEC = 32
+integer(kind=c_int), parameter :: EFP_TERM_AI_POL = 64
+integer(kind=c_int), parameter :: EFP_TERM_AI_DISP = 128
+integer(kind=c_int), parameter :: EFP_TERM_AI_XR = 256
+integer(kind=c_int), parameter :: EFP_TERM_AI_CHTR = 512
+
+! efp_disp_damp
+integer(kind=c_int), parameter :: EFP_DISP_DAMP_OVERLAP = 0
+integer(kind=c_int), parameter :: EFP_DISP_DAMP_TT = 1
+integer(kind=c_int), parameter :: EFP_DISP_DAMP_OFF = 2
+
+! efp_elec_damp
+integer(kind=c_int), parameter :: EFP_ELEC_DAMP_SCREEN = 0
+integer(kind=c_int), parameter :: EFP_ELEC_DAMP_OVERLAP = 1
+integer(kind=c_int), parameter :: EFP_ELEC_DAMP_OFF = 2
+
+! efp_pol_damp
+integer(kind=c_int), parameter :: EFP_POL_DAMP_TT = 0
+integer(kind=c_int), parameter :: EFP_POL_DAMP_OFF = 1
+
+! efp_coord_type
+integer(kind=c_int), parameter :: EFP_COORD_TYPE_XYZABC = 0
+integer(kind=c_int), parameter :: EFP_COORD_TYPE_POINTS = 1
+integer(kind=c_int), parameter :: EFP_COORD_TYPE_ROTMAT = 2
+
 type, bind(c) :: efp_opts
   integer(kind=c_int) terms
   integer(kind=c_int) disp_damp
