@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2012-2015 Ilya Kaliman
+ * Copyright (c) 2012-2017 Ilya Kaliman
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,33 +27,39 @@
 #ifndef LIBEFP_CLAPACK_H
 #define LIBEFP_CLAPACK_H
 
+#ifdef LIBEFP_FORTRAN_INT64
+typedef long long int fortranint_t;
+#else /* LIBEFP_FORTRAN_INT64 */
+typedef int fortranint_t;
+#endif /* LIBEFP_FORTRAN_INT64 */
+
 void efp_dgemm(char,
 	       char,
-	       int,
-	       int,
-	       int,
+	       fortranint_t,
+	       fortranint_t,
+	       fortranint_t,
 	       double,
 	       double *,
-	       int,
+	       fortranint_t,
 	       double *,
-	       int,
+	       fortranint_t,
 	       double,
 	       double *,
-	       int);
+	       fortranint_t);
 
-int efp_dsyev(char,
-	      char,
-	      int,
-	      double *,
-	      int,
-	      double *);
+fortranint_t efp_dsyev(char,
+		       char,
+		       fortranint_t,
+		       double *,
+		       fortranint_t,
+		       double *);
 
-int efp_dgesv(int,
-	      int,
-	      double *,
-	      int,
-	      int *,
-	      double *,
-	      int);
+fortranint_t efp_dgesv(fortranint_t,
+		       fortranint_t,
+		       double *,
+		       fortranint_t,
+		       fortranint_t *,
+		       double *,
+		       fortranint_t);
 
 #endif /* LIBEFP_CLAPACK_H */

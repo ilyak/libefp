@@ -30,53 +30,55 @@
 
 void dgemm_(char *,
 	    char *,
-	    int *,
-	    int *,
-	    int *,
+	    fortranint_t *,
+	    fortranint_t *,
+	    fortranint_t *,
 	    double *,
 	    double *,
-	    int *,
+	    fortranint_t *,
 	    double *,
-	    int *,
+	    fortranint_t *,
 	    double *,
 	    double *,
-	    int *);
+	    fortranint_t *);
 
 void dsyev_(char *,
 	    char *,
-	    int *,
+	    fortranint_t *,
 	    double *,
-	    int *,
+	    fortranint_t *,
 	    double *,
 	    double *,
-	    int *,
-	    int *);
+	    fortranint_t *,
+	    fortranint_t *);
 
-void dgesv_(int *,
-	    int *,
+void dgesv_(fortranint_t *,
+	    fortranint_t *,
 	    double *,
-	    int *,
-	    int *,
+	    fortranint_t *,
+	    fortranint_t *,
 	    double *,
-	    int *,
-	    int *);
+	    fortranint_t *,
+	    fortranint_t *);
 
 void
-efp_dgemm(char transa, char transb, int m, int n, int k, double alpha,
-    double *a, int lda, double *b, int ldb, double beta, double *c, int ldc)
+efp_dgemm(char transa, char transb, fortranint_t m, fortranint_t n,
+    fortranint_t k, double alpha, double *a, fortranint_t lda, double *b,
+    fortranint_t ldb, double beta, double *c, fortranint_t ldc)
 {
-	dgemm_(&transa, &transb, &m, &n, &k, &alpha,
-	    a, &lda, b, &ldb, &beta, c, &ldc);
+	dgemm_(&transa, &transb, &m, &n, &k, &alpha, a, &lda,
+	    b, &ldb, &beta, c, &ldc);
 }
 
-int
-efp_dsyev(char jobz, char uplo, int n, double *a, int lda, double *w)
+fortranint_t
+efp_dsyev(char jobz, char uplo, fortranint_t n, double *a, fortranint_t lda,
+    double *w)
 {
-	int info, lwork;
+	fortranint_t info, lwork;
 	double *work;
 
 	lwork = n * n;
-	work = (double *)malloc(lwork * sizeof(double));
+	work = (double *)malloc(lwork * sizeof *work);
 
 	dsyev_(&jobz, &uplo, &n, a, &lda, w, work, &lwork, &info);
 
@@ -84,10 +86,11 @@ efp_dsyev(char jobz, char uplo, int n, double *a, int lda, double *w)
 	return (info);
 }
 
-int
-efp_dgesv(int n, int nrhs, double *a, int lda, int *ipiv, double *b, int ldb)
+fortranint_t
+efp_dgesv(fortranint_t n, fortranint_t nrhs, double *a, fortranint_t lda,
+    fortranint_t *ipiv, double *b, fortranint_t ldb)
 {
-	int info;
+	fortranint_t info;
 
 	dgesv_(&n, &nrhs, a, &lda, ipiv, b, &ldb, &info);
 
