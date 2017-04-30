@@ -148,12 +148,12 @@ efp_compute_id_direct(struct efp *efp)
 {
 	double *c;
 	size_t n;
-	int *ipiv;
+	fortranint_t *ipiv;
 	enum efp_result res;
 
 	n = 3 * efp->n_polarizable_pts;
-	c = (double *)calloc(n * n, sizeof(double));
-	ipiv = (int *)calloc(n, sizeof(int));
+	c = (double *)calloc(n * n, sizeof *c);
+	ipiv = (fortranint_t *)calloc(n, sizeof *ipiv);
 
 	if (c == NULL || ipiv == NULL) {
 		res = EFP_RESULT_NO_MEMORY;
@@ -165,7 +165,8 @@ efp_compute_id_direct(struct efp *efp)
 	compute_rhs(efp, efp->indip, 0);
 	transpose_matrix(c, n);
 
-	if (efp_dgesv((int)n, 1, c, (int)n, ipiv, (double *)efp->indip, (int)n) != 0) {
+	if (efp_dgesv((fortranint_t)n, 1, c, (fortranint_t)n, ipiv,
+	    (double *)efp->indip, (fortranint_t)n) != 0) {
 		efp_log("dgesv: error solving for induced dipoles");
 		res = EFP_RESULT_FATAL;
 		goto error;
@@ -176,16 +177,15 @@ efp_compute_id_direct(struct efp *efp)
 	compute_rhs(efp, efp->indipconj, 1);
 	transpose_matrix(c, n);
 
-	if (efp_dgesv((int)n, 1, c, (int)n, ipiv, (double *)efp->indipconj, (int)n) != 0) {
+	if (efp_dgesv((fortranint_t)n, 1, c, (fortranint_t)n, ipiv,
+	    (double *)efp->indipconj, (fortranint_t)n) != 0) {
 		efp_log("dgesv: error solving for conjugate induced dipoles");
 		res = EFP_RESULT_FATAL;
 		goto error;
 	}
-
 	res = EFP_RESULT_SUCCESS;
 error:
 	free(c);
 	free(ipiv);
-
 	return (res);
 }

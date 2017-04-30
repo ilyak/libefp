@@ -109,12 +109,12 @@ transform_integrals(size_t n_lmo_i, size_t n_lmo_j, size_t wf_size_i,
     size_t wf_size_j, double *wf_i, double *wf_j, double *s, double *lmo_s,
     double *tmp)
 {
-	efp_dgemm('N', 'N', (int)wf_size_j, (int)n_lmo_i, (int)wf_size_i,
-	    1.0, s, (int)wf_size_j, wf_i, (int)wf_size_i, 0.0, tmp,
-	    (int)wf_size_j);
-	efp_dgemm('T', 'N', (int)n_lmo_j, (int)n_lmo_i, (int)wf_size_j,
-	    1.0, wf_j, (int)wf_size_j, tmp, (int)wf_size_j, 0.0, lmo_s,
-	    (int)n_lmo_j);
+	efp_dgemm('N', 'N', (fortranint_t)wf_size_j, (fortranint_t)n_lmo_i,
+	    (fortranint_t)wf_size_i, 1.0, s, (fortranint_t)wf_size_j, wf_i,
+	    (fortranint_t)wf_size_i, 0.0, tmp, (fortranint_t)wf_size_j);
+	efp_dgemm('T', 'N', (fortranint_t)n_lmo_j, (fortranint_t)n_lmo_i,
+	    (fortranint_t)wf_size_j, 1.0, wf_j, (fortranint_t)wf_size_j, tmp,
+	    (fortranint_t)wf_size_j, 0.0, lmo_s, (fortranint_t)n_lmo_j);
 }
 
 static void
