@@ -82,3 +82,8 @@ an existing quantum chemistry package to get a working QM/EFP interface.
 3. Cleanup resources
 
 	a. Release all memory used by libefp: efp_shutdown
+
+4. Misc
+
+Depending on your setup you may need to define LIBEFP_FORTRAN_INT64
+if you have 64-bit integers in Fortran/BLAS by default.
