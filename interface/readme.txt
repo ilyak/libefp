@@ -3,7 +3,7 @@ an existing quantum chemistry package to get a working QM/EFP interface.
 
 1. Initialization
 
-	a. Print the libefp banner: efp_banner
+	a. Print the libefp banner: efp_print_banner
 	b. Create a EFP object: efp_create
 	c. Setup your EFP options: efp_set_opts
 	d. Load EFP parameters from ".efp" files: efp_add_potential
