@@ -468,6 +468,7 @@ int main(int argc, char **argv)
 	ff_free(state.ff);
 	sys_free(state.sys);
 	cfg_free(state.cfg);
+	free(state.grad);
 exit:
 #ifdef WITH_MPI
 	MPI_Finalize();
