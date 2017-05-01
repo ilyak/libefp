@@ -23,7 +23,7 @@ MYCFLAGS= -std=c99 -O3 -g -fopenmp
 MYFFLAGS= -g
 
 # ar command
-AR= ar rcu
+AR= ar rc
 
 # ranlib command
 RANLIB= ranlib
