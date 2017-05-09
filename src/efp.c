@@ -1318,7 +1318,7 @@ efp_add_fragment(struct efp *efp, const char *name)
 	const struct frag *lib = efp_find_lib(efp, name);
 
 	if (!lib) {
-		efp_log("unknown fragment \"%s\"; check its .efp file", name);
+		efp_log("cannot find \"%s\" in any of .efp files", name);
 		return EFP_RESULT_UNKNOWN_FRAGMENT;
 	}
 
