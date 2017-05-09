@@ -33,7 +33,13 @@
 
 #include "log.h"
 
-static efp_log_cb _log_cb = NULL;
+static void
+efp_default_log_cb(const char *msg)
+{
+	printf("%s", msg);
+}
+
+static efp_log_cb _log_cb = efp_default_log_cb;
 
 void
 efp_log(const char *fmt, ...)
