@@ -243,13 +243,13 @@ void efp_opts_default(struct efp_opts *opts);
  * Set the error log callback function.
  *
  * The callback function can be used to print verbose diagnostic messages from
- * libefp. By default libefp prints to stdout using the function shown below.
+ * libefp. By default libefp prints to stderr using the function shown below.
  * Logging can be disabled by setting \a cb to NULL.
  *
  * \code
  * void log_cb(const char *msg)
  * {
- *     printf("%s\n", msg);
+ *     fprintf(stderr, "LIBEFP: %s\n", msg);
  * }
  * \endcode
  *

@@ -36,7 +36,7 @@
 static void
 efp_default_log_cb(const char *msg)
 {
-	printf("%s", msg);
+	fprintf(stderr, "LIBEFP: %s\n", msg);
 }
 
 static efp_log_cb _log_cb = efp_default_log_cb;
