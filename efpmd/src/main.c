@@ -140,11 +140,6 @@ static struct cfg *make_cfg(void)
 	return cfg;
 }
 
-static void log_cb(const char *msg)
-{
-	fprintf(stderr, "LIBEFP: %s\n", msg);
-}
-
 static sim_fn_t get_sim_fn(enum run_type run_type)
 {
 	switch (run_type) {
@@ -257,8 +252,6 @@ static struct efp *create_efp(const struct cfg *cfg, const struct sys *sys)
 
 	if (!efp)
 		error("unable to create efp object");
-
-	efp_set_error_log(log_cb);
 
 	if (cfg_get_bool(cfg, "single_params_file"))
 		check_fail(efp_add_potential(efp, cfg_get_string(cfg, "efp_params_file")));
