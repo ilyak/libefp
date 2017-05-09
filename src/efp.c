@@ -1310,7 +1310,11 @@ efp_add_fragment(struct efp *efp, const char *name)
 	assert(efp);
 	assert(name);
 
-	enum efp_result res;
+	if (efp->skiplist) {
+		efp_log("cannot add fragments after efp_prepare");
+		return (EFP_RESULT_FATAL);
+	}
+
 	const struct frag *lib = efp_find_lib(efp, name);
 
 	if (!lib) {
@@ -1325,6 +1329,7 @@ efp_add_fragment(struct efp *efp, const char *name)
 	if (!efp->frags)
 		return EFP_RESULT_NO_MEMORY;
 
+	enum efp_result res;
 	struct frag *frag = efp->frags + efp->n_frag - 1;
 
 	if ((res = copy_frag(frag, lib)))
