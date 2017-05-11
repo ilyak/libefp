@@ -136,6 +136,12 @@ Default value: `iterative`
 
 Default value: `false`
 
+##### Enable multistep molecular dynamics
+
+`enable_multistep [true|false]`
+
+Default value: `false`
+
 ##### Geometry of the molecular-mechanics part
 
 `ff_geometry <path>`
@@ -182,6 +188,14 @@ Default value: `100`
 
 This specifies maximum number of steps for both geometry optimization and
 molecular dynamics.
+
+##### Number of steps between recomputation of slow terms in multistep MD
+
+`multistep_steps <number>`
+
+Default value: `1`
+
+Currently only exchange-repulsion EFP term is affected.
 
 ##### The path to the directory with fragment library
 
