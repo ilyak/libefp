@@ -2,6 +2,8 @@ run_type md
 ensemble nve
 time_step 0.5
 max_steps 50
+enable_multistep true
+multistep_steps 2
 fraglib_path ../fraglib
 
 fragment h2o_l

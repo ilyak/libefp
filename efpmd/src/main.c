@@ -103,6 +103,7 @@ static struct cfg *make_cfg(void)
 			   EFP_POL_DRIVER_DIRECT });
 
 	cfg_add_bool(cfg, "enable_ff", false);
+	cfg_add_bool(cfg, "enable_multistep", false);
 	cfg_add_string(cfg, "ff_geometry", "ff.xyz");
 	cfg_add_string(cfg, "ff_parameters", FRAGLIB_PATH "/params/amber99.prm");
 	cfg_add_bool(cfg, "single_params_file", false);
@@ -110,6 +111,7 @@ static struct cfg *make_cfg(void)
 	cfg_add_bool(cfg, "enable_cutoff", false);
 	cfg_add_double(cfg, "swf_cutoff", 10.0);
 	cfg_add_int(cfg, "max_steps", 100);
+	cfg_add_int(cfg, "multistep_steps", 1);
 	cfg_add_string(cfg, "fraglib_path", FRAGLIB_PATH);
 	cfg_add_string(cfg, "userlib_path", ".");
 	cfg_add_bool(cfg, "enable_pbc", false);

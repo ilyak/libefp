@@ -61,11 +61,14 @@ struct md {
 	struct body *bodies;
 	size_t n_freedom;
 	vec_t box;
+	int step; /* current md step */
 	double potential_energy;
+	double xr_energy; /* used in multistep md */
+	double *xr_gradient; /* used in multistep md */
 	double (*get_invariant)(const struct md *);
 	void (*update_step)(struct md *);
 	struct state *state;
-	void *data;
+	void *data; /* nvt/npt data */
 };
 
 void sim_md(struct state *state);
@@ -153,7 +156,7 @@ static double get_invariant_nvt(const struct md *md)
 	double kbt = BOLTZMANN * t_target;
 
 	double t_virt = kbt * md->n_freedom * (data->chi_dt +
-				data->chi * data->chi * t_tau * t_tau / 2.0);
+	    data->chi * data->chi * t_tau * t_tau / 2.0);
 
 	return md->potential_energy + get_kinetic_energy(md) + t_virt;
 }
@@ -171,10 +174,10 @@ static double get_invariant_npt(const struct md *md)
 	double volume = get_volume(md);
 
 	double t_virt = kbt * md->n_freedom * (data->chi_dt +
-				data->chi * data->chi * t_tau * t_tau / 2.0);
+	    data->chi * data->chi * t_tau * t_tau / 2.0);
 
 	double p_virt = p_target * volume + 3.0 * md->n_bodies * kbt *
-				data->eta * data->eta * p_tau * p_tau / 2.0;
+	    data->eta * data->eta * p_tau * p_tau / 2.0;
 
 	return md->potential_energy + get_kinetic_energy(md) + t_virt + p_virt;
 }
@@ -327,7 +330,31 @@ static void compute_forces(struct md *md)
 		    EFP_COORD_TYPE_ROTMAT, crd));
 	}
 
-	compute_energy(md->state, true);
+	if (cfg_get_bool(md->state->cfg, "enable_multistep")) {
+		struct efp_opts opts, opts_save;
+		int multistep_steps;
+
+		multistep_steps = cfg_get_int(md->state->cfg,
+		    "multistep_steps");
+		check_fail(efp_get_opts(md->state->efp, &opts));
+		if (md->step % multistep_steps == 0) {
+			opts_save = opts;
+			opts.terms = EFP_TERM_XR; /* xr only */
+			check_fail(efp_set_opts(md->state->efp, &opts));
+			compute_energy(md->state, true);
+			md->xr_energy = md->state->energy;
+			memcpy(md->xr_gradient, md->state->grad,
+			    6 * md->n_bodies * sizeof(double));
+			opts = opts_save;
+		}
+		opts.terms &= ~EFP_TERM_XR; /* turn off xr */
+		check_fail(efp_set_opts(md->state->efp, &opts));
+		compute_energy(md->state, true);
+		md->state->energy += md->xr_energy;
+		for (size_t i = 0; i < 6 * md->n_bodies; i++)
+			md->state->grad[i] += md->xr_gradient[i];
+	} else
+		compute_energy(md->state, true);
 
 	md->potential_energy = md->state->energy;
 
@@ -790,6 +817,7 @@ static struct md *md_create(struct state *state)
 
 	md->n_bodies = state->sys->n_frags;
 	md->bodies = xcalloc(md->n_bodies, sizeof(struct body));
+	md->xr_gradient = xcalloc(6 * md->n_bodies, sizeof(double));
 
 	double coord[6 * md->n_bodies];
 	check_fail(efp_get_coordinates(state->efp, coord));
@@ -871,6 +899,7 @@ static void print_status(const struct md *md)
 static void md_shutdown(struct md *md)
 {
 	free(md->bodies);
+	free(md->xr_gradient);
 	free(md->data);
 	free(md);
 }
@@ -890,11 +919,13 @@ void sim_md(struct state *state)
 	msg("    INITIAL STATE\n\n");
 	print_status(md);
 
-	for (int i = 1; i <= cfg_get_int(state->cfg, "max_steps"); i++) {
+	for (md->step = 1;
+	     md->step <= cfg_get_int(state->cfg, "max_steps");
+	     md->step++) {
 		md->update_step(md);
 
-		if (i % cfg_get_int(state->cfg, "print_step") == 0) {
-			msg("    STATE AFTER %d STEPS\n\n", i);
+		if (md->step % cfg_get_int(state->cfg, "print_step") == 0) {
+			msg("    STATE AFTER %d STEPS\n\n", md->step);
 			print_status(md);
 		}
 	}
