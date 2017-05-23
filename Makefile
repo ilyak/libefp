@@ -28,13 +28,15 @@ install: all
 	install -d $(PREFIX)/bin
 	install -d $(PREFIX)/include
 	install -d $(PREFIX)/lib
-	install -d $(FRAGLIB)
+	install -d $(FRAGLIB)/databases
 	install -m 0755 efpmd/src/efpmd $(PREFIX)/bin
 	install -m 0755 efpmd/tools/cubegen.pl $(PREFIX)/bin
 	install -m 0755 efpmd/tools/trajectory.pl $(PREFIX)/bin
 	install -m 0644 src/efp.h $(PREFIX)/include
 	install -m 0644 src/libefp.a $(PREFIX)/lib
-	install -m 0644 fraglib/* $(FRAGLIB)
+	install -m 0644 fraglib/*.efp $(FRAGLIB)
+	install -m 0644 fraglib/makefp.inp $(FRAGLIB)
+	install -m 0644 fraglib/databases/* $(FRAGLIB)/databases
 
 dist:
 	git archive --format=tar.gz --prefix=libefp/ -o libefp.tar.gz HEAD
