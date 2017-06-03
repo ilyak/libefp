@@ -270,26 +270,22 @@ check_opts(const struct efp_opts *opts)
 		    (opts->terms & EFP_TERM_AI_DISP) ||
 		    (opts->terms & EFP_TERM_AI_XR) ||
 		    (opts->terms & EFP_TERM_AI_CHTR)) {
-			efp_log(
-"periodic calculations are not supported for QM/EFP");
+			efp_log("periodic calculations are not supported "
+			    "for QM/EFP");
 			return EFP_RESULT_FATAL;
 		}
-
 		if (!opts->enable_cutoff) {
-			efp_log(
-"periodic calculations require interaction cutoff");
+			efp_log("periodic calculations require interaction "
+			    "cutoff to be enabled");
 			return EFP_RESULT_FATAL;
 		}
 	}
-
 	if (opts->enable_cutoff) {
 		if (opts->swf_cutoff < 1.0) {
-			efp_log(
-"interaction cutoff is too small");
+			efp_log("interaction cutoff is too small");
 			return EFP_RESULT_FATAL;
 		}
 	}
-
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -320,8 +316,8 @@ check_frag_params(const struct efp_opts *opts, const struct frag *frag)
 		}
 		if (opts->disp_damp == EFP_DISP_DAMP_OVERLAP &&
 		    frag->n_lmo != frag->n_dynamic_polarizable_pts) {
-			efp_log(
-"number of polarization points does not match number of LMOs");
+			efp_log("number of polarization points does not "
+			    "match number of LMOs");
 			return EFP_RESULT_FATAL;
 		}
 	}
@@ -827,8 +823,8 @@ efp_set_periodic_box(struct efp *efp, double x, double y, double z)
 	if (x < 2.0 * efp->opts.swf_cutoff ||
 	    y < 2.0 * efp->opts.swf_cutoff ||
 	    z < 2.0 * efp->opts.swf_cutoff) {
-		efp_log(
-"periodic box dimensions must be at least twice the cutoff");
+		efp_log("periodic box dimensions must be at least twice "
+		    "the switching function cutoff");
 		return EFP_RESULT_FATAL;
 	}
 

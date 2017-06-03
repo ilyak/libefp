@@ -748,8 +748,8 @@ parse_xrfit(struct frag *frag, struct stream *stream)
 	for (size_t i = 0; i < frag->n_lmo; i++) {
 		for (int k = 0; k < 4; k++) {
 			if (!tok_double(stream, frag->xrfit + 4 * i + k)) {
-				efp_log(
-"four parameters are expected for each LMO in XRFIT group");
+				efp_log("four parameters are expected for "
+				    "each LMO in XRFIT group");
 				return (EFP_RESULT_SYNTAX_ERROR);
 			}
 		}
@@ -766,8 +766,8 @@ static enum efp_result
 parse_polab(struct frag *frag, struct stream *stream)
 {
 	if (!tok_double(stream, &frag->pol_damp)) {
-		efp_log(
-"error parsing fragment polarization damping parameter");
+		efp_log("error parsing fragment polarization damping "
+		    "parameters");
 		return (EFP_RESULT_SYNTAX_ERROR);
 	}
 
