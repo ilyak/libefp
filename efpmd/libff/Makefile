@@ -15,9 +15,6 @@ $(LIBFF_A): $(ALL_O)
 	$(RANLIB) $@
 
 clean:
-	$(RM) $(LIBFF_A) $(ALL_O) $(TAGS)
-
-$(TAGS): $(ALL_C)
-	$(CTAGS) -f $(TAGS) $(ALL_C)
+	$(RM) $(LIBFF_A) $(ALL_O)
 
 .PHONY: all clean

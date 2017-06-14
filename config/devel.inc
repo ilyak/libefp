@@ -30,9 +30,3 @@ RANLIB= ranlib
 
 # rm command
 RM= rm -f
-
-# tags program
-CTAGS= exctags
-
-# tags file
-TAGS= tags

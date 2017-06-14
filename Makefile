@@ -10,10 +10,6 @@ efpmd: libefp
 libefp:
 	cd src && $(MAKE)
 
-tags:
-	cd src && $(MAKE) $@
-	cd efpmd/src && $(MAKE) $@
-
 clean:
 	cd src && $(MAKE) $@
 	cd tests && $(MAKE) $@
@@ -41,4 +37,4 @@ install: all
 dist:
 	git archive --format=tar.gz --prefix=libefp/ -o libefp.tar.gz HEAD
 
-.PHONY: all efpmd libefp tags clean check check-omp check-mpi install dist
+.PHONY: all efpmd libefp clean check check-omp check-mpi install dist

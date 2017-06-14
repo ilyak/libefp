@@ -18,10 +18,7 @@ $(PROG): $(ALL_O)
 	$(CC) -o $@ $(CFLAGS) $(LDFLAGS) $(ALL_O) $(LIBS)
 
 clean:
-	$(RM) $(PROG) $(ALL_O) $(TAGS)
-
-$(TAGS): $(ALL_C)
-	$(CTAGS) -f $(TAGS) $(ALL_C)
+	$(RM) $(PROG) $(ALL_O)
 
 depend:
 	@$(CC) $(CFLAGS) -MM $(ALL_C)

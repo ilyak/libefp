@@ -18,9 +18,6 @@ $(LIBOPT_A): $(ALL_O)
 	$(RANLIB) $@
 
 clean:
-	$(RM) $(LIBOPT_A) $(ALL_O) $(TAGS)
-
-$(TAGS): $(ALL_C) $(ALL_F)
-	$(CTAGS) -f $(TAGS) $(ALL_C) $(ALL_F)
+	$(RM) $(LIBOPT_A) $(ALL_O)
 
 .PHONY: all clean

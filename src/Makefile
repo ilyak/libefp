@@ -17,10 +17,7 @@ $(LIBEFP_A): $(ALL_O)
 	$(RANLIB) $@
 
 clean:
-	$(RM) $(LIBEFP_A) $(ALL_O) $(TAGS)
-
-$(TAGS): $(ALL_C)
-	$(CTAGS) -f $(TAGS) $(ALL_C)
+	$(RM) $(LIBEFP_A) $(ALL_O)
 
 depend:
 	@$(CC) $(CFLAGS) -MM $(ALL_C)
