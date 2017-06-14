@@ -7,8 +7,6 @@ LDFLAGS= -L$(TOP)/src -L$(TOP)/efpmd/libopt -L$(TOP)/efpmd/libff $(MYLDFLAGS)
 LIBS= -lefp -lopt -lff $(MYLIBS) -lm
 
 PROG= efpmd
-ALL_C= cfg.c common.c efield.c energy.c grad.c gtest.c hess.c main.c \
-       md.c msg.c opt.c parse.c rand.c sp.c
 ALL_O= cfg.o common.o efield.o energy.o grad.o gtest.o hess.o main.o \
        md.o msg.o opt.o parse.o rand.o sp.o
 
@@ -20,7 +18,4 @@ $(PROG): $(ALL_O)
 clean:
 	$(RM) $(PROG) $(ALL_O)
 
-depend:
-	@$(CC) $(CFLAGS) -MM $(ALL_C)
-
-.PHONY: all clean depend
+.PHONY: all clean

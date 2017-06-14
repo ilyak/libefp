@@ -6,9 +6,6 @@ CFLAGS= $(MYCFLAGS)
 FFLAGS= $(MYFFLAGS)
 
 LIBOPT_A= libopt.a
-
-ALL_C= opt.c
-ALL_F= blas.f lbfgsb.f linpack.f timer.f
 ALL_O= opt.o blas.o lbfgsb.o linpack.o timer.o
 
 all: $(LIBOPT_A)

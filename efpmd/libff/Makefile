@@ -5,7 +5,6 @@ include $(TOP)/config.inc
 CFLAGS= $(MYCFLAGS)
 
 LIBFF_A= libff.a
-ALL_C= ff.c
 ALL_O= ff.o
 
 all: $(LIBFF_A)
