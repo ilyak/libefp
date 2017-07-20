@@ -129,7 +129,12 @@ struct efp;
 
 /** Options controlling EFP computation. */
 struct efp_opts {
-	/** Specifies which energy terms to compute. */
+	/** Specifies which energy terms should be computed.
+	 * This field is a collection of bit flags where each bit specifies
+	 * whether the term is enabled (bit is set to 1) or disabled (bit is
+	 * set to 0). To enable the term, use bitwise OR with the corresponding
+	 * efp_term constant (e.g., terms |= EFP_TERM_ELEC). To disable the
+	 * term, use bitwise AND NOT (e.g., terms &= ~EFP_TERM_POL). */
 	unsigned terms;
 	/** Dispersion damping type (see #efp_disp_damp). */
 	enum efp_disp_damp disp_damp;
