@@ -17,7 +17,7 @@ include(psi4OptionsTools)
 option_with_default(CMAKE_BUILD_TYPE "Build type" Release)
 option_with_print(BUILD_SHARED_LIBS "Build final library as shared, not static" OFF)
 option_with_default(BUILD_FPIC "Libraries will be compiled with position independent code" ON)
-if(${BUILD_SHARED_LIBS} AND NOT ${BUILD_FPIC})
+if((${BUILD_SHARED_LIBS}) AND NOT ${BUILD_FPIC})
     message(FATAL_ERROR "BUILD_SHARED_LIBS ON and BUILD_FPIC OFF are incompatible, as shared library requires position independent code")
 endif()
 option_with_print(ENABLE_OPENMP "Enable OpenMP parallelization. Psi4 wants OFF" OFF)
@@ -26,6 +26,7 @@ option_with_flags(ENABLE_XHOST "Enable processor-specific optimization" ON
                   "-xHost" "-march=native")
 option_with_print(FRAGLIB_UNDERSCORE_L "Installed fragment library has names ending in _L. Psi4 wants OFF" ON)
 option_with_print(FRAGLIB_DEEP "Installed fragment libary has hierarchical, not flat, filestructure. Psi4 wants OFF" ON)
+option_with_print(INSTALL_DEVEL_HEADERS "Install additional namespaced devel headers beyond convenience efp.h" OFF)
 
 ######################### Process & Validate Options ###########################
 include(autocmake_safeguards)
@@ -95,6 +96,11 @@ install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/fraglib
 # headers NOT namespace protected
 install(FILES ${src_prefix}/efp.h
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+if (INSTALL_DEVEL_HEADERS)
+    install(DIRECTORY ${src_prefix}
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PN}
+            FILES_MATCHING PATTERN "*.h")
+endif()
 install(TARGETS efp
         EXPORT "${PN}Targets"
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
