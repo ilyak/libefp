@@ -124,6 +124,7 @@ write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/${PN}ConfigVersion.
                                  COMPATIBILITY AnyNewerVersion)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PN}Config.cmake
               ${CMAKE_CURRENT_BINARY_DIR}/${PN}ConfigVersion.cmake
+              cmake/FindTargetLAPACK.cmake
         DESTINATION ${CMAKECONFIG_INSTALL_DIR})
 install(EXPORT "${PN}Targets"
         NAMESPACE "${PN}::"
