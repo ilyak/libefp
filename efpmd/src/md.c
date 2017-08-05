@@ -24,8 +24,6 @@
  * SUCH DAMAGE.
  */
 
-#include <math_util.h>
-
 #include "common.h"
 #include "rand.h"
 

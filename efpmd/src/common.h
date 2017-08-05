@@ -43,7 +43,7 @@
 
 #include <efp.h>
 #include <ff.h>
-#include <math_util.h>
+#include <mathutil.h>
 
 #include "cfg.h"
 #include "msg.h"

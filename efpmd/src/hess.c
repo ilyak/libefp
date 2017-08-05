@@ -24,8 +24,6 @@
  * SUCH DAMAGE.
  */
 
-#include <math_util.h>
-
 #include "clapack.h"
 #include "common.h"
 
