@@ -1,20 +1,16 @@
-TOP= ..
-
-include $(TOP)/config.inc
-
-CFLAGS= $(MYCFLAGS)
-
 LIBEFP_A= libefp.a
-ALL_O= ai_disp.o balance.o clapack.o disp.o efp.o elec.o elec_terms.o \
-       int.o log.o parse.o pol.o pol_direct.o stream.o swf.o util.o xr.o
+LIBEFP_O= aidisp.o balance.o clapack.o disp.o efp.o elec.o \
+	  electerms.o int.o log.o parse.o pol.o poldirect.o \
+	  stream.o swf.o util.o xr.o
 
-all: $(LIBEFP_A)
+AR= ar rc
+RANLIB= ranlib
 
-$(LIBEFP_A): $(ALL_O)
-	$(AR) $@ $(ALL_O)
+$(LIBEFP_A): $(LIBEFP_O)
+	$(AR) $@ $(LIBEFP_O)
 	$(RANLIB) $@
 
 clean:
-	$(RM) $(LIBEFP_A) $(ALL_O)
+	rm -f $(LIBEFP_A) $(LIBEFP_O)
 
-.PHONY: all clean
+.PHONY: clean

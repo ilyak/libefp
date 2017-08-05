@@ -8,7 +8,7 @@ efpmd: libefp
 	cd efpmd/src && $(MAKE)
 
 libefp:
-	cd src && $(MAKE)
+	cd src && CC="$(CC)" CFLAGS="$(MYCFLAGS)" $(MAKE)
 
 clean:
 	cd src && $(MAKE) $@
