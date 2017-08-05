@@ -27,7 +27,7 @@
 #ifndef LIBEFP_ELEC_H
 #define LIBEFP_ELEC_H
 
-#include "math_util.h"
+#include "mathutil.h"
 
 static inline void
 add_3(vec_t *a, const vec_t *aa,

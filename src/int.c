@@ -28,7 +28,7 @@
 #include <string.h>
 
 #include "int.h"
-#include "int_shift.h"
+#include "intshift.h"
 
 /* Overlap and kinetic energy integral computation routines. */
 

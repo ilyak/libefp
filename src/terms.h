@@ -27,7 +27,7 @@
 #ifndef LIBEFP_TERMS_H
 #define LIBEFP_TERMS_H
 
-#include "math_util.h"
+#include "mathutil.h"
 
 struct efp;
 struct frag;

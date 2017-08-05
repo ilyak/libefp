@@ -27,7 +27,7 @@
 #ifndef LIBEFP_SWF_H
 #define LIBEFP_SWF_H
 
-#include "math_util.h"
+#include "mathutil.h"
 
 struct swf {
 	double swf;
