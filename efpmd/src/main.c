@@ -342,7 +342,7 @@ static void print_proc_info(void)
 {
 	int n_mpi = 1, n_omp = 1;
 
-#ifdef WITH_MPI
+#ifdef EFP_USE_MPI
 	MPI_Comm_size(MPI_COMM_WORLD, &n_mpi);
 #endif
 #ifdef _OPENMP
@@ -358,7 +358,7 @@ static void print_time(const time_t *t)
 
 static void print_config(struct cfg *cfg)
 {
-#ifdef WITH_MPI
+#ifdef EFP_USE_MPI
 	int rank;
 
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -417,7 +417,7 @@ int main(int argc, char **argv)
 	struct state state;
 	time_t start_time, end_time;
 
-#ifdef WITH_MPI
+#ifdef EFP_USE_MPI
 	MPI_Init(&argc, &argv);
 #endif
 	if (argc < 2) {
@@ -465,7 +465,7 @@ int main(int argc, char **argv)
 	cfg_free(state.cfg);
 	free(state.grad);
 exit:
-#ifdef WITH_MPI
+#ifdef EFP_USE_MPI
 	MPI_Finalize();
 #endif
 	return (EXIT_SUCCESS);

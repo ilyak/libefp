@@ -24,7 +24,7 @@
  * SUCH DAMAGE.
  */
 
-#ifdef WITH_MPI
+#ifdef EFP_USE_MPI
 #include <mpi.h>
 #endif
 
@@ -35,7 +35,7 @@
 #include "balance.h"
 #include "private.h"
 
-#ifdef WITH_MPI
+#ifdef EFP_USE_MPI
 struct master {
 	int total, range[2];
 };
@@ -139,12 +139,12 @@ do_slave(struct efp *efp, work_fn fn, void *data)
 		fn(efp, range[0], range[1], data);
 	}
 }
-#endif /* WITH_MPI */
+#endif /* EFP_USE_MPI */
 
 void
 efp_allreduce(double *x, size_t n)
 {
-#ifdef WITH_MPI
+#ifdef EFP_USE_MPI
 	MPI_Allreduce(MPI_IN_PLACE, x, (int)n, MPI_DOUBLE,
 	    MPI_SUM, MPI_COMM_WORLD);
 #else
@@ -156,7 +156,7 @@ efp_allreduce(double *x, size_t n)
 void
 efp_balance_work(struct efp *efp, work_fn fn, void *data)
 {
-#ifdef WITH_MPI
+#ifdef EFP_USE_MPI
 	int rank, size;
 
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);

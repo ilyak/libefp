@@ -26,7 +26,7 @@
 
 #include "msg.h"
 
-#ifdef WITH_MPI
+#ifdef EFP_USE_MPI
 #include <mpi.h>
 #endif
 
@@ -55,7 +55,7 @@ void vmsg(const char *fmt, va_list ap)
 
 void vfmsg(FILE *st, const char *fmt, va_list ap)
 {
-#ifdef WITH_MPI
+#ifdef EFP_USE_MPI
 	int rank;
 
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);

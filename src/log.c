@@ -27,7 +27,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#ifdef WITH_MPI
+#ifdef EFP_USE_MPI
 #include <mpi.h>
 #endif
 
@@ -54,7 +54,7 @@ efp_log(const char *fmt, ...)
 #pragma omp master
 #endif
 {
-#ifdef WITH_MPI
+#ifdef EFP_USE_MPI
 	int rank;
 
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);

@@ -17,7 +17,7 @@ MYLIBS= -lblas -llapack -lgfortran
 MYLDFLAGS=
 
 # additional C flags
-MYCFLAGS= -DWITH_MPI -std=c99 -O3 -g -fopenmp
+MYCFLAGS= -DEFP_USE_MPI -std=c99 -O3 -g -fopenmp
 
 # additional Fortran flags
 MYFFLAGS= -g

@@ -985,7 +985,7 @@ efp_compute(struct efp *efp, int do_gradient)
 	if ((res = efp_compute_ai_disp(efp)))
 		return res;
 
-#ifdef WITH_MPI
+#ifdef EFP_USE_MPI
 	efp_allreduce(&efp->energy.electrostatic, 1);
 	efp_allreduce(&efp->energy.dispersion, 1);
 	efp_allreduce(&efp->energy.exchange_repulsion, 1);

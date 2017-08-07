@@ -34,7 +34,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef WITH_MPI
+#ifdef EFP_USE_MPI
 #include <mpi.h>
 #endif
 #ifdef _OPENMP

@@ -36,7 +36,7 @@ void NORETURN die(const char *format, ...)
 	fmsg(stderr, "\n");
 	fflush(stderr);
 
-#ifdef WITH_MPI
+#ifdef EFP_USE_MPI
 	MPI_Finalize();
 #endif
 
