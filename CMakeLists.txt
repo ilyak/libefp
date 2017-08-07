@@ -2,13 +2,11 @@ cmake_minimum_required(VERSION 3.0)
 # project_VERSION* variables populated from project(... VERSION x.x.x) string
 cmake_policy(SET CMP0048 NEW)
 
-project(libefp
-        VERSION 1.4.2
-        LANGUAGES C)
-set(libefp_AUTHORS      "Ilya A. Kaliman")
-set(libefp_DESCRIPTION  "Parallel implementation of the Effective Fragment Potential (EFP) method")
-set(libefp_URL          "https://libefp.github.io/")
-set(libefp_LICENSE      "BSD 2-clause")
+project(libefp VERSION 1.5.0 LANGUAGES C)
+set(libefp_AUTHORS "Ilya A. Kaliman")
+set(libefp_DESCRIPTION "Parallel implementation of the Effective Fragment Potential method")
+set(libefp_URL "https://libefp.github.io/")
+set(libefp_LICENSE "BSD 2-clause")
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
@@ -22,8 +20,7 @@ if(${BUILD_SHARED_LIBS} AND NOT ${BUILD_FPIC})
 endif()
 option_with_print(ENABLE_OPENMP "Enable OpenMP parallelization. Psi4 wants OFF" OFF)
 option_with_print(ENABLE_GENERIC "Enable mostly static linking in shared library" OFF)
-option_with_flags(ENABLE_XHOST "Enable processor-specific optimization" ON
-                  "-xHost" "-march=native")
+option_with_flags(ENABLE_XHOST "Enable processor-specific optimization" ON "-xHost" "-march=native")
 option_with_print(FRAGLIB_UNDERSCORE_L "Installed fragment library has names ending in _L. Psi4 wants OFF" ON)
 option_with_print(FRAGLIB_DEEP "Installed fragment libary has hierarchical, not flat, filestructure. Psi4 wants OFF" ON)
 
@@ -40,7 +37,7 @@ include(CMakePackageConfigHelpers)
 
 set(PN ${PROJECT_NAME})
 
-# <<<  Build  >>>
+# <<< Build >>>
 
 set(raw_sources_list aidisp.c balance.c clapack.c disp.c efp.c elec.c
                      electerms.c int.c log.c parse.c pol.c poldirect.c
@@ -52,7 +49,6 @@ string(REGEX REPLACE "([^;]+)" "${src_prefix}\\1" sources_list "${raw_sources_li
 add_library(efp ${sources_list})
 set_target_properties(efp PROPERTIES POSITION_INDEPENDENT_CODE ${BUILD_FPIC}
                                      COMPILE_FLAGS "-std=c99")
-set_source_files_properties(${src_prefix}int.c PROPERTIES COMPILE_FLAGS -O1)
 if(${BUILD_SHARED_LIBS})
     target_link_libraries(efp PRIVATE ${LIBC_INTERJECT})
     if(APPLE)
@@ -85,7 +81,7 @@ foreach(_dotefp ${_dotefps})
 endforeach()
 list(REMOVE_DUPLICATES FRAGLIB_DATADIRS)
 
-# <<<  Install  >>>
+# <<< Install >>>
 
 install(FILES fraglib/makefp.inp
         DESTINATION ${CMAKE_INSTALL_DATADIR}/${PN})
@@ -100,13 +96,13 @@ install(TARGETS efp
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
-# <<<  Export Interface  >>>
+# <<< Export Interface >>>
 
 target_compile_definitions(efp INTERFACE USING_${PN})
 target_include_directories(efp INTERFACE
                            $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
-# <<<  Export Config  >>>
+# <<< Export Config >>>
 
 # GNUInstallDirs "DATADIR" wrong here; CMake search path wants "share".
 set(CMAKECONFIG_INSTALL_DIR "share/cmake/${PN}")
