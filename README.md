@@ -9,19 +9,18 @@ chemically active part [1-8]. The LIBEFP library is a full implementation of
 the EFP method. It allows users to easily incorporate EFP support into their
 favourite quantum chemistry package.
 
-Detailed description of methods and algorithms can be found in
-the libefp journal articles:
+Detailed description of methods and algorithms can be found in two LIBEFP
+papers:
 
 - [Kaliman and Slipchenko, JCC 2013](http://dx.doi.org/10.1002/jcc.23375)
 - [Kaliman and Slipchenko, JCC 2015](http://dx.doi.org/10.1002/jcc.23772)
 
 ## EFPMD
 
-The EFPMD program is a molecular simulation package based on LIBEFP. It allows
-running EFP-only molecular simulations such as geometry optimization and
-molecular dynamics. EFPMD is a part of this distribution. See README file in
+The EFPMD program is a molecular simulation package based on LIBEFP. It
+supports EFP-only molecular simulations such as geometry optimization and
+molecular dynamics. EFPMD is a part of this distribution. See README.md file in
 the `efpmd` directory for more information.
-
 
 ## Installation
 
@@ -29,9 +28,9 @@ To build LIBEFP from source you need the following:
 
 - C compiler (with C99 standard and OpenMP support)
 
-- POSIX complaint make (BSD make or GNU make will work)
+- POSIX complaint make utility (BSD make or GNU make will work)
 
-- BLAS/LAPACK libraries (required when linking with libefp)
+- BLAS/LAPACK libraries (required when linking with LIBEFP)
 
 If you are going to compile EFPMD program (required for tests):
 
@@ -39,8 +38,8 @@ If you are going to compile EFPMD program (required for tests):
 
 First, copy the configuration file which suits you from `config` directory to
 the top source code directory. Rename the file to `config.inc` and edit it
-according to your needs. All available options are explained with comments.
-Defaults usually work well but you may need to change the `MYLIBS` variable to
+according to your needs. All available options are explained in comments.
+Defaults usually work well, but you may need to change the `MYLIBS` variable to
 link with additional libraries required by your setup. You may also need to add
 additional include directories to `MYCFLAGS` (using -I flag) or library search
 path to `MYLDFLAGS` (using -L flag).
@@ -63,13 +62,10 @@ Finally, to install everything issue:
 
 	make install
 
-
 ## How to use the library
 
 For the description of the public API functions and structures provided by the
-library see the "Documentation" section at project's web site
-http://www.libefp.org/.
-
+library see the "Documentation" section at the https://libefp.github.io website.
 
 ## How to create custom EFP fragment types
 
@@ -91,10 +87,9 @@ replacing `$FRAGNAME` with your name of choice (e.g. rename `$FRAGNAME` to
 For a complete description of EFP data file format consult FRAGNAME section in
 GAMESS manual (see http://www.msg.ameslab.gov/gamess/).
 
-
 ## Information for code contributors
 
-- The main design principle for the libefp library is Keep It Simple. All
+- The main design principle for the LIBEFP library is Keep It Simple. All
   code should be easy to read and to understand. It should be easy to
   integrate the library into programs written in different programming
   languages. So the language of choice is C and no fancy OO hierarchies.
@@ -114,7 +109,6 @@ GAMESS manual (see http://www.msg.ameslab.gov/gamess/).
 
 - Use `-Wall -Wextra -Werror` flags to make sure that compilation produces no
   warnings. Use `make check` to make sure that the code passes test cases.
-
 
 ## References
 
