@@ -3,8 +3,8 @@ include config.inc
 all: efpmd
 
 efpmd: libefp
-	cd efpmd/libff && $(MAKE)
-	cd efpmd/libopt && $(MAKE)
+	cd efpmd/libff && CC="$(CC)" CFLAGS="$(MYCFLAGS)" $(MAKE)
+	cd efpmd/libopt && CC="$(CC)" CFLAGS="$(MYCFLAGS)" FC="$(FC)" FFLAGS="$(MYFFLAGS)" $(MAKE)
 	cd efpmd/src && $(MAKE)
 
 libefp:

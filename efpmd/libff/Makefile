@@ -1,19 +1,14 @@
-TOP= ../..
-
-include $(TOP)/config.inc
-
-CFLAGS= $(MYCFLAGS)
-
 LIBFF_A= libff.a
-ALL_O= ff.o
+LIBFF_O= ff.o
 
-all: $(LIBFF_A)
+AR= ar rc
+RANLIB= ranlib
 
-$(LIBFF_A): $(ALL_O)
-	$(AR) $@ $(ALL_O)
+$(LIBFF_A): $(LIBFF_O)
+	$(AR) $@ $(LIBFF_O)
 	$(RANLIB) $@
 
 clean:
-	$(RM) $(LIBFF_A) $(ALL_O)
+	rm -f $(LIBFF_A) $(LIBFF_O)
 
-.PHONY: all clean
+.PHONY: clean

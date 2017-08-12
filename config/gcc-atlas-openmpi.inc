@@ -21,12 +21,3 @@ MYCFLAGS= -DEFP_USE_MPI -std=c99 -O3 -g -fopenmp
 
 # additional Fortran flags
 MYFFLAGS= -g
-
-# ar command
-AR= ar rc
-
-# ranlib command
-RANLIB= ranlib
-
-# rm command
-RM= rm -f
