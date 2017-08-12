@@ -17,7 +17,7 @@ clean:
 	cd efpmd/libopt && $(MAKE) $@
 	cd efpmd/src && $(MAKE) $@
 
-check check-omp check-mpi: efpmd
+check checkomp checkmpi: efpmd
 	cd tests && $(MAKE) $@
 
 install: all
@@ -37,4 +37,4 @@ install: all
 dist:
 	git archive --format=tar.gz --prefix=libefp/ -o libefp.tar.gz HEAD
 
-.PHONY: all efpmd libefp clean check check-omp check-mpi install dist
+.PHONY: all efpmd libefp clean check checkomp checkmpi install dist

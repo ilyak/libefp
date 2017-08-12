@@ -56,8 +56,8 @@ If you only need the library you can use:
 To run the test suite (optional) issue:
 
 	make check
-	make check-omp    # to test OpenMP parallel code
-	make check-mpi    # to test MPI parallel code
+	make checkomp    # to test OpenMP parallel code
+	make checkmpi    # to test MPI parallel code
 
 Finally, to install everything issue:
 
