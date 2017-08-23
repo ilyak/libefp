@@ -460,11 +460,11 @@ efp_get_atomic_gradient(struct efp *efp, double *grad)
 	size_t maxa; /* Maximum number of size of m, Ia, r arrays */
 	vec_t *r = NULL; /* Radius-vector of each atom inside current fragment
 			    with respect to CoM of that fragment */
-	double M, *m = NULL; /* Total Mass of fragments and individual atoms */
+	double mm, *m = NULL; /* Total Mass of fragments and individual atoms */
 	double I, *Ia = NULL; /* Inertia along axis and contribution of each
 				 individual atom */
-	mat_t Id; /* Total inertia tensor of fragment */
-	vec_t V, G; /* Principal axis and Inertia along that axis */
+	mat_t Id; /* Total inertia tensor of a fragment */
+	vec_t v, g; /* Principal axis and Inertia along that axis */
 	vec_t rbuf, rbuf2, tq, ri, rt;
 	double dist, sina, ft, norm;
 	enum efp_result res;
@@ -505,17 +505,17 @@ efp_get_atomic_gradient(struct efp *efp, double *grad)
 		memset(r, 0, maxa * sizeof(*r));
 		memset(m, 0, maxa * sizeof(*m));
 		memset(Ia, 0, maxa * sizeof(*Ia));
-		M = 0.0;
+		mm = 0.0;
 		Id = mat_zero;
-		V = vec_zero;
-		G = vec_zero;
+		v = vec_zero;
+		g = vec_zero;
 
 		for (i = 0; i < nr ; i++) {
 			r[i].x = efp->frags[j].atoms[i].x - efp->frags[j].x;
 			r[i].y = efp->frags[j].atoms[i].y - efp->frags[j].y;
 			r[i].z = efp->frags[j].atoms[i].z - efp->frags[j].z;
 			m[i] = efp->frags[j].atoms[i].mass;
-			M += m[i];
+			mm += m[i];
 
 			/* Inertia tensor contribution calculations */
 			Id.xx += m[i] * (r[i].y*r[i].y + r[i].z*r[i].z);
@@ -530,7 +530,7 @@ efp_get_atomic_gradient(struct efp *efp, double *grad)
 		}
 
 		/* Try to diagonalize Id and get principal axis */
-		if (efp_dsyev('V', 'U', 3, (double *)&Id, 3, (double *)&G)) {
+		if (efp_dsyev('V', 'U', 3, (double *)&Id, 3, (double *)&g)) {
 			efp_log("inertia tensor diagonalization failed");
 			res = EFP_RESULT_FATAL;
 			goto error;
@@ -548,19 +548,20 @@ efp_get_atomic_gradient(struct efp *efp, double *grad)
 			pgrad[k+i] = vec_zero;
 		}
 
-		/* Now we are ready to redistribute efpgrad over atoms */
-		/* Redistribute total translation grad[i] = m[i]/M*efpgrad[j] */
+		/* Now we are ready to redistribute efpgrad over the atoms */
+
+		/* Redistribute total translation grad[i]=m[i]/mm*efpgrad[j] */
 		for (i = 0; i < nr; i++) {
 			pgrad[k+i].x = efpgrad[j].x;
 			pgrad[k+i].y = efpgrad[j].y;
 			pgrad[k+i].z = efpgrad[j].z;
-			vec_scale(&pgrad[k+i], m[i] / M);
+			vec_scale(&pgrad[k+i], m[i] / mm);
 		}
 
 		/* Redistribution of torque should be done over 3 principal
 		   axes computed previously */
 		for (l = 0; l < 3; l++) {
-			V = ((vec_t *)&Id)[l];
+			v = ((vec_t *)&Id)[l];
 			tq.x = efpgrad[j].a;
 			tq.y = efpgrad[j].b;
 			tq.z = efpgrad[j].c;
@@ -569,15 +570,15 @@ efp_get_atomic_gradient(struct efp *efp, double *grad)
 			   inertia with respect to current axis */
 			I = 0.0;
 			for (i = 0; i < nr; i++) {
-				rbuf = vec_cross(&V, &r[i]);
+				rbuf = vec_cross(&v, &r[i]);
 				dist = vec_len(&rbuf);
 				Ia[i] = m[i] * dist * dist;
 				I += Ia[i];
 			}
 
-			/* Project torque onto V axis */
-			norm = vec_dot(&tq, &V);
-			tq = V;
+			/* Project torque onto v axis */
+			norm = vec_dot(&tq, &v);
+			tq = v;
 			vec_scale(&tq, norm);
 
 			/* Now distribute torque using Ia[i]/I as a scale */
@@ -597,7 +598,7 @@ efp_get_atomic_gradient(struct efp *efp, double *grad)
 				vec_normalize(&rbuf2);
 				vec_scale(&rbuf2, ft/sina/vec_len(&r[i]));
 				/* Update grad with torque contribution of
-				   atom i over axis V */
+				   atom i over axis v */
 				pgrad[k+i] = vec_add(&pgrad[k+i], &rbuf2);
 			}
 		}
