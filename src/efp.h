@@ -520,8 +520,8 @@ enum efp_result efp_set_coordinates(struct efp *efp,
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_set_frag_coordinates(struct efp *efp,
-    size_t frag_idx, enum efp_coord_type coord_type, const double *coord);
+enum efp_result efp_set_frag_coordinates(struct efp *efp, size_t frag_idx,
+    enum efp_coord_type coord_type, const double *coord);
 
 /**
  * Get center of mass positions and Euler angles of the effective fragments.
@@ -611,8 +611,8 @@ enum efp_result efp_get_ai_screen(struct efp *efp, size_t frag_idx,
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_set_orbital_energies(struct efp *efp,
-    size_t n_core, size_t n_act, size_t n_vir, const double *oe);
+enum efp_result efp_set_orbital_energies(struct efp *efp, size_t n_core,
+    size_t n_act, size_t n_vir, const double *oe);
 
 /**
  * Set ab initio dipole integrals.
@@ -630,8 +630,8 @@ enum efp_result efp_set_orbital_energies(struct efp *efp,
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_set_dipole_integrals(struct efp *efp,
-    size_t n_core, size_t n_act, size_t n_vir, const double *dipint);
+enum efp_result efp_set_dipole_integrals(struct efp *efp, size_t n_core,
+    size_t n_act, size_t n_vir, const double *dipint);
 
 /**
  * Update wave function dependent energy terms.
@@ -915,8 +915,8 @@ enum efp_result efp_get_frag_count(struct efp *efp, size_t *n_frag);
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_frag_name(struct efp *efp, size_t frag_idx,
-    size_t size, char *frag_name);
+enum efp_result efp_get_frag_name(struct efp *efp, size_t frag_idx, size_t size,
+    char *frag_name);
 
 /**
  * Get total mass of a fragment.
@@ -926,12 +926,12 @@ enum efp_result efp_get_frag_name(struct efp *efp, size_t frag_idx,
  * \param[in] frag_idx Index of a fragment. This must be a value between zero
  * and the total number of fragments minus one.
  *
- * \param[out] mass_out Output mass value.
+ * \param[out] mass Output mass value.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
 enum efp_result efp_get_frag_mass(struct efp *efp, size_t frag_idx,
-    double *mass_out);
+    double *mass);
 
 /**
  * Get fragment principal moments of inertia.
@@ -941,13 +941,13 @@ enum efp_result efp_get_frag_mass(struct efp *efp, size_t frag_idx,
  * \param[in] frag_idx Index of a fragment. Must be a value between zero and
  * the total number of fragments minus one.
  *
- * \param[out] inertia_out Array of 3 elements where principal moments of
+ * \param[out] inertia Array of 3 elements where principal moments of
  * inertia of a fragment will be stored.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
 enum efp_result efp_get_frag_inertia(struct efp *efp, size_t frag_idx,
-    double *inertia_out);
+    double *inertia);
 
 /**
  * Get the number of atoms in the specified fragment.
