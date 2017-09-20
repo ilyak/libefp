@@ -840,7 +840,7 @@ EFP_EXPORT enum efp_result
 efp_get_periodic_box(struct efp *efp, double *xyz)
 {
 	assert(efp);
-    assert(xyz);
+	assert(xyz);
 
 	*xyz++ = efp->box.x;
 	*xyz++ = efp->box.y;
