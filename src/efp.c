@@ -837,6 +837,19 @@ efp_set_periodic_box(struct efp *efp, double x, double y, double z)
 }
 
 EFP_EXPORT enum efp_result
+efp_get_periodic_box(struct efp *efp, double *xyz)
+{
+	assert(efp);
+    assert(xyz);
+
+	*xyz++ = efp->box.x;
+	*xyz++ = efp->box.y;
+	*xyz++ = efp->box.z;
+
+	return EFP_RESULT_SUCCESS;
+}
+
+EFP_EXPORT enum efp_result
 efp_get_stress_tensor(struct efp *efp, double *stress)
 {
 	assert(efp);

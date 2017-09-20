@@ -568,6 +568,18 @@ enum efp_result efp_set_periodic_box(struct efp *efp, double x, double y,
     double z);
 
 /**
+ * Get periodic box size.
+ *
+ * \param[in] efp The efp structure.
+ *
+ * \param[out] xyz Array of 3 elements where 3 dimensions of box size will be
+ * stored.
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_get_periodic_box(struct efp *efp, double *xyz);
+
+/**
  * Get the stress tensor.
  *
  * \param[in] efp The efp structure.
