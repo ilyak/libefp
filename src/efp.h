@@ -815,7 +815,7 @@ enum efp_result efp_get_induced_dipole_conj_values(struct efp *efp,
     double *dip);
 
 /**
- *  Get the number of LMOs in a fragment.
+ * Get the number of LMOs in a fragment.
  *
  * \param[in] efp The efp structure.
  *
@@ -1040,7 +1040,7 @@ void efp_shutdown(struct efp *efp);
  * \param res Result value to be converted to string.
  *
  * \return Human readable string with the description of the result,
- *         zero-terminated.
+ * zero-terminated.
  */
 const char *efp_result_to_string(enum efp_result res);
 
