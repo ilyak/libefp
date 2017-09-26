@@ -93,7 +93,7 @@ tok_label(struct stream *stream, size_t size, char *val)
 	for (size_t i = 0; start < end && i < size - 1; i++)
 		*val++ = *start++;
 
-	return (start == end);
+	return start == end;
 }
 
 static int
@@ -621,7 +621,7 @@ skip_canonvec(struct frag *frag, struct stream *stream)
 
 	if (!tok_uint(stream, NULL) ||
 	    !tok_uint(stream, &wf_size))
-		return (EFP_RESULT_SYNTAX_ERROR);
+		return EFP_RESULT_SYNTAX_ERROR;
 
 	efp_stream_next_line(stream);
 
@@ -631,7 +631,7 @@ skip_canonvec(struct frag *frag, struct stream *stream)
 		}
 	}
 
-	return (EFP_RESULT_SUCCESS);
+	return EFP_RESULT_SUCCESS;
 }
 
 static enum efp_result
@@ -643,12 +643,12 @@ skip_canonfok(struct frag *frag, struct stream *stream)
 
 	if (strstr(efp_stream_get_ptr(stream), "STOP") != NULL) {
 		efp_stream_next_line(stream);
-		return (EFP_RESULT_SUCCESS);
+		return EFP_RESULT_SUCCESS;
 	}
 
 	efp_stream_next_line(stream);
 	efp_stream_next_line(stream);
-	return (EFP_RESULT_SUCCESS);
+	return EFP_RESULT_SUCCESS;
 }
 
 static enum efp_result
@@ -660,7 +660,7 @@ skip_ctvec(struct frag *frag, struct stream *stream)
 
 	if (!tok_uint(stream, NULL) ||
 	    !tok_uint(stream, &wf_size))
-		return (EFP_RESULT_SYNTAX_ERROR);
+		return EFP_RESULT_SYNTAX_ERROR;
 
 	efp_stream_next_line(stream);
 
@@ -669,7 +669,7 @@ skip_ctvec(struct frag *frag, struct stream *stream)
 			efp_stream_next_line(stream);
 	}
 
-	return (EFP_RESULT_SUCCESS);
+	return EFP_RESULT_SUCCESS;
 }
 
 static enum efp_result
@@ -681,12 +681,12 @@ skip_ctfok(struct frag *frag, struct stream *stream)
 
 	if (strstr(efp_stream_get_ptr(stream), "STOP") != NULL) {
 		efp_stream_next_line(stream);
-		return (EFP_RESULT_SUCCESS);
+		return EFP_RESULT_SUCCESS;
 	}
 
 	efp_stream_next_line(stream);
 	efp_stream_next_line(stream);
-	return (EFP_RESULT_SUCCESS);
+	return EFP_RESULT_SUCCESS;
 }
 
 static enum efp_result
@@ -705,33 +705,33 @@ parse_screen(struct frag *frag, struct stream *stream)
 		    !tok_double(stream, NULL) ||
 		    !tok_double(stream, scr + i)) {
 			free(scr);
-			return (EFP_RESULT_SYNTAX_ERROR);
+			return EFP_RESULT_SYNTAX_ERROR;
 		}
 		efp_stream_next_line(stream);
 	}
 
 	if (!tok_stop(stream)) {
 		free(scr);
-		return (EFP_RESULT_SYNTAX_ERROR);
+		return EFP_RESULT_SYNTAX_ERROR;
 	}
 
 	if (type == '\0' || isspace(type)) {
 		if (frag->ai_screen_params)
 			free(frag->ai_screen_params);
 		frag->ai_screen_params = scr;
-		return (EFP_RESULT_SUCCESS);
+		return EFP_RESULT_SUCCESS;
 	}
 
 	if (type == '2') {
 		if (frag->screen_params)
 			free(frag->screen_params);
 		frag->screen_params = scr;
-		return (EFP_RESULT_SUCCESS);
+		return EFP_RESULT_SUCCESS;
 	}
 
 	efp_log("unsupported screen group in EFP data file");
 	free(scr);
-	return (EFP_RESULT_SUCCESS);
+	return EFP_RESULT_SUCCESS;
 }
 
 static enum efp_result
@@ -739,7 +739,7 @@ parse_xrfit(struct frag *frag, struct stream *stream)
 {
 	if (frag->n_lmo == 0) {
 		efp_log("no LMO centroids found before XRFIT group");
-		return (EFP_RESULT_SYNTAX_ERROR);
+		return EFP_RESULT_SYNTAX_ERROR;
 	}
 
 	frag->xrfit = (double *)malloc(frag->n_lmo * 4 * sizeof(double));
@@ -750,16 +750,16 @@ parse_xrfit(struct frag *frag, struct stream *stream)
 			if (!tok_double(stream, frag->xrfit + 4 * i + k)) {
 				efp_log("four parameters are expected for "
 				    "each LMO in XRFIT group");
-				return (EFP_RESULT_SYNTAX_ERROR);
+				return EFP_RESULT_SYNTAX_ERROR;
 			}
 		}
 		efp_stream_next_line(stream);
 	}
 
 	if (!tok_stop(stream))
-		return (EFP_RESULT_SYNTAX_ERROR);
+		return EFP_RESULT_SYNTAX_ERROR;
 
-	return (EFP_RESULT_SUCCESS);
+	return EFP_RESULT_SUCCESS;
 }
 
 static enum efp_result
@@ -768,15 +768,15 @@ parse_polab(struct frag *frag, struct stream *stream)
 	if (!tok_double(stream, &frag->pol_damp)) {
 		efp_log("error parsing fragment polarization damping "
 		    "parameters");
-		return (EFP_RESULT_SYNTAX_ERROR);
+		return EFP_RESULT_SYNTAX_ERROR;
 	}
 
 	efp_stream_next_line(stream);
 
 	if (!tok_stop(stream))
-		return (EFP_RESULT_SYNTAX_ERROR);
+		return EFP_RESULT_SYNTAX_ERROR;
 
-	return (EFP_RESULT_SUCCESS);
+	return EFP_RESULT_SUCCESS;
 }
 
 typedef enum efp_result (*parse_fn)(struct frag *, struct stream *);
@@ -906,7 +906,7 @@ efp_add_potential(struct efp *efp, const char *path)
 
 	if ((stream = efp_stream_open(path)) == NULL) {
 		efp_log("unable to open file %s", path);
-		return (EFP_RESULT_FILE_NOT_FOUND);
+		return EFP_RESULT_FILE_NOT_FOUND;
 	}
 
 	efp_stream_set_split_char(stream, '>');
@@ -914,5 +914,5 @@ efp_add_potential(struct efp *efp, const char *path)
 	res = parse_file(efp, stream);
 	efp_stream_close(stream);
 
-	return (res);
+	return res;
 }
