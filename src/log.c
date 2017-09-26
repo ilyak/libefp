@@ -83,5 +83,5 @@ efp_set_log_cb(efp_log_cb log_cb)
 efp_log_cb
 efp_get_log_cb(void)
 {
-	return (_log_cb);
+	return _log_cb;
 }
