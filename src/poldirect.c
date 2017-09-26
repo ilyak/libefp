@@ -91,28 +91,31 @@ get_int_mat(const struct efp *efp, size_t i, size_t j, size_t ii, size_t jj)
 	m.zy = swf.swf * p1 *  3.0 * dr.z * dr.y / r5;
 	m.zz = swf.swf * p1 * (3.0 * dr.z * dr.z / r5 - 1.0 / r3);
 
-	return (m);
+	return m;
 }
 
 static void
 compute_lhs(const struct efp *efp, double *c, int conj)
 {
+	size_t i, ii, j, jj, offset_i, offset_j;
 	size_t n = 3 * efp->n_polarizable_pts;
 
-	for (size_t i = 0, offset_i = 0; i < efp->n_frag; i++) {
-	for (size_t ii = 0; ii < efp->frags[i].n_polarizable_pts; ii++, offset_i++) {
-	for (size_t j = 0, offset_j = 0; j < efp->n_frag; j++) {
-	for (size_t jj = 0; jj < efp->frags[j].n_polarizable_pts; jj++, offset_j++) {
+	for (i = 0, offset_i = 0; i < efp->n_frag; i++) {
+	for (ii = 0; ii < efp->frags[i].n_polarizable_pts; ii++, offset_i++) {
+	for (j = 0, offset_j = 0; j < efp->n_frag; j++) {
+	for (jj = 0; jj < efp->frags[j].n_polarizable_pts; jj++, offset_j++) {
 		if (i == j) {
-			if (ii == jj)
-				copy_matrix(c, n, offset_i, offset_j, &mat_identity);
-			else
-				copy_matrix(c, n, offset_i, offset_j, &mat_zero);
-
+			if (ii == jj) {
+				copy_matrix(c, n, offset_i, offset_j,
+				    &mat_identity);
+			} else {
+				copy_matrix(c, n, offset_i, offset_j,
+				    &mat_zero);
+			}
 			continue;
 		}
-
-		const struct polarizable_pt *pt_i = efp->frags[i].polarizable_pts + ii;
+		const struct polarizable_pt *pt_i =
+		    efp->frags[i].polarizable_pts + ii;
 		mat_t m = get_int_mat(efp, i, j, ii, jj);
 
 		if (conj)
@@ -132,8 +135,10 @@ compute_rhs(const struct efp *efp, vec_t *id, int conj)
 		const struct frag *frag = efp->frags + i;
 
 		for (size_t j = 0; j < frag->n_polarizable_pts; j++, idx++) {
-			const struct polarizable_pt *pt = frag->polarizable_pts + j;
-			vec_t field = vec_add(&pt->elec_field, &pt->elec_field_wf);
+			const struct polarizable_pt *pt =
+			    frag->polarizable_pts + j;
+			vec_t field = vec_add(&pt->elec_field,
+			    &pt->elec_field_wf);
 
 			if (conj)
 				id[idx] = mat_trans_vec(&pt->tensor, &field);
@@ -187,5 +192,5 @@ efp_compute_id_direct(struct efp *efp)
 error:
 	free(c);
 	free(ipiv);
-	return (res);
+	return res;
 }
