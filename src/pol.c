@@ -48,7 +48,7 @@ efp_get_pol_damp_tt(double r, double pa, double pb)
 	double ab = sqrt(pa * pb);
 	double r2 = r * r;
 
-	return (1.0 - exp(-ab * r2) * (1.0 + ab * r2));
+	return 1.0 - exp(-ab * r2) * (1.0 + ab * r2);
 }
 
 static double
@@ -57,7 +57,7 @@ efp_get_pol_damp_tt_grad(double r, double pa, double pb)
 	double ab = sqrt(pa * pb);
 	double r2 = r * r;
 
-	return (-2.0 * exp(-ab * r2) * (ab * ab * r2));
+	return -2.0 * exp(-ab * r2) * (ab * ab * r2);
 }
 
 static vec_t
@@ -110,7 +110,7 @@ get_multipole_field(const vec_t *xyz, const struct multipole_pt *mult_pt,
 
 	/* octupole-polarizability interactions are ignored */
 
-	return (field);
+	return field;
 }
 
 static vec_t
@@ -190,7 +190,7 @@ get_elec_field(const struct efp *efp, size_t frag_idx, size_t pt_idx)
 		}
 	}
 
-	return (elec_field);
+	return elec_field;
 }
 
 static enum efp_result
@@ -200,7 +200,7 @@ add_electron_density_field(struct efp *efp)
 	vec_t *xyz, *field;
 
 	if (efp->get_electron_density_field == NULL)
-		return (EFP_RESULT_SUCCESS);
+		return EFP_RESULT_SUCCESS;
 
 	xyz = (vec_t *)malloc(efp->n_polarizable_pts * sizeof(vec_t));
 	field = (vec_t *)malloc(efp->n_polarizable_pts * sizeof(vec_t));
@@ -233,7 +233,7 @@ add_electron_density_field(struct efp *efp)
 error:
 	free(xyz);
 	free(field);
-	return (res);
+	return res;
 }
 
 static void
@@ -280,9 +280,9 @@ compute_elec_field(struct efp *efp)
 
 	if (efp->opts.terms & EFP_TERM_AI_POL)
 		if ((res = add_electron_density_field(efp)))
-			return (res);
+			return res;
 
-	return (EFP_RESULT_SUCCESS);
+	return EFP_RESULT_SUCCESS;
 }
 
 static void
@@ -409,7 +409,7 @@ pol_scf_iter(struct efp *efp)
 	free(data.id_new);
 	free(data.id_conj_new);
 
-	return (data.conv / npts / 2);
+	return data.conv / npts / 2;
 }
 
 static void
@@ -447,9 +447,9 @@ efp_compute_id_iterative(struct efp *efp)
 		if (pol_scf_iter(efp) < POL_SCF_TOL)
 			break;
 		if (iter == POL_SCF_MAX_ITER)
-			return (EFP_RESULT_POL_NOT_CONVERGED);
+			return EFP_RESULT_POL_NOT_CONVERGED;
 	}
-	return (EFP_RESULT_SUCCESS);
+	return EFP_RESULT_SUCCESS;
 }
 
 enum efp_result
@@ -460,7 +460,7 @@ efp_compute_pol_energy(struct efp *efp, double *energy)
 	assert(energy);
 
 	if ((res = compute_elec_field(efp)))
-		return (res);
+		return res;
 
 	switch (efp->opts.pol_driver) {
 	case EFP_POL_DRIVER_ITERATIVE:
@@ -472,13 +472,13 @@ efp_compute_pol_energy(struct efp *efp, double *energy)
 	}
 
 	if (res)
-		return (res);
+		return res;
 
 	*energy = 0.0;
 	efp_balance_work(efp, compute_energy_range, energy);
 	efp_allreduce(energy, 1);
 
-	return (EFP_RESULT_SUCCESS);
+	return EFP_RESULT_SUCCESS;
 }
 
 static void
@@ -840,5 +840,5 @@ efp_get_electric_field(struct efp *efp, size_t frag_idx, const double *xyz,
 	}
 
 	*((vec_t *)field) = elec_field;
-	return (EFP_RESULT_SUCCESS);
+	return EFP_RESULT_SUCCESS;
 }
