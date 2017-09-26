@@ -54,8 +54,7 @@ quadrature(const mat_t *tensor, size_t i, size_t j, double de)
 		m = mat_get(tensor + k, i, j);
 		sum += m * quad_fact[k] / (de * de + quad_freq[k]);
 	}
-
-	return (sum * de);
+	return sum * de;
 }
 
 static double
@@ -67,7 +66,7 @@ get_dip_int(struct efp *efp, size_t i_occ, size_t i_vir, size_t axis)
 	idx = axis * size * size + i_occ * size +
 	    (efp->n_ai_core + efp->n_ai_act) + i_vir;
 
-	return (efp->ai_dipole_integrals[idx]);
+	return efp->ai_dipole_integrals[idx];
 }
 
 static double
@@ -102,7 +101,7 @@ compute_ai_disp_pt(struct efp *efp, size_t fr_idx, size_t pt_idx)
 			}
 		}
 	}
-	return (-sum / PI);
+	return -sum / PI;
 }
 
 static void
@@ -128,15 +127,15 @@ enum efp_result
 efp_compute_ai_disp(struct efp *efp)
 {
 	if (!(efp->opts.terms & EFP_TERM_AI_DISP))
-		return (EFP_RESULT_SUCCESS);
+		return EFP_RESULT_SUCCESS;
 
 	if (efp->do_gradient) {
 		efp_log("gradient for AI/EFP dispersion is not implemented");
-		return (EFP_RESULT_FATAL);
+		return EFP_RESULT_FATAL;
 	}
 
 	efp_balance_work(efp, compute_ai_disp_range, NULL);
 	efp_allreduce(&efp->energy.ai_dispersion, 1);
 
-	return (EFP_RESULT_SUCCESS);
+	return EFP_RESULT_SUCCESS;
 }
