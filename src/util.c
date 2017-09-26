@@ -35,10 +35,9 @@ efp_skip_frag_pair(const struct efp *efp, size_t fr_i_idx, size_t fr_j_idx)
 	size_t idx = fr_i_idx * efp->n_frag + fr_j_idx;
 
 	if (efp->skiplist[idx])
-		return (1);
-
+		return 1;
 	if (!efp->opts.enable_cutoff)
-		return (0);
+		return 0;
 
 	const struct frag *fr_i = efp->frags + fr_i_idx;
 	const struct frag *fr_j = efp->frags + fr_j_idx;
@@ -52,8 +51,7 @@ efp_skip_frag_pair(const struct efp *efp, size_t fr_i_idx, size_t fr_j_idx)
 			       efp->box.z * round(dr.z / efp->box.z) };
 		dr = vec_sub(&dr, &cell);
 	}
-
-	return (vec_len_2(&dr) > cutoff2);
+	return vec_len_2(&dr) > cutoff2;
 }
 
 struct swf
@@ -68,7 +66,6 @@ efp_make_swf(const struct efp *efp, const struct frag *fr_i,
 
 	if (!efp->opts.enable_cutoff)
 		return swf;
-
 	if (efp->opts.enable_pbc) {
 		swf.cell.x = efp->box.x * round(swf.dr.x / efp->box.x);
 		swf.cell.y = efp->box.y * round(swf.dr.y / efp->box.y);
@@ -101,7 +98,6 @@ efp_check_rotation_matrix(const mat_t *rotmat)
 	    !eq(vec_len(&ay), 1.0) ||
 	    !eq(vec_len(&az), 1.0))
 		return 0;
-
 	if (!eq(vec_dot(&ax, &ay), 0.0))
 		return 0;
 
