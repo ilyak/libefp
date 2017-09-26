@@ -83,7 +83,7 @@ efp_dsyev(char jobz, char uplo, fortranint_t n, double *a, fortranint_t lda,
 	dsyev_(&jobz, &uplo, &n, a, &lda, w, work, &lwork, &info);
 
 	free(work);
-	return (info);
+	return info;
 }
 
 fortranint_t
@@ -94,5 +94,5 @@ efp_dgesv(fortranint_t n, fortranint_t nrhs, double *a, fortranint_t lda,
 
 	dgesv_(&n, &nrhs, a, &lda, ipiv, b, &ldb, &info);
 
-	return (info);
+	return info;
 }
