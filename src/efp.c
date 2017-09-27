@@ -831,9 +831,9 @@ efp_get_periodic_box(struct efp *efp, double *xyz)
 	assert(efp);
 	assert(xyz);
 
-	*xyz++ = efp->box.x;
-	*xyz++ = efp->box.y;
-	*xyz++ = efp->box.z;
+	xyz[0] = efp->box.x;
+	xyz[1] = efp->box.y;
+	xyz[2] = efp->box.z;
 
 	return EFP_RESULT_SUCCESS;
 }
