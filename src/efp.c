@@ -980,10 +980,8 @@ efp_compute(struct efp *efp, int do_gradient)
 
 	if ((res = efp_compute_pol(efp)))
 		return res;
-
 	if ((res = efp_compute_ai_elec(efp)))
 		return res;
-
 	if ((res = efp_compute_ai_disp(efp)))
 		return res;
 
@@ -1013,19 +1011,22 @@ efp_compute(struct efp *efp, int do_gradient)
 EFP_EXPORT enum efp_result
 efp_get_frag_charge(struct efp *efp, size_t frag_idx, double *charge)
 {
+	struct frag *frag;
+	double sum = 0.0;
+	size_t i;
+
 	assert(efp);
 	assert(charge);
 	assert(frag_idx < efp->n_frag);
 
-	struct frag *frag = efp->frags + frag_idx;
-	*charge = 0.0;
+	frag = efp->frags + frag_idx;
 
-	for (size_t i = 0; i < frag->n_atoms; i++)
-		*charge += frag->atoms[i].znuc;
+	for (i = 0; i < frag->n_atoms; i++)
+		sum += frag->atoms[i].znuc;
+	for (i = 0; i < frag->n_multipole_pts; i++)
+		sum += frag->multipole_pts[i].monopole;
 
-	for (size_t i = 0; i < frag->n_multipole_pts; i++)
-		*charge += frag->multipole_pts[i].monopole;
-
+	*charge = sum;
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -1037,7 +1038,6 @@ efp_get_frag_multiplicity(struct efp *efp, size_t frag_idx, int *mult)
 	assert(frag_idx < efp->n_frag);
 
 	*mult = efp->frags[frag_idx].multiplicity;
-
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -1049,7 +1049,6 @@ efp_get_frag_multipole_count(struct efp *efp, size_t frag_idx, size_t *n_mult)
 	assert(frag_idx < efp->n_frag);
 
 	*n_mult = efp->frags[frag_idx].n_multipole_pts;
-
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -1065,7 +1064,6 @@ efp_get_multipole_count(struct efp *efp, size_t *n_mult)
 		sum += efp->frags[i].n_multipole_pts;
 
 	*n_mult = sum;
-
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -1107,7 +1105,6 @@ efp_get_multipole_values(struct efp *efp, double *mult)
 
 			for (size_t t = 0; t < 6; t++)
 				*mult++ = pt->quadrupole[t];
-
 			for (size_t t = 0; t < 10; t++)
 				*mult++ = pt->octupole[t];
 		}
@@ -1127,7 +1124,6 @@ efp_get_induced_dipole_count(struct efp *efp, size_t *n_dip)
 		sum += efp->frags[i].n_polarizable_pts;
 
 	*n_dip = sum;
-
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -1197,7 +1193,6 @@ efp_get_lmo_coordinates(struct efp *efp, size_t frag_idx, double *xyz)
 		efp_log("no LMO centroids for fragment %s", frag->name);
 		return EFP_RESULT_FATAL;
 	}
-
 	memcpy(xyz, frag->lmo_centroids, frag->n_lmo * sizeof(vec_t));
 	return EFP_RESULT_SUCCESS;
 }
@@ -1217,7 +1212,6 @@ efp_get_xrfit(struct efp *efp, size_t frag_idx, double *xrfit)
 		efp_log("no XRFIT parameters for fragment %s", frag->name);
 		return EFP_RESULT_FATAL;
 	}
-
 	memcpy(xrfit, frag->xrfit, frag->n_lmo * 4 * sizeof(double));
 	return EFP_RESULT_SUCCESS;
 }
@@ -1225,17 +1219,14 @@ efp_get_xrfit(struct efp *efp, size_t frag_idx, double *xrfit)
 EFP_EXPORT void
 efp_shutdown(struct efp *efp)
 {
-	if (!efp)
+	if (efp == NULL)
 		return;
-
 	for (size_t i = 0; i < efp->n_frag; i++)
 		free_frag(efp->frags + i);
-
 	for (size_t i = 0; i < efp->n_lib; i++) {
 		free_frag(efp->lib[i]);
 		free(efp->lib[i]);
 	}
-
 	free(efp->frags);
 	free(efp->lib);
 	free(efp->grad);
@@ -1262,7 +1253,6 @@ efp_set_opts(struct efp *efp, const struct efp_opts *opts)
 		return res;
 
 	efp->opts = *opts;
-
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -1273,7 +1263,6 @@ efp_get_opts(struct efp *efp, struct efp_opts *opts)
 	assert(opts);
 
 	*opts = efp->opts;
-
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -1283,7 +1272,6 @@ efp_opts_default(struct efp_opts *opts)
 	assert(opts);
 
 	memset(opts, 0, sizeof(*opts));
-
 	opts->terms = EFP_TERM_ELEC | EFP_TERM_POL | EFP_TERM_DISP |
 	    EFP_TERM_XR | EFP_TERM_AI_ELEC | EFP_TERM_AI_POL;
 }
@@ -1469,13 +1457,16 @@ EFP_EXPORT enum efp_result
 efp_get_frag_atoms(struct efp *efp, size_t frag_idx, size_t size,
     struct efp_atom *atoms)
 {
+	struct frag *frag;
+
 	assert(efp);
 	assert(atoms);
 	assert(frag_idx < efp->n_frag);
 	assert(size >= efp->frags[frag_idx].n_atoms);
 
-	struct frag *frag = efp->frags + frag_idx;
+	frag = efp->frags + frag_idx;
 	memcpy(atoms, frag->atoms, frag->n_atoms * sizeof(struct efp_atom));
+
 	return EFP_RESULT_SUCCESS;
 }
 
