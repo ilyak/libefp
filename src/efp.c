@@ -28,10 +28,10 @@
 #include <stdlib.h>
 
 #include "balance.h"
+#include "clapack.h"
 #include "elec.h"
 #include "private.h"
 #include "stream.h"
-#include "clapack.h"
 
 static void
 update_fragment(struct frag *frag)
