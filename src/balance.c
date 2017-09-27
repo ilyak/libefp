@@ -58,7 +58,7 @@ master_get_work(struct master *master, int range[2])
 		range[0] = master->range[0];
 		range[1] = master->range[1];
 	}
-	return (range[1] > range[0]);
+	return range[1] > range[0];
 }
 
 static void
@@ -99,7 +99,7 @@ slave_on_master(struct master *master, struct efp *efp, work_fn fn, void *data)
 static int
 omp_get_thread_num(void)
 {
-	return (0);
+	return 0;
 }
 #endif /* _OPENMP */
 
