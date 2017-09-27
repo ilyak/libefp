@@ -55,8 +55,8 @@ set_coord_xyzabc(struct frag *frag, const double *coord)
 	frag->z = coord[2];
 
 	euler_to_matrix(coord[3], coord[4], coord[5], &frag->rotmat);
-
 	update_fragment(frag);
+
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -97,6 +97,7 @@ set_coord_points(struct frag *frag, const double *coord)
 	frag->z = coord[2] - p1.z;
 
 	update_fragment(frag);
+
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -113,8 +114,8 @@ set_coord_rotmat(struct frag *frag, const double *coord)
 	frag->z = coord[2];
 
 	memcpy(&frag->rotmat, coord + 3, sizeof(frag->rotmat));
-
 	update_fragment(frag);
+
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -348,13 +349,13 @@ check_params(struct efp *efp)
 static int
 do_elec(const struct efp_opts *opts)
 {
-	return (opts->terms & EFP_TERM_ELEC);
+	return opts->terms & EFP_TERM_ELEC;
 }
 
 static int
 do_disp(const struct efp_opts *opts)
 {
-	return (opts->terms & EFP_TERM_DISP);
+	return opts->terms & EFP_TERM_DISP;
 }
 
 static int
@@ -365,7 +366,7 @@ do_xr(const struct efp_opts *opts)
 		 (opts->elec_damp == EFP_ELEC_DAMP_OVERLAP);
 	int dd = (opts->terms & EFP_TERM_DISP) &&
 		 (opts->disp_damp == EFP_DISP_DAMP_OVERLAP);
-	return (xr || cp || dd);
+	return xr || cp || dd;
 }
 
 static void
@@ -442,12 +443,10 @@ efp_get_gradient(struct efp *efp, double *grad)
 
 	if (!efp->do_gradient) {
 		efp_log("gradient calculation was not requested");
-		return (EFP_RESULT_FATAL);
+		return EFP_RESULT_FATAL;
 	}
-
 	memcpy(grad, efp->grad, efp->n_frag * sizeof(six_t));
-
-	return (EFP_RESULT_SUCCESS);
+	return EFP_RESULT_SUCCESS;
 }
 
 EFP_EXPORT enum efp_result
@@ -474,7 +473,7 @@ efp_get_atomic_gradient(struct efp *efp, double *grad)
 
 	if (!efp->do_gradient) {
 		efp_log("gradient calculation was not requested");
-		return (EFP_RESULT_FATAL);
+		return EFP_RESULT_FATAL;
 	}
 	pgrad = (vec_t *)grad;
 
@@ -610,7 +609,7 @@ error:
 	free(m);
 	free(Ia);
 	free(efpgrad);
-	return (res);
+	return res;
 }
 
 EFP_EXPORT enum efp_result
@@ -627,7 +626,7 @@ efp_set_point_charges(struct efp *efp, size_t n_ptc, const double *ptc,
 		efp->ptc = NULL;
 		efp->ptc_xyz = NULL;
 		efp->ptc_grad = NULL;
-		return (EFP_RESULT_SUCCESS);
+		return EFP_RESULT_SUCCESS;
 	}
 
 	assert(ptc);
@@ -641,7 +640,7 @@ efp_set_point_charges(struct efp *efp, size_t n_ptc, const double *ptc,
 	memcpy(efp->ptc_xyz, xyz, n_ptc * sizeof(vec_t));
 	memset(efp->ptc_grad, 0, n_ptc * sizeof(vec_t));
 
-	return (EFP_RESULT_SUCCESS);
+	return EFP_RESULT_SUCCESS;
 }
 
 EFP_EXPORT enum efp_result
@@ -652,7 +651,7 @@ efp_get_point_charge_count(struct efp *efp, size_t *n_ptc)
 
 	*n_ptc = efp->n_ptc;
 
-	return (EFP_RESULT_SUCCESS);
+	return EFP_RESULT_SUCCESS;
 }
 
 EFP_EXPORT enum efp_result
@@ -663,12 +662,10 @@ efp_get_point_charge_gradient(struct efp *efp, double *grad)
 
 	if (!efp->do_gradient) {
 		efp_log("gradient calculation was not requested");
-		return (EFP_RESULT_FATAL);
+		return EFP_RESULT_FATAL;
 	}
-
 	memcpy(grad, efp->ptc_grad, efp->n_ptc * sizeof(vec_t));
-
-	return (EFP_RESULT_SUCCESS);
+	return EFP_RESULT_SUCCESS;
 }
 
 EFP_EXPORT enum efp_result
@@ -678,8 +675,7 @@ efp_get_point_charge_coordinates(struct efp *efp, double *xyz)
 	assert(xyz);
 
 	memcpy(xyz, efp->ptc_xyz, efp->n_ptc * sizeof(vec_t));
-
-	return (EFP_RESULT_SUCCESS);
+	return EFP_RESULT_SUCCESS;
 }
 
 EFP_EXPORT enum efp_result
@@ -689,8 +685,7 @@ efp_set_point_charge_coordinates(struct efp *efp, const double *xyz)
 	assert(xyz);
 
 	memcpy(efp->ptc_xyz, xyz, efp->n_ptc * sizeof(vec_t));
-
-	return (EFP_RESULT_SUCCESS);
+	return EFP_RESULT_SUCCESS;
 }
 
 EFP_EXPORT enum efp_result
@@ -700,8 +695,7 @@ efp_get_point_charge_values(struct efp *efp, double *ptc)
 	assert(ptc);
 
 	memcpy(ptc, efp->ptc, efp->n_ptc * sizeof(double));
-
-	return (EFP_RESULT_SUCCESS);
+	return EFP_RESULT_SUCCESS;
 }
 
 EFP_EXPORT enum efp_result
@@ -711,8 +705,7 @@ efp_set_point_charge_values(struct efp *efp, const double *ptc)
 	assert(ptc);
 
 	memcpy(efp->ptc, ptc, efp->n_ptc * sizeof(double));
-
-	return (EFP_RESULT_SUCCESS);
+	return EFP_RESULT_SUCCESS;
 }
 
 EFP_EXPORT enum efp_result
@@ -739,9 +732,9 @@ efp_set_coordinates(struct efp *efp, enum efp_coord_type coord_type,
 
 	for (size_t i = 0; i < efp->n_frag; i++, coord += stride)
 		if ((res = efp_set_frag_coordinates(efp, i, coord_type, coord)))
-			return (res);
+			return res;
 
-	return (EFP_RESULT_SUCCESS);
+	return EFP_RESULT_SUCCESS;
 }
 
 EFP_EXPORT enum efp_result
@@ -758,16 +751,13 @@ efp_set_frag_coordinates(struct efp *efp, size_t frag_idx,
 
 	switch (coord_type) {
 	case EFP_COORD_TYPE_XYZABC:
-		return (set_coord_xyzabc(frag, coord));
+		return set_coord_xyzabc(frag, coord);
 	case EFP_COORD_TYPE_POINTS:
-		return (set_coord_points(frag, coord));
+		return set_coord_points(frag, coord);
 	case EFP_COORD_TYPE_ROTMAT:
-		return (set_coord_rotmat(frag, coord));
+		return set_coord_rotmat(frag, coord);
 	}
-
-	/* unreachable */
-
-	return (EFP_RESULT_FATAL);
+	assert(0);
 }
 
 EFP_EXPORT enum efp_result
@@ -789,8 +779,7 @@ efp_get_coordinates(struct efp *efp, double *xyzabc)
 		*xyzabc++ = b;
 		*xyzabc++ = c;
 	}
-
-	return (EFP_RESULT_SUCCESS);
+	return EFP_RESULT_SUCCESS;
 }
 
 EFP_EXPORT enum efp_result
@@ -813,7 +802,7 @@ efp_get_frag_xyzabc(struct efp *efp, size_t frag_idx, double *xyzabc)
 	xyzabc[4] = b;
 	xyzabc[5] = c;
 
-	return (EFP_RESULT_SUCCESS);
+	return EFP_RESULT_SUCCESS;
 }
 
 EFP_EXPORT enum efp_result
@@ -857,12 +846,12 @@ efp_get_stress_tensor(struct efp *efp, double *stress)
 
 	if (!efp->do_gradient) {
 		efp_log("gradient calculation was not requested");
-		return (EFP_RESULT_FATAL);
+		return EFP_RESULT_FATAL;
 	}
 
 	*(mat_t *)stress = efp->stress;
 
-	return (EFP_RESULT_SUCCESS);
+	return EFP_RESULT_SUCCESS;
 }
 
 EFP_EXPORT enum efp_result
@@ -879,13 +868,13 @@ efp_get_ai_screen(struct efp *efp, size_t frag_idx, double *screen)
 
 	if (frag->ai_screen_params == NULL) {
 		efp_log("no screening parameters found for %s", frag->name);
-		return (EFP_RESULT_FATAL);
+		return EFP_RESULT_FATAL;
 	}
 
 	size = frag->n_multipole_pts * sizeof(double);
 	memcpy(screen, frag->ai_screen_params, size);
 
-	return (EFP_RESULT_SUCCESS);
+	return EFP_RESULT_SUCCESS;
 }
 
 EFP_EXPORT enum efp_result
@@ -905,7 +894,7 @@ efp_prepare(struct efp *efp)
 	efp->grad = (six_t *)calloc(efp->n_frag, sizeof(six_t));
 	efp->skiplist = (char *)calloc(efp->n_frag * efp->n_frag, 1);
 
-	return (EFP_RESULT_SUCCESS);
+	return EFP_RESULT_SUCCESS;
 }
 
 EFP_EXPORT enum efp_result
@@ -927,7 +916,7 @@ efp_set_orbital_energies(struct efp *efp, size_t n_core, size_t n_act,
 	    size);
 	memcpy(efp->ai_orbital_energies, oe, size);
 
-	return (EFP_RESULT_SUCCESS);
+	return EFP_RESULT_SUCCESS;
 }
 
 EFP_EXPORT enum efp_result
@@ -948,7 +937,7 @@ efp_set_dipole_integrals(struct efp *efp, size_t n_core, size_t n_act,
 	    size * sizeof(double));
 	memcpy(efp->ai_dipole_integrals, dipint, size * sizeof(double));
 
-	return (EFP_RESULT_SUCCESS);
+	return EFP_RESULT_SUCCESS;
 }
 
 EFP_EXPORT enum efp_result
@@ -962,7 +951,6 @@ efp_get_wavefunction_dependent_energy(struct efp *efp, double *energy)
 		*energy = 0.0;
 		return EFP_RESULT_SUCCESS;
 	}
-
 	return efp_compute_pol_energy(efp, energy);
 }
 
@@ -975,13 +963,13 @@ efp_compute(struct efp *efp, int do_gradient)
 
 	if (efp->grad == NULL) {
 		efp_log("call efp_prepare after all fragments are added");
-		return (EFP_RESULT_FATAL);
+		return EFP_RESULT_FATAL;
 	}
 
 	efp->do_gradient = do_gradient;
 
 	if ((res = check_params(efp)))
-		return (res);
+		return res;
 
 	memset(&efp->energy, 0, sizeof(efp->energy));
 	memset(&efp->stress, 0, sizeof(efp->stress));
@@ -1096,7 +1084,6 @@ efp_get_multipole_coordinates(struct efp *efp, double *xyz)
 			*xyz++ = frag->multipole_pts[j].z;
 		}
 	}
-
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -1125,7 +1112,6 @@ efp_get_multipole_values(struct efp *efp, double *mult)
 				*mult++ = pt->octupole[t];
 		}
 	}
-
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -1162,7 +1148,6 @@ efp_get_induced_dipole_coordinates(struct efp *efp, double *xyz)
 			*xyz++ = pt->z;
 		}
 	}
-
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -1173,7 +1158,6 @@ efp_get_induced_dipole_values(struct efp *efp, double *dip)
 	assert(dip);
 
 	memcpy(dip, efp->indip, efp->n_polarizable_pts * sizeof(vec_t));
-
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -1184,7 +1168,6 @@ efp_get_induced_dipole_conj_values(struct efp *efp, double *dip)
 	assert(dip);
 
 	memcpy(dip, efp->indipconj, efp->n_polarizable_pts * sizeof(vec_t));
-
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -1196,8 +1179,7 @@ efp_get_lmo_count(struct efp *efp, size_t frag_idx, size_t *n_lmo)
 	assert(n_lmo != NULL);
 
 	*n_lmo = efp->frags[frag_idx].n_lmo;
-
-	return (EFP_RESULT_SUCCESS);
+	return EFP_RESULT_SUCCESS;
 }
 
 EFP_EXPORT enum efp_result
@@ -1213,12 +1195,11 @@ efp_get_lmo_coordinates(struct efp *efp, size_t frag_idx, double *xyz)
 
 	if (frag->lmo_centroids == NULL) {
 		efp_log("no LMO centroids for fragment %s", frag->name);
-		return (EFP_RESULT_FATAL);
+		return EFP_RESULT_FATAL;
 	}
 
 	memcpy(xyz, frag->lmo_centroids, frag->n_lmo * sizeof(vec_t));
-
-	return (EFP_RESULT_SUCCESS);
+	return EFP_RESULT_SUCCESS;
 }
 
 EFP_EXPORT enum efp_result
@@ -1234,12 +1215,11 @@ efp_get_xrfit(struct efp *efp, size_t frag_idx, double *xrfit)
 
 	if (frag->xrfit == NULL) {
 		efp_log("no XRFIT parameters for fragment %s", frag->name);
-		return (EFP_RESULT_FATAL);
+		return EFP_RESULT_FATAL;
 	}
 
 	memcpy(xrfit, frag->xrfit, frag->n_lmo * 4 * sizeof(double));
-
-	return (EFP_RESULT_SUCCESS);
+	return EFP_RESULT_SUCCESS;
 }
 
 EFP_EXPORT void
@@ -1322,7 +1302,7 @@ efp_add_fragment(struct efp *efp, const char *name)
 
 	if (efp->skiplist) {
 		efp_log("cannot add fragments after efp_prepare");
-		return (EFP_RESULT_FATAL);
+		return EFP_RESULT_FATAL;
 	}
 
 	const struct frag *lib = efp_find_lib(efp, name);
@@ -1353,7 +1333,6 @@ efp_add_fragment(struct efp *efp, const char *name)
 		if (!frag->xr_wf_deriv[a])
 			return EFP_RESULT_NO_MEMORY;
 	}
-
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -1368,7 +1347,7 @@ efp_skip_fragments(struct efp *efp, size_t i, size_t j, int value)
 	efp->skiplist[i * efp->n_frag + j] = value ? 1 : 0;
 	efp->skiplist[j * efp->n_frag + i] = value ? 1 : 0;
 
-	return (EFP_RESULT_SUCCESS);
+	return EFP_RESULT_SUCCESS;
 }
 
 EFP_EXPORT struct efp *
@@ -1377,11 +1356,11 @@ efp_create(void)
 	struct efp *efp = (struct efp *)calloc(1, sizeof(struct efp));
 
 	if (!efp)
-		return (NULL);
+		return NULL;
 
 	efp_opts_default(&efp->opts);
 
-	return (efp);
+	return efp;
 }
 
 EFP_EXPORT enum efp_result
@@ -1496,9 +1475,7 @@ efp_get_frag_atoms(struct efp *efp, size_t frag_idx, size_t size,
 	assert(size >= efp->frags[frag_idx].n_atoms);
 
 	struct frag *frag = efp->frags + frag_idx;
-
 	memcpy(atoms, frag->atoms, frag->n_atoms * sizeof(struct efp_atom));
-
 	return EFP_RESULT_SUCCESS;
 }
 
