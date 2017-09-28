@@ -1513,7 +1513,7 @@ efp_banner(void)
 EFP_EXPORT void
 efp_print_banner(void)
 {
-	printf("%s", efp_banner());
+	puts(efp_banner());
 }
 
 EFP_EXPORT const char *
