@@ -1285,6 +1285,8 @@ efp_set_error_log(void (*cb)(const char *))
 EFP_EXPORT enum efp_result
 efp_add_fragment(struct efp *efp, const char *name)
 {
+	const struct frag *lib;
+
 	assert(efp);
 	assert(name);
 
@@ -1292,10 +1294,7 @@ efp_add_fragment(struct efp *efp, const char *name)
 		efp_log("cannot add fragments after efp_prepare");
 		return EFP_RESULT_FATAL;
 	}
-
-	const struct frag *lib = efp_find_lib(efp, name);
-
-	if (!lib) {
+	if ((lib = efp_find_lib(efp, name)) == NULL) {
 		efp_log("cannot find \"%s\" in any of .efp files", name);
 		return EFP_RESULT_UNKNOWN_FRAGMENT;
 	}
@@ -1303,8 +1302,7 @@ efp_add_fragment(struct efp *efp, const char *name)
 	efp->n_frag++;
 	efp->frags = (struct frag *)realloc(efp->frags,
 	    efp->n_frag * sizeof(struct frag));
-
-	if (!efp->frags)
+	if (efp->frags == NULL)
 		return EFP_RESULT_NO_MEMORY;
 
 	enum efp_result res;
@@ -1317,8 +1315,7 @@ efp_add_fragment(struct efp *efp, const char *name)
 		size_t size = frag->xr_wf_size * frag->n_lmo;
 
 		frag->xr_wf_deriv[a] = (double *)calloc(size, sizeof(double));
-
-		if (!frag->xr_wf_deriv[a])
+		if (frag->xr_wf_deriv[a] == NULL)
 			return EFP_RESULT_NO_MEMORY;
 	}
 	return EFP_RESULT_SUCCESS;
@@ -1343,7 +1340,7 @@ efp_create(void)
 {
 	struct efp *efp = (struct efp *)calloc(1, sizeof(struct efp));
 
-	if (!efp)
+	if (efp == NULL)
 		return NULL;
 
 	efp_opts_default(&efp->opts);
