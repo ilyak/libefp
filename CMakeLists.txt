@@ -49,7 +49,8 @@ string(REGEX REPLACE "([^;]+)" "${src_prefix}\\1" sources_list "${raw_sources_li
 # STATIC/SHARED on below governed by BUILD_SHARED_LIBS
 add_library(efp ${sources_list})
 set_target_properties(efp PROPERTIES POSITION_INDEPENDENT_CODE ${BUILD_FPIC}
-                                     COMPILE_FLAGS "-std=c99")
+				     COMPILE_FLAGS "-std=c99"
+				     SOVERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 if(${BUILD_SHARED_LIBS})
     target_link_libraries(efp PRIVATE ${LIBC_INTERJECT})
     if(APPLE)
