@@ -50,21 +50,21 @@ path to `MYLDFLAGS` (using -L flag).
 
 To compile issue:
 
-	make
+    make
 
 If you only need the library you can use:
 
-	make libefp
+    make libefp
 
 To run the test suite (optional) issue:
 
-	make check
-	make checkomp    # to test OpenMP parallel code
-	make checkmpi    # to test MPI parallel code
+    make check
+    make checkomp    # to test OpenMP parallel code
+    make checkmpi    # to test MPI parallel code
 
 Finally, to install everything issue:
 
-	make install
+    make install
 
 For CMake instructions, see [README-cmake.md](README-cmake.md).
 
