@@ -7,7 +7,11 @@ molecular systems by replacing chemically inert part of a system by a set of
 Effective Fragments while performing regular ab initio calculation on the
 chemically active part [1-8]. The LIBEFP library is a full implementation of
 the EFP method. It allows users to easily incorporate EFP support into their
-favourite quantum chemistry package.
+favourite quantum chemistry package. LIBEFP is used by many major quantum
+chemistry packages, such as [Q-Chem](http://www.q-chem.com),
+[PSI4](http://www.psicode.org), [NWChem](http://www.nwchem-sw.org),
+[GAMESS](http://www.msg.ameslab.gov/GAMESS),
+[Molcas](https://gitlab.com/Molcas), and others.
 
 Detailed description of methods and algorithms can be found in two LIBEFP
 papers:
@@ -28,7 +32,7 @@ To build LIBEFP from source you need the following:
 
 - C compiler (with C99 standard and OpenMP support)
 
-- POSIX complaint make utility (BSD make or GNU make will work)
+- POSIX complaint make utility (BSD make or GNU make will work) or CMake
 
 - BLAS/LAPACK libraries (required when linking with LIBEFP)
 
@@ -61,6 +65,8 @@ To run the test suite (optional) issue:
 Finally, to install everything issue:
 
 	make install
+
+For CMake instructions, see [README-cmake.md](README-cmake.md).
 
 ## How to use the library
 
