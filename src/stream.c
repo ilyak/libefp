@@ -39,7 +39,7 @@ struct stream {
 };
 
 static void
-skip_newline2(FILE *in)
+skip_newline(FILE *in)
 {
 	int ch = getc(in);
 
@@ -69,7 +69,7 @@ read_line(FILE *in, char split)
 			ch = getc(in);
 
 			if (ch == '\n' || ch == '\r') {
-				skip_newline2(in);
+				skip_newline(in);
 				continue;
 			}
 			else {
@@ -89,7 +89,7 @@ read_line(FILE *in, char split)
 
 		case '\n':
 		case '\r':
-			skip_newline2(in);
+			skip_newline(in);
 
 			if (i == size) {
 				char *tmp;
