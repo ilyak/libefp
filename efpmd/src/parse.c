@@ -55,7 +55,7 @@ static void check_cfg(struct cfg *cfg)
 }
 
 static void parse_frag(struct stream *stream, enum efp_coord_type coord_type,
-				struct frag *frag)
+    struct frag *frag)
 {
 	memset(frag, 0, sizeof(struct frag));
 	efp_stream_skip_space(stream);
@@ -127,7 +127,8 @@ static void parse_frag(struct stream *stream, enum efp_coord_type coord_type,
 
 static bool is_keyword(const char *str, const char *key)
 {
-	return efp_strncasecmp(str, key, strlen(key)) == 0 && isspace(str[strlen(key)]);
+	return efp_strncasecmp(str, key, strlen(key)) == 0 &&
+	    isspace(str[strlen(key)]);
 }
 
 struct sys *parse_input(struct cfg *cfg, const char *path)
