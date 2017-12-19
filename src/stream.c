@@ -210,7 +210,12 @@ efp_stream_parse_int(struct stream *stream, int *out)
 	assert(stream);
 
 	char *endptr;
-	int x = (int)strtol(stream->ptr, &endptr, 10);
+	int x;
+
+	if (stream->ptr == NULL)
+		return 0;
+
+	x = (int)strtol(stream->ptr, &endptr, 10);
 
 	if (endptr == stream->ptr)
 		return 0;
@@ -228,7 +233,12 @@ efp_stream_parse_double(struct stream *stream, double *out)
 	assert(stream);
 
 	char *endptr;
-	double x = strtod(stream->ptr, &endptr);
+	double x;
+
+	if (stream->ptr == NULL)
+		return 0;
+
+	x = strtod(stream->ptr, &endptr);
 
 	if (endptr == stream->ptr)
 		return 0;
@@ -248,7 +258,6 @@ efp_stream_advance(struct stream *stream, size_t cnt)
 	while (cnt--)
 		if (efp_stream_get_char(stream) == '\0')
 			return 0;
-
 	return 1;
 }
 
