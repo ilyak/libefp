@@ -175,7 +175,8 @@ static bool is_lib(const char *name)
 {
 	size_t len = strlen(name);
 
-	return name[len - 2] == '_' && (name[len - 1] == 'l' || name[len - 1] == 'L');
+	return len > 2 && name[len - 2] == '_' &&
+	    (name[len - 1] == 'l' || name[len - 1] == 'L');
 }
 
 static void add_potentials(struct efp *efp, const struct cfg *cfg, const struct sys *sys)
