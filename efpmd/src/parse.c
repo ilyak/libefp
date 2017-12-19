@@ -160,7 +160,7 @@ struct sys *parse_input(struct cfg *cfg, const char *path)
 
 			sys->n_frags++;
 			sys->frags = xrealloc(sys->frags,
-					sys->n_frags * sizeof(struct frag));
+			    sys->n_frags * sizeof(struct frag));
 			sys->frags[sys->n_frags - 1] = frag;
 			continue;
 		}
@@ -178,11 +178,12 @@ struct sys *parse_input(struct cfg *cfg, const char *path)
 
 			sys->n_charges++;
 			sys->charges = xrealloc(sys->charges,
-					sys->n_charges * sizeof(struct charge));
+			    sys->n_charges * sizeof(struct charge));
 			sys->charges[sys->n_charges - 1] = charge;
 		}
 		else {
-			cfg_parse_line(cfg, efp_stream_get_ptr(stream));
+			if (!cfg_parse_line(cfg, efp_stream_get_ptr(stream)))
+				error("%s", cfg_get_last_error(cfg));
 		}
 next:
 		efp_stream_next_line(stream);
