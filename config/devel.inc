@@ -8,10 +8,10 @@ FC= gfortran
 PREFIX= /home/ilya/libefp
 
 # fragment library path
-FRAGLIB= $(PREFIX)/libefp/fraglib
+FRAGLIB= $(PREFIX)/fraglib
 
 # additional link libraries
-MYLIBS= -llapack -lblas -lg2c -lgfortran
+MYLIBS= -llapack -lblas -lgfortran
 
 # additional linker flags
 MYLDFLAGS= -L/usr/local/lib
