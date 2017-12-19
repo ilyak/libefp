@@ -62,6 +62,9 @@ static void parse_frag(struct stream *stream, enum efp_coord_type coord_type,
 	const char *ptr = efp_stream_get_ptr(stream);
 	efp_stream_skip_nonspace(stream);
 	size_t len = efp_stream_get_ptr(stream) - ptr;
+
+	if (len == 0)
+		error("fragment name is missing");
 	frag->name = xmalloc(len + 1);
 
 	for (size_t i = 0; i < len; i++)
