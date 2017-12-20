@@ -441,6 +441,8 @@ parse_projection_basis(struct frag *frag, struct stream *stream)
 		frag->n_xr_atoms++;
 		frag->xr_atoms = (struct xr_atom *)realloc(frag->xr_atoms,
 		    frag->n_xr_atoms * sizeof(struct xr_atom));
+		if (frag->xr_atoms == NULL)
+			return EFP_RESULT_NO_MEMORY;
 
 		struct xr_atom *atom = frag->xr_atoms + frag->n_xr_atoms - 1;
 		memset(atom, 0, sizeof(*atom));
@@ -466,6 +468,8 @@ shell:
 		atom->n_shells++;
 		atom->shells = (struct shell *)realloc(atom->shells,
 		    atom->n_shells * sizeof(struct shell));
+		if (atom->shells == NULL)
+			return EFP_RESULT_NO_MEMORY;
 
 		struct shell *shell = atom->shells + atom->n_shells - 1;
 		shell->type = efp_stream_get_char(stream);
@@ -480,7 +484,8 @@ shell:
 
 		size_t cnt = (shell->type == 'L' ? 3 : 2) * shell->n_funcs;
 		shell->coef = (double *)malloc(cnt * sizeof(double));
-
+		if (shell->coef == NULL)
+			return EFP_RESULT_NO_MEMORY;
 		double *ptr = shell->coef;
 
 		for (size_t i = 0; i < shell->n_funcs; i++) {
