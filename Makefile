@@ -16,6 +16,7 @@ clean:
 	cd efpmd/libff && $(MAKE) $@
 	cd efpmd/libopt && $(MAKE) $@
 	cd efpmd/src && $(MAKE) $@
+	rm -rf doxygen_html
 
 check checkomp checkmpi: efpmd
 	cd tests && $(MAKE) $@
