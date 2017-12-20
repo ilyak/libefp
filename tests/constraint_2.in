@@ -1,7 +1,7 @@
 run_type gtest
 ref_energy 0.0019051720
 elec_damp screen
-disp damp tt
+disp_damp tt
 pol_damp tt
 enable_pbc true
 periodic_box 15.0 15.0 15.0

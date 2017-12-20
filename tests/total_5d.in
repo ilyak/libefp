@@ -1,7 +1,7 @@
 run_type gtest
 ref_energy 0.0001205050
 elec_damp overlap
-disp damp overlap
+disp_damp overlap
 pol_damp tt
 pol_driver direct
 enable_pbc true
