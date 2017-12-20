@@ -290,7 +290,6 @@ parse_polarizable_pts(struct frag *frag, struct stream *stream)
 		frag->polarizable_pts = (struct polarizable_pt *)realloc(
 		    frag->polarizable_pts,
 		    frag->n_polarizable_pts * sizeof(struct polarizable_pt));
-
 		if (!frag->polarizable_pts)
 			return EFP_RESULT_NO_MEMORY;
 
@@ -343,7 +342,6 @@ parse_dynamic_polarizable_pts(struct frag *frag, struct stream *stream)
 		    (struct dynamic_polarizable_pt *)realloc(
 		    frag->dynamic_polarizable_pts,
 		    frag->n_dynamic_polarizable_pts * size);
-
 		if (!frag->dynamic_polarizable_pts)
 			return EFP_RESULT_NO_MEMORY;
 
@@ -570,7 +568,6 @@ parse_fock_mat(struct frag *frag, struct stream *stream)
 
 	size_t size = frag->n_lmo * (frag->n_lmo + 1) / 2;
 	frag->xr_fock_mat = (double *)malloc(size * sizeof(double));
-
 	if (!frag->xr_fock_mat)
 		return EFP_RESULT_NO_MEMORY;
 
@@ -705,8 +702,9 @@ parse_screen(struct frag *frag, struct stream *stream)
 	char type;
 
 	scr = (double *)malloc(frag->n_multipole_pts * sizeof(double));
+	if (scr == NULL)
+		return EFP_RESULT_NO_MEMORY;
 	type = efp_stream_get_char(stream);
-
 	efp_stream_next_line(stream);
 
 	for (size_t i = 0; i < frag->n_multipole_pts; i++) {
@@ -752,6 +750,8 @@ parse_xrfit(struct frag *frag, struct stream *stream)
 	}
 
 	frag->xrfit = (double *)malloc(frag->n_lmo * 4 * sizeof(double));
+	if (frag->xrfit == NULL)
+		return EFP_RESULT_NO_MEMORY;
 	efp_stream_next_line(stream);
 
 	for (size_t i = 0; i < frag->n_lmo; i++) {
