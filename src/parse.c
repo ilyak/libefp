@@ -590,6 +590,10 @@ parse_lmo_centroids(struct frag *frag, struct stream *stream)
 {
 	efp_stream_next_line(stream);
 
+	if (frag->n_lmo == 0) {
+		efp_log("number of LMO centroids is zero");
+		return EFP_RESULT_SYNTAX_ERROR;
+	}
 	frag->lmo_centroids = (vec_t *)malloc(frag->n_lmo * sizeof(vec_t));
 	if (!frag->lmo_centroids)
 		return EFP_RESULT_NO_MEMORY;
@@ -890,8 +894,11 @@ parse_file(struct efp *efp, struct stream *stream)
 
 		if ((res = parse_fragment(frag, stream)))
 			return res;
+		if (frag->n_lmo > 0 && frag->lmo_centroids == NULL) {
+			efp_log("LMO centroids are missing");
+			return EFP_RESULT_FATAL;
+		}
 	}
-
 	return EFP_RESULT_SUCCESS;
 }
 
