@@ -70,8 +70,9 @@ For CMake instructions, see [README-cmake.md](README-cmake.md).
 
 ## How to use the library
 
-For the description of the public API functions and structures provided by the
-library see the "Documentation" section at the https://libefp.github.io website.
+The description of public LIBEFP API is available
+[here](https://libefp.github.io/doxygen_html/efp_8h.html).
+Also see [this](interface/readme.txt) file for step-by-step instructions.
 
 ## How to create custom EFP fragment types
 
