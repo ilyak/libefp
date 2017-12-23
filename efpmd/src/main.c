@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2012-2016 Ilya Kaliman
+ * Copyright (c) 2012-2017 Ilya Kaliman
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -335,7 +335,7 @@ static void state_init(struct state *state, const struct cfg *cfg, const struct 
 static void print_banner(void)
 {
 	msg("EFPMD ver. " LIBEFP_VERSION_STRING "\n");
-	msg("Copyright (c) 2012-2016 Ilya Kaliman\n\n");
+	msg("Copyright (c) 2012-2017 Ilya Kaliman\n\n");
 	msg("%s", efp_banner());
 }
 
