@@ -4,7 +4,7 @@
 
 The Effective Fragment Potential (EFP) method allows one to describe large
 molecular systems by replacing chemically inert part of a system by a set of
-Effective Fragments while performing regular ab initio calculation on the
+Effective Fragments while performing regular _ab initio_ calculation on the
 chemically active part [1-8]. The LIBEFP library is a full implementation of
 the EFP method. It allows users to easily incorporate EFP support into their
 favourite quantum chemistry package. LIBEFP is used by many major quantum
@@ -95,23 +95,24 @@ GAMESS manual (see http://www.msg.ameslab.gov/gamess/).
 
 ## Information for code contributors
 
-- The main design principle for the LIBEFP library is Keep It Simple. All
-  code should be easy to read and to understand. It should be easy to
+- The main design principle for the LIBEFP library is Keep It Simple.
+  All code should be easy to read and to understand. It should be easy to
   integrate the library into programs written in different programming
-  languages. So the language of choice is C and no fancy OO hierarchies.
+  languages. So the language of choice is C and no fancy Object-Oriented
+  hierarchies.
 
 - Be consistent in coding style when adding new code. Consistency is more
   important than particular coding style. Use descriptive names for variables
   and functions. The bigger the scope of the symbol the longer its name should
   be. Look at the sources and maintain similar style for new code.
 
-- As with most quantum chemistry methods EFP can require large amounts of
+- As with most quantum chemistry methods, EFP can require large amounts of
   memory. The guideline for developers here is simple: ALWAYS check for memory
   allocation errors in your code and return `EFP_RESULT_NO_MEMORY` on error.
 
-- The code is reentrant which means that it is safe to use two different efp
+- The code is reentrant which means that it is safe to use two different `efp`
   objects from two different threads. NEVER use mutable global state as it
-  will break this. Store all mutable data in the efp object.
+  will break this. Store all mutable data in the `efp` object.
 
 - Use `-Wall -Wextra -Werror` flags to make sure that compilation produces no
   warnings. Use `make check` to make sure that the code passes test cases.
