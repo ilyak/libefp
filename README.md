@@ -24,13 +24,6 @@ papers:
 The latest release can be downloaded
 [here](https://github.com/ilyak/libefp/releases).
 
-## EFPMD
-
-The EFPMD program is a molecular simulation package based on LIBEFP. It
-supports EFP-only molecular simulations such as geometry optimization and
-molecular dynamics. EFPMD is a part of this distribution. See README.md file in
-the `efpmd` directory for more information.
-
 ## Installation
 
 To build LIBEFP from source you need the following:
@@ -72,6 +65,13 @@ Finally, to install everything issue:
     make install
 
 For CMake instructions, see [README-cmake.md](README-cmake.md).
+
+## EFPMD
+
+The EFPMD program is a molecular simulation package based on LIBEFP.
+It supports EFP-only molecular simulations such as geometry optimization
+and molecular dynamics. EFPMD is a part of the LIBEFP distribution.
+See [this](efpmd/README.md) file for more information.
 
 ## How to use the library
 
