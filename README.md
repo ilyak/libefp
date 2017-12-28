@@ -19,6 +19,11 @@ papers:
 - [Kaliman and Slipchenko, JCC 2013](http://dx.doi.org/10.1002/jcc.23375)
 - [Kaliman and Slipchenko, JCC 2015](http://dx.doi.org/10.1002/jcc.23772)
 
+## Getting source code
+
+The latest release can be downloaded
+[here](https://github.com/ilyak/libefp/releases).
+
 ## EFPMD
 
 The EFPMD program is a molecular simulation package based on LIBEFP. It
