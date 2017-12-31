@@ -66,18 +66,18 @@ Finally, to install everything issue:
 
 For CMake instructions, see [README-cmake.md](README-cmake.md).
 
+## Documentation
+
+The description of public LIBEFP API is available
+[here](https://ilyak.github.io/libefp/doxygen_html/efp_8h.html).
+Also see [this](interface/readme.txt) file for step-by-step instructions.
+
 ## EFPMD
 
 The EFPMD program is a molecular simulation package based on LIBEFP.
 It supports EFP-only molecular simulations such as geometry optimization
 and molecular dynamics. EFPMD is a part of the LIBEFP distribution.
 See [this](efpmd/README.md) file for more information.
-
-## How to use the library
-
-The description of public LIBEFP API is available
-[here](https://ilyak.github.io/libefp/doxygen_html/efp_8h.html).
-Also see [this](interface/readme.txt) file for step-by-step instructions.
 
 ## How to create custom EFP fragment types
 
