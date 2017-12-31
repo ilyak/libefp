@@ -76,7 +76,7 @@ See [this](efpmd/README.md) file for more information.
 ## How to use the library
 
 The description of public LIBEFP API is available
-[here](https://libefp.github.io/doxygen_html/efp_8h.html).
+[here](https://ilyak.github.io/libefp/doxygen_html/efp_8h.html).
 Also see [this](interface/readme.txt) file for step-by-step instructions.
 
 ## How to create custom EFP fragment types
