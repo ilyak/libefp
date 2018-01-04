@@ -71,6 +71,7 @@ For CMake instructions, see [README-cmake.md](README-cmake.md).
 The description of public LIBEFP API is available
 [here](https://ilyak.github.io/libefp/doxygen_html/efp_8h.html).
 Also see [this](interface/readme.txt) file for step-by-step instructions.
+Fortran interface to LIBEFP is available [here](interface/efp.f90).
 
 ## EFPMD
 
