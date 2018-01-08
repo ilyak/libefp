@@ -71,7 +71,8 @@ For CMake instructions, see [README-cmake.md](README-cmake.md).
 The description of public LIBEFP API is available
 [here](https://ilyak.github.io/libefp/doxygen_html/efp_8h.html).
 Also see [this](interface/readme.txt) file for step-by-step instructions.
-Fortran interface to LIBEFP is available [here](interface/efp.f90).
+Fortran bindings to LIBEFP are available in
+[interface/efp.f90](interface/efp.f90).
 
 ## EFPMD
 
@@ -79,6 +80,13 @@ The EFPMD program is a molecular simulation package based on LIBEFP.
 It supports EFP-only molecular simulations such as geometry optimization
 and molecular dynamics. EFPMD is a part of the LIBEFP distribution.
 See [this](efpmd/README.md) file for more information.
+
+## Parallel scaling
+
+Parallel scaling of LIBEFP is shown below. Benchmarks were done on the
+SDSC Gordon supercomputer using EFPMD.
+
+![parallel.png](parallel.png)
 
 ## How to create custom EFP fragment types
 
