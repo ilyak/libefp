@@ -86,7 +86,7 @@ See [this](efpmd/README.md) file for more information.
 Parallel scaling of LIBEFP is shown below. Benchmarks were done on the
 SDSC Gordon supercomputer using EFPMD.
 
-![parallel.png](parallel.png)
+![parallel.png](efpmd/parallel.png)
 
 ## How to create custom EFP fragment types
 
