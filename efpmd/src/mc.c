@@ -43,17 +43,6 @@ struct body {
 	double mass;
 };
 
-struct nvt_data {
-	double chi;
-	double chi_dt;
-};
-
-struct npt_data {
-	double chi;
-	double chi_dt;
-	double eta;
-};
-
 struct mc {
 	size_t n_bodies;
 	struct body *bodies;
@@ -61,6 +50,7 @@ struct mc {
 	vec_t box;
 	int step; /* current mc step */
 	double potential_energy;
+	double mc_energy; /* energy calculated using monte carlo method */
 	double xr_energy; /* used in multistep mc */
 	double *xr_gradient; /* used in multistep mc */
 	double (*get_invariant)(const struct mc *);
@@ -416,8 +406,9 @@ static void rotate_body(struct body *body, double dt)
 	rotate_step(1, 2, angle, &body->angmom, &body->rotmat);
 }
 
-static void update_step_nve(struct mc *mc)
+static void update_step_mc(struct mc *mc)
 {
+	/* TODO compute mc energy change at each step */
 	double dt = cfg_get_double(mc->state->cfg, "time_step");
 
 	for (size_t i = 0; i < mc->n_bodies; i++) {
@@ -453,6 +444,38 @@ static void update_step_nve(struct mc *mc)
 	}
 }
 
+/*
+Thus we
+define dAB, the minimum distance between particles A
+and B, as the shortest distance between A and any of
+the particles B, of which there is one in each of the
+squares which comprise the complete substance.
+
+If we know the positions of the N particles in the
+square, we can easily calculate, for example, the potential
+energy of the system, 
+ 	0.5 * sum i = 1 to N sum j = 1 to N (i != j) V(d sub ij)
+(Here V is the potential between molecules, and dij is
+the minimum distance between particles i and j as
+defined above.) 
+
+This we do as follows: We place the N particles in any
+configuration, for example, in a regular lattice. Then
+we move each of the particles in succession according
+to the following prescription: 
+	x becomes x + a * epsilon1
+	y becomes y + a * epsilon2
+where a is the maximum allowed displacement, which
+for the sake of this argument is arbitrary, and epsilon1 and epsilon2
+are random numbers between (-1) and 1. Then, after
+we move a particle, it is equally likely to be anywhere
+within a square of side 2a centered about its original
+position. (In accord with the periodicity assumption,
+if the indicated move would put the particle outside the
+square, this only means that it re-enters the square from
+the opposite side.) 
+*/
+
 static void print_info(const struct mc *mc)
 {
 	double e_kin = get_kinetic_energy(mc);
@@ -460,6 +483,9 @@ static void print_info(const struct mc *mc)
 	double temperature = get_temperature(mc);
 
 	print_energy(mc->state);
+
+	msg("%30s %16.10lf\n\n", "MC ENERGY", mc->mc_energy);
+
 	msg("%30s %16.10lf\n", "KINETIC ENERGY", e_kin);
 	msg("%30s %16.10lf\n", "INVARIANT", invariant);
 	msg("%30s %16.10lf\n", "TEMPERATURE (K)", temperature);
@@ -521,7 +547,7 @@ static struct mc *mc_create(struct state *state)
 	mc->box = box_from_str(cfg_get_string(state->cfg, "periodic_box"));
 
 	mc->get_invariant = get_invariant_nve;
-	mc->update_step = update_step_nve;
+	mc->update_step = update_step_mc;
 
 	mc->n_bodies = state->sys->n_frags;
 	mc->bodies = xcalloc(mc->n_bodies, sizeof(struct body));
@@ -628,8 +654,8 @@ void sim_mc(struct state *state)
 	print_status(mc);
 
 	for (mc->step = 1;
-	     mc->step <= cfg_get_int(state->cfg, "max_steps");
-	     mc->step++) {
+	    mc->step <= cfg_get_int(state->cfg, "max_steps");
+	    mc->step++) {
 		mc->update_step(mc);
 
 		if (mc->step % cfg_get_int(state->cfg, "print_step") == 0) {
