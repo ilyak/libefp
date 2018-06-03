@@ -35,9 +35,9 @@ void sim_grad(struct state *);
 void sim_hess(struct state *);
 void sim_opt(struct state *);
 void sim_md(struct state *);
+void sim_mc(struct state *);
 void sim_efield(struct state *);
 void sim_gtest(struct state *);
-//void sim_mc(struct state *);
 
 #define USAGE_STRING \
 	"usage: efpmd [-d | -v | -h | input]\n" \
@@ -163,9 +163,7 @@ static sim_fn_t get_sim_fn(enum run_type run_type)
 	case RUN_TYPE_GTEST:
 		return sim_gtest;
 	case RUN_TYPE_MC:
-		fprintf(stdout, "\n----monte carlo----\n\n");
-		return sim_gtest;
-		//return sim_mc;
+		return sim_mc;
 	}
 	assert(0);
 }
