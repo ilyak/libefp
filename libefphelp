@@ -1,0 +1,17 @@
+1. git clone libefp and cd into that directory and run make
+
+2. Go into the bin directory, e.g.
+	
+	cd /Users/jialincheoh/libefp/bin
+
+3. Run libefp, e.g. :
+
+	./efpmd ../tests/disp_1a.in
+
+
+To modify, change code in efpmd/src
+in efpmd/src:
+	
+	make
+	cp efpmd ../../bin/
+	
