@@ -31,5 +31,7 @@ void rand_init(void);
 double rand_uniform_1(void);
 double rand_uniform_2(void);
 double rand_normal(void);
+double rand_range(double low, double high);
+double rand_neg1_to_1();
 
 #endif /* EFPMD_RAND_H */

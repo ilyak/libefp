@@ -47,6 +47,7 @@ struct mc {
 	size_t n_bodies;
 	struct body *bodies;
 	size_t n_freedom;
+	double dispmag;
 	vec_t box;
 	int step; /* current mc step */
 	double potential_energy;
@@ -408,6 +409,8 @@ static void rotate_body(struct body *body, double dt)
 
 static void update_step_mc(struct mc *mc)
 {
+
+
 	/* TODO compute mc energy change at each step */
 	double dt = cfg_get_double(mc->state->cfg, "time_step");
 
@@ -543,6 +546,8 @@ static struct mc *mc_create(struct state *state)
 {
 	struct mc *mc = xcalloc(1, sizeof(struct mc));
 
+	mc->dispmag = 0.1;
+
 	mc->state = state;
 	mc->box = box_from_str(cfg_get_string(state->cfg, "periodic_box"));
 
@@ -638,6 +643,32 @@ static void mc_shutdown(struct mc *mc)
 	free(mc);
 }
 
+
+/*
+Generate random displacment vector for coordinates.
+    
+Move each of the particles in succession according
+to the following prescription: 
+	x becomes x + a * epsilon1
+	y becomes y + a * epsilon2
+	z becomes z + a * epsilon3
+where a is the maximum allowed displacement (dispmag), which
+for the sake of this argument is arbitrary, and the epsilons
+are random numbers between (-1) and 1.
+*/
+static void get_rand_displacement(struct mc *mc)
+{
+	rand_init(); // Do we need to do this, or is it better to only init once?
+
+	for (size_t i = 0; i < mc->n_bodies; i++) {
+		struct body *body = mc->bodies + i;
+
+		body->pos.x = body->pos.x * mc->dispmag * rand_neg1_to_1();
+		body->pos.y = body->pos.y * mc->dispmag * rand_neg1_to_1();
+		body->pos.z = body->pos.z * mc->dispmag * rand_neg1_to_1();
+	}
+}
+
 void sim_mc(struct state *state)
 {
 	msg("MONTE CARLO JOB\n\n\n");
@@ -653,6 +684,43 @@ void sim_mc(struct state *state)
 	msg("    INITIAL STATE\n\n");
 	print_status(mc);
 
+	//self._ZeroVels() -- handled by create_mc
+    //numpy.random.seed(self.random_seed)
+    //self.mol.GetEnergy('standard') -- happens in compute_forces
+    //self._CheckPrint(0, print_all=True)
+    //previous_energy = self.mol.e_total
+    //while self.conf < self.totconf:
+    double previous_energy = mc->potential_energy;
+    while (mc->step <= cfg_get_int(state->cfg, "max_steps")) {
+    	get_rand_displacement(mc);
+    	if (mc->step % cfg_get_int(state->cfg, "print_step") == 0) {
+			msg("    STATE AFTER %16.10lf STEPS\n\n", mc->step);
+			print_status(mc);
+		}
+		mc->step++;
+    }
+
+    msg("    PREVIOUS ENERGY: %f\n\n", previous_energy);
+
+    /*
+      self._GetRandDisp()
+      self._DispCoords(self.rand_disp)
+      self.mol.GetEnergy('standard')
+      delta_e = self.mol.e_total - previous_energy
+      bf = math.exp(min(1.0, -delta_e / (const.KB * self.temperature)))
+      if bf >= numpy.random.random():
+        self._CheckPrint(1)
+        self.conf += 1
+        self.n_accept += 1
+        previous_energy = self.mol.e_total
+      else:
+        self._DispCoords(-self.rand_disp)
+        self.n_reject += 1
+      self._CheckDisp()
+      */
+
+/*
+	// TODO change this to a while loop?
 	for (mc->step = 1;
 	    mc->step <= cfg_get_int(state->cfg, "max_steps");
 	    mc->step++) {
@@ -663,6 +731,7 @@ void sim_mc(struct state *state)
 			print_status(mc);
 		}
 	}
+	*/
 
 	mc_shutdown(mc);
 
