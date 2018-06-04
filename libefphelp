@@ -6,7 +6,7 @@
 
 3. Run libefp, e.g. :
 
-	./efpmd ../tests/disp_1a.in
+	./efpmd ../tests/disp_1a_mc.in
 
 
 To modify, change code in efpmd/src
