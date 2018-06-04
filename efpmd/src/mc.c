@@ -45,11 +45,14 @@ struct body {
 
 struct mc {
 	size_t n_bodies;
+	struct body *prev_bodies;
 	struct body *bodies;
 	size_t n_freedom;
 	double dispmag;
 	vec_t box;
 	int step; /* current mc step */
+	int n_accept;
+	int n_reject;
 	double potential_energy;
 	double mc_energy; /* energy calculated using monte carlo method */
 	double xr_energy; /* used in multistep mc */
@@ -238,8 +241,8 @@ static void remove_system_drift(struct mc *mc)
 	mat_t inertia_inv = mat_zero;
 
 	if (inertia.xx < EPSILON ||
-	    inertia.yy < EPSILON ||
-	    inertia.zz < EPSILON) {
+		inertia.yy < EPSILON ||
+		inertia.zz < EPSILON) {
 		inertia_inv.xx = inertia.xx < EPSILON ? 0.0 : 1.0 / inertia.xx;
 		inertia_inv.yy = inertia.yy < EPSILON ? 0.0 : 1.0 / inertia.yy;
 		inertia_inv.zz = inertia.zz < EPSILON ? 0.0 : 1.0 / inertia.zz;
@@ -280,7 +283,7 @@ static void compute_forces(struct mc *mc)
 		memcpy(crd + 3, &mc->bodies[i].rotmat, 9 * sizeof(double));
 
 		check_fail(efp_set_frag_coordinates(mc->state->efp, i,
-		    EFP_COORD_TYPE_ROTMAT, crd));
+			EFP_COORD_TYPE_ROTMAT, crd));
 	}
 
 	if (cfg_get_bool(mc->state->cfg, "enable_multistep")) {
@@ -288,7 +291,7 @@ static void compute_forces(struct mc *mc)
 		int multistep_steps;
 
 		multistep_steps = cfg_get_int(mc->state->cfg,
-		    "multistep_steps");
+			"multistep_steps");
 		check_fail(efp_get_opts(mc->state->efp, &opts));
 		if (mc->step % multistep_steps == 0) {
 			opts_save = opts;
@@ -297,7 +300,7 @@ static void compute_forces(struct mc *mc)
 			compute_energy(mc->state, true);
 			mc->xr_energy = mc->state->energy;
 			memcpy(mc->xr_gradient, mc->state->grad,
-			    6 * mc->n_bodies * sizeof(double));
+				6 * mc->n_bodies * sizeof(double));
 			opts = opts_save;
 		}
 		opts.terms &= ~EFP_TERM_XR; /* turn off xr */
@@ -328,7 +331,7 @@ static void compute_forces(struct mc *mc)
 }
 
 static void set_body_mass_and_inertia(struct efp *efp, size_t idx,
-    struct body *body)
+	struct body *body)
 {
 	double mass, inertia[3];
 
@@ -342,19 +345,19 @@ static void set_body_mass_and_inertia(struct efp *efp, size_t idx,
 	body->inertia.z = AMU_TO_AU * inertia[2];
 
 	body->inertia_inv.x = body->inertia.x < EPSILON ? 0.0 :
-	    1.0 / body->inertia.x;
+		1.0 / body->inertia.x;
 	body->inertia_inv.y = body->inertia.y < EPSILON ? 0.0 :
-	    1.0 / body->inertia.y;
+		1.0 / body->inertia.y;
 	body->inertia_inv.z = body->inertia.z < EPSILON ? 0.0 :
-	    1.0 / body->inertia.z;
+		1.0 / body->inertia.z;
 }
 
 static void rotate_step(size_t a1, size_t a2, double angle, vec_t *angmom,
-    mat_t *rotmat)
+	mat_t *rotmat)
 {
 	mat_t rot = { 1.0, 0.0, 0.0,
-		      0.0, 1.0, 0.0,
-		      0.0, 0.0, 1.0 };
+			  0.0, 1.0, 0.0,
+			  0.0, 0.0, 1.0 };
 
 	double cosa = cos(angle);
 	double sina = sin(angle);
@@ -457,7 +460,7 @@ squares which comprise the complete substance.
 If we know the positions of the N particles in the
 square, we can easily calculate, for example, the potential
 energy of the system, 
- 	0.5 * sum i = 1 to N sum j = 1 to N (i != j) V(d sub ij)
+	0.5 * sum i = 1 to N sum j = 1 to N (i != j) V(d sub ij)
 (Here V is the potential between molecules, and dij is
 the minimum distance between particles i and j as
 defined above.) 
@@ -505,7 +508,7 @@ static void print_info(const struct mc *mc)
 		double z = mc->box.z * BOHR_RADIUS;
 
 		msg("%30s %9.3lf %9.3lf %9.3lf A^3\n",
-		    "PERIODIC BOX SIZE", x, y, z);
+			"PERIODIC BOX SIZE", x, y, z);
 	}
 
 	msg("\n\n");
@@ -520,14 +523,14 @@ static void print_restart(const struct mc *mc)
 
 		char name[64];
 		check_fail(efp_get_frag_name(mc->state->efp, i,
-		    sizeof(name), name));
+			sizeof(name), name));
 
 		double xyzabc[6] = { body->pos.x * BOHR_RADIUS,
-				     body->pos.y * BOHR_RADIUS,
-				     body->pos.z * BOHR_RADIUS };
+					 body->pos.y * BOHR_RADIUS,
+					 body->pos.z * BOHR_RADIUS };
 
 		matrix_to_euler(&body->rotmat,
-		    xyzabc + 3, xyzabc + 4, xyzabc + 5);
+			xyzabc + 3, xyzabc + 4, xyzabc + 5);
 
 		double vel[6] = { body->vel.x,
 				  body->vel.y,
@@ -546,7 +549,12 @@ static struct mc *mc_create(struct state *state)
 {
 	struct mc *mc = xcalloc(1, sizeof(struct mc));
 
+	// TODO dispmag (maximum allowed displacement aka alpha) should probably 
+	// be a configuration parameter
 	mc->dispmag = 0.1;
+	mc->n_accept = 0;
+	mc->n_reject = 0;
+	mc->step = 1;
 
 	mc->state = state;
 	mc->box = box_from_str(cfg_get_string(state->cfg, "periodic_box"));
@@ -581,11 +589,11 @@ static struct mc *mc_create(struct state *state)
 		set_body_mass_and_inertia(state->efp, i, body);
 
 		body->angmom.x = mc->state->sys->frags[i].vel[3] *
-		    body->inertia.x;
+			body->inertia.x;
 		body->angmom.y = mc->state->sys->frags[i].vel[4] *
-		    body->inertia.y;
+			body->inertia.y;
 		body->angmom.z = mc->state->sys->frags[i].vel[5] *
-		    body->inertia.z;
+			body->inertia.z;
 
 		mc->n_freedom += 3;
 
@@ -606,7 +614,7 @@ static void velocitize(struct mc *mc)
 
 	double temperature = cfg_get_double(mc->state->cfg, "temperature");
 	double ke = temperature * BOLTZMANN *
-	    mc->n_freedom / (2.0 * 6.0 * mc->n_bodies);
+		mc->n_freedom / (2.0 * 6.0 * mc->n_bodies);
 
 	for (size_t i = 0; i < mc->n_bodies; i++) {
 		struct body *body = mc->bodies + i;
@@ -618,11 +626,11 @@ static void velocitize(struct mc *mc)
 		body->vel.z = vel * rand_normal();
 
 		body->angmom.x = sqrt(2.0 * ke * body->inertia.x) *
-		    rand_normal();
+			rand_normal();
 		body->angmom.y = sqrt(2.0 * ke * body->inertia.y) *
-		    rand_normal();
+			rand_normal();
 		body->angmom.z = sqrt(2.0 * ke * body->inertia.z) *
-		    rand_normal();
+			rand_normal();
 	}
 }
 
@@ -646,7 +654,7 @@ static void mc_shutdown(struct mc *mc)
 
 /*
 Generate random displacment vector for coordinates.
-    
+	
 Move each of the particles in succession according
 to the following prescription: 
 	x becomes x + a * epsilon1
@@ -656,9 +664,11 @@ where a is the maximum allowed displacement (dispmag), which
 for the sake of this argument is arbitrary, and the epsilons
 are random numbers between (-1) and 1.
 */
+// TODO: need to store temporary 
 static void get_rand_displacement(struct mc *mc)
 {
-	rand_init(); // Do we need to do this, or is it better to only init once?
+	// TODO: Make a backup of previous positions
+	//memcpy(&mc->bodies, &mc->prev_bodies, sizeof(mc->bodies));
 
 	for (size_t i = 0; i < mc->n_bodies; i++) {
 		struct body *body = mc->bodies + i;
@@ -682,48 +692,99 @@ void sim_mc(struct state *state)
 	compute_forces(mc);
 
 	msg("    INITIAL STATE\n\n");
-	print_status(mc);
+	print_status(mc); 
 
-	//self._ZeroVels() -- handled by create_mc
-    //numpy.random.seed(self.random_seed)
-    //self.mol.GetEnergy('standard') -- happens in compute_forces
-    //self._CheckPrint(0, print_all=True)
-    //previous_energy = self.mol.e_total
-    //while self.conf < self.totconf:
-    double previous_energy = mc->potential_energy;
-    while (mc->step <= cfg_get_int(state->cfg, "max_steps")) {
-    	get_rand_displacement(mc);
-    	if (mc->step % cfg_get_int(state->cfg, "print_step") == 0) {
-			msg("    STATE AFTER %16.10lf STEPS\n\n", mc->step);
+	//self._ZeroVels() -- handled by create
+	//numpy.random.seed(self.random_seed) -- handled by rand_init
+	//self.mol.GetEnergy('standard') -- happens in compute_forces
+	//self._CheckPrint(0, print_all=True)
+	//previous_energy = self.mol.e_total
+	//while self.conf < self.totconf:
+	//  self._GetRandDisp()
+	//  self._DispCoords(self.rand_disp)
+	rand_init();
+	double previous_energy = mc->potential_energy;
+	double delta_e = 0;
+	double temperature = cfg_get_double(mc->state->cfg, "temperature");
+	double epsilon;
+	double exp_value;
+	double bf;
+	bool allow_move;
+	while (mc->step <= cfg_get_int(state->cfg, "max_steps")) {
+		get_rand_displacement(mc);
+		compute_forces(mc);
+		delta_e = mc->potential_energy - previous_energy;
+		msg("    DELTA ENERGY: %16.10lf\n", delta_e);
+
+		allow_move = false;
+		if (delta_e < 0) {
+			allow_move = true;
+		} else {
+			/* If delta_e > 0, allow the move with probability exp(-delta_e/kT)
+			i.e. we take a random number epsilon between 0 and 1, and if
+			epsilon < exp(-delta_e/kT), allow the move */
+			epsilon = rand_uniform_1();
+			exp_value = -delta_e / (BOLTZMANN * temperature);
+			bf = exp(exp_value);
+			msg("    epsilon: %e, BF: %e, exp_value: %e\n", 
+				epsilon, bf, exp_value);
+			// TODO verify exp_value and bf; after some time exp_value goes to zero
+			// which means bf is always one so we always allow move.
+			if (epsilon < bf) {
+				allow_move = true;
+			}
+		}
+		msg("    allow move: %d\n", allow_move);
+		msg("---------done iteration----------:\n");
+		if (allow_move) {
+			//self._CheckPrint(1)
+			//mc->step++;
+			mc->n_accept++;
+			previous_energy = mc->potential_energy;
+		} else {
+			// TODO: Revert to previous state
+			//memcpy(&mc->prev_bodies, &mc->bodies, sizeof(mc->bodies));
+			mc->n_reject++;
+		}
+		// TODO Only increment step when move is allowed
+		mc->step++;
+
+/*
+		if (mc->step % cfg_get_int(state->cfg, "print_step") == 0) {
+			msg("    STATE AFTER %d\n\n", mc->step);
 			print_status(mc);
 		}
-		mc->step++;
-    }
+		*/
+	}
 
-    msg("    PREVIOUS ENERGY: %f\n\n", previous_energy);
+	// TODO all steps are currently being accepted, probably some should be rejected
+	msg("    ACCEPTED STEPS: %d, REJECTED STEPS: %d\n\n", mc->n_accept, mc->n_reject);
 
-    /*
-      self._GetRandDisp()
-      self._DispCoords(self.rand_disp)
-      self.mol.GetEnergy('standard')
-      delta_e = self.mol.e_total - previous_energy
-      bf = math.exp(min(1.0, -delta_e / (const.KB * self.temperature)))
-      if bf >= numpy.random.random():
-        self._CheckPrint(1)
-        self.conf += 1
-        self.n_accept += 1
-        previous_energy = self.mol.e_total
-      else:
-        self._DispCoords(-self.rand_disp)
-        self.n_reject += 1
-      self._CheckDisp()
-      */
+	// TODO calculate and print out mc energy
+	compute_forces(mc);
+	msg("    FINAL STATE\n\n");
+	print_status(mc);
+	/*
+	  
+	  self.mol.GetEnergy('standard')
+	  delta_e = self.mol.e_total - previous_energy
+	  bf = math.exp(min(1.0, -delta_e / (const.KB * self.temperature)))
+	  if bf >= numpy.random.random():
+		self._CheckPrint(1)
+		self.conf += 1
+		self.n_accept += 1
+		previous_energy = self.mol.e_total
+	  else:
+		self._DispCoords(-self.rand_disp)
+		self.n_reject += 1
+	  self._CheckDisp()
+	  */
 
 /*
 	// TODO change this to a while loop?
 	for (mc->step = 1;
-	    mc->step <= cfg_get_int(state->cfg, "max_steps");
-	    mc->step++) {
+		mc->step <= cfg_get_int(state->cfg, "max_steps");
+		mc->step++) {
 		mc->update_step(mc);
 
 		if (mc->step % cfg_get_int(state->cfg, "print_step") == 0) {
