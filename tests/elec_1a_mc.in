@@ -1,9 +1,8 @@
 run_type mc
 temperature 300.0
-max_steps 10
-ref_energy -0.0000989033
-terms disp
-disp_damp tt
+ref_energy 0.0002900482
+terms elec
+elec_damp screen
 fraglib_path ../fraglib
 
 fragment h2o_l

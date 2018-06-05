@@ -564,6 +564,7 @@ static struct mc *mc_create(struct state *state)
 
 	mc->n_bodies = state->sys->n_frags;
 	mc->bodies = xcalloc(mc->n_bodies, sizeof(struct body));
+	mc->prev_bodies = xcalloc(mc->n_bodies, sizeof(struct body));
 	mc->xr_gradient = xcalloc(6 * mc->n_bodies, sizeof(double));
 
 	double coord[6 * mc->n_bodies];
@@ -668,7 +669,7 @@ are random numbers between (-1) and 1.
 static void get_rand_displacement(struct mc *mc)
 {
 	// TODO: Make a backup of previous positions
-	//memcpy(&mc->bodies, &mc->prev_bodies, sizeof(mc->bodies));
+	memcpy(&mc->prev_bodies, &mc->bodies, sizeof(mc->bodies));
 
 	for (size_t i = 0; i < mc->n_bodies; i++) {
 		struct body *body = mc->bodies + i;
@@ -692,7 +693,7 @@ void sim_mc(struct state *state)
 	compute_forces(mc);
 
 	msg("    INITIAL STATE\n\n");
-	print_status(mc); 
+	print_status(mc);
 
 	//self._ZeroVels() -- handled by create
 	//numpy.random.seed(self.random_seed) -- handled by rand_init
@@ -703,7 +704,8 @@ void sim_mc(struct state *state)
 	//  self._GetRandDisp()
 	//  self._DispCoords(self.rand_disp)
 	rand_init();
-	double previous_energy = mc->potential_energy;
+	//struct efp_energy efp_energy;
+	double previous_energy = mc->state->energy;
 	double delta_e = 0;
 	double temperature = cfg_get_double(mc->state->cfg, "temperature");
 	double epsilon;
@@ -713,8 +715,12 @@ void sim_mc(struct state *state)
 	while (mc->step <= cfg_get_int(state->cfg, "max_steps")) {
 		get_rand_displacement(mc);
 		compute_forces(mc);
-		delta_e = mc->potential_energy - previous_energy;
-		msg("    DELTA ENERGY: %16.10lf\n", delta_e);
+		// Maybe we don't need all of compute_forces and could just use,
+		// but I don't think so because values get copied around
+		//compute_energy(mc->state, true);
+		//check_fail(efp_get_energy(state->efp, &efp_energy));
+		delta_e = mc->state->energy - previous_energy;
+		msg("    ENERGY: %16.10lf, DELTA ENERGY: %e\n", mc->state->energy, delta_e);
 
 		allow_move = false;
 		if (delta_e < 0) {
@@ -740,13 +746,12 @@ void sim_mc(struct state *state)
 			//self._CheckPrint(1)
 			//mc->step++;
 			mc->n_accept++;
-			previous_energy = mc->potential_energy;
+			previous_energy = mc->state->energy;
 		} else {
-			// TODO: Revert to previous state
-			//memcpy(&mc->prev_bodies, &mc->bodies, sizeof(mc->bodies));
+			memcpy(&mc->bodies, &mc->prev_bodies, sizeof(mc->bodies));
 			mc->n_reject++;
 		}
-		// TODO Only increment step when move is allowed
+		// TODO Only increment step when move is allowed. How to ensure termination?
 		mc->step++;
 
 /*
