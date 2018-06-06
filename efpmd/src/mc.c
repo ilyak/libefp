@@ -54,7 +54,6 @@ struct mc {
 	int n_accept;
 	int n_reject;
 	double potential_energy;
-	double mc_energy; /* energy calculated using monte carlo method */
 	double xr_energy; /* used in multistep mc */
 	double *xr_gradient; /* used in multistep mc */
 	double (*get_invariant)(const struct mc *);
@@ -489,8 +488,6 @@ static void print_info(const struct mc *mc)
 	double temperature = get_temperature(mc);
 
 	print_energy(mc->state);
-
-	msg("%30s %16.10lf\n\n", "MC ENERGY", mc->mc_energy);
 
 	msg("%30s %16.10lf\n", "KINETIC ENERGY", e_kin);
 	msg("%30s %16.10lf\n", "INVARIANT", invariant);

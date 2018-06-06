@@ -1,4 +1,4 @@
-run_type mc
+run_type md
 temperature 300.0
 max_steps 100
 ref_energy -0.0000989033

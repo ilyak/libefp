@@ -14,4 +14,52 @@ in efpmd/src:
 	
 	make
 	cp efpmd ../../bin/
-	
+
+
+The questions:
+1.
+Do we do the requested number of steps, and record how many are accepted/rejected?
+OR
+Do we keep going until we get the requested number of steps accepted?
+(If the latter, what do we do if it never happens?)
+Python code keeps going until we get the accepted values
+
+2. We are currently using mc->state->energy as the energy values compared in each
+step. Is this really equivalent to the energy summation in the paper?
+If so, do we simply show that value at the end as well, i.e. there is no extra
+calculation for MC energy?
+
+3. What outputs should we be printing at the end.
+
+
+MC
+ TOTAL ENERGY    -0.0552509909
+
+MD
+ TOTAL ENERGY    -0.0001011034
+
+
+H20
+---
+$ python mc.py ../../input/mc/h2o.mc 
+0/10000 confs as of 12:40:03
+3620/10000 confs as of 12:40:04
+7417/10000 confs as of 12:40:05
+10000/10000 confs as of 12:40:06
+
+$ cat ../../plot/mc/h2o.log 
+
+ ------------- Energy Component Properties [kcal/mol] -------------
+   component           avg         std         min         max
+ ------------------------------------------------------------------
+   Potential     |  8.5977e-01  6.9946e-01  5.5148e-03  4.6959e+00
+   Non-bonded    |  0.0000e+00  0.0000e+00  0.0000e+00  0.0000e+00
+   Bonded        |  8.5977e-01  6.9946e-01  5.5150e-03  4.6960e+00
+   Boundary      |  0.0000e+00  0.0000e+00  0.0000e+00  0.0000e+00
+   Vdw           |  0.0000e+00  0.0000e+00  0.0000e+00  0.0000e+00
+   Elst          |  0.0000e+00  0.0000e+00  0.0000e+00  0.0000e+00
+   Bonds         |  5.9803e-01  5.8815e-01  2.0840e-04  3.3440e+00
+   Angles        |  2.6174e-01  3.7511e-01  5.3260e-06  3.4970e+00
+   Torsions      |  0.0000e+00  0.0000e+00  0.0000e+00  0.0000e+00
+   Outofplanes   |  0.0000e+00  0.0000e+00  0.0000e+00  0.0000e+00
+
