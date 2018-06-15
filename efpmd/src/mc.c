@@ -28,6 +28,9 @@
 #include "rand.h"
 
 #define MAX_ITER 10
+#define DISPMAG_THRESHOLD 0.5
+#define DISPMAG_MODIFIER 0.95
+#define DISPMAG_MODIFY_STEPS 100
 
 struct body {
 	mat_t rotmat;
@@ -49,6 +52,7 @@ struct mc {
 	struct body *bodies;
 	size_t n_freedom;
 	double dispmag;
+	double anglemag;
 	vec_t box;
 	int step; /* current mc step */
 	int n_accept;
@@ -548,7 +552,7 @@ static struct mc *mc_create(struct state *state)
 
 	// TODO dispmag (maximum allowed displacement aka alpha) should probably 
 	// be a configuration parameter
-	mc->dispmag = 0.1;
+	mc->dispmag = DISPMAG_THRESHOLD;
 	mc->n_accept = 0;
 	mc->n_reject = 0;
 	mc->step = 1;
@@ -717,7 +721,7 @@ void sim_mc(struct state *state)
 		//compute_energy(mc->state, true);
 		//check_fail(efp_get_energy(state->efp, &efp_energy));
 		delta_e = mc->state->energy - previous_energy;
-		msg("    ENERGY: %16.10lf, DELTA ENERGY: %e\n", mc->state->energy, delta_e);
+		//msg("    ENERGY: %16.10lf, DELTA ENERGY: %e\n", mc->state->energy, delta_e);
 
 		allow_move = false;
 		if (delta_e < 0) {
@@ -729,16 +733,16 @@ void sim_mc(struct state *state)
 			epsilon = rand_uniform_1();
 			exp_value = -delta_e / (BOLTZMANN * temperature);
 			bf = exp(exp_value);
-			msg("    epsilon: %e, BF: %e, exp_value: %e\n", 
-				epsilon, bf, exp_value);
+			//msg("    epsilon: %e, BF: %e, exp_value: %e\n", 
+			//	epsilon, bf, exp_value);
 			// TODO verify exp_value and bf; after some time exp_value goes to zero
 			// which means bf is always one so we always allow move.
 			if (epsilon < bf) {
 				allow_move = true;
 			}
 		}
-		msg("    allow move: %d\n", allow_move);
-		msg("---------done iteration----------:\n");
+		//msg("    allow move: %d\n", allow_move);
+		//msg("---------done iteration----------:\n");
 		if (allow_move) {
 			//self._CheckPrint(1)
 			//mc->step++;
@@ -750,6 +754,17 @@ void sim_mc(struct state *state)
 		}
 		// TODO Only increment step when move is allowed. How to ensure termination?
 		mc->step++;
+
+		if (mc->step % DISPMAG_MODIFY_STEPS == 0) {
+
+			if (mc->dispmag <= DISPMAG_THRESHOLD) {
+				mc->dispmag = mc->dispmag / DISPMAG_MODIFIER;
+
+			} else {
+				mc->dispmag = mc->dispmag * DISPMAG_MODIFIER;	
+			}
+			msg("    NEW DISPMAG %e\n\n", mc->dispmag);
+		}
 
 /*
 		if (mc->step % cfg_get_int(state->cfg, "print_step") == 0) {
