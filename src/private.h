@@ -53,6 +53,8 @@ struct polarizable_pt {
 	mat_t tensor;
 	vec_t elec_field;
 	vec_t elec_field_wf;
+        vec_t p_elec_field;
+        vec_t p_elec_field_wf;
 };
 
 struct dynamic_polarizable_pt {
@@ -202,6 +204,12 @@ struct efp {
 	/* polarization conjugate induced dipoles */
 	vec_t *indipconj;
 
+        /* polarization induced dipoles for pairwise interaction */
+        vec_t *p_indip;
+   	
+	/* polarization conjugation induced dipoles for pairwise ineraction*/
+        vec_t *p_indipconj;
+
 	/* total number of polarizable points */
 	size_t n_polarizable_pts;
 
@@ -227,6 +235,10 @@ struct efp {
 
 	/* skip-list of fragments - boolean array of nfrag^2 elements */
 	char *skiplist;
+
+	/* efp_pairwise array that will be copied from efp structure */
+
+        six_t *energy_components;
 };
 
 #endif /* LIBEFP_PRIVATE_H */
