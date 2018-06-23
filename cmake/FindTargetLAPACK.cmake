@@ -33,7 +33,7 @@ if (LAPACK_LIBRARIES)
     set_property (TARGET tgt::lapack PROPERTY INTERFACE_LINK_LIBRARIES ${LAPACK_LIBRARIES})
 else()
     # 2nd precedence - target already prepared and findable in TargetLAPACKConfig.cmake
-    if (NOT ${CMAKE_DISABLE_FIND_PACKAGE_${PN}})
+    if (NOT "${CMAKE_DISABLE_FIND_PACKAGE_${PN}}")
         find_package (TargetLAPACK QUIET CONFIG)
     endif()
     if (TARGET tgt::lapack)
