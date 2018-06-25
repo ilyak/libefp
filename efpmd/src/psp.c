@@ -9,7 +9,7 @@ void print_paired_energy_coord(struct state *state){
         double coord[6 * n_frags];
 
         check_fail(efp_get_frag_count(state->efp, &n_frags));
-        //check_fail(efp_get_coordinates(state->efp, coord));
+        check_fail(efp_get_coordinates(state->efp, coord));
 	
         for (size_t i=0; i <n_frags; i++){
                 char name[64];
@@ -34,7 +34,6 @@ void print_paired_energy_coord(struct state *state){
                         msg("   %-16s %12.6lf %12.6lf %12.6lf\n", atoms[a].label, x, y, z);
                 }
 
-                //print_fragment(name, coord + 6 * i, NULL);
 
                 msg("   PAIRWISE-EFP ENERGY BETWEEN FRAGMENT %zu (%s) with LIGAND %zu (%s) \n", i+1, name, ligand_index, ligand);
 		msg("   %16.8s %16.8s %16.8s %16.8s %16.8s %16.8s \n", "ELEC", "POL", "DISP", "EXCH REP", "CHR-PEN", "TOTAL"); 	
