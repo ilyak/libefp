@@ -678,6 +678,12 @@ static void get_rand_displacement(struct mc *mc)
 		body->pos.x = body->pos.x * mc->dispmag * rand_neg1_to_1();
 		body->pos.y = body->pos.y * mc->dispmag * rand_neg1_to_1();
 		body->pos.z = body->pos.z * mc->dispmag * rand_neg1_to_1();
+		
+		body->angmom.x = 0.5 * mc->dispmag * rand_neg1_to_1();
+		body->angmom.y = 0.5 * mc->dispmag * rand_neg1_to_1();
+		body->angmom.x = 0.5 * mc->dispmag * rand_neg1_to_1();
+		
+		rotate_body(body, dt);
 	}
 }
 
