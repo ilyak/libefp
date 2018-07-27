@@ -681,6 +681,16 @@ static void get_rand_displacement(struct mc *mc)
 	}
 }
 
+void update_xyzabc() {
+	for (size_t i = 0; i < n_coord; i++) {
+		double save = xyzabc[i];
+		double step = i % 6 < 3 ? cfg_get_double(state->cfg, "num_step_dist") :
+					  cfg_get_double(state->cfg, "num_step_angle");
+
+		xyzabc[i] = save + step;
+	}
+}
+
 void sim_mc(struct state *state)
 {
 	msg("MONTE CARLO JOB\n\n\n");
@@ -720,6 +730,11 @@ void sim_mc(struct state *state)
 		// but I don't think so because values get copied around
 		//compute_energy(mc->state, true);
 		//check_fail(efp_get_energy(state->efp, &efp_energy));
+
+		// TODO this should probably be where the function should be called to
+		// update xyzabc
+		// update_xyzabc();
+
 		delta_e = mc->state->energy - previous_energy;
 		//msg("    ENERGY: %16.10lf, DELTA ENERGY: %e\n", mc->state->energy, delta_e);
 
