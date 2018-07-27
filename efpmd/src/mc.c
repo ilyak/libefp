@@ -670,6 +670,7 @@ are random numbers between (-1) and 1.
 static void get_rand_displacement(struct mc *mc)
 {
 	// TODO: Make a backup of previous positions
+	double dt = cfg_get_double(mc->state->cfg, "time_step");
 	memcpy(&mc->prev_bodies, &mc->bodies, sizeof(mc->bodies));
 
 	for (size_t i = 0; i < mc->n_bodies; i++) {
@@ -678,10 +679,16 @@ static void get_rand_displacement(struct mc *mc)
 		body->pos.x = body->pos.x * mc->dispmag * rand_neg1_to_1();
 		body->pos.y = body->pos.y * mc->dispmag * rand_neg1_to_1();
 		body->pos.z = body->pos.z * mc->dispmag * rand_neg1_to_1();
+		
+		body->angmom.x = 0.5 * mc->dispmag * rand_neg1_to_1();
+		body->angmom.y = 0.5 * mc->dispmag * rand_neg1_to_1();
+		body->angmom.x = 0.5 * mc->dispmag * rand_neg1_to_1();
+		
+		rotate_body(body, dt);
 	}
 }
 
-void update_xyzabc() {
+/* void update_xyzabc() {
 	for (size_t i = 0; i < n_coord; i++) {
 		double save = xyzabc[i];
 		double step = i % 6 < 3 ? cfg_get_double(state->cfg, "num_step_dist") :
@@ -690,6 +697,7 @@ void update_xyzabc() {
 		xyzabc[i] = save + step;
 	}
 }
+*/
 
 void sim_mc(struct state *state)
 {
