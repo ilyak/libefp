@@ -257,9 +257,9 @@ get_p_elec_field(const struct efp *efp, size_t frag_idx, size_t pt_idx, size_t l
                 p_elec_field.y += mult_field.y * p1;
                 p_elec_field.z += mult_field.z * p1;
         }
-
         return p_elec_field;
 }
+
 
 static enum efp_result
 add_electron_density_field(struct efp *efp)
@@ -323,54 +323,97 @@ compute_elec_field_range(struct efp *efp, size_t from, size_t to, void *data)
 }
 
 static void
-compute_p_elec_field_range(struct efp *efp, size_t from, size_t to, void *data)
+compute_p_elec_field_range_1(struct efp *efp, size_t from, size_t to, void *data)
 {
         vec_t *p_elec_field = (vec_t *)data;
+        size_t ligand = efp->opts.ligand;
+
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic)
 #endif
         for (size_t i = from; i < to; i++) {
 
                 const struct frag *frag = efp->frags + i;
-
                 if  (i != efp->opts.ligand){
-
-                        size_t ligand = efp->opts.ligand;
-
                         for (size_t j = 0; j < frag->n_polarizable_pts; j++) {
                                 p_elec_field[frag->polarizable_offset + j] =
                                 get_p_elec_field(efp, i, j, ligand);
                         }
                 }
+//		if (i == efp->opts.ligand){
+//			for (size_t j = 0; j < frag->n_polarizable_pts; j++){
+//				p_elec_field[frag->polarizable_offset + j ] = 
+//				get_p_elec_field(efp, ligand, j, i); 
+//			} 
+//		}
         }
 }
 
+static void
+compute_p_elec_field_range_2(struct efp *efp, size_t from, size_t to, void *data)
+{
+        vec_t *l_elec_field = (vec_t *)data;
+        size_t ligand = efp->opts.ligand;
 
+#ifdef _OPENMP
+#pragma omp parallel for schedule(dynamic)
+#endif
+        for (size_t i = from; i < to; i++){
+
+                if (i != efp->opts.ligand){
+
+	                const struct frag *frag = efp->frags + i;
+        	        const struct frag *lig = efp->frags + ligand;
+    
+                    for (size_t j=0; j < lig->n_polarizable_pts; j++){
+                                l_elec_field[frag->l_polarizable_offset + j] =
+                                get_p_elec_field(efp, ligand, j, i);
+                        }
+                }
+//		if (i == efp->opts.ligand){
+//			for (size_t j = 0; j < lig->n_polarizable_pts; j++){
+//				l_elec_field[frag->l_polarizable_offset +j]=
+//				get_p_elec_field(efp, i, j, ligand); 
+//			}
+//		}
+        }
+}
 
 static enum efp_result
 compute_elec_field(struct efp *efp)
 {
 	vec_t *elec_field;
 	vec_t *p_elec_field; 
+	vec_t *l_elec_field; 
+	size_t lig_n_pol_pts; 
+
+        size_t lig = efp->opts.ligand;
+        struct frag *ligand= efp->frags + lig;
 
 	enum efp_result res;
 
 	elec_field = (vec_t *)calloc(efp->n_polarizable_pts, sizeof(vec_t));
 
-        if (efp->opts.enable_pairwise){
+        if (efp->opts.enable_pairwise){	
+		
+		lig_n_pol_pts = efp->n_frag * ligand->n_polarizable_pts;
+
                 p_elec_field = (vec_t *)calloc(efp->n_polarizable_pts, sizeof(vec_t));
+		l_elec_field = (vec_t *)calloc(lig_n_pol_pts, sizeof(vec_t));
         }	
 
 	efp_balance_work(efp, compute_elec_field_range, elec_field);
 
         if (efp->opts.enable_pairwise){
-                efp_balance_work(efp, compute_p_elec_field_range, p_elec_field);
+                efp_balance_work(efp, compute_p_elec_field_range_1, p_elec_field);
+		efp_balance_work(efp, compute_p_elec_field_range_2, l_elec_field); 
         }
 
 	efp_allreduce((double *)elec_field, 3 * efp->n_polarizable_pts);
 
         if (efp->opts.enable_pairwise){
                 efp_allreduce((double *)p_elec_field, 3 * efp->n_polarizable_pts);
+		efp_allreduce((double *)l_elec_field, 3 * lig_n_pol_pts); 
         }
 
 #ifdef _OPENMP
@@ -378,31 +421,35 @@ compute_elec_field(struct efp *efp)
 #endif
 	for (size_t i = 0; i < efp->n_frag; i++) {
 		struct frag *frag = efp->frags + i;
+		struct frag *lig = efp->frags + efp->opts.ligand; 
 
 		for (size_t j = 0; j < frag->n_polarizable_pts; j++) {
 			frag->polarizable_pts[j].elec_field =
 			    elec_field[frag->polarizable_offset + j];
 			frag->polarizable_pts[j].elec_field_wf = vec_zero;
-		}
+		};
 
-		if (efp->opts.enable_pairwise && (i != efp->opts.ligand)){
+		if (efp->opts.enable_pairwise){
                         for (size_t j = 0; j < frag->n_polarizable_pts; j++) {
-                                frag->polarizable_pts[j].p_elec_field =
-                                         p_elec_field[frag->polarizable_offset + j];
-                                frag->polarizable_pts[j].p_elec_field_wf = vec_zero;
+				frag->polarizable_pts[j].p_elec_field = p_elec_field[frag->polarizable_offset + j]; 
+				frag->polarizable_pts[j].p_elec_field_wf = vec_zero; 
                         }
+			for (size_t j = 0; j < frag->n_l_polarizable_pts; j++){
+				frag->l_polarizable_pts[j].elec_field = l_elec_field[frag->l_polarizable_offset +j];
+				frag->l_polarizable_pts[j].elec_field_wf = vec_zero;  
+			}
 		}
 	}
 	free(elec_field);
 
         if (efp->opts.enable_pairwise){
                 free(p_elec_field);
+		free(l_elec_field); 
         }
 
 	if (efp->opts.terms & EFP_TERM_AI_POL)
 		if ((res = add_electron_density_field(efp)))
 			return res;
-
 	return EFP_RESULT_SUCCESS;
 }
 
@@ -653,14 +700,15 @@ static void
 compute_energy_range(struct efp *efp, size_t from, size_t to, void *data)
 {
 	double energy = 0.0;
-
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic) reduction(+:energy)
 #endif
 	for (size_t i = from; i < to; i++) {
 		struct frag *frag = efp->frags + i;
+		struct frag *lig = efp->frags + efp->opts.ligand; 
 		
 		double p_energy = 0.0; 
+		double l_energy = 0.0; 
 
 		for (size_t j = 0; j < frag->n_polarizable_pts; j++) {
 			struct polarizable_pt *pt = frag->polarizable_pts + j;
@@ -670,20 +718,40 @@ compute_energy_range(struct efp *efp, size_t from, size_t to, void *data)
 						&pt->elec_field_wf) -
 				  0.5 * vec_dot(&efp->indip[idx],
 						&pt->elec_field);
-                        if (efp->opts.enable_pairwise && (i != efp->opts.ligand)){
+                        if (efp->opts.enable_pairwise){
+				if (i == efp->opts.ligand){
+					continue; 
+				}
+				if(i != efp->opts.ligand){
                                 p_energy += 0.5 * vec_dot(&efp->indipconj[idx],
                                         &pt->p_elec_field_wf) -
                                  0.5 * vec_dot(&efp->indip[idx],
                                         &pt->p_elec_field);
+				}
 			}
 		}
-                if (efp->opts.enable_pairwise && (i != efp->opts.ligand)){
-                        six_set(efp->energy_components, (6 * i + 3), p_energy);
+                if (efp->opts.enable_pairwise){
+			if (i == efp->opts.ligand){
+				continue; 
+			}
+			if(i != efp->opts.ligand){
+				for (size_t j = 0; j < frag->n_l_polarizable_pts; j++){
+					struct l_polarizable_pt *pt = frag->l_polarizable_pts + j; 
+					size_t idx = lig->polarizable_offset + j ;  
+					l_energy += 0.5 * vec_dot(&efp->indipconj[idx], &pt->elec_field_wf) - 
+						0.5 * vec_dot(&efp->indip[idx],
+							&pt->elec_field);
+				}
+			}
+		}
+			double total_p_l_energy = l_energy + p_energy; 
+                        six_set(efp->energy_components, (6 * i + 3), total_p_l_energy);
                         six_add_total(efp->energy_components, (6 * i + 0));
-
-                }
+                
                 p_energy = 0.0;
+		l_energy = 0.0; 
 	}
+//	six_set(efp->energy_components, (6 * efp->opts.ligand + 3), l_energy); 
 
 	*(double *)data += energy;
 }

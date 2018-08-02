@@ -263,6 +263,42 @@ copy_frag(struct frag *dest, const struct frag *src)
 }
 
 static enum efp_result
+copy_lig(struct frag *dest, const struct frag *src){
+	size_t size; 
+	memcpy(dest, src, sizeof(*dest)); 
+
+	if (src->polarizable_pts){
+		size = src->n_polarizable_pts * sizeof(struct polarizable_pt); 
+		dest->l_polarizable_pts = (struct l_polarizable_pt *)malloc(size); 
+		memcpy(dest->l_polarizable_pts, src->polarizable_pts, size); 
+		dest->n_l_polarizable_pts = src->n_polarizable_pts; 
+	}; 
+	return EFP_RESULT_SUCCESS;
+}
+
+EFP_EXPORT enum efp_result
+copy_lig_polarizable_pts(struct efp *efp, size_t ligand){
+	for (size_t i = 0; i < efp->n_frag; i ++){
+	
+		struct frag *frag = efp->frags + i; 
+		struct frag *lig = efp->frags + ligand; 
+
+		size_t size = lig->n_polarizable_pts * sizeof(lig->polarizable_pts); 
+
+		for (size_t j = 0; j < lig->n_polarizable_pts; j++){
+			frag->l_polarizable_pts = (struct l_polarizable_pt *)realloc(frag->l_polarizable_pts, lig->n_polarizable_pts* sizeof(struct l_polarizable_pt)); 
+			struct l_polarizable_pt *l_pt = frag->l_polarizable_pts + lig->n_polarizable_pts - 1; 
+
+			memcpy(frag->l_polarizable_pts, lig->polarizable_pts, size);
+		};
+
+	frag->n_l_polarizable_pts = lig->n_polarizable_pts; 
+
+	};
+	 return EFP_RESULT_SUCCESS;
+}
+
+static enum efp_result
 check_opts(const struct efp_opts *opts)
 {
 	if (opts->enable_pbc) {
@@ -388,7 +424,6 @@ compute_two_body_range(struct efp *efp, size_t frag_from, size_t frag_to,
 
 		for (size_t j = i + 1; j < i + 1 + cnt; j++) {
 			size_t fr_j = j % efp->n_frag;
-
 			if (!efp_skip_frag_pair(efp, i, fr_j)) {
 				double *s;
 				six_t *ds;
@@ -406,27 +441,50 @@ compute_two_body_range(struct efp *efp, size_t frag_from, size_t frag_to,
 					e_xr += exr;
 					e_cp += ecp;
 					
-					if(efp->opts.enable_pairwise && (i == efp->opts.ligand)){
-						six_set(efp->energy_components, (6 * fr_j + 2), exr);
-						six_set(efp->energy_components, (6 * fr_j + 5), ecp);
-					};
+					if(efp->opts.enable_pairwise){
+						if((i == efp->opts.ligand) && (fr_j != efp->opts.ligand)){
+							six_set(efp->energy_components, (6 * fr_j + 2), exr);
+							six_set(efp->energy_components, (6 * fr_j + 5), ecp);
+						}
+						if((i != efp->opts.ligand) && (fr_j == efp->opts.ligand)){
+							six_set(efp->energy_components, (6 * i + 2), exr);
+							six_set(efp->energy_components, (6 * i + 5), ecp);
+						}
+					}
+
 				}
 				if (do_elec(&efp->opts)) {
 					temp = efp_frag_frag_elec(efp,
 					    i, fr_j);
 					e_elec += temp; 
 
-					if (efp->opts.enable_pairwise && (i == efp->opts.ligand)){
-						six_set(efp->energy_components, (6 * fr_j + 1), temp);
+//					if (efp->opts.enable_pairwise && (i != efp->opts.ligand) && (fr_j == efp->opts.ligand)){
+//						six_set(efp->energy_components, (6 * i + 1), temp);
+//					}
+
+					if(efp->opts.enable_pairwise){
+						if((i == efp->opts.ligand) && (fr_j != efp->opts.ligand)){
+							six_set(efp->energy_components, (6 * fr_j + 1), temp);
+						}
+						if((i != efp->opts.ligand) && (fr_j == efp->opts.ligand)){
+							six_set(efp->energy_components, (6 * i + 1), temp);
+						}
 					}
 				}
+
 				if (do_disp(&efp->opts)) {
 					temp = efp_frag_frag_disp(efp,
 					    i, fr_j, s, ds);
 					e_disp += temp; 
 
-					if (efp->opts.enable_pairwise && (i == efp->opts.ligand)){
-						six_set(efp->energy_components, (6 * fr_j + 4), temp);
+                                        if(efp->opts.enable_pairwise){
+                                                if((i == efp->opts.ligand) && (fr_j != efp->opts.ligand)){
+                                                        six_set(efp->energy_components, (6 * fr_j + 4), temp);
+                                                }
+                                                if((i != efp->opts.ligand) && (fr_j == efp->opts.ligand)){
+                                                        six_set(efp->energy_components, (6 * i + 4), temp);
+                                                }
+
 					};
 				}
 				free(s);
@@ -903,6 +961,19 @@ efp_prepare(struct efp *efp)
 	for (size_t i = 0; i < efp->n_frag; i++) {
 		efp->frags[i].polarizable_offset = efp->n_polarizable_pts;
 		efp->n_polarizable_pts += efp->frags[i].n_polarizable_pts;
+	}
+
+	if(efp->opts.enable_pairwise){
+		struct frag *lig = efp->frags + efp->opts.ligand;
+		size_t n_ligand_polarizable_pts =0;
+		for(size_t i = 0; i < efp->n_frag; i++){
+			size_t lig_offset = lig->n_polarizable_pts; 
+			efp->frags[i].l_polarizable_offset = n_ligand_polarizable_pts; 
+			efp->n_lig_polarizable_pts += lig_offset;
+			n_ligand_polarizable_pts += lig_offset;  
+		};
+		
+	copy_lig_polarizable_pts(efp, efp->opts.ligand); 
 	}
 
 	efp->indip = (vec_t *)calloc(efp->n_polarizable_pts, sizeof(vec_t));

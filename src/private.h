@@ -57,6 +57,13 @@ struct polarizable_pt {
         vec_t p_elec_field_wf;
 };
 
+struct l_polarizable_pt{
+        double x, y, z;
+        mat_t tensor;
+        vec_t elec_field;
+        vec_t elec_field_wf;
+};
+
 struct dynamic_polarizable_pt {
 	double x, y, z;
 	mat_t tensor[12];
@@ -150,6 +157,12 @@ struct frag {
 
 	/* offset of polarizable points for this fragment */
 	size_t polarizable_offset;
+
+	struct l_polarizable_pt *l_polarizable_pts; 
+
+	size_t l_polarizable_offset; 
+
+	size_t n_l_polarizable_pts; 
 };
 
 struct efp {
@@ -239,6 +252,8 @@ struct efp {
 	/* efp_pairwise array that will be copied from efp structure */
 
         six_t *energy_components;
+
+	size_t n_lig_polarizable_pts; 
 };
 
 #endif /* LIBEFP_PRIVATE_H */
