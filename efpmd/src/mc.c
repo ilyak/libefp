@@ -45,26 +45,28 @@ struct mc_state *mc_create(size_t n)
 
 enum mc_result mc_init(struct mc_state *state, size_t n, const double *x)
 {
+	fprintf(stdout, "\n----mc init----\n\n");
 	assert(state);
 	assert(n == state->n);
 	assert(x);
 
 	memcpy(state->x, x, n * sizeof(double));
-	memset(state->task, ' ', sizeof(state->task));
+	memset(state->task, '\0', sizeof(state->task));
 
-	state->task[0] = 'S';
-	state->task[1] = 'T';
-	state->task[2] = 'A';
-	state->task[3] = 'R';
-	state->task[4] = 'T';
+	const char start[] = "START";
+	strncpy(state->task, start, sizeof(start));
 
-	if (strncmp(state->task, "FG_START", strlen("FG_START")) != 0)
+	if (strncmp(state->task, start, sizeof(start)) != 0) {
+		fprintf(stdout, "\n----failed strncmp %s----\n\n", state->task);
 		return MC_RESULT_ERROR;
+	}
 
 	state->f = state->func(state->n, state->x, state->data);
 
-	if (isnan(state->f))
+	if (isnan(state->f)) {
+		fprintf(stdout, "\n----failed isnan %lf----\n\n", state->f);
 		return MC_RESULT_ERROR;
+	}
 
 	return MC_RESULT_SUCCESS;
 }
@@ -281,8 +283,9 @@ void sim_mc(struct state *state){
 
 
 //	#does an efp_compute with coord
-	if (mc_init(mc_state, n_coord, coord))
+	if (mc_init(mc_state, n_coord, coord)) {
 		error("unable to initialize an optimizer");
+	}
 
 	double e_old = mc_get_fx(mc_state);
 
@@ -304,6 +307,6 @@ void sim_mc(struct state *state){
 
 	mc_shutdown(mc_state);
 
-	msg("	MONTE CARLO JOB DONE BITCHES"); 
+	msg("	MONTE CARLO JOB DONE BITCHES\n"); 
 
 }
