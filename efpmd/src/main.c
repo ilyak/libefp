@@ -37,7 +37,8 @@ void sim_opt(struct state *);
 void sim_md(struct state *);
 void sim_efield(struct state *);
 void sim_gtest(struct state *);
-void sim_psp(struct state *); 
+void sim_psp(struct state *);
+void sim_mc(struct state *);
 
 #define USAGE_STRING \
 	"usage: efpmd [-d | -v | -h | input]\n" \
@@ -57,7 +58,8 @@ static struct cfg *make_cfg(void)
 		"md\n"
 		"efield\n"
 		"gtest\n"
-		"psp\n",
+		"psp\n"
+		"mc\n",
 		(int []) { RUN_TYPE_SP,
 			   RUN_TYPE_GRAD,
 			   RUN_TYPE_HESS,
@@ -65,7 +67,8 @@ static struct cfg *make_cfg(void)
 			   RUN_TYPE_MD,
 			   RUN_TYPE_EFIELD,
 			   RUN_TYPE_GTEST,
-			   RUN_TYPE_PSP });
+			   RUN_TYPE_PSP,
+			   RUN_TYPE_MC });
 
 	cfg_add_enum(cfg, "coord", EFP_COORD_TYPE_XYZABC,
 		"xyzabc\n"
@@ -164,8 +167,11 @@ static sim_fn_t get_sim_fn(enum run_type run_type)
 		return sim_efield;
 	case RUN_TYPE_GTEST:
 		return sim_gtest;
-        case RUN_TYPE_PSP:
-                return sim_psp;
+    case RUN_TYPE_PSP:
+        return sim_psp;
+    case RUN_TYPE_MC:
+    	fprintf(stdout, "\n----monte carlo----\n\n");
+        return sim_mc;
 	}
 	assert(0);
 }

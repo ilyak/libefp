@@ -60,7 +60,8 @@ enum run_type {
 	RUN_TYPE_MD,
 	RUN_TYPE_EFIELD,
 	RUN_TYPE_GTEST,
-	RUN_TYPE_PSP
+	RUN_TYPE_PSP,
+	RUN_TYPE_MC
 };
 
 enum ensemble_type {
