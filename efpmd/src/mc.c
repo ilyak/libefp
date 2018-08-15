@@ -200,20 +200,38 @@ enum mc_result mc_step(struct mc_state *state){
 
 next:
 	mc_rand(state);
+
+	// state->task should be an integer, not a string (would be much easier 
+	// to work with)
 	
+	// Nothing that I can see ever changes the value of state->task,
+	// so both if statements will always fail.
+	// Presumably there should be code somewhere that sets state-task
+	// to FG or NEW_X.
 	if (strncmp(state->task, "FG", strlen("FG")) == 0) {
+		fprintf(stdout, "task is FG\n");
 		state->f_prop = state->func(state->n, state->x_prop, state->data);
 
+		// Maybe this code should always happen with no if around it?
 		check_acceptance_ratio(state, state->f, state->f_prop); 
 
-		if (isnan(state->f))
+		if (isnan(state->f)) {
 			return MC_RESULT_ERROR;
+		}
 
+		// The way this code is written, it will loop forever if every new
+		// energy state is valid. This is not a good idea. There should be
+		// some kind of condition on this goto.
+		// I mean really, you should not use goto, but if you do, you must
+		// limit it somehow.
 		goto next;
 	}
 
-	if (strncmp(state->task, "NEW_X", strlen("NEW_X")) == 0)
+	// It's unclear how this code is meant to fit in.
+	if (strncmp(state->task, "NEW_X", strlen("NEW_X")) == 0) {
+		fprintf(stdout, "task is NEW_X\n");
 		return MC_RESULT_SUCCESS;
+	}
 
 	return MC_RESULT_ERROR;
 }
@@ -296,7 +314,11 @@ void sim_mc(struct state *state){
 	print_status(state, 0.0);
 	double e_new; 
 	for (int step = 1; step <= cfg_get_int(state->cfg, "max_steps"); step++) {
-		if (mc_step(mc_state)){
+		int step_result = mc_step(mc_state);
+		// Step always errors:
+		// step result is: 1, error is: 1
+		fprintf(stdout, "step result is: %d, error is: %d\n", step_result, MC_RESULT_ERROR);
+		if (step_result) {
 			e_new = mc_get_fx(mc_state);
 			msg("	STATE AFTER %d STEPS\n\n", step);
 			print_status(state, e_new-e_old);
