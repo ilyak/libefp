@@ -17,7 +17,7 @@ struct mc_state {
 	double *g;
 	char task[60];
 	mc_func_t func;
-	void *data;
+	void *data; // Why is this not a state*? It is cast to one later
 	double *x_prop;
 	double *g_prop; 
 	double f_prop; 
@@ -61,6 +61,7 @@ enum mc_result mc_init(struct mc_state *state, size_t n, const double *x)
 		return MC_RESULT_ERROR;
 	}
 
+	fprintf(stdout, "Setting state->f\n");
 	state->f = state->func(state->n, state->x, state->data);
 
 	if (isnan(state->f)) {
@@ -171,12 +172,13 @@ static bool check_acceptance_ratio(struct mc_state *state, double new_energy, do
 //	#Insert Jay's acceptance ratio script thing here;
 
 	bool allow_move = false; 
+	fprintf(stdout, "Checking, new=%lf, old=%lf\n", new_energy, old_energy);
 
-	if(new_energy < old_energy){
+	if (new_energy < old_energy){
 		allow_move = true; 
 	}
 
-	else{
+	else {
 	
 		double temperature = 298.0; 
 		double epsilon = rand_uniform_1();
@@ -184,23 +186,26 @@ static bool check_acceptance_ratio(struct mc_state *state, double new_energy, do
 		double exp_value = -delta_e / (BOLTZMANN * temperature); 
 		double bf = exp(exp_value);
 
-		if(epsilon < bf ){
+		fprintf(stdout, "Comparing, delta_e=%lf, exp_value=%lf, bf=%lf\n",
+			delta_e, exp_value, bf);
+
+		if (epsilon < bf ) {
 			allow_move = true;
 		}
 	}
 
 	if (allow_move){
 		memcpy(state->x, state->x_prop, (6 * state->n + 3 * state->n_charge) * sizeof(double)); 
-		return allow_move;
-	} 
-	else{
-		return allow_move; 
 	}
+	
+	return allow_move; 
 
 }
 
 static void mc_step(struct mc_state *state){
 	assert(state);
+
+	int num_tries = 0;
 
 	bool allow_step = false;
 next:
@@ -213,6 +218,7 @@ next:
 	// so both if statements will always fail.
 	// Presumably there should be code somewhere that sets state-task
 	// to FG or NEW_X.
+	fprintf(stdout, "Setting state->f_prop\n");
 	state->f_prop = state->func(state->n, state->x_prop, state->data);
 
 		// Maybe this code should always happen with no if around it?
@@ -224,10 +230,13 @@ next:
 		// some kind of condition on this goto.
 		// I mean really, you should not use goto, but if you do, you must
 		// limit it somehow.
-	if(!allow_step){
-		goto next;
-	}else{
-		return;
+	if (!allow_step) {
+		if (num_tries < 10) {
+			num_tries++;
+			goto next;
+		} else {
+			fprintf(stdout, "Num tries exceeded\n");
+		}
 	}
 
 }
@@ -235,9 +244,24 @@ next:
 static double compute_efp(size_t n, const double *x, void *data)
 {
 	size_t n_frags, n_charge;
+	// Why pass in void* and cast to state*? Far safer to have a state* parameter.
 	struct state *state = (struct state *)data;
 
+	// Why does this duplicate part of compute_energy,
+	// i.e. efp_get_frag_count, then call compute_energy?
 	check_fail(efp_get_frag_count(state->efp, &n_frags));
+
+	/* Debugging */
+	fprintf(stdout, "compute_efp, n=%lu\n", n);
+	// efp_set_coordinates(struct efp *efp, enum efp_coord_type coord_type,
+    //const double *coord)
+	print_energy(state);
+	const double *coord = x;
+	for (size_t i = 0; i < n_frags; i++, coord += 6) {
+		fprintf(stdout, "compute_efp, i=%lu, x[i]=%e\n", i, *coord);
+	}
+	/* End debugging */
+
 	check_fail(efp_get_point_charge_count(state->efp, &n_charge));
 
 	assert(n == (6 * n_frags + 3 * n_charge));
