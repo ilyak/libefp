@@ -167,7 +167,7 @@ static void mc_rand(struct mc_state *state){
 	}
 }
 
-static void check_acceptance_ratio(struct mc_state *state, double new_energy, double old_energy){
+static bool check_acceptance_ratio(struct mc_state *state, double new_energy, double old_energy){
 //	#Insert Jay's acceptance ratio script thing here;
 
 	bool allow_move = false; 
@@ -191,13 +191,18 @@ static void check_acceptance_ratio(struct mc_state *state, double new_energy, do
 
 	if (allow_move){
 		memcpy(state->x, state->x_prop, (6 * state->n + 3 * state->n_charge) * sizeof(double)); 
-	}; 
+		return allow_move;
+	} 
+	else{
+		return allow_move; 
+	}
 
 }
 
-enum mc_result mc_step(struct mc_state *state){
+static void mc_step(struct mc_state *state){
 	assert(state);
 
+	bool allow_step = false;
 next:
 	mc_rand(state);
 
@@ -208,32 +213,23 @@ next:
 	// so both if statements will always fail.
 	// Presumably there should be code somewhere that sets state-task
 	// to FG or NEW_X.
-	if (strncmp(state->task, "FG", strlen("FG")) == 0) {
-		fprintf(stdout, "task is FG\n");
-		state->f_prop = state->func(state->n, state->x_prop, state->data);
+	state->f_prop = state->func(state->n, state->x_prop, state->data);
 
 		// Maybe this code should always happen with no if around it?
-		check_acceptance_ratio(state, state->f, state->f_prop); 
+	allow_step = check_acceptance_ratio(state, state->f, state->f_prop); 
 
-		if (isnan(state->f)) {
-			return MC_RESULT_ERROR;
-		}
 
 		// The way this code is written, it will loop forever if every new
 		// energy state is valid. This is not a good idea. There should be
 		// some kind of condition on this goto.
 		// I mean really, you should not use goto, but if you do, you must
 		// limit it somehow.
+	if(!allow_step){
 		goto next;
+	}else{
+		return;
 	}
 
-	// It's unclear how this code is meant to fit in.
-	if (strncmp(state->task, "NEW_X", strlen("NEW_X")) == 0) {
-		fprintf(stdout, "task is NEW_X\n");
-		return MC_RESULT_SUCCESS;
-	}
-
-	return MC_RESULT_ERROR;
 }
 
 static double compute_efp(size_t n, const double *x, void *data)
@@ -314,16 +310,14 @@ void sim_mc(struct state *state){
 	print_status(state, 0.0);
 	double e_new; 
 	for (int step = 1; step <= cfg_get_int(state->cfg, "max_steps"); step++) {
-		int step_result = mc_step(mc_state);
+		mc_step(mc_state);
 		// Step always errors:
 		// step result is: 1, error is: 1
-		fprintf(stdout, "step result is: %d, error is: %d\n", step_result, MC_RESULT_ERROR);
-		if (step_result) {
-			e_new = mc_get_fx(mc_state);
-			msg("	STATE AFTER %d STEPS\n\n", step);
-			print_status(state, e_new-e_old);
-		}
+		e_new = mc_get_fx(mc_state);
+		msg("	STATE AFTER %d STEPS\n\n", step);
+		print_status(state, e_new-e_old);
 	}
+
 	msg("	FINAL STATE\n\n");
 	print_status(state, e_new); 
 
