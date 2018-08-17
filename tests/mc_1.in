@@ -1,6 +1,6 @@
 run_type mc
 time_step 0.5
-max_steps 50
+max_steps 5
 fraglib_path ../fraglib
 pol_driver direct
 fragment h2o_l
