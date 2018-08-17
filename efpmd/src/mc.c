@@ -176,6 +176,7 @@ static bool check_acceptance_ratio(struct mc_state *state, double new_energy, do
 
 	if (new_energy < old_energy){
 		allow_move = true; 
+		state->f = new_energy; 
 	}
 
 	else {
@@ -191,11 +192,13 @@ static bool check_acceptance_ratio(struct mc_state *state, double new_energy, do
 
 		if (epsilon < bf ) {
 			allow_move = true;
+			state->f = new_energy; 
 		}
 	}
 
 	if (allow_move){
 		memcpy(state->x, state->x_prop, (6 * state->n + 3 * state->n_charge) * sizeof(double)); 
+		state->f = new_energy; 
 	}
 	
 	return allow_move; 
@@ -236,6 +239,7 @@ next:
 			goto next;
 		} else {
 			fprintf(stdout, "Num tries exceeded\n");
+			exit(allow_step); 
 		}
 	}
 
@@ -326,7 +330,7 @@ void sim_mc(struct state *state){
 	}
 
 	double e_old = mc_get_fx(mc_state);
-
+	mc_state->f = e_old; 
 //	#sets up empty array; 
 //	memset(grad,0, n_coord*sizeof(double)); 
 
