@@ -19,12 +19,10 @@ struct mc_state {
 	size_t n_frags;
 	double *x;
 	double f;
-	double *g;
 	char task[60];
 	mc_func_t func;
 	void *data; // Why is this not a state*? It is cast to one later
 	double *x_prop;
-	double *g_prop; 
 	double f_prop; 
 	double n_charge; 
 	int step; 
@@ -45,10 +43,6 @@ struct mc_state *mc_create(size_t n)
 	assert(state->x);
 	state->x_prop= calloc(n, sizeof(double));
 	assert(state->x_prop);
-	state->g = calloc(n, sizeof(double));
-	assert(state->g);
-	state->g_prop = calloc(n, sizeof(double));
-	assert(state->g_prop);
 
 	return state;
 }
@@ -163,17 +157,18 @@ static void print_status(struct state *state, double e_diff)
 static void mc_rand(struct mc_state *state){
 
 	//#copy coord * gradient to n, x_prop, g_prop, state->data; 
+	printf("n_frags in system: %i\n", state->n_frags);
 
 	for (size_t i = 0; i < state->n_frags; i++){
+		printf("goes through mc_rand before\n"); 
+		state->x_prop[6 * i + 0] = state->x[6 *i + 0] + state->dispmag * rand_neg1_to_1(); 
+		state->x_prop[6 * i + 1] = state->x[6 *i + 1] + state->dispmag * rand_neg1_to_1(); 
+		state->x_prop[6 * i + 2] = state->x[6 *i + 2] + state->dispmag * rand_neg1_to_1(); 
 
-		state->x_prop[6 * i + 0] = state->x[6 *i + 0] * state->dispmag * rand_neg1_to_1(); 
-		state->x_prop[6 * i + 1] = state->x[6 *i + 1] * state->dispmag * rand_neg1_to_1(); 
-		state->x_prop[6 * i + 2] = state->x[6 *i + 2] * state->dispmag * rand_neg1_to_1(); 
-
-		state->x_prop[6 * i + 3] = state->x[6 *i + 3] * state->dispmag * rand_neg1_to_1();
-                state->x_prop[6 * i + 4] = state->x[6 *i + 4] * state->dispmag * rand_neg1_to_1();
-                state->x_prop[6 * i + 5] = state->x[6 *i + 5] * state->dispmag * rand_neg1_to_1();
-		fprintf("com of frag %u x: %u y: %u z: %u \n", i, state->x_prop[6 * i + 0], state->x_prop[6 * i + 1], state->x_prop[6 * i + 2]); 
+		state->x_prop[6 * i + 3] = state->x[6 *i + 3] + state->dispmag * rand_neg1_to_1();
+                state->x_prop[6 * i + 4] = state->x[6 *i + 4] + state->dispmag * rand_neg1_to_1();
+                state->x_prop[6 * i + 5] = state->x[6 *i + 5] + state->dispmag * rand_neg1_to_1();
+		printf("com of frag %i x: %f y: %f z: %f \n", i, state->x_prop[6 * i + 0], state->x_prop[6 * i + 1], state->x_prop[6 * i + 2]); 
 	}
 
 	//#mess with translation
@@ -240,7 +235,7 @@ next:
 	state->f_prop = state->func(state->n, state->x_prop, state->data);
 
 		// Maybe this code should always happen with no if around it?
-	allow_step = check_acceptance_ratio(state, state->f, state->f_prop); 
+	allow_step = check_acceptance_ratio(state, state->f_prop, state->f); 
 
 
 		// The way this code is written, it will loop forever if every new
@@ -299,11 +294,9 @@ static double compute_efp(size_t n, const double *x, void *data)
 
 void mc_shutdown(struct mc_state *state)
 {
-	if (state) {
-		free(state->x);
-		free(state->x_prop); 
-		free(state);
-	}
+	free(state->x);
+	free(state->x_prop); 
+	free(state);
 }
 
 void sim_mc(struct state *state){
@@ -344,6 +337,7 @@ void sim_mc(struct state *state){
 	if (mc_init(mc_state, n_coord, coord)) {
 		error("unable to initialize an optimizer");
 	}
+	mc_state->n_frags = n_frags; 
 
 	double e_old = mc_get_fx(mc_state);
 	printf("e_old %f\n", e_old); 
@@ -365,7 +359,6 @@ void sim_mc(struct state *state){
 
 	msg("	FINAL STATE\n\n");
 	print_status(state, e_new); 
-
 	mc_shutdown(mc_state);
 
 	msg("	MONTE CARLO JOB DONE BITCHES\n"); 
