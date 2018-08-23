@@ -160,14 +160,15 @@ static void mc_rand(struct mc_state *state){
 	printf("n_frags in system: %i\n", state->n_frags);
 
 	for (size_t i = 0; i < state->n_frags; i++){
-		printf("goes through mc_rand before\n"); 
+		printf("goes through mc_rand before\n");
+		// Are all of these valid indices to state->x_prop?
 		state->x_prop[6 * i + 0] = state->x[6 *i + 0] + state->dispmag * rand_neg1_to_1(); 
 		state->x_prop[6 * i + 1] = state->x[6 *i + 1] + state->dispmag * rand_neg1_to_1(); 
 		state->x_prop[6 * i + 2] = state->x[6 *i + 2] + state->dispmag * rand_neg1_to_1(); 
 
 		state->x_prop[6 * i + 3] = state->x[6 *i + 3] + state->dispmag * rand_neg1_to_1();
-                state->x_prop[6 * i + 4] = state->x[6 *i + 4] + state->dispmag * rand_neg1_to_1();
-                state->x_prop[6 * i + 5] = state->x[6 *i + 5] + state->dispmag * rand_neg1_to_1();
+        state->x_prop[6 * i + 4] = state->x[6 *i + 4] + state->dispmag * rand_neg1_to_1();
+        state->x_prop[6 * i + 5] = state->x[6 *i + 5] + state->dispmag * rand_neg1_to_1();
 		printf("com of frag %i x: %f y: %f z: %f \n", i, state->x_prop[6 * i + 0], state->x_prop[6 * i + 1], state->x_prop[6 * i + 2]); 
 	}
 
@@ -204,8 +205,9 @@ static bool check_acceptance_ratio(struct mc_state *state, double new_energy, do
 		}
 	}
 
-	if (allow_move){
-		memcpy(state->x, state->x_prop, (6 * state->n + 3 * state->n_charge) * sizeof(double)); 
+	if (allow_move) {
+		// Can only memcpy up to the size that was allocated
+		memcpy(state->x, state->x_prop, state->n * sizeof(double)); 
 		state->f = new_energy; 
 	}
 	printf("check ratio\n"); 
@@ -231,12 +233,14 @@ next:
 	// so both if statements will always fail.
 	// Presumably there should be code somewhere that sets state-task
 	// to FG or NEW_X.
-//	fprintf(stdout, "Setting state->f_prop\n");
+	fprintf(stdout, "Setting state->f_prop\n");
 	state->f_prop = state->func(state->n, state->x_prop, state->data);
+	fprintf(stdout, "Set state->f_prop %lf, state->f is %lf\n",
+		state->f_prop, state->f);
 
 		// Maybe this code should always happen with no if around it?
-	allow_step = check_acceptance_ratio(state, state->f_prop, state->f); 
 
+	allow_step = check_acceptance_ratio(state, state->f_prop, state->f);
 
 		// The way this code is written, it will loop forever if every new
 		// energy state is valid. This is not a good idea. There should be
@@ -284,7 +288,14 @@ static double compute_efp(size_t n, const double *x, void *data)
 
 	compute_energy(state, false);
 	check_fail(efp_get_energy(state->efp, &energy));
+	/*
+	efp_get_energy
+	*/
 
+	//fprintf(stdout, 'Energies 1 %f\n', energy.electrostatic);
+	//fprintf(stdout, 'Energies 2 %lf\n', energy.polarization);
+	//fprintf(stdout, 'Energies 3 %lf\n', energy.dispersion);
+	//fprintf(stdout, 'Energies 4 %lf\n', energy.exchange_repulsion);
 	state->energy = energy.electrostatic + energy.polarization + energy.dispersion + energy.exchange_repulsion;  
 	
 	//#we randomized gradients before so don't worry; 
@@ -294,9 +305,11 @@ static double compute_efp(size_t n, const double *x, void *data)
 
 void mc_shutdown(struct mc_state *state)
 {
-	free(state->x);
-	free(state->x_prop); 
-	free(state);
+	if (state) {
+		free(state->x);
+		free(state->x_prop); 
+		free(state);
+	}
 }
 
 void sim_mc(struct state *state){
@@ -337,7 +350,8 @@ void sim_mc(struct state *state){
 	if (mc_init(mc_state, n_coord, coord)) {
 		error("unable to initialize an optimizer");
 	}
-	mc_state->n_frags = n_frags; 
+
+	mc_state->n_frags = n_frags;
 
 	double e_old = mc_get_fx(mc_state);
 	printf("e_old %f\n", e_old); 

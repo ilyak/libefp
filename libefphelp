@@ -16,3 +16,23 @@ in efpmd/src:
 	cp efpmd ../../bin/
 
 Hello I am Terri
+
+
+Debugging
+
+If command is: ./efpmd ../tests/mc_1.in
+then:
+gdb ./efpmd
+
+run ../tests/mc_1.in
+
+
+To get electricfence:
+download from http://lh3lh3.users.sourceforge.net/download/efence_mac-2.1.13.tar.bz2
+in Terminal:
+cd ~/Downloads/
+bunzip2 efence_mac-2.1.13.tar.bz2
+tar -xvf efence_mac-2.1.13.tar
+cd efence_mac-2.1.13/
+make
+mv libefence.a /usr/local/lib/
