@@ -247,8 +247,22 @@ next:
 		// some kind of condition on this goto.
 		// I mean really, you should not use goto, but if you do, you must
 		// limit it somehow.
-	if (!allow_step) {
-		if (num_tries < 10) {
+	if (allow_step) {
+		// Are number of steps currently limited to the max_steps from the input file?
+		state->step++;
+		if (state->step % DISPMAG_MODIFY_STEPS == 0) {
+			if (state->dispmag <= DISPMAG_THRESHOLD) {
+				fprintf(stdout, "dividing dispmag\n");
+				state->dispmag = state->dispmag / DISPMAG_MODIFIER;
+			} else {
+				fprintf(stdout, "multiplying dispmag\n");
+				state->dispmag = state->dispmag * DISPMAG_MODIFIER;	
+			}
+			msg("    NEW DISPMAG %e\n\n", state->dispmag);
+		}
+	} else {
+		// How many times should it try to find a new step before it gives up?
+		if (num_tries < 100) {
 			num_tries++;
 			goto next;
 		} else {
