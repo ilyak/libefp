@@ -328,7 +328,7 @@ void mc_shutdown(struct mc_state *state)
 
 void sim_mc(struct state *state){
 	
-	msg ("YO MONTE CARLO JOB BITCHES\n"); 
+	msg ("MONTE CARLO JOB \n"); 
 
 	size_t n_frags, n_charge, n_coord; 
 	double rms_grad, max_grad; 
@@ -389,6 +389,6 @@ void sim_mc(struct state *state){
 	print_status(state, e_new); 
 	mc_shutdown(mc_state);
 
-	msg("	MONTE CARLO JOB DONE BITCHES\n"); 
+	msg("	MONTE CARLO JOB DONE\n"); 
 
 }
