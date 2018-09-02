@@ -25,7 +25,7 @@ struct mc_state {
 	double *x_prop;
 	double f_prop; 
 	double n_charge; 
-	int step; 
+	int step;
 	int n_accept; 
 	int n_reject; 
 	double dispmag;
@@ -60,7 +60,7 @@ enum mc_result mc_init(struct mc_state *state, size_t n, const double *x)
 	state->dispmag = DISPMAG_THRESHOLD; 
 	state->n_accept = 0; 
 	state->n_reject = 0;
-	state->step = 1; 
+	state->step = 1;
 	
 	const char start[] = "START";
 	strncpy(state->task, start, sizeof(start));
@@ -157,7 +157,7 @@ static void print_status(struct state *state, double e_diff)
 static void mc_rand(struct mc_state *state){
 
 	//#copy coord * gradient to n, x_prop, g_prop, state->data; 
-	printf("n_frags in system: %i\n", state->n_frags);
+	printf("n_frags in system: %li\n", state->n_frags);
 
 	for (size_t i = 0; i < state->n_frags; i++){
 		printf("goes through mc_rand before\n");
@@ -169,7 +169,7 @@ static void mc_rand(struct mc_state *state){
 		state->x_prop[6 * i + 3] = state->x[6 *i + 3] + state->dispmag * rand_neg1_to_1();
         state->x_prop[6 * i + 4] = state->x[6 *i + 4] + state->dispmag * rand_neg1_to_1();
         state->x_prop[6 * i + 5] = state->x[6 *i + 5] + state->dispmag * rand_neg1_to_1();
-		printf("com of frag %i x: %f y: %f z: %f \n", i, state->x_prop[6 * i + 0], state->x_prop[6 * i + 1], state->x_prop[6 * i + 2]); 
+		printf("com of frag %li x: %f y: %f z: %f \n", i, state->x_prop[6 * i + 0], state->x_prop[6 * i + 1], state->x_prop[6 * i + 2]); 
 	}
 
 	//#mess with translation
@@ -204,12 +204,6 @@ static bool check_acceptance_ratio(struct mc_state *state, double new_energy, do
 			state->f = new_energy; 
 		}
 	}
-
-	if (allow_move) {
-		// Can only memcpy up to the size that was allocated
-		memcpy(state->x, state->x_prop, state->n * sizeof(double)); 
-		state->f = new_energy; 
-	}
 	printf("check ratio\n"); 
 	printf("new_energy %f\n", new_energy); 
 	printf("old_energy %f\n", old_energy); 	
@@ -217,13 +211,11 @@ static bool check_acceptance_ratio(struct mc_state *state, double new_energy, do
 
 }
 
-static void mc_step(struct mc_state *state){
+static bool mc_step(struct mc_state *state){
 	assert(state);
 
-	int num_tries = 0;
-
 	bool allow_step = false;
-next:
+
 	mc_rand(state);
 
 	// state->task should be an integer, not a string (would be much easier 
@@ -242,41 +234,13 @@ next:
 
 	allow_step = check_acceptance_ratio(state, state->f_prop, state->f);
 
-		// The way this code is written, it will loop forever if every new
-		// energy state is valid. This is not a good idea. There should be
-		// some kind of condition on this goto.
-		// I mean really, you should not use goto, but if you do, you must
-		// limit it somehow.
-	if (allow_step) {
-		// Are number of steps currently limited to the max_steps from the input file?
-		state->step++;
-		if (state->step % DISPMAG_MODIFY_STEPS == 0) {
-			if (state->dispmag <= DISPMAG_THRESHOLD) {
-				fprintf(stdout, "dividing dispmag\n");
-				state->dispmag = state->dispmag / DISPMAG_MODIFIER;
-			} else {
-				fprintf(stdout, "multiplying dispmag\n");
-				state->dispmag = state->dispmag * DISPMAG_MODIFIER;	
-			}
-			msg("    NEW DISPMAG %e\n\n", state->dispmag);
-		}
-	} else {
-		// How many times should it try to find a new step before it gives up?
-		if (num_tries < 100) {
-			num_tries++;
-			goto next;
-		} else {
-			fprintf(stdout, "Num tries exceeded\n");
-			exit(allow_step); 
-		}
-	}
-
+	return allow_step;
 }
 
 static double compute_efp(size_t n, const double *x, void *data)
 {
 	size_t n_frags, n_charge;
-	const double *coord = x;	
+	//const double *coord = x;	
 	// Why pass in void* and cast to state*? Far safer to have a state* parameter.
 	struct state *state = (struct state *)data;
 	struct efp_energy  energy; 
@@ -331,7 +295,7 @@ void sim_mc(struct state *state){
 	msg ("MONTE CARLO JOB \n"); 
 
 	size_t n_frags, n_charge, n_coord; 
-	double rms_grad, max_grad; 
+	//double rms_grad, max_grad; 
 
 	check_fail(efp_get_frag_count(state->efp, & n_frags));
 	check_fail(efp_get_point_charge_count(state->efp, &n_charge));
@@ -353,7 +317,7 @@ void sim_mc(struct state *state){
 
 
 //	#allocaates array of n_coord size and grad of n_coord]; 
-	double coord[n_coord], grad[n_coord];
+	double coord[n_coord]; //, grad[n_coord];
 
 //	#copies state->efp, into coord for each fragment; 
 	check_fail(efp_get_coordinates(state->efp, coord));
@@ -374,15 +338,51 @@ void sim_mc(struct state *state){
 
 	msg("    INITIAL STATE\n\n");
 	print_status(state, 0.0);
-	double e_new; 
+	double e_new;
+	bool allow_step;
+	double acceptance_ratio;
 
 	for (int step = 1; step <= cfg_get_int(state->cfg, "max_steps"); step++) {
 		msg("   STATE AFTER %d STEPS\n\n", step);
-		mc_step(mc_state);
+		allow_step = mc_step(mc_state);
+		fprintf(stdout, "Allow step: %d\n", allow_step);
+		if (allow_step) {
+			// Can only memcpy up to the size that was allocated
+			memcpy(mc_state->x, mc_state->x_prop, mc_state->n * sizeof(double)); 
+			mc_state->f = mc_state->f_prop;
+
+			mc_state->n_accept++;
+
+			e_new = mc_get_fx(mc_state);
+			print_status(state, e_new-e_old);
+
+		// if (state->step % DISPMAG_MODIFY_STEPS == 0) {
+		// 	if (state->dispmag <= DISPMAG_THRESHOLD) {
+		// 		fprintf(stdout, "dividing dispmag\n");
+		// 		state->dispmag = state->dispmag / DISPMAG_MODIFIER;
+		// 	} else {
+		// 		fprintf(stdout, "multiplying dispmag\n");
+		// 		state->dispmag = state->dispmag * DISPMAG_MODIFIER;	
+		// 	}
+		// 	msg("    NEW DISPMAG %e\n\n", state->dispmag);
+		// }
+
+		}
+
+		if ((step % 100) == 0) {
+			acceptance_ratio = (double)mc_state->n_accept / step;
+			fprintf(stdout, "Step: %d, acceptance ratio: %lf\n", step, acceptance_ratio);
+			if (acceptance_ratio < 0.5) {
+				mc_state->dispmag = mc_state->dispmag * DISPMAG_MODIFIER;
+			} else {
+				mc_state->dispmag = mc_state->dispmag / DISPMAG_MODIFIER;
+			}
+			msg("    NEW DISPMAG %e\n\n", mc_state->dispmag);
+		}
+
 		// Step always errors:
 		// step result is: 1, error is: 1
-		e_new = mc_get_fx(mc_state);
-		print_status(state, e_new-e_old);
+
 	}
 
 	msg("	FINAL STATE\n\n");
