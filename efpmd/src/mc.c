@@ -191,7 +191,10 @@ static bool check_acceptance_ratio(struct mc_state *state, double new_energy, do
 	else {
 	
 		double temperature = 298.0; 
-		double epsilon = rand_uniform_1();
+		
+		rand_init(); 
+		double epsilon = rand_normal(); 
+//		double epsilon = rand_uniform_1();
 		double delta_e = new_energy - old_energy; 
 		double exp_value = -delta_e / (BOLTZMANN * temperature); 
 		double bf = exp(exp_value);
@@ -367,6 +370,8 @@ void sim_mc(struct state *state){
 		// 	msg("    NEW DISPMAG %e\n\n", state->dispmag);
 		// }
 
+		}else{
+			mc_state->n_reject++; 
 		}
 
 		if ((step % 100) == 0) {
@@ -386,6 +391,8 @@ void sim_mc(struct state *state){
 	}
 
 	msg("	FINAL STATE\n\n");
+	msg("	TOTAL STEP ACCEPTED: %d\n", mc_state->n_accept); 
+	msg("	TOTAL STEPS REJECTED: %d\n", mc_state->n_reject);  
 	print_status(state, e_new); 
 	mc_shutdown(mc_state);
 
