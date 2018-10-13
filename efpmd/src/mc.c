@@ -390,12 +390,12 @@ void sim_mc(struct state *state){
 			fprintf(stdout, "Step: %d, acceptance ratio: %lf\n", step, acceptance_ratio);
 //			if ((acceptance_ratio < (mc_state->dispmag_threshold * 1.2))) {
 			if (acceptance_ratio < 0.5){
-				mc_state->dispmag = (mc_state->dispmag * mc_state->dispmag_modifier);
+				mc_state->dispmag = (mc_state->dispmag / mc_state->dispmag_modifier);
 			printf("goes through increasing dispmag"); 
 			} 
 			if (acceptance_ratio > 0.5){
 //			if ((acceptance_ratio > (mc_state->dispmag_threshold*0.8))) {
-				mc_state->dispmag = (mc_state->dispmag / mc_state->dispmag_modifier);
+				mc_state->dispmag = (mc_state->dispmag * mc_state->dispmag_modifier);
 			                        printf("goes through decreasing dispmag");
 			}
 			msg("    NEW DISPMAG %e\n\n", mc_state->dispmag);

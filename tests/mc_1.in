@@ -3,8 +3,8 @@ time_step 0.5
 max_steps 10000
 fraglib_path ../fraglib
 dispmag_threshold 0.5
-dispmag_modifier 0.95
-dispmag_modify_steps 100
+dispmag_modifier 0.86
+dispmag_modify_steps 50
 temperature 10000
 pol_driver direct
 
