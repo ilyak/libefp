@@ -1,8 +1,5 @@
 #include <stddef.h>
 
-#define DISPMAG_THRESHOLD 0.5
-#define DISPMAG_MODIFIER 0.95
-
 enum mc_result {
 	MC_RESULT_SUCCESS = 0,
 	MC_RESULT_ERROR

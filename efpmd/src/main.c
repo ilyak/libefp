@@ -146,7 +146,9 @@ static struct cfg *make_cfg(void)
 	cfg_add_double(cfg, "barostat_tau", 1.0e4);
 	cfg_add_int(cfg, "ligand", 0); 
 	cfg_add_bool(cfg, "enable_pairwise", false); 
-
+	cfg_add_double(cfg, "dispmag_threshold", 0.5); 
+	cfg_add_double(cfg, "dispmag_modifier", 0.9); 
+	cfg_add_int(cfg, "dispmag_modify_steps", 100); 
 	return cfg;
 }
 

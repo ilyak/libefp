@@ -29,7 +29,11 @@ struct mc_state {
 	int n_accept; 
 	int n_reject; 
 	double dispmag;
+	double dispmag_threshold; 
+	double dispmag_modifier; 
+	int dispmag_modify_steps; 
 	double anglemag; 
+	double temperature; 
 };
 
 struct mc_state *mc_create(size_t n)
@@ -57,7 +61,7 @@ enum mc_result mc_init(struct mc_state *state, size_t n, const double *x)
 	memcpy(state->x, x, n * sizeof(double));
 	memset(state->task, '\0', sizeof(state->task));
 
-	state->dispmag = DISPMAG_THRESHOLD; 
+//	state->dispmag = cfg_get_double(state->cfg, "dispmag_threshold"); 
 	state->n_accept = 0; 
 	state->n_reject = 0;
 	state->step = 1;
@@ -158,17 +162,19 @@ static void mc_rand(struct mc_state *state){
 
 	//#copy coord * gradient to n, x_prop, g_prop, state->data; 
 	printf("n_frags in system: %li\n", state->n_frags);
-
 	for (size_t i = 0; i < state->n_frags; i++){
+
+		printf("dispmag %f", state->dispmag); 
+		rand(); 
 		printf("goes through mc_rand before\n");
 		// Are all of these valid indices to state->x_prop?
-		state->x_prop[6 * i + 0] = state->x[6 *i + 0] + state->dispmag * rand_neg1_to_1(); 
-		state->x_prop[6 * i + 1] = state->x[6 *i + 1] + state->dispmag * rand_neg1_to_1(); 
-		state->x_prop[6 * i + 2] = state->x[6 *i + 2] + state->dispmag * rand_neg1_to_1(); 
+		state->x_prop[6 * i + 0] = state->x[6 *i + 0] + (state->dispmag * rand_neg1_to_1()); 
+		state->x_prop[6 * i + 1] = state->x[6 *i + 1] + (state->dispmag * rand_neg1_to_1()); 
+		state->x_prop[6 * i + 2] = state->x[6 *i + 2] + (state->dispmag * rand_neg1_to_1()); 
 
-		state->x_prop[6 * i + 3] = state->x[6 *i + 3] + state->dispmag * rand_neg1_to_1();
-        state->x_prop[6 * i + 4] = state->x[6 *i + 4] + state->dispmag * rand_neg1_to_1();
-        state->x_prop[6 * i + 5] = state->x[6 *i + 5] + state->dispmag * rand_neg1_to_1();
+		state->x_prop[6 * i + 3] = state->x[6 *i + 3] + (state->dispmag * rand_neg1_to_1());
+	        state->x_prop[6 * i + 4] = state->x[6 *i + 4] + (state->dispmag * rand_neg1_to_1());
+	        state->x_prop[6 * i + 5] = state->x[6 *i + 5] + (state->dispmag * rand_neg1_to_1());
 		printf("com of frag %li x: %f y: %f z: %f \n", i, state->x_prop[6 * i + 0], state->x_prop[6 * i + 1], state->x_prop[6 * i + 2]); 
 	}
 
@@ -190,10 +196,11 @@ static bool check_acceptance_ratio(struct mc_state *state, double new_energy, do
 
 	else {
 	
-		double temperature = 298.0; 
+		double temperature;
+		temperature = state->temperature;  
 		
-		rand_init(); 
-		double epsilon = rand_normal(); 
+		rand(); 
+		double epsilon=	rand_normal(); 
 //		double epsilon = rand_uniform_1();
 		double delta_e = new_energy - old_energy; 
 		double exp_value = -delta_e / (BOLTZMANN * temperature); 
@@ -308,6 +315,7 @@ void sim_mc(struct state *state){
 	struct mc_state *mc_state = mc_create(n_coord);
 
 	mc_state->n_charge = n_charge; 
+	mc_state->dispmag = cfg_get_double(state->cfg, "dispmag_modifier"); 
 
 	if (!mc_state)
 		error("unable to create an move!");
@@ -326,6 +334,10 @@ void sim_mc(struct state *state){
 	check_fail(efp_get_coordinates(state->efp, coord));
 	check_fail(efp_get_point_charge_coordinates(state->efp, coord + 6 * n_frags));
 
+        mc_state->temperature = cfg_get_double(state->cfg, "temperature");
+        mc_state->dispmag_threshold = cfg_get_double(state->cfg, "dispmag_threshold");
+        mc_state->dispmag_modifier = cfg_get_double(state->cfg, "dispmag_modifier");
+        mc_state->dispmag_modify_steps = cfg_get_int(state->cfg, "dispmag_modify_steps");
 
 //	#does an efp_compute with coord
 	if (mc_init(mc_state, n_coord, coord)) {
@@ -344,7 +356,6 @@ void sim_mc(struct state *state){
 	double e_new;
 	bool allow_step;
 	double acceptance_ratio;
-
 	for (int step = 1; step <= cfg_get_int(state->cfg, "max_steps"); step++) {
 		msg("   STATE AFTER %d STEPS\n\n", step);
 		allow_step = mc_step(mc_state);
@@ -374,13 +385,18 @@ void sim_mc(struct state *state){
 			mc_state->n_reject++; 
 		}
 
-		if ((step % 100) == 0) {
-			acceptance_ratio = (double)mc_state->n_accept / step;
+		if ((step % mc_state->dispmag_modify_steps) == 0) {
+			acceptance_ratio = (double)mc_state->n_accept/step;
 			fprintf(stdout, "Step: %d, acceptance ratio: %lf\n", step, acceptance_ratio);
-			if (acceptance_ratio < 0.5) {
-				mc_state->dispmag = mc_state->dispmag * DISPMAG_MODIFIER;
-			} else {
-				mc_state->dispmag = mc_state->dispmag / DISPMAG_MODIFIER;
+//			if ((acceptance_ratio < (mc_state->dispmag_threshold * 1.2))) {
+			if (acceptance_ratio < 0.5){
+				mc_state->dispmag = (mc_state->dispmag * mc_state->dispmag_modifier);
+			printf("goes through increasing dispmag"); 
+			} 
+			if (acceptance_ratio > 0.5){
+//			if ((acceptance_ratio > (mc_state->dispmag_threshold*0.8))) {
+				mc_state->dispmag = (mc_state->dispmag / mc_state->dispmag_modifier);
+			                        printf("goes through decreasing dispmag");
 			}
 			msg("    NEW DISPMAG %e\n\n", mc_state->dispmag);
 		}
