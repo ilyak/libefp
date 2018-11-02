@@ -165,7 +165,7 @@ static void mc_rand(struct mc_state *state){
 	for (size_t i = 0; i < state->n_frags; i++){
 
 		printf("dispmag %f", state->dispmag); 
-		rand(); 
+		rand_init(); 
 		printf("goes through mc_rand before\n");
 		// Are all of these valid indices to state->x_prop?
 		state->x_prop[6 * i + 0] = state->x[6 *i + 0] + (state->dispmag * rand_neg1_to_1()); 
@@ -199,7 +199,7 @@ static bool check_acceptance_ratio(struct mc_state *state, double new_energy, do
 		double temperature;
 		temperature = state->temperature;  
 		
-		rand(); 
+		rand_init(); 
 		double epsilon=	rand_normal(); 
 //		double epsilon = rand_uniform_1();
 		double delta_e = new_energy - old_energy; 
@@ -389,11 +389,11 @@ void sim_mc(struct state *state){
 			acceptance_ratio = (double)mc_state->n_accept/step;
 			fprintf(stdout, "Step: %d, acceptance ratio: %lf\n", step, acceptance_ratio);
 //			if ((acceptance_ratio < (mc_state->dispmag_threshold * 1.2))) {
-			if (acceptance_ratio < 0.5){
+			if (acceptance_ratio < mc_state->dispmag_threshold){
 				mc_state->dispmag = (mc_state->dispmag / mc_state->dispmag_modifier);
 			printf("goes through increasing dispmag"); 
 			} 
-			if (acceptance_ratio > 0.5){
+			if (acceptance_ratio > mc_state->dispmag_threshold){
 //			if ((acceptance_ratio > (mc_state->dispmag_threshold*0.8))) {
 				mc_state->dispmag = (mc_state->dispmag * mc_state->dispmag_modifier);
 			                        printf("goes through decreasing dispmag");
