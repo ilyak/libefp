@@ -6,7 +6,7 @@ LIBS= -lefp -lopt -lff $(MYLIBS) -lm
 
 PROG= efpmd
 ALL_O= cfg.o common.o efield.o energy.o grad.o gtest.o hess.o main.o \
-       md.o msg.o opt.o parse.o rand.o sp.o psp.o mc.o
+       md.o msg.o opt.o parse.o rand.o sp.o psp.o mc_direct.o
 
 $(PROG): $(ALL_O)
 	$(CC) -o $@ $(CFLAGS) $(LDFLAGS) $(ALL_O) $(LIBS)
