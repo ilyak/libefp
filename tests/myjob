@@ -1,0 +1,23 @@
+#!/bin/sh
+# FILENAME:  mc_c_testing
+
+#PBS -V
+#PBS -q lslipche 
+#PBS -l nodes=1:ppn=16
+#PBS -l naccesspolicy=shared
+#PBS -l walltime=04:00:00
+#PBS -N mc_c_testing
+
+cd $PBS_O_WORKDIR
+
+../efpmd/src/efpmd mc_1.in > mc_1.out
+../efpmd/src/efpmd mc_2.in > mc_2.out
+../efpmd/src/efpmd mc_3.in > mc_3.out
+../efpmd/src/efpmd mc_4.in > mc_4.out
+../efpmd/src/efpmd mc_5.in > mc_5.out
+../efpmd/src/efpmd mc_6.in > mc_6.out
+../efpmd/src/efpmd mc_7.in > mc_7.out
+../efpmd/src/efpmd mc_8.in > mc_8.out
+../efpmd/src/efpmd mc_9.in > mc_9.out
+../efpmd/src/efpmd mc_10.in > mc_10.out
+../efpmd/src/efpmd mc_11.in > mc_11.out

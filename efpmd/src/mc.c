@@ -165,7 +165,9 @@ static void mc_rand(struct mc_state *state){
 	for (size_t i = 0; i < state->n_frags; i++){
 
 		printf("dispmag %f", state->dispmag); 
-		rand_init(); 
+//
+		//rand_init(); 
+		rand(); 
 		printf("goes through mc_rand before\n");
 		// Are all of these valid indices to state->x_prop?
 		state->x_prop[6 * i + 0] = state->x[6 *i + 0] + (state->dispmag * rand_neg1_to_1()); 
@@ -199,7 +201,8 @@ static bool check_acceptance_ratio(struct mc_state *state, double new_energy, do
 		double temperature;
 		temperature = state->temperature;  
 		
-		rand_init(); 
+		rand(); 
+		//rand_init(); 
 		double epsilon=	rand_normal(); 
 //		double epsilon = rand_uniform_1();
 		double delta_e = new_energy - old_energy; 
