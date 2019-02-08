@@ -1,0 +1,13 @@
+#!/bin/sh
+# FILENAME:  mc_c_testing
+
+#PBS -V
+#PBS -q standby 
+#PBS -l nodes=1:ppn=16
+#PBS -l naccesspolicy=shared
+#PBS -l walltime=04:00:00
+#PBS -N mc_c_testing
+
+cd $PBS_O_WORKDIR
+
+../efpmd/src/efpmd mc_1.in > mc_1.out

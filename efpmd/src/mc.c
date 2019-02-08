@@ -161,28 +161,37 @@ static void print_status(struct state *state, double e_diff)
 static void mc_rand(struct mc_state *state){
 
 	//#copy coord * gradient to n, x_prop, g_prop, state->data; 
-	printf("n_frags in system: %li\n", state->n_frags);
+	//printf("n_frags in system: %li\n", state->n_frags);
 	for (size_t i = 0; i < state->n_frags; i++){
 
-		printf("dispmag %f", state->dispmag); 
-//
+	//	printf("dispmag %f", state->dispmag); 
+		double temp; 
 		//rand_init(); 
 		rand(); 
-		printf("goes through mc_rand before\n");
+	//	printf("goes through mc_rand before\n");
 		// Are all of these valid indices to state->x_prop?
 		state->x_prop[6 * i + 0] = state->x[6 *i + 0] + (state->dispmag * rand_neg1_to_1()); 
 		state->x_prop[6 * i + 1] = state->x[6 *i + 1] + (state->dispmag * rand_neg1_to_1()); 
 		state->x_prop[6 * i + 2] = state->x[6 *i + 2] + (state->dispmag * rand_neg1_to_1()); 
 
-		state->x_prop[6 * i + 3] = state->x[6 *i + 3] + (state->dispmag * rand_neg1_to_1());
-	        state->x_prop[6 * i + 4] = state->x[6 *i + 4] + (state->dispmag * rand_neg1_to_1());
-	        state->x_prop[6 * i + 5] = state->x[6 *i + 5] + (state->dispmag * rand_neg1_to_1());
-		printf("com of frag %li x: %f y: %f z: %f \n", i, state->x_prop[6 * i + 0], state->x_prop[6 * i + 1], state->x_prop[6 * i + 2]); 
+		temp=rand_neg1_to_1();
+		printf("random_no: %f", temp); 
+		state->x_prop[6 * i + 3] = state->x[6 *i + 3] + (state->dispmag * temp);
+	//	state->x_prop[6 * i + 3] = state->x[6 *i + 3] + (state->dispmag * rand_neg1_to_1());
+		temp=rand_neg1_to_1();
+		printf("random_no: %f", temp);
+                state->x_prop[6 * i + 4] = state->x[6 *i + 4] + (state->dispmag * temp)
+	//        state->x_prop[6 * i + 4] = state->x[6 *i + 4] + (state->dispmag * rand_neg1_to_1());
+		temp=rand_neg1_to_1();
+		printf("random_no: %f", temp);
+                state->x_prop[6 * i + 5] = state->x[6 *i + 5] + (state->dispmag * temp);
+	//        state->x_prop[6 * i + 5] = state->x[6 *i + 5] + (state->dispmag * rand_neg1_to_1());
+	//	printf("com of frag %li x: %f y: %f z: %f \n", i, state->x_prop[6 * i + 0], state->x_prop[6 * i + 1], state->x_prop[6 * i + 2]); 
 	}
 
 	//#mess with translation
 
-	printf("finishes mc_rand\n"); 
+//	printf("finishes mc_rand\n"); 
 }
 
 static bool check_acceptance_ratio(struct mc_state *state, double new_energy, double old_energy){
@@ -217,9 +226,9 @@ static bool check_acceptance_ratio(struct mc_state *state, double new_energy, do
 			state->f = new_energy; 
 		}
 	}
-	printf("check ratio\n"); 
-	printf("new_energy %f\n", new_energy); 
-	printf("old_energy %f\n", old_energy); 	
+//	printf("check ratio\n"); 
+//	printf("new_energy %f\n", new_energy); 
+//	printf("old_energy %f\n", old_energy); 	
 	return allow_move; 
 
 }
@@ -350,7 +359,7 @@ void sim_mc(struct state *state){
 	mc_state->n_frags = n_frags;
 
 	double e_old = mc_get_fx(mc_state);
-	printf("e_old %f\n", e_old); 
+//	printf("e_old %f\n", e_old); 
 //	#sets up empty array; 
 //	memset(grad,0, n_coord*sizeof(double)); 
 
@@ -399,7 +408,7 @@ void sim_mc(struct state *state){
 			if (acceptance_ratio > mc_state->dispmag_threshold){
 //			if ((acceptance_ratio > (mc_state->dispmag_threshold*0.8))) {
 				mc_state->dispmag = (mc_state->dispmag * mc_state->dispmag_modifier);
-			                        printf("goes through decreasing dispmag");
+			                       // printf("goes through decreasing dispmag");
 			}
 			msg("    NEW DISPMAG %e\n\n", mc_state->dispmag);
 		}
