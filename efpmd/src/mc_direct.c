@@ -34,6 +34,7 @@ struct mc_state {
 	int dispmag_modify_steps; 
 	double anglemag; 
 	double temperature; 
+	vec_t box;
 };
 
 struct mc_state *mc_create(size_t n)
@@ -320,7 +321,7 @@ void sim_mc(struct state *state){
         n_coord = 6 * n_frags + 3 * n_charge;
 
         struct mc_state *mc_state = mc_create(n_coord);
-
+	mc_state->box = box_from_str(cfg_get_string(state->cfg, "periodic_box"));
         mc_state->n_charge = n_charge;
         mc_state->dispmag = cfg_get_double(state->cfg, "dispmag_modifier");
 

@@ -1,0 +1,11 @@
+#!/bin/sh
+# FILENAME:  mc_c_testing
+
+#PBS -V
+#PBS -q debug
+#PBS -l nodes=1:ppn=20
+#PBS -l walltime=00:30:00
+#PBS -N s22_test
+
+cd $PBS_O_WORKDIR
+for i in *.inp; do ../../efpmd/src/efpmd $i > $i.out; done

@@ -1,4 +1,4 @@
-run_type md
+run_type opt
 ensemble nve
 time_step 0.5
 max_steps 50

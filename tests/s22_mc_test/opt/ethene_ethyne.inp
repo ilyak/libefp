@@ -1,0 +1,21 @@
+run_type opt
+coord points
+time_step 0.05
+max_steps 10000
+fraglib_path ../../../fraglib/databases
+dispmag_threshold 0.01
+dispmag_modifier 0.95
+dispmag_modify_steps 500
+temperature 10000
+pol_driver direct
+
+fragment ETHENE_L
+   0.000000  -0.667578  -2.124659
+   0.000000   0.667578  -2.124659
+   0.923621  -1.232253  -2.126185
+fragment ETHYNE_L
+   0.000000   0.000000   2.900503
+   0.000000   0.000000   1.693240
+   0.000000   0.000000   0.627352
+ 
+ 

@@ -1,0 +1,21 @@
+run_type mc
+coord points
+time_step 0.05
+max_steps 10000
+fraglib_path ../../fraglib/databases
+dispmag_threshold 0.03
+dispmag_modifier 0.95
+dispmag_modify_steps 500
+temperature 10000
+pol_driver direct
+
+fragment PYRIDONE_L
+    -1.3976213   -1.8858368   -0.3673061
+    -1.4642550    0.3641828    0.0192301
+    -4.1857398    0.3696669    0.0360960
+
+fragment 2AMINOPYRIDINE_L
+     1.4327616    0.3639703   -0.0159508
+     2.1154200   -0.7803450    0.1681099
+     3.5237586   -0.8016096    0.1545027
+

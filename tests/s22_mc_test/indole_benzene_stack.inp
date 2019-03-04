@@ -1,0 +1,20 @@
+run_type mc
+coord points
+time_step 0.05
+max_steps 10000
+fraglib_path ../../fraglib/databases
+dispmag_threshold 0.03
+dispmag_modifier 0.95
+dispmag_modify_steps 500
+temperature 10000
+pol_driver direct
+fragment BENZENE_L
+    -0.0210742    1.5318615   -1.3639345
+    -1.2746794    0.9741030   -1.6074097
+    -1.3783055   -0.2256981   -2.3084154
+fragment INDOLE_L
+    -2.0220674    0.4258540    1.9013549
+    -0.8149418    1.0740453    2.1066982
+    -0.7851529    2.0443812    2.5856086
+    
+ 

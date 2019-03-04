@@ -1,9 +1,9 @@
 run_type mc
 coord points
-time_step 0.5
+time_step 0.05
 max_steps 10000
-fraglib_path ../fraglib/databases
-dispmag_threshold 0.5
+fraglib_path ../../fraglib/databases
+dispmag_threshold 0.03
 dispmag_modifier 0.95
 dispmag_modify_steps 500
 temperature 10000

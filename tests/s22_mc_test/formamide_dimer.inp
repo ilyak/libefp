@@ -1,0 +1,19 @@
+run_type mc
+coord points
+time_step 0.05
+max_steps 10000
+fraglib_path ../../fraglib/databases
+dispmag_threshold 0.03
+dispmag_modifier 0.95
+dispmag_modify_steps 500
+temperature 10000
+pol_driver direct
+fragment FORMAMIDE_L
+  -2.018649   0.052883   0.000000
+  -1.452200   1.143634   0.000000
+  -1.407770  -1.142484   0.000000
+fragment FORMAMIDE_L
+   2.018649  -0.052883   0.000000
+   1.452200  -1.143634   0.000000
+   1.407770   1.142484   0.000000
+ 
