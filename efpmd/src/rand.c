@@ -61,3 +61,11 @@ double rand_normal(void)
 
 	return sqrt(-2.0 * log(a)) * cos(2.0 * PI * b);
 }
+
+double rand_range(double low, double high) {
+    return (rand()/(double)(RAND_MAX))*abs(low-high) + low;
+}
+
+double rand_neg1_to_1() {
+	return rand_range(-1, 1);
+}

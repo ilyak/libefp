@@ -1,0 +1,19 @@
+run_type opt
+coord points
+time_step 0.05
+max_steps 10000
+fraglib_path ../../../fraglib/databases
+dispmag_threshold 0.01
+dispmag_modifier 0.95
+dispmag_modify_steps 500
+temperature 10000
+pol_driver direct
+fragment FORMICACID_L
+  -1.888896  -0.179692   0.000000
+  -1.493280   1.073689   0.000000
+  -1.170435  -1.166590   0.000000
+fragment FORMICACID_L
+   1.888896   0.179692   0.000000
+   1.493280  -1.073689   0.000000
+   1.170435   1.166590   0.000000
+ 

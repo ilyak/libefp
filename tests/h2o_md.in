@@ -1,0 +1,11 @@
+run_type md
+temperature 298.15
+ensemble nve
+time_step 0.5
+max_steps 50
+fraglib_path ../fraglib
+
+fragment h2o_l
+   0.0   0.0   0.0     0.0   0.0   0.0
+velocity
+   0.0   0.0   5.0e-4  0.0   0.0   0.0

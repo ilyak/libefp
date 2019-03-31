@@ -80,6 +80,32 @@ vec_set(vec_t *vec, size_t idx, double val)
 }
 
 static inline void
+six_set(six_t *six_t, size_t idx, double val)
+{
+        ((double *)six_t)[idx] = val;
+}
+
+static inline void
+six_add_total(six_t *six_t, size_t idx)
+{
+          double total = 0;
+  
+          size_t elec_idx = idx + 1;
+          size_t exch_idx = idx + 2;
+          size_t pol_idx = idx + 3;
+          size_t disp_idx = idx + 4;
+          size_t ct_idx = idx + 5;
+  
+          total = (((double *)six_t)[elec_idx] +
+		((double *)six_t)[exch_idx] + 
+		((double *)six_t)[pol_idx] + 
+		((double *)six_t)[disp_idx] + 
+		((double *)six_t)[ct_idx]);
+
+          ((double *)six_t)[idx] = total;
+}
+
+static inline void
 vec_negate(vec_t *vec)
 {
 	vec->x = -vec->x;

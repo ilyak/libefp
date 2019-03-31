@@ -35,5 +35,4 @@ typedef void (*work_fn)(struct efp *, size_t, size_t, void *);
 
 void efp_allreduce(double *, size_t);
 void efp_balance_work(struct efp *, work_fn, void *);
-
 #endif /* LIBEFP_BALANCE_H */

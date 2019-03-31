@@ -119,13 +119,13 @@ void print_geometry(struct efp *efp)
 		}
 	}
 
+
 	size_t n_charges;
 	check_fail(efp_get_point_charge_count(efp, &n_charges));
-
+ 
 	if (n_charges > 0) {
 		double xyz[3 * n_charges];
 		check_fail(efp_get_point_charge_coordinates(efp, xyz));
-
 		for (size_t i = 0; i < n_charges; i++) {
 			char label[32];
 			double x = xyz[3 * i + 0] * BOHR_RADIUS;
@@ -136,7 +136,7 @@ void print_geometry(struct efp *efp)
 			msg("%-16s %12.6lf %12.6lf %12.6lf\n", label, x, y, z);
 		}
 	}
-
+	
 	msg("\n\n");
 }
 
@@ -279,4 +279,8 @@ vec_t box_from_str(const char *str)
 
 	vec_scale(&box, 1.0 / BOHR_RADIUS);
 	return box;
+}
+
+void print_six_t(const double *six_t){
+         msg("   %16.8E %16.8E %16.8E %16.8E %16.8E %16.8E", six_t[1], six_t[3], six_t[4], six_t[2], six_t[5], six_t[0]);
 }

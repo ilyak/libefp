@@ -59,7 +59,9 @@ enum run_type {
 	RUN_TYPE_OPT,
 	RUN_TYPE_MD,
 	RUN_TYPE_EFIELD,
-	RUN_TYPE_GTEST
+	RUN_TYPE_GTEST,
+	RUN_TYPE_PSP,
+	RUN_TYPE_MC
 };
 
 enum ensemble_type {
@@ -96,6 +98,7 @@ struct state {
 	struct sys *sys;
 	double energy;
 	double *grad;
+	double *energy_components; 
 };
 
 void NORETURN die(const char *, ...);
@@ -113,6 +116,7 @@ void print_fragment(const char *, const double *, const double *);
 void print_charge(double, double, double, double);
 void print_vector(size_t, const double *);
 void print_matrix(size_t, size_t, const double *);
+void print_six_t(const double *); 
 
 void check_fail(enum efp_result);
 void compute_energy(struct state *, bool);

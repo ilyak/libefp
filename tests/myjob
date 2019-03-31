@@ -1,0 +1,12 @@
+#!/bin/sh
+# FILENAME:  mc_c_testing
+
+#PBS -V
+#PBS -q lslipche 
+#PBS -l nodes=1:ppn=16
+#PBS -l walltime=10:00:00
+#PBS -N mc_c_testing_1_mL
+
+cd $PBS_O_WORKDIR
+
+../efpmd/src/efpmd mc_1.in > /scratch/halstead/y/ybui/mc_1.out

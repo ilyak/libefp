@@ -36,6 +36,7 @@ void compute_energy(struct state *state, bool do_grad)
 	int itotal;
 
 	/* EFP part */
+
 	check_fail(efp_compute(state->efp, do_grad));
 	check_fail(efp_get_energy(state->efp, &efp_energy));
 	check_fail(efp_get_frag_count(state->efp, &nfrag));
@@ -45,6 +46,10 @@ void compute_energy(struct state *state, bool do_grad)
 		check_fail(efp_get_point_charge_gradient(state->efp,
 		    state->grad + 6 * nfrag));
 	}
+
+        if (cfg_get_bool(state->cfg, "enable_pairwise")){
+                check_fail(efp_get_energy_components(state->efp, state->energy_components));
+        }
 
 	state->energy = efp_energy.total;
 

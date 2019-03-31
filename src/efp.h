@@ -150,6 +150,10 @@ struct efp_opts {
 	int enable_cutoff;
 	/** Cutoff distance for fragment-fragment interactions. */
 	double swf_cutoff;
+	/** Enable ligand-fragment energy decomposition from total system */ 
+	int enable_pairwise; 
+	/** Index of ligand of interest for enable_pairwise; default = 0; */
+	int ligand; 	
 };
 
 /** EFP energy terms. */
@@ -814,6 +818,34 @@ enum efp_result efp_get_induced_dipole_values(struct efp *efp, double *dip);
 enum efp_result efp_get_induced_dipole_conj_values(struct efp *efp,
     double *dip);
 
+
+/**
+ * Get values of pair_wise (between ligand-fragment) polarization induced dipoles.
+ *   
+ * \param[in] efp The efp structure.
+ *     
+ * \param[out] dip Array where induced dipoles will be stored. The size of the
+ *  array must be at least [3 * \p n_dip] elements.
+ *       
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+
+enum efp_result efp_get_p_induced_dipole_values(struct efp *efp, double *dip);
+
+/**
+ * Get values of pairwise (between ligand-fragment) polarization conjugated induced 
+ * dipoles.
+ *   
+ * \param[in] efp The efp structure.
+ *       
+ * \param[out] dip Array where induced dipoles will be stored. The size of the
+ * array must be at least [3 * \p n_dip] elements.
+ *           
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+
+enum efp_result efp_get_p_induced_dipole_conj_values(struct efp *efp, double *dip);
+
 /**
  * Get the number of LMOs in a fragment.
  *
@@ -1043,6 +1075,21 @@ void efp_shutdown(struct efp *efp);
  * zero-terminated.
  */
 const char *efp_result_to_string(enum efp_result res);
+
+/**
+ * Get the interaction energy array of each ligand-fragment interaction for 
+ * each fragment. 
+ *
+ * \param[in] efp The efp structure.
+ *
+ * \param[out] energy component; efp energy decomposition for each fragment, 
+ * \a total \a elec \a polar \a disp * \a disp \a charge-transfer is added to 
+ * this array. This size of this array is at least [5 * \a n] elements, where 
+ * \n is the total number of fragments. 
+ *
+ */
+enum efp_result efp_get_energy_components(struct efp *efp, 
+					 double *energy_component);
 
 #ifdef __cplusplus
 } /* extern "C" */

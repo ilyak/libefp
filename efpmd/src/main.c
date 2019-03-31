@@ -37,6 +37,8 @@ void sim_opt(struct state *);
 void sim_md(struct state *);
 void sim_efield(struct state *);
 void sim_gtest(struct state *);
+void sim_psp(struct state *);
+void sim_mc(struct state *);
 
 #define USAGE_STRING \
 	"usage: efpmd [-d | -v | -h | input]\n" \
@@ -55,14 +57,18 @@ static struct cfg *make_cfg(void)
 		"opt\n"
 		"md\n"
 		"efield\n"
-		"gtest\n",
+		"gtest\n"
+		"psp\n"
+		"mc\n",
 		(int []) { RUN_TYPE_SP,
 			   RUN_TYPE_GRAD,
 			   RUN_TYPE_HESS,
 			   RUN_TYPE_OPT,
 			   RUN_TYPE_MD,
 			   RUN_TYPE_EFIELD,
-			   RUN_TYPE_GTEST });
+			   RUN_TYPE_GTEST,
+			   RUN_TYPE_PSP,
+			   RUN_TYPE_MC });
 
 	cfg_add_enum(cfg, "coord", EFP_COORD_TYPE_XYZABC,
 		"xyzabc\n"
@@ -138,7 +144,11 @@ static struct cfg *make_cfg(void)
 	cfg_add_double(cfg, "pressure", 1.0);
 	cfg_add_double(cfg, "thermostat_tau", 1.0e3);
 	cfg_add_double(cfg, "barostat_tau", 1.0e4);
-
+	cfg_add_int(cfg, "ligand", 0); 
+	cfg_add_bool(cfg, "enable_pairwise", false); 
+	cfg_add_double(cfg, "dispmag_threshold", 0.5); 
+	cfg_add_double(cfg, "dispmag_modifier", 0.9); 
+	cfg_add_int(cfg, "dispmag_modify_steps", 100); 
 	return cfg;
 }
 
@@ -159,6 +169,11 @@ static sim_fn_t get_sim_fn(enum run_type run_type)
 		return sim_efield;
 	case RUN_TYPE_GTEST:
 		return sim_gtest;
+    case RUN_TYPE_PSP:
+        return sim_psp;
+    case RUN_TYPE_MC:
+    	fprintf(stdout, "\n----monte carlo----\n\n");
+        return sim_mc;
 	}
 	assert(0);
 }
@@ -247,7 +262,9 @@ static struct efp *create_efp(const struct cfg *cfg, const struct sys *sys)
 		.pol_driver = cfg_get_enum(cfg, "pol_driver"),
 		.enable_pbc = cfg_get_bool(cfg, "enable_pbc"),
 		.enable_cutoff = cfg_get_bool(cfg, "enable_cutoff"),
-		.swf_cutoff = cfg_get_double(cfg, "swf_cutoff")
+		.swf_cutoff = cfg_get_double(cfg, "swf_cutoff"),
+		.enable_pairwise = cfg_get_bool(cfg, "enable_pairwise"), 
+		.ligand = cfg_get_int(cfg, "ligand")
 	};
 
 	enum efp_coord_type coord_type = cfg_get_enum(cfg, "coord");
@@ -309,6 +326,7 @@ static void state_init(struct state *state, const struct cfg *cfg, const struct 
 	state->energy = 0;
 	state->grad = xcalloc(sys->n_frags * 6 + sys->n_charges * 3, sizeof(double));
 	state->ff = NULL;
+	state->energy_components = xcalloc(sys->n_frags * 6, sizeof(double));
 
 	if (cfg_get_bool(cfg, "enable_ff")) {
 		if ((state->ff = ff_create()) == NULL)

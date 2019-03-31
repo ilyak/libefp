@@ -1,0 +1,22 @@
+run_type opt
+coord points
+time_step 0.05
+max_steps 10000
+fraglib_path ../../../fraglib/databases
+dispmag_threshold 0.01
+dispmag_modifier 0.95
+dispmag_modify_steps 500
+temperature 10000
+pol_driver direct
+
+fragment ADENINE-WC_L
+     0.9350155   -0.0279801   -0.3788916
+     1.6739638   -0.0357766    0.7424316
+     3.0747955   -0.0094480    0.5994562
+
+fragment THYMINE-WC_L
+    -3.9211729   -0.0009646   -1.5163659
+    -4.6136833    0.0169051   -0.3336520
+    -3.9917387    0.0219348    0.8663338
+ 
+ 
