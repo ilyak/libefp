@@ -168,6 +168,7 @@ void print_energy(struct state *state)
 	msg("\n\n");
 }
 
+
 void print_gradient(struct state *state)
 {
 	size_t n_frags;

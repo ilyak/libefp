@@ -139,6 +139,10 @@ static struct cfg *make_cfg(void)
 	cfg_add_double(cfg, "thermostat_tau", 1.0e3);
 	cfg_add_double(cfg, "barostat_tau", 1.0e4);
 
+	cfg_add_int(cfg, "ligand", 0); 
+    cfg_add_bool(cfg, "enable_pairwise", false); 
+
+
 	return cfg;
 }
 
@@ -247,7 +251,9 @@ static struct efp *create_efp(const struct cfg *cfg, const struct sys *sys)
 		.pol_driver = cfg_get_enum(cfg, "pol_driver"),
 		.enable_pbc = cfg_get_bool(cfg, "enable_pbc"),
 		.enable_cutoff = cfg_get_bool(cfg, "enable_cutoff"),
-		.swf_cutoff = cfg_get_double(cfg, "swf_cutoff")
+		.swf_cutoff = cfg_get_double(cfg, "swf_cutoff"),
+        .enable_pairwise = cfg_get_bool(cfg, "enable_pairwise"), 
+        .ligand = cfg_get_int(cfg, "ligand")
 	};
 
 	enum efp_coord_type coord_type = cfg_get_enum(cfg, "coord");
@@ -309,6 +315,7 @@ static void state_init(struct state *state, const struct cfg *cfg, const struct 
 	state->energy = 0;
 	state->grad = xcalloc(sys->n_frags * 6 + sys->n_charges * 3, sizeof(double));
 	state->ff = NULL;
+
 
 	if (cfg_get_bool(cfg, "enable_ff")) {
 		if ((state->ff = ff_create()) == NULL)

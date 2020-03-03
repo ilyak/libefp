@@ -31,6 +31,7 @@ void compute_energy(struct state *state, bool do_grad)
 {
 	struct efp_atom *atoms;
 	struct efp_energy efp_energy;
+	struct efp_energy *pair_energies;
 	double xyz[3], xyzabc[6], *grad;
 	size_t ifrag, nfrag, iatom, natom;
 	int itotal;
@@ -39,6 +40,13 @@ void compute_energy(struct state *state, bool do_grad)
 	check_fail(efp_compute(state->efp, do_grad));
 	check_fail(efp_get_energy(state->efp, &efp_energy));
 	check_fail(efp_get_frag_count(state->efp, &nfrag));
+
+    /* fragment-ligand pairwise interactions */
+    //if (cfg_get_bool(state->cfg, "enable_pairwise")){
+	//	pair_energies = xmalloc(nfrag * sizeof(struct efp_energy));
+    //    check_fail(efp_get_pairwise_energy(state->efp, pair_energies));
+    //    free(pair_energies);	
+    //}
 
 	if (do_grad) {
 		check_fail(efp_get_gradient(state->efp, state->grad));

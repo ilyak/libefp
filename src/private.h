@@ -227,6 +227,9 @@ struct efp {
 
 	/* skip-list of fragments - boolean array of nfrag^2 elements */
 	char *skiplist;
+
+	/* energies of pairwise interactions with the ligand */
+	struct efp_energy *pair_energies;
 };
 
 #endif /* LIBEFP_PRIVATE_H */
