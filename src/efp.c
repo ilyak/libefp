@@ -405,6 +405,7 @@ compute_two_body_range(struct efp *efp, size_t frag_from, size_t frag_to,
 					e_xr += exr;
 					e_cp += ecp;
 
+					/* */
 					if (efp->opts.enable_pairwise) {
                         if (i == efp->opts.ligand) {
                             efp->pair_energies[fr_j].exchange_repulsion = exr;
@@ -420,6 +421,7 @@ compute_two_body_range(struct efp *efp, size_t frag_from, size_t frag_to,
 					e_elec_tmp = efp_frag_frag_elec(efp,
 					    i, fr_j);
 					e_elec += e_elec_tmp;
+					/* */
 					if (efp->opts.enable_pairwise) {
                         if (i == efp->opts.ligand) 
                             efp->pair_energies[fr_j].electrostatic = e_elec_tmp;                       
@@ -431,6 +433,7 @@ compute_two_body_range(struct efp *efp, size_t frag_from, size_t frag_to,
 					e_disp_tmp = efp_frag_frag_disp(efp,
 					    i, fr_j, s, ds);
 					e_disp += e_disp_tmp;
+					/* */
 					if (efp->opts.enable_pairwise) {
                         if (i == efp->opts.ligand) 
                             efp->pair_energies[fr_j].dispersion = e_disp_tmp;                       
@@ -914,12 +917,21 @@ efp_prepare(struct efp *efp)
 		efp->n_polarizable_pts += efp->frags[i].n_polarizable_pts;
 	}
 
+	efp->n_fragment_field_pts = 0;
+	if (efp->opts.enable_pairwise) {
+		size_t ligand_idx = efp->opts.ligand;
+		for (size_t i = 0; i < efp->n_frag; i++) {
+			efp->frags[i].fragment_field_offset = efp->n_fragment_field_pts;
+			efp->n_fragment_field_pts += efp->frags[ligand_idx].n_polarizable_pts;
+		}
+	}
+	efp->fragment_field = (vec_t *)calloc(efp->n_fragment_field_pts, sizeof(vec_t));
+
 	efp->indip = (vec_t *)calloc(efp->n_polarizable_pts, sizeof(vec_t));
 	efp->indipconj = (vec_t *)calloc(efp->n_polarizable_pts, sizeof(vec_t));
 	efp->grad = (six_t *)calloc(efp->n_frag, sizeof(six_t));
 	efp->skiplist = (char *)calloc(efp->n_frag * efp->n_frag, 1);
-	efp->pair_energies = (struct efp_energy *)calloc(efp->n_frag, sizeof(struct efp_energy));   
-
+	efp->pair_energies = (struct efp_energy *)calloc(efp->n_frag, sizeof(struct efp_energy));
 
 	return EFP_RESULT_SUCCESS;
 }
@@ -1002,7 +1014,7 @@ efp_compute(struct efp *efp, int do_gradient)
 	memset(&efp->stress, 0, sizeof(efp->stress));
 	memset(efp->grad, 0, efp->n_frag * sizeof(six_t));
 	memset(efp->ptc_grad, 0, efp->n_ptc * sizeof(vec_t));
-	memset(&efp->pair_energies, 0, efp->n_frag * sizeof(efp->energy));
+	memset(efp->pair_energies, 0, efp->n_frag * sizeof(efp->energy));
 
 
 	efp_balance_work(efp, compute_two_body_range, NULL);
@@ -1267,6 +1279,8 @@ efp_shutdown(struct efp *efp)
 	free(efp->ai_orbital_energies);
 	free(efp->ai_dipole_integrals);
 	free(efp->skiplist);
+	free(efp->fragment_field);
+	free(efp->pair_energies);
 	free(efp);
 }
 

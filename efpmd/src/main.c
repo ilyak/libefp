@@ -37,6 +37,7 @@ void sim_opt(struct state *);
 void sim_md(struct state *);
 void sim_efield(struct state *);
 void sim_gtest(struct state *);
+// void sim_pairwise(struct state *);
 
 #define USAGE_STRING \
 	"usage: efpmd [-d | -v | -h | input]\n" \
@@ -62,7 +63,9 @@ static struct cfg *make_cfg(void)
 			   RUN_TYPE_OPT,
 			   RUN_TYPE_MD,
 			   RUN_TYPE_EFIELD,
-			   RUN_TYPE_GTEST });
+			   RUN_TYPE_GTEST});
+	/* 		"pairwise\n",
+	 RUN_TYPE_PAIRWISE */
 
 	cfg_add_enum(cfg, "coord", EFP_COORD_TYPE_XYZABC,
 		"xyzabc\n"
@@ -164,6 +167,8 @@ static sim_fn_t get_sim_fn(enum run_type run_type)
 	case RUN_TYPE_GTEST:
 		return sim_gtest;
 	}
+	// 	case RUN_TYPE_PAIRWISE:
+	//  return sim_ pairwise;
 	assert(0);
 }
 

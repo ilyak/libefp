@@ -53,6 +53,7 @@ struct polarizable_pt {
 	mat_t tensor;
 	vec_t elec_field;
 	vec_t elec_field_wf;
+	vec_t ligand_field;
 };
 
 struct dynamic_polarizable_pt {
@@ -148,6 +149,9 @@ struct frag {
 
 	/* offset of polarizable points for this fragment */
 	size_t polarizable_offset;
+
+	/* offset of fragment field points for this fragment */
+	size_t fragment_field_offset;
 };
 
 struct efp {
@@ -204,6 +208,12 @@ struct efp {
 
 	/* total number of polarizable points */
 	size_t n_polarizable_pts;
+
+	/* total number of points to store electric field due to ligand */
+	size_t n_fragment_field_pts;
+
+	/* electric field on ligand points due to fragments */
+	vec_t *fragment_field;
 
 	/* number of core orbitals in ab initio subsystem */
 	size_t n_ai_core;

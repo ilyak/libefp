@@ -193,6 +193,70 @@ get_elec_field(const struct efp *efp, size_t frag_idx, size_t pt_idx)
 	return elec_field;
 }
 
+/* this function computes electric field on a polarizable point due to a ligand */
+static vec_t
+get_ligand_field(const struct efp *efp, size_t frag_idx, size_t pt_idx, size_t ligand_idx)
+{
+	const struct frag *fr_j = efp->frags + frag_idx;
+	const struct polarizable_pt *pt = fr_j->polarizable_pts + pt_idx;
+	const struct frag *fr_i = efp->frags + ligand_idx;
+	vec_t elec_field = vec_zero;
+
+	if (efp_skip_frag_pair(efp, ligand_idx, frag_idx))
+		return elec_field;
+
+	struct swf swf = efp_make_swf(efp, fr_i, fr_j);
+
+	/* field due to nuclei */
+	for (size_t j = 0; j < fr_i->n_atoms; j++) {
+		const struct efp_atom *at = fr_i->atoms + j;
+
+		vec_t dr = {
+			pt->x - at->x - swf.cell.x,
+			pt->y - at->y - swf.cell.y,
+			pt->z - at->z - swf.cell.z
+		};
+
+		double r = vec_len(&dr);
+		double r3 = r * r * r;
+		double p1 = 1.0;
+
+		if (efp->opts.pol_damp == EFP_POL_DAMP_TT) {
+			p1 = efp_get_pol_damp_tt(r, fr_i->pol_damp,
+				   fr_j->pol_damp);
+		}
+		elec_field.x += swf.swf * at->znuc * dr.x / r3 * p1;
+		elec_field.y += swf.swf * at->znuc * dr.y / r3 * p1;
+		elec_field.z += swf.swf * at->znuc * dr.z / r3 * p1;
+	}
+
+	/* field due to multipoles */
+	for (size_t j = 0; j < fr_i->n_multipole_pts; j++) {
+		const struct multipole_pt *mult_pt =
+			   fr_i->multipole_pts + j;
+		vec_t mult_field = get_multipole_field(CVEC(pt->x),
+			    mult_pt, &swf);
+
+		vec_t dr = {
+			pt->x - mult_pt->x - swf.cell.x,
+			pt->y - mult_pt->y - swf.cell.y,
+			pt->z - mult_pt->z - swf.cell.z
+		};
+
+		double r = vec_len(&dr);
+		double p1 = 1.0;
+
+		if (efp->opts.pol_damp == EFP_POL_DAMP_TT) {
+			p1 = efp_get_pol_damp_tt(r, fr_i->pol_damp,
+				    fr_j->pol_damp);
+		}
+		elec_field.x += mult_field.x * p1;
+		elec_field.y += mult_field.y * p1;
+		elec_field.z += mult_field.z * p1;
+	}
+	return elec_field;
+}
+
 static enum efp_result
 add_electron_density_field(struct efp *efp)
 {
@@ -254,15 +318,66 @@ compute_elec_field_range(struct efp *efp, size_t from, size_t to, void *data)
 	}
 }
 
+static void
+compute_ligand_field_range(struct efp *efp, size_t from, size_t to, void *data)
+{
+	vec_t *elec_field = (vec_t *)data;
+
+#ifdef _OPENMP
+#pragma omp parallel for schedule(dynamic)
+#endif
+	for (size_t i = from; i < to; i++) {
+		const struct frag *frag = efp->frags + i;
+
+		for (size_t j = 0; j < frag->n_polarizable_pts; j++) {
+			elec_field[frag->polarizable_offset + j] =
+			    get_ligand_field(efp, i, j, efp->opts.ligand);
+		}
+	}
+}
+
+static void
+compute_fragment_field_range(struct efp *efp, size_t from, size_t to, void *data)
+{
+	vec_t *elec_field = (vec_t *)data;
+	struct frag *ligand = efp->frags + efp->opts.ligand;
+
+#ifdef _OPENMP
+#pragma omp parallel for schedule(dynamic)
+#endif
+	for (size_t i = from; i < to; i++) {
+		const struct frag *frag = efp->frags + i;
+
+		for (size_t j = 0; j < ligand->n_polarizable_pts; j++) {
+			elec_field[frag->fragment_field_offset + j] =
+			    get_ligand_field(efp, efp->opts.ligand, j, i);
+		}
+	}
+}
+
 static enum efp_result
 compute_elec_field(struct efp *efp)
 {
 	vec_t *elec_field;
+	vec_t *ligand_field;
+	vec_t *fragment_field;
+	struct frag *ligand = efp->frags + efp->opts.ligand;
 	enum efp_result res;
 
 	elec_field = (vec_t *)calloc(efp->n_polarizable_pts, sizeof(vec_t));
 	efp_balance_work(efp, compute_elec_field_range, elec_field);
 	efp_allreduce((double *)elec_field, 3 * efp->n_polarizable_pts);
+
+	if (efp->opts.enable_pairwise) {
+		// this is field due to ligand on a fragment point
+		ligand_field = (vec_t *)calloc(efp->n_polarizable_pts, sizeof(vec_t));
+		efp_balance_work(efp, compute_ligand_field_range, ligand_field);
+		efp_allreduce((double *)ligand_field, 3 * efp->n_polarizable_pts);
+		// this is field due to fragment(s) on ligand points
+		fragment_field = (vec_t *)calloc(efp->n_fragment_field_pts, sizeof(vec_t));
+		efp_balance_work(efp, compute_fragment_field_range, fragment_field);
+		efp_allreduce((double *)fragment_field, 3 * efp->n_fragment_field_pts);
+	}
 
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic)
@@ -274,9 +389,24 @@ compute_elec_field(struct efp *efp)
 			frag->polarizable_pts[j].elec_field =
 			    elec_field[frag->polarizable_offset + j];
 			frag->polarizable_pts[j].elec_field_wf = vec_zero;
+			if (efp->opts.enable_pairwise) {
+				frag->polarizable_pts[j].ligand_field =
+						ligand_field[frag->polarizable_offset + j];
+			}
 		}
+		if (efp->opts.enable_pairwise && i!= efp->opts.ligand) {
+			for (size_t lp = 0; lp < ligand->n_polarizable_pts; lp++) {
+				efp->fragment_field[frag->fragment_field_offset + lp] =
+						fragment_field[frag->fragment_field_offset + lp];
+			}
+		}
+
 	}
 	free(elec_field);
+	if (efp->opts.enable_pairwise) {
+		free(ligand_field);
+		free(fragment_field);
+	}
 
 	if (efp->opts.terms & EFP_TERM_AI_POL)
 		if ((res = add_electron_density_field(efp)))
@@ -416,10 +546,12 @@ static void
 compute_energy_range(struct efp *efp, size_t from, size_t to, void *data)
 {
 	double energy = 0.0;
+	struct frag *ligand = efp->frags + efp->opts.ligand;
 
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic) reduction(+:energy)
 #endif
+
 	for (size_t i = from; i < to; i++) {
 		struct frag *frag = efp->frags + i;
 
@@ -431,7 +563,23 @@ compute_energy_range(struct efp *efp, size_t from, size_t to, void *data)
 						&pt->elec_field_wf) -
 				  0.5 * vec_dot(&efp->indip[idx],
 						&pt->elec_field);
+
+			if (efp->opts.enable_pairwise && i != efp->opts.ligand) {
+                    efp->pair_energies[i].polarization +=
+					  - 0.5 * vec_dot(&efp->indip[idx], &pt->ligand_field);
+			}
 		}
+
+		if (efp->opts.enable_pairwise &&  i != efp->opts.ligand) {
+			for (size_t lp = 0; lp < ligand->n_polarizable_pts; lp++) {
+				struct polarizable_pt *lpt = ligand->polarizable_pts + lp;
+				size_t idx = ligand->polarizable_offset + lp;
+
+                efp->pair_energies[i].polarization +=
+				  - 0.5 * vec_dot(&efp->indip[idx], &efp->fragment_field[frag->fragment_field_offset+lp]);
+			}
+		}
+
 	}
 
 	*(double *)data += energy;
