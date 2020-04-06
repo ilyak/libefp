@@ -117,7 +117,7 @@ void print_matrix(size_t, size_t, const double *);
 void check_fail(enum efp_result);
 void compute_energy(struct state *, bool);
 struct sys *parse_input(struct cfg *, const char *);
-vec_t box_from_str(const char *);
+six_t box_from_str(const char *);
 int efp_strcasecmp(const char *, const char *);
 int efp_strncasecmp(const char *, const char *, size_t);
 

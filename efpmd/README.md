@@ -227,11 +227,11 @@ Setting `enable_pbc` to `true` also sets `enable_cutoff` to `true`.
 
 ##### Periodic Box Size
 
-`periodic_box <x> <y> <z>`
+`periodic_box <x> <y> <z> <alpha> <beta> <gamma>`
 
-Default value: `30.0 30.0 30.0`
+Default value: `30.0 30.0 30.0 90.0 90.0 90.0`
 
-Unit: Angstrom
+Unit: Angstroms, degrees
 
 The smallest box dimension must be greater than `2 * swf_cutoff`.
 

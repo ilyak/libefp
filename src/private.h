@@ -176,7 +176,7 @@ struct efp {
 	int do_gradient;
 
 	/* periodic simulation box size */
-	vec_t box;
+	six_t box;
 
 	/* stress tensor */
 	mat_t stress;

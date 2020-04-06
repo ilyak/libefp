@@ -46,10 +46,19 @@ efp_skip_frag_pair(const struct efp *efp, size_t fr_i_idx, size_t fr_j_idx)
 	vec_t dr = vec_sub(CVEC(fr_j->x), CVEC(fr_i->x));
 
 	if (efp->opts.enable_pbc) {
-		vec_t cell = { efp->box.x * round(dr.x / efp->box.x),
-			       efp->box.y * round(dr.y / efp->box.y),
-			       efp->box.z * round(dr.z / efp->box.z) };
-		dr = vec_sub(&dr, &cell);
+	    // orthogonal box
+	    if (efp->box.a == 90.0 && efp->box.b == 90.0 && efp->box.c == 90.0) {
+            vec_t cell = {efp->box.x * round(dr.x / efp->box.x),
+                          efp->box.y * round(dr.y / efp->box.y),
+                          efp->box.z * round(dr.z / efp->box.z)};
+            dr = vec_sub(&dr, &cell);
+        }
+	    else {
+	        cart_to_frac(efp->box, &dr);
+	        vec_t cell = {round(dr.x), round(dr.y), round(dr.z)};
+	        dr = vec_sub(&dr, &cell);
+	        frac_to_cart(efp->box, &dr);
+	    }
 	}
 	return vec_len_2(&dr) > cutoff2;
 }
@@ -67,12 +76,23 @@ efp_make_swf(const struct efp *efp, const struct frag *fr_i,
 	if (!efp->opts.enable_cutoff)
 		return swf;
 	if (efp->opts.enable_pbc) {
-		swf.cell.x = efp->box.x * round(swf.dr.x / efp->box.x);
-		swf.cell.y = efp->box.y * round(swf.dr.y / efp->box.y);
-		swf.cell.z = efp->box.z * round(swf.dr.z / efp->box.z);
-		swf.dr.x -= swf.cell.x;
-		swf.dr.y -= swf.cell.y;
-		swf.dr.z -= swf.cell.z;
+        if (efp->box.a == 90.0 && efp->box.b == 90.0 && efp->box.c == 90.0) {
+            swf.cell.x = efp->box.x * round(swf.dr.x / efp->box.x);
+            swf.cell.y = efp->box.y * round(swf.dr.y / efp->box.y);
+            swf.cell.z = efp->box.z * round(swf.dr.z / efp->box.z);
+            swf.dr.x -= swf.cell.x;
+            swf.dr.y -= swf.cell.y;
+            swf.dr.z -= swf.cell.z;
+        }
+        else {
+            cart_to_frac(efp->box, &swf.dr);
+            swf.cell.x = round(swf.dr.x);
+            swf.cell.y = round(swf.dr.y);
+            swf.cell.z = round(swf.dr.z);
+            swf.dr = vec_sub(&swf.dr, &swf.cell);
+            frac_to_cart(efp->box, &swf.cell);
+            frac_to_cart(efp->box, &swf.dr);
+        }
 	}
 
 	double r = vec_len(&swf.dr);

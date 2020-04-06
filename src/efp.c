@@ -806,7 +806,7 @@ efp_get_frag_xyzabc(struct efp *efp, size_t frag_idx, double *xyzabc)
 }
 
 EFP_EXPORT enum efp_result
-efp_set_periodic_box(struct efp *efp, double x, double y, double z)
+efp_set_periodic_box(struct efp *efp, double x, double y, double z, double alpha, double beta, double gamma)
 {
 	assert(efp);
 
@@ -818,22 +818,40 @@ efp_set_periodic_box(struct efp *efp, double x, double y, double z)
 		return EFP_RESULT_FATAL;
 	}
 
+	if (alpha == 0.0 && beta == 0.0 && gamma == 0.0) {
+        // assigning default angles of 90.0 degrees
+        alpha = 90.0;
+        beta = 90.0;
+        gamma = 90.0;
+    }
+
+    if (alpha == 0.0 || beta == 0.0 || gamma == 0.0) {
+        efp_log("periodic box angle cannot be zero");
+        return EFP_RESULT_FATAL;
+	}
+
 	efp->box.x = x;
 	efp->box.y = y;
 	efp->box.z = z;
+	efp->box.a = alpha;
+	efp->box.b = beta;
+	efp->box.c = gamma;
 
 	return EFP_RESULT_SUCCESS;
 }
 
 EFP_EXPORT enum efp_result
-efp_get_periodic_box(struct efp *efp, double *xyz)
+efp_get_periodic_box(struct efp *efp, double *xyzabc)
 {
 	assert(efp);
-	assert(xyz);
+	assert(xyzabc);
 
-	xyz[0] = efp->box.x;
-	xyz[1] = efp->box.y;
-	xyz[2] = efp->box.z;
+	xyzabc[0] = efp->box.x;
+	xyzabc[1] = efp->box.y;
+	xyzabc[2] = efp->box.z;
+    xyzabc[3] = efp->box.a;
+    xyzabc[4] = efp->box.b;
+    xyzabc[5] = efp->box.c;
 
 	return EFP_RESULT_SUCCESS;
 }

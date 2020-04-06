@@ -58,7 +58,7 @@ struct md {
 	size_t n_bodies;
 	struct body *bodies;
 	size_t n_freedom;
-	vec_t box;
+	six_t box;
 	int step; /* current md step */
 	double potential_energy;
 	double xr_energy; /* used in multistep md */
@@ -76,13 +76,22 @@ static vec_t wrap(const struct md *md, const vec_t *pos)
 	if (!cfg_get_bool(md->state->cfg, "enable_pbc"))
 		return *pos;
 
-	vec_t sub = {
-		md->box.x * floor(pos->x / md->box.x),
-		md->box.y * floor(pos->y / md->box.y),
-		md->box.z * floor(pos->z / md->box.z)
-	};
-
-	return vec_sub(pos, &sub);
+	if (md->box.a == 90.0 && md->box.b == 90.0 && md->box.c == 90.0) {
+        vec_t sub = {
+                md->box.x * floor(pos->x / md->box.x),
+                md->box.y * floor(pos->y / md->box.y),
+                md->box.z * floor(pos->z / md->box.z)
+        };
+        return vec_sub(pos, &sub);
+    }
+	else {
+	    vec_t new_pos = {pos->x,pos->y,pos->z};
+        cart_to_frac(md->box, &new_pos);
+        vec_t sub = {floor(new_pos.x), floor(new_pos.y), floor(new_pos.z)};
+        vec_t dr = vec_sub(&new_pos, &sub);
+        frac_to_cart(md->box, &dr);
+        return dr;
+    }
 }
 
 static double get_kinetic_energy(const struct md *md)
@@ -669,9 +678,13 @@ static void update_step_npt(struct md *md)
 			msg("WARNING: NPT UPDATE DID NOT CONVERGE\n\n");
 	}
 
-	vec_scale(&md->box, exp(dt * data->eta));
+	md->box.x = md->box.x * exp(dt * data->eta);
+    md->box.y = md->box.y * exp(dt * data->eta);
+    md->box.z = md->box.z * exp(dt * data->eta);
+
+	// vec_scale(&md->box, exp(dt * data->eta));
 	check_fail(efp_set_periodic_box(md->state->efp,
-	    md->box.x, md->box.y, md->box.z));
+	    md->box.x, md->box.y, md->box.z, md->box.a, md->box.b, md->box.c));
 
 	compute_forces(md);
 
@@ -748,9 +761,12 @@ static void print_info(const struct md *md)
 		double x = md->box.x * BOHR_RADIUS;
 		double y = md->box.y * BOHR_RADIUS;
 		double z = md->box.z * BOHR_RADIUS;
+		double alpha = md->box.a;
+        double beta = md->box.b;
+        double gamma = md->box.c;
 
-		msg("%30s %9.3lf %9.3lf %9.3lf A^3\n",
-		    "PERIODIC BOX SIZE", x, y, z);
+		msg("%30s %9.3lf %9.3lf %9.3lf %9.3lf %9.3lf %9.3lf  A^6\n",
+		    "PERIODIC BOX SIZE AND ANGLES", x, y, z, alpha, beta, gamma);
 	}
 
 	msg("\n\n");

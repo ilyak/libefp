@@ -115,7 +115,7 @@ static struct cfg *make_cfg(void)
 	cfg_add_string(cfg, "fraglib_path", FRAGLIB_PATH);
 	cfg_add_string(cfg, "userlib_path", ".");
 	cfg_add_bool(cfg, "enable_pbc", false);
-	cfg_add_string(cfg, "periodic_box", "30.0 30.0 30.0");
+	cfg_add_string(cfg, "periodic_box", "30.0 30.0 30.0 90.0 90.0 90.0");
 	cfg_add_double(cfg, "opt_tol", 1.0e-4);
 	cfg_add_double(cfg, "gtest_tol", 1.0e-6);
 	cfg_add_double(cfg, "ref_energy", 0.0);
@@ -291,8 +291,8 @@ static struct efp *create_efp(const struct cfg *cfg, const struct sys *sys)
 	check_fail(efp_prepare(efp));
 
 	if (opts.enable_pbc) {
-		vec_t box = box_from_str(cfg_get_string(cfg, "periodic_box"));
-		check_fail(efp_set_periodic_box(efp, box.x, box.y, box.z));
+		six_t box = box_from_str(cfg_get_string(cfg, "periodic_box"));
+		check_fail(efp_set_periodic_box(efp, box.x, box.y, box.z, box.a, box.b, box.c));
 	}
 
 	for (size_t i = 0; i < sys->n_frags; i++)

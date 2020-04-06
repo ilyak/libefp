@@ -270,13 +270,16 @@ void print_matrix(size_t rows, size_t cols, const double *mat)
 	}
 }
 
-vec_t box_from_str(const char *str)
+six_t box_from_str(const char *str)
 {
-	vec_t box;
+	six_t box;
 
-	if (sscanf(str, "%lf %lf %lf", &box.x, &box.y, &box.z) < 3)
+	if (sscanf(str, "%lf %lf %lf %lf %lf %lf ", &box.x, &box.y, &box.z, &box.a, &box.b, &box.c) < 3)
 		error("incorrect box format");
 
-	vec_scale(&box, 1.0 / BOHR_RADIUS);
+	box.x *= 1.0 / BOHR_RADIUS;
+	box.y *= 1.0 / BOHR_RADIUS;
+	box.z *= 1.0 / BOHR_RADIUS;
+	// vec_scale(&box, 1.0 / BOHR_RADIUS);
 	return box;
 }
