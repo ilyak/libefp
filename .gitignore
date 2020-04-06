@@ -13,7 +13,7 @@
 .deps/
 .dirstamp
 .libs/
-.idea
+.idea/
 /config.inc
 /doxygen_html
 /efpmd/libff/libtinker.a
