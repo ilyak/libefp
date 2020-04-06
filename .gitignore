@@ -13,9 +13,11 @@
 .deps/
 .dirstamp
 .libs/
+.idea
 /config.inc
 /doxygen_html
 /efpmd/libff/libtinker.a
 /efpmd/src/efpmd
 /fraglib/params
+/bin/efpmd
 tags

@@ -215,6 +215,20 @@ Default value: `"."` (current directory)
 The `<path>` parameter should not contain spaces or should be in double quotes
 otherwise.
 
+### Pairwise energy analysis
+
+##### Enable/Disable pairwise analysis
+
+`enable_pairwise [true|false]`
+
+Default value: `false`
+
+##### Specify ligand 
+
+`ligand [integer]`
+
+Default value: `0` (the first fragment in the system)
+
 ### Periodic Boundary Conditions (PBC)
 
 ##### Enable/Disable PBC

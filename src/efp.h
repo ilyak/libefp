@@ -150,6 +150,10 @@ struct efp_opts {
 	int enable_cutoff;
 	/** Cutoff distance for fragment-fragment interactions. */
 	double swf_cutoff;
+	/** Enable ligand-fragment energy decomposition from total system */ 
+    int enable_pairwise; 
+    /** Index of ligand for enable_pairwise; default = 0; */
+    int ligand;     
 };
 
 /** EFP energy terms. */
@@ -1046,6 +1050,18 @@ void efp_shutdown(struct efp *efp);
  * zero-terminated.
  */
 const char *efp_result_to_string(enum efp_result res);
+
+/**
+ * Get the interaction energies of ligand-fragment pairs 
+ *
+ * \param[in] efp The efp structure.
+ *
+ * \param[out] total energy and energy components of each ligand-fragment pair
+ *
+ */
+enum efp_result efp_get_pairwise_energy(struct efp *efp, 
+                                        struct efp_energy *pair_energies);
+
 
 #ifdef __cplusplus
 } /* extern "C" */

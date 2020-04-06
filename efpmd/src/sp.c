@@ -34,6 +34,7 @@ void sim_sp(struct state *state)
 
 	print_geometry(state->efp);
 	compute_energy(state, false);
+    print_pair_energy(state);
 	print_energy(state);
 
 	msg("SINGLE POINT ENERGY JOB COMPLETED SUCCESSFULLY\n");
