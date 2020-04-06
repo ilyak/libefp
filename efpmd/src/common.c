@@ -168,6 +168,7 @@ void print_energy(struct state *state)
 	msg("\n\n");
 }
 
+
 void print_gradient(struct state *state)
 {
 	size_t n_frags;
@@ -270,6 +271,97 @@ void print_matrix(size_t rows, size_t cols, const double *mat)
 	}
 }
 
+void print_pair_energy(struct state *state){
+
+	if (cfg_get_bool(state->cfg, "enable_pairwise")) {
+		msg(" ------ PAIRWISE ENERGY ANALYSIS FOLLOWS ------------------\n\n");
+		size_t n_frags;
+        check_fail(efp_get_frag_count(state->efp, &n_frags));
+        double coord[6 * n_frags];
+        check_fail(efp_get_coordinates(state->efp, coord));
+
+        struct efp_energy *energies;
+        energies = xmalloc(n_frags * sizeof(struct efp_energy));
+        check_fail(efp_get_pairwise_energy(state->efp, energies));
+
+        char ligand[32];
+        size_t lig_atoms;
+
+        size_t ligand_index = cfg_get_int(state->cfg, "ligand");
+        check_fail(efp_get_frag_name(state->efp, ligand_index, sizeof(ligand),ligand));
+        check_fail(efp_get_frag_atom_count(state->efp, ligand_index, &lig_atoms));
+        struct efp_atom latoms[lig_atoms];
+        check_fail(efp_get_frag_atoms(state->efp, ligand_index, lig_atoms, latoms));
+
+        char frag_name[32];
+        size_t frag_atoms;
+        double lattice_energy[6];
+        for (size_t j=0; j<6; j++){
+        	lattice_energy[j]=0.0;
+        }
+        for (size_t i=0; i <n_frags; i++){
+                check_fail(efp_get_frag_name(state->efp, i, sizeof(frag_name),frag_name));
+                check_fail(efp_get_frag_atom_count(state->efp, i, &frag_atoms));
+
+                struct efp_atom atoms[frag_atoms];
+                check_fail(efp_get_frag_atoms(state->efp, i, frag_atoms, atoms));
+
+                msg("   PAIRWISE ENERGY BETWEEN FRAGMENT %zu (%s) AND LIGAND %zu (%s) \n", i, frag_name, ligand_index, ligand);
+                msg("fragment %s\n", frag_name);
+                for (size_t a = 0; a < frag_atoms; a++) {
+                        double x = atoms[a].x * BOHR_RADIUS;
+                        double y = atoms[a].y * BOHR_RADIUS;
+                        double z = atoms[a].z * BOHR_RADIUS;
+                        msg("   %-16s %12.6lf %12.6lf %12.6lf\n", atoms[a].label, x, y, z);
+                }
+                msg("\n");
+
+                msg("fragment %s\n", ligand);
+                for (size_t a = 0; a < lig_atoms; a++) {
+                        double x = latoms[a].x * BOHR_RADIUS;
+                        double y = latoms[a].y * BOHR_RADIUS;
+                        double z = latoms[a].z * BOHR_RADIUS;
+                        msg("   %-16s %12.6lf %12.6lf %12.6lf\n", latoms[a].label, x, y, z);
+                }
+                msg("\n");
+
+                msg("    PAIRWISE ENERGY COMPONENTS (ATOMIC UNITS)\n");
+                msg("%40s %16.10lf\n", "PAIRWISE ELECTROSTATIC ENERGY", energies[i].electrostatic);
+                msg("%40s %16.10lf\n", "PAIRWISE POLARIZATION ENERGY", energies[i].polarization);
+                msg("%40s %16.10lf\n", "PAIRWISE DISPERSION ENERGY", energies[i].dispersion);
+                msg("%40s %16.10lf\n", "PAIRWISE EXCHANGE REPULSION ENERGY",
+                        energies[i].exchange_repulsion);
+                msg("%40s %16.10lf\n", "PAIRWISE CHARGE PENETRATION ENERGY",
+                		energies[i].charge_penetration);
+
+                energies[i].total = energies[i].electrostatic + energies[i].polarization + energies[i].dispersion
+                		+ energies[i].exchange_repulsion + energies[i].charge_penetration;
+                msg("%40s %16.10lf\n", "PAIRWISE TOTAL ENERGY", energies[i].total);
+                msg("\n ---------------------------------------------------------\n");
+
+                lattice_energy[0] = lattice_energy[0] + energies[i].electrostatic;
+                lattice_energy[1] = lattice_energy[1] + energies[i].polarization;
+                lattice_energy[2] = lattice_energy[2] + energies[i].dispersion;
+                lattice_energy[3] = lattice_energy[3] + energies[i].exchange_repulsion;
+                lattice_energy[4] = lattice_energy[4] + energies[i].charge_penetration;
+                lattice_energy[5] = lattice_energy[5] + energies[i].total;
+        }
+        free(energies);
+
+        msg("    LATTICE ENERGY COMPONENTS (ATOMIC UNITS)\n");
+        msg("%40s %16.10lf\n", "LATTICE ELECTROSTATIC ENERGY", lattice_energy[0]);
+        msg("%40s %16.10lf\n", "LATTICE POLARIZATION ENERGY", lattice_energy[1]);
+        msg("%40s %16.10lf\n", "LATTICE DISPERSION ENERGY", lattice_energy[2]);
+        msg("%40s %16.10lf\n", "LATTICE EXCHANGE REPULSION ENERGY", lattice_energy[3]);
+        msg("%40s %16.10lf\n", "LATTICE CHARGE PENETRATION ENERGY", lattice_energy[4]);
+        msg("%40s %16.10lf\n", "LATTICE TOTAL ENERGY", lattice_energy[5]);
+        msg("\n\n");
+
+        msg(" ------ PAIRWISE ENERGY ANALYSIS COMPLETED --------------\n\n");
+	}
+}
+
+
 vec_t box_from_str(const char *str)
 {
 	vec_t box;
@@ -280,3 +372,4 @@ vec_t box_from_str(const char *str)
 	vec_scale(&box, 1.0 / BOHR_RADIUS);
 	return box;
 }
+

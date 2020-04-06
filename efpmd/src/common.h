@@ -59,8 +59,9 @@ enum run_type {
 	RUN_TYPE_OPT,
 	RUN_TYPE_MD,
 	RUN_TYPE_EFIELD,
-	RUN_TYPE_GTEST
+	RUN_TYPE_GTEST,
 };
+//RUN_TYPE_PAIRWISE
 
 enum ensemble_type {
 	ENSEMBLE_TYPE_NVE,
@@ -113,6 +114,7 @@ void print_fragment(const char *, const double *, const double *);
 void print_charge(double, double, double, double);
 void print_vector(size_t, const double *);
 void print_matrix(size_t, size_t, const double *);
+void print_pair_energy(struct state *);
 
 void check_fail(enum efp_result);
 void compute_energy(struct state *, bool);
@@ -120,5 +122,6 @@ struct sys *parse_input(struct cfg *, const char *);
 vec_t box_from_str(const char *);
 int efp_strcasecmp(const char *, const char *);
 int efp_strncasecmp(const char *, const char *, size_t);
+
 
 #endif /* EFPMD_COMMON_H */
