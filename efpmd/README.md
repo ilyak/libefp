@@ -247,7 +247,18 @@ Default value: `30.0 30.0 30.0 90.0 90.0 90.0`
 
 Unit: Angstroms, degrees
 
+If only three values are given, the angles are set to 90 degrees (orthogonal box). 
+Non-orthogonal PBC is implemented only for single-point energy calculations.
 The smallest box dimension must be greater than `2 * swf_cutoff`.
+
+##### Print PBC coordinates
+
+`print_pbc [true/false]`
+
+Default value: `false`
+
+Prints coordinates of the system contained in a single periodic cell around 
+a fragment specified by `ligand` keyword.
 
 ### Geometry optimization related parameters
 
