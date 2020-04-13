@@ -20,6 +20,6 @@
 /efpmd/src/efpmd
 /fraglib/params
 /bin/efpmd
-/share/libefp/fraglib/
+/share/
 /include/
 tags
