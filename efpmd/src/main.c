@@ -37,7 +37,6 @@ void sim_opt(struct state *);
 void sim_md(struct state *);
 void sim_efield(struct state *);
 void sim_gtest(struct state *);
-// void sim_pairwise(struct state *);
 
 #define USAGE_STRING \
 	"usage: efpmd [-d | -v | -h | input]\n" \
@@ -64,8 +63,6 @@ static struct cfg *make_cfg(void)
 			   RUN_TYPE_MD,
 			   RUN_TYPE_EFIELD,
 			   RUN_TYPE_GTEST});
-	/* 		"pairwise\n",
-	 RUN_TYPE_PAIRWISE */
 
 	cfg_add_enum(cfg, "coord", EFP_COORD_TYPE_XYZABC,
 		"xyzabc\n"
@@ -143,7 +140,8 @@ static struct cfg *make_cfg(void)
 	cfg_add_double(cfg, "barostat_tau", 1.0e4);
 
 	cfg_add_int(cfg, "ligand", 0); 
-    cfg_add_bool(cfg, "enable_pairwise", false); 
+    cfg_add_bool(cfg, "enable_pairwise", false);
+    cfg_add_bool(cfg, "print_pbc", false);
 
 
 	return cfg;
@@ -167,8 +165,6 @@ static sim_fn_t get_sim_fn(enum run_type run_type)
 	case RUN_TYPE_GTEST:
 		return sim_gtest;
 	}
-	// 	case RUN_TYPE_PAIRWISE:
-	//  return sim_ pairwise;
 	assert(0);
 }
 
@@ -258,7 +254,8 @@ static struct efp *create_efp(const struct cfg *cfg, const struct sys *sys)
 		.enable_cutoff = cfg_get_bool(cfg, "enable_cutoff"),
 		.swf_cutoff = cfg_get_double(cfg, "swf_cutoff"),
         .enable_pairwise = cfg_get_bool(cfg, "enable_pairwise"), 
-        .ligand = cfg_get_int(cfg, "ligand")
+        .ligand = cfg_get_int(cfg, "ligand"),
+        .print_pbc = cfg_get_bool(cfg, "print_pbc")
 	};
 
 	enum efp_coord_type coord_type = cfg_get_enum(cfg, "coord");

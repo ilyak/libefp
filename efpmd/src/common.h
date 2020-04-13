@@ -61,7 +61,6 @@ enum run_type {
 	RUN_TYPE_EFIELD,
 	RUN_TYPE_GTEST,
 };
-//RUN_TYPE_PAIRWISE
 
 enum ensemble_type {
 	ENSEMBLE_TYPE_NVE,
@@ -108,6 +107,7 @@ void *xrealloc(void *, size_t);
 
 void print_vec(const double *);
 void print_geometry(struct efp *);
+void print_geometry_pbc(struct efp *, int);
 void print_energy(struct state *);
 void print_gradient(struct state *);
 void print_fragment(const char *, const double *, const double *);
