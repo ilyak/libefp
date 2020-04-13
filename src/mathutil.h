@@ -382,7 +382,7 @@ matrix_to_euler(const mat_t *rotmat, double *ea, double *eb, double *ec)
 	*ec = c;
 }
 
-static inline vec_t *
+static inline void
 cart_to_frac(const six_t box, vec_t *dr)
 {
     double radian = 180.0/PI;
@@ -397,10 +397,9 @@ cart_to_frac(const six_t box, vec_t *dr)
     dr->z = (dr->z/gamma_term) / box.z;
     dr->y = ((dr->y - dr->z * box.z * beta_term)/gamma_sin) / box.y;
     dr->x = (dr->x - dr->y * box.y * gamma_cos - dr->z * box.z * beta_cos) / box.x;
-    return dr;
 }
 
-static inline vec_t *
+static inline void
 frac_to_cart(const six_t box, vec_t *dr) {
     double radian = 180.0/PI;
     double alpha_cos = cos(box.a / radian);
@@ -411,10 +410,9 @@ frac_to_cart(const six_t box, vec_t *dr) {
     double beta_term = (alpha_cos - beta_cos*gamma_cos) / gamma_sin;
     double gamma_term = sqrt(beta_sin*beta_sin - beta_term*beta_term);
 
-    dr->z = dr->z * gamma_term * box.z;
-    dr->y = dr->y * box.y * gamma_sin + dr->z * box.z * beta_term;
     dr->x = dr->x * box.x + dr->y * box.y * gamma_cos + dr->z * box.z * beta_cos;
-    return dr;
+    dr->y = dr->y * box.y * gamma_sin + dr->z * box.z * beta_term;
+    dr->z = dr->z * gamma_term * box.z;
 }
 
 #endif /* LIBEFP_MATH_UTIL_H */

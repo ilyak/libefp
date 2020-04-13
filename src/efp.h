@@ -153,7 +153,9 @@ struct efp_opts {
 	/** Enable ligand-fragment energy decomposition from total system */ 
     int enable_pairwise; 
     /** Index of ligand for enable_pairwise; default = 0; */
-    int ligand;     
+    int ligand;
+    /** Prints fragment coordinates rearranged around ligand. Applicable for periodic simulations only. */
+    int print_pbc;
 };
 
 /** EFP energy terms. */

@@ -48,5 +48,9 @@ void efp_rotate_t2(const mat_t *, const double *, double *);
 void efp_rotate_t3(const mat_t *, const double *, double *);
 int efp_strcasecmp(const char *, const char *);
 int efp_strncasecmp(const char *, const char *, size_t);
+// find plane by 3 points
+void find_plane(const vec_t, const vec_t, const vec_t, vec_t *, double);
+// computes maximum cut_off distance for an arbitrary periodic cell
+double max_cutoff(const six_t);
 
 #endif /* LIBEFP_UTIL_H */

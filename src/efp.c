@@ -32,6 +32,7 @@
 #include "elec.h"
 #include "private.h"
 #include "stream.h"
+#include "util.h"
 
 static void
 update_fragment(struct frag *frag)
@@ -837,26 +838,13 @@ EFP_EXPORT enum efp_result
 efp_set_periodic_box(struct efp *efp, double x, double y, double z, double alpha, double beta, double gamma)
 {
 	assert(efp);
-
-	if (x < 2.0 * efp->opts.swf_cutoff ||
-	    y < 2.0 * efp->opts.swf_cutoff ||
-	    z < 2.0 * efp->opts.swf_cutoff) {
-		efp_log("periodic box dimensions must be at least twice "
-		    "the switching function cutoff");
-		return EFP_RESULT_FATAL;
-	}
-
-	if (alpha == 0.0 && beta == 0.0 && gamma == 0.0) {
+	if (alpha < 0.01) {
         // assigning default angles of 90.0 degrees
+        //printf("\n assigning angles to 90.0 \n");
         alpha = 90.0;
         beta = 90.0;
         gamma = 90.0;
     }
-
-    if (alpha == 0.0 || beta == 0.0 || gamma == 0.0) {
-        efp_log("periodic box angle cannot be zero");
-        return EFP_RESULT_FATAL;
-	}
 
 	efp->box.x = x;
 	efp->box.y = y;
@@ -865,7 +853,17 @@ efp_set_periodic_box(struct efp *efp, double x, double y, double z, double alpha
 	efp->box.b = beta;
 	efp->box.c = gamma;
 
-	return EFP_RESULT_SUCCESS;
+	double max_cut = max_cutoff(efp->box);
+	double cut = efp->opts.swf_cutoff;
+	if (cut > max_cut) {
+	    printf("\n Maximum allowed cutoff is %lf ", max_cut*0.52917721092);
+        printf("\n Given cutoff is %lf \n", cut*0.52917721092);
+        efp_log("periodic box dimensions must be at least twice "
+                "the switching function cutoff");
+        return EFP_RESULT_FATAL;
+	}
+
+    return EFP_RESULT_SUCCESS;
 }
 
 EFP_EXPORT enum efp_result
@@ -874,7 +872,7 @@ efp_get_periodic_box(struct efp *efp, double *xyzabc)
 	assert(efp);
 	assert(xyzabc);
 
-	xyzabc[0] = efp->box.x;
+    xyzabc[0] = efp->box.x;
 	xyzabc[1] = efp->box.y;
 	xyzabc[2] = efp->box.z;
     xyzabc[3] = efp->box.a;

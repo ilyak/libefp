@@ -295,3 +295,46 @@ efp_strncasecmp(const char *s1, const char *s2, size_t n)
 	}
 	return 0;
 }
+
+void
+find_plane(const vec_t pt1, const vec_t pt2, const vec_t pt3, vec_t *normal, double d) {
+    // determines plane by three points: ax + by + cz + d = 0, where a,b,c are given by a normal vector
+    vec_t vec21 = vec_sub(&pt2,&pt1);
+    vec_t vec31 = vec_sub(&pt3,&pt1);
+    *normal = vec_cross(&vec21,&vec31);
+    d = - vec_dot(normal,&pt1);
+}
+
+double
+max_cutoff(const six_t box) {
+    vec_t point000 = {0.0, 0.0, 0.0};
+    vec_t point100 = {1.0, 0.0, 0.0};
+    vec_t point010 = {0.0, 1.0, 0.0};
+    vec_t point001 = {0.0, 0.0, 1.0};
+    vec_t point = {0.5,0.5,0.5};
+    frac_to_cart(box, &point100);
+    frac_to_cart(box, &point010);
+    frac_to_cart(box, &point001);
+    frac_to_cart(box, &point);
+    // plane xy: points 000, 100, 010
+    vec_t normal;
+    double d;
+    double dist;
+    double min_dist;
+    // plane xy: points 000, 100, 010
+    find_plane(point100, point000, point010, &normal, d);
+    dist = (vec_dot(&normal, &point) + d) / vec_len(&normal);
+    dist = sqrt(dist*dist);
+    min_dist = dist;
+    // plane xz: points 000, 100, 001
+    find_plane(point100, point000, point001, &normal, d);
+    dist = (vec_dot(&normal, &point) + d) / vec_len(&normal);
+    dist = sqrt(dist*dist);
+    if (min_dist > dist) min_dist = dist;
+    // plane yz: points 000, 010, 001
+    find_plane(point010, point000, point001, &normal, d);
+    dist = (vec_dot(&normal, &point) + d) / vec_len(&normal);
+    dist = sqrt(dist*dist);
+    if (min_dist > dist) min_dist = dist;
+    return min_dist;
+}
