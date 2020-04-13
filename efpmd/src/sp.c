@@ -33,8 +33,11 @@ void sim_sp(struct state *state)
 	msg("SINGLE POINT ENERGY JOB\n\n\n");
 
 	print_geometry(state->efp);
+	if (cfg_get_bool(state->cfg, "print_pbc") && cfg_get_bool(state->cfg, "enable_pbc"))
+	    print_geometry_pbc(state->efp,cfg_get_int(state->cfg, "ligand"));
 	compute_energy(state, false);
-    print_pair_energy(state);
+    if (cfg_get_bool(state->cfg, "enable_pairwise"))
+        print_pair_energy(state);
 	print_energy(state);
 
 	msg("SINGLE POINT ENERGY JOB COMPLETED SUCCESSFULLY\n");

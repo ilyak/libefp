@@ -153,7 +153,9 @@ struct efp_opts {
 	/** Enable ligand-fragment energy decomposition from total system */ 
     int enable_pairwise; 
     /** Index of ligand for enable_pairwise; default = 0; */
-    int ligand;     
+    int ligand;
+    /** Prints fragment coordinates rearranged around ligand. Applicable for periodic simulations only. */
+    int print_pbc;
 };
 
 /** EFP energy terms. */
@@ -565,23 +567,26 @@ enum efp_result efp_get_frag_xyzabc(struct efp *efp, size_t frag_idx,
  * \param[in] x Box size in x dimension.
  * \param[in] y Box size in y dimension.
  * \param[in] z Box size in z dimension.
+ * \param[in] alpha Unit cell alpha angle.
+ * \param[in] beta Unit cell beta angle.
+ * \param[in] gamma Unit cell gamma angle.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
 enum efp_result efp_set_periodic_box(struct efp *efp, double x, double y,
-    double z);
+    double z, double alpha, double beta, double gamma);
 
 /**
  * Get periodic box size.
  *
  * \param[in] efp The efp structure.
  *
- * \param[out] xyz Array of 3 elements where 3 dimensions of box size will be
+ * \param[out] xyz Array of 6 elements where 3 dimensions of box size and 3 angles will be
  * stored.
  *
  * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
  */
-enum efp_result efp_get_periodic_box(struct efp *efp, double *xyz);
+enum efp_result efp_get_periodic_box(struct efp *efp, double *xyzabc);
 
 /**
  * Get the stress tensor.

@@ -241,13 +241,24 @@ Setting `enable_pbc` to `true` also sets `enable_cutoff` to `true`.
 
 ##### Periodic Box Size
 
-`periodic_box <x> <y> <z>`
+`periodic_box <x> <y> <z> <alpha> <beta> <gamma>`
 
-Default value: `30.0 30.0 30.0`
+Default value: `30.0 30.0 30.0 90.0 90.0 90.0`
 
-Unit: Angstrom
+Unit: Angstroms, degrees
 
+If only three values are given, the angles are set to 90 degrees (orthogonal box). 
+Non-orthogonal PBC is implemented only for single-point energy calculations.
 The smallest box dimension must be greater than `2 * swf_cutoff`.
+
+##### Print PBC coordinates
+
+`print_pbc [true/false]`
+
+Default value: `false`
+
+Prints coordinates of the system contained in a single periodic cell around 
+a fragment specified by `ligand` keyword.
 
 ### Geometry optimization related parameters
 

@@ -46,10 +46,19 @@ efp_skip_frag_pair(const struct efp *efp, size_t fr_i_idx, size_t fr_j_idx)
 	vec_t dr = vec_sub(CVEC(fr_j->x), CVEC(fr_i->x));
 
 	if (efp->opts.enable_pbc) {
-		vec_t cell = { efp->box.x * round(dr.x / efp->box.x),
-			       efp->box.y * round(dr.y / efp->box.y),
-			       efp->box.z * round(dr.z / efp->box.z) };
-		dr = vec_sub(&dr, &cell);
+	    // orthogonal box
+	    if (efp->box.a == 90.0 && efp->box.b == 90.0 && efp->box.c == 90.0) {
+            vec_t cell = {efp->box.x * round(dr.x / efp->box.x),
+                          efp->box.y * round(dr.y / efp->box.y),
+                          efp->box.z * round(dr.z / efp->box.z)};
+            dr = vec_sub(&dr, &cell);
+        }
+	    else {
+	        cart_to_frac(efp->box, &dr);
+	        vec_t cell = {round(dr.x), round(dr.y), round(dr.z)};
+	        dr = vec_sub(&dr, &cell);
+	        frac_to_cart(efp->box, &dr);
+	    }
 	}
 	return vec_len_2(&dr) > cutoff2;
 }
@@ -67,12 +76,23 @@ efp_make_swf(const struct efp *efp, const struct frag *fr_i,
 	if (!efp->opts.enable_cutoff)
 		return swf;
 	if (efp->opts.enable_pbc) {
-		swf.cell.x = efp->box.x * round(swf.dr.x / efp->box.x);
-		swf.cell.y = efp->box.y * round(swf.dr.y / efp->box.y);
-		swf.cell.z = efp->box.z * round(swf.dr.z / efp->box.z);
-		swf.dr.x -= swf.cell.x;
-		swf.dr.y -= swf.cell.y;
-		swf.dr.z -= swf.cell.z;
+        if (efp->box.a == 90.0 && efp->box.b == 90.0 && efp->box.c == 90.0) {
+            swf.cell.x = efp->box.x * round(swf.dr.x / efp->box.x);
+            swf.cell.y = efp->box.y * round(swf.dr.y / efp->box.y);
+            swf.cell.z = efp->box.z * round(swf.dr.z / efp->box.z);
+            swf.dr.x -= swf.cell.x;
+            swf.dr.y -= swf.cell.y;
+            swf.dr.z -= swf.cell.z;
+        }
+        else {
+            cart_to_frac(efp->box, &swf.dr);
+            swf.cell.x = round(swf.dr.x);
+            swf.cell.y = round(swf.dr.y);
+            swf.cell.z = round(swf.dr.z);
+            swf.dr = vec_sub(&swf.dr, &swf.cell);
+            frac_to_cart(efp->box, &swf.cell);
+            frac_to_cart(efp->box, &swf.dr);
+        }
 	}
 
 	double r = vec_len(&swf.dr);
@@ -274,4 +294,47 @@ efp_strncasecmp(const char *s1, const char *s2, size_t n)
 		} while (--n != 0);
 	}
 	return 0;
+}
+
+void
+find_plane(const vec_t pt1, const vec_t pt2, const vec_t pt3, vec_t *normal, double d) {
+    // determines plane by three points: ax + by + cz + d = 0, where a,b,c are given by a normal vector
+    vec_t vec21 = vec_sub(&pt2,&pt1);
+    vec_t vec31 = vec_sub(&pt3,&pt1);
+    *normal = vec_cross(&vec21,&vec31);
+    d = - vec_dot(normal,&pt1);
+}
+
+double
+max_cutoff(const six_t box) {
+    vec_t point000 = {0.0, 0.0, 0.0};
+    vec_t point100 = {1.0, 0.0, 0.0};
+    vec_t point010 = {0.0, 1.0, 0.0};
+    vec_t point001 = {0.0, 0.0, 1.0};
+    vec_t point = {0.5,0.5,0.5};
+    frac_to_cart(box, &point100);
+    frac_to_cart(box, &point010);
+    frac_to_cart(box, &point001);
+    frac_to_cart(box, &point);
+    // plane xy: points 000, 100, 010
+    vec_t normal;
+    double d;
+    double dist;
+    double min_dist;
+    // plane xy: points 000, 100, 010
+    find_plane(point100, point000, point010, &normal, d);
+    dist = (vec_dot(&normal, &point) + d) / vec_len(&normal);
+    dist = sqrt(dist*dist);
+    min_dist = dist;
+    // plane xz: points 000, 100, 001
+    find_plane(point100, point000, point001, &normal, d);
+    dist = (vec_dot(&normal, &point) + d) / vec_len(&normal);
+    dist = sqrt(dist*dist);
+    if (min_dist > dist) min_dist = dist;
+    // plane yz: points 000, 010, 001
+    find_plane(point010, point000, point001, &normal, d);
+    dist = (vec_dot(&normal, &point) + d) / vec_len(&normal);
+    dist = sqrt(dist*dist);
+    if (min_dist > dist) min_dist = dist;
+    return min_dist;
 }
