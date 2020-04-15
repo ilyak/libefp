@@ -521,146 +521,152 @@ efp_frag_frag_xr(struct efp *efp, size_t frag_i, size_t frag_j, double *lmo_s,
 	struct frag *fr_i = efp->frags + frag_i;
 	struct frag *fr_j = efp->frags + frag_j;
 
-	size_t ij_wf_size = fr_i->xr_wf_size * fr_j->xr_wf_size;
-	size_t ij_nlmo = fr_i->n_lmo * fr_j->n_lmo;
-	size_t ij_nlmo_wf_size = fr_i->n_lmo * fr_j->xr_wf_size;
-	double *s = (double *)malloc(ij_wf_size * sizeof(double));
-	double *t = (double *)malloc(ij_wf_size * sizeof(double));
-	double *lmo_t = (double *)malloc(ij_nlmo * sizeof(double));
-	double *tmp = (double *)malloc(ij_nlmo_wf_size * sizeof(double));
-	struct xr_atom *atoms_j = (struct xr_atom *)malloc(
-	    fr_j->n_xr_atoms * sizeof(struct xr_atom));
-	struct swf swf = efp_make_swf(efp, fr_i, fr_j);
+    double exr = 0.0;
+    double ecp = 0.0;
 
-	for (size_t j = 0; j < fr_j->n_xr_atoms; j++) {
-		atoms_j[j] = fr_j->xr_atoms[j];
-		atoms_j[j].x -= swf.cell.x;
-		atoms_j[j].y -= swf.cell.y;
-		atoms_j[j].z -= swf.cell.z;
-	}
+    struct swf swf = efp_make_swf(efp, fr_i, fr_j, 1);
+    // skip calculations if distance between fragments is too big...
+    if (swf.swf == 0.0) {
+        return;
+    }
+    else {
+        size_t ij_wf_size = fr_i->xr_wf_size * fr_j->xr_wf_size;
+        size_t ij_nlmo = fr_i->n_lmo * fr_j->n_lmo;
+        size_t ij_nlmo_wf_size = fr_i->n_lmo * fr_j->xr_wf_size;
+        double *s = (double *) malloc(ij_wf_size * sizeof(double));
+        double *t = (double *) malloc(ij_wf_size * sizeof(double));
+        double *lmo_t = (double *) malloc(ij_nlmo * sizeof(double));
+        double *tmp = (double *) malloc(ij_nlmo_wf_size * sizeof(double));
+        struct xr_atom *atoms_j = (struct xr_atom *) malloc(
+                fr_j->n_xr_atoms * sizeof(struct xr_atom));
 
-	efp_st_int(fr_i->n_xr_atoms, fr_i->xr_atoms,
-		   fr_j->n_xr_atoms, atoms_j,
-		   fr_j->xr_wf_size, s, t);
+        for (size_t j = 0; j < fr_j->n_xr_atoms; j++) {
+            atoms_j[j] = fr_j->xr_atoms[j];
+            atoms_j[j].x -= swf.cell.x;
+            atoms_j[j].y -= swf.cell.y;
+            atoms_j[j].z -= swf.cell.z;
+        }
 
-	transform_integrals(fr_i->n_lmo, fr_j->n_lmo,
-			    fr_i->xr_wf_size, fr_j->xr_wf_size,
-			    fr_i->xr_wf, fr_j->xr_wf,
-			    s, lmo_s, tmp);
-	transform_integrals(fr_i->n_lmo, fr_j->n_lmo,
-			    fr_i->xr_wf_size, fr_j->xr_wf_size,
-			    fr_i->xr_wf, fr_j->xr_wf,
-			    t, lmo_t, tmp);
+        efp_st_int(fr_i->n_xr_atoms, fr_i->xr_atoms,
+                   fr_j->n_xr_atoms, atoms_j,
+                   fr_j->xr_wf_size, s, t);
 
-	double exr = 0.0;
-	double ecp = 0.0;
+        transform_integrals(fr_i->n_lmo, fr_j->n_lmo,
+                            fr_i->xr_wf_size, fr_j->xr_wf_size,
+                            fr_i->xr_wf, fr_j->xr_wf,
+                            s, lmo_s, tmp);
+        transform_integrals(fr_i->n_lmo, fr_j->n_lmo,
+                            fr_i->xr_wf_size, fr_j->xr_wf_size,
+                            fr_i->xr_wf, fr_j->xr_wf,
+                            t, lmo_t, tmp);
 
-	for (size_t i = 0, idx = 0; i < fr_i->n_lmo; i++) {
-		for (size_t j = 0; j < fr_j->n_lmo; j++, idx++) {
-			double s_ij = lmo_s[i * fr_j->n_lmo + j];
+        for (size_t i = 0, idx = 0; i < fr_i->n_lmo; i++) {
+            for (size_t j = 0; j < fr_j->n_lmo; j++, idx++) {
+                double s_ij = lmo_s[i * fr_j->n_lmo + j];
 
-			vec_t dr = {
-				fr_j->lmo_centroids[j].x -
-				    fr_i->lmo_centroids[i].x - swf.cell.x,
-				fr_j->lmo_centroids[j].y -
-				    fr_i->lmo_centroids[i].y - swf.cell.y,
-				fr_j->lmo_centroids[j].z -
-				    fr_i->lmo_centroids[i].z - swf.cell.z
-			};
+                vec_t dr = {
+                        fr_j->lmo_centroids[j].x -
+                        fr_i->lmo_centroids[i].x - swf.cell.x,
+                        fr_j->lmo_centroids[j].y -
+                        fr_i->lmo_centroids[i].y - swf.cell.y,
+                        fr_j->lmo_centroids[j].z -
+                        fr_i->lmo_centroids[i].z - swf.cell.z
+                };
 
-			double r_ij = vec_len(&dr);
+                double r_ij = vec_len(&dr);
 
-			if ((efp->opts.terms & EFP_TERM_ELEC) &&
-			    (efp->opts.elec_damp == EFP_ELEC_DAMP_OVERLAP))
-				ecp += charge_penetration_energy(s_ij, r_ij);
-			if (efp->opts.terms & EFP_TERM_XR)
-				exr += lmo_lmo_xr_energy(fr_i, fr_j, i, j,
-				    lmo_s, lmo_t, &swf);
-		}
-	}
+                if ((efp->opts.terms & EFP_TERM_ELEC) &&
+                    (efp->opts.elec_damp == EFP_ELEC_DAMP_OVERLAP))
+                    ecp += charge_penetration_energy(s_ij, r_ij);
+                if (efp->opts.terms & EFP_TERM_XR)
+                    exr += lmo_lmo_xr_energy(fr_i, fr_j, i, j,
+                                             lmo_s, lmo_t, &swf);
+            }
+        }
 
-	*exr_out = exr * swf.swf;
-	*ecp_out = ecp * swf.swf;
+        *exr_out = exr * swf.swf;
+        *ecp_out = ecp * swf.swf;
 
-	if (!efp->do_gradient) {
-		free(s);
-		free(t);
-		free(lmo_t);
-		free(tmp);
-		free(atoms_j);
-		return;
-	}
+        if (!efp->do_gradient) {
+            free(s);
+            free(t);
+            free(lmo_t);
+            free(tmp);
+            free(atoms_j);
+            return;
+        }
 
-	/* compute gradient */
+        /* compute gradient */
 
-	six_t *ds = (six_t *)malloc(ij_wf_size * sizeof(six_t));
-	six_t *dt = (six_t *)malloc(ij_wf_size * sizeof(six_t));
-	six_t *lmo_dt = (six_t *)malloc(ij_nlmo * sizeof(six_t));
-	six_t *sixtmp = (six_t *)malloc(ij_nlmo_wf_size * sizeof(six_t));
-	double *lmo_tmp = (double *)malloc(ij_nlmo * sizeof(double));
+        six_t *ds = (six_t *) malloc(ij_wf_size * sizeof(six_t));
+        six_t *dt = (six_t *) malloc(ij_wf_size * sizeof(six_t));
+        six_t *lmo_dt = (six_t *) malloc(ij_nlmo * sizeof(six_t));
+        six_t *sixtmp = (six_t *) malloc(ij_nlmo_wf_size * sizeof(six_t));
+        double *lmo_tmp = (double *) malloc(ij_nlmo * sizeof(double));
 
-	efp_st_int_deriv(fr_i->n_xr_atoms, fr_i->xr_atoms,
-			 fr_j->n_xr_atoms, atoms_j,
-			 VEC(fr_i->x), fr_i->xr_wf_size, fr_j->xr_wf_size,
-			 ds, dt);
+        efp_st_int_deriv(fr_i->n_xr_atoms, fr_i->xr_atoms,
+                         fr_j->n_xr_atoms, atoms_j,
+                         VEC(fr_i->x), fr_i->xr_wf_size, fr_j->xr_wf_size,
+                         ds, dt);
 
-	transform_integral_derivatives(fr_i->n_lmo, fr_j->n_lmo,
-				       fr_i->xr_wf_size, fr_j->xr_wf_size,
-				       fr_i->xr_wf, fr_j->xr_wf,
-				       ds, lmo_ds, sixtmp);
-	transform_integral_derivatives(fr_i->n_lmo, fr_j->n_lmo,
-				       fr_i->xr_wf_size, fr_j->xr_wf_size,
-				       fr_i->xr_wf, fr_j->xr_wf,
-				       dt, lmo_dt, sixtmp);
+        transform_integral_derivatives(fr_i->n_lmo, fr_j->n_lmo,
+                                       fr_i->xr_wf_size, fr_j->xr_wf_size,
+                                       fr_i->xr_wf, fr_j->xr_wf,
+                                       ds, lmo_ds, sixtmp);
+        transform_integral_derivatives(fr_i->n_lmo, fr_j->n_lmo,
+                                       fr_i->xr_wf_size, fr_j->xr_wf_size,
+                                       fr_i->xr_wf, fr_j->xr_wf,
+                                       dt, lmo_dt, sixtmp);
 
-	for (size_t a = 0; a < 3; a++) {
-		transform_integrals(fr_i->n_lmo, fr_j->n_lmo,
-				    fr_i->xr_wf_size, fr_j->xr_wf_size,
-				    fr_i->xr_wf_deriv[a], fr_j->xr_wf,
-				    s, lmo_tmp, tmp);
-		add_six_vec(3 + a, fr_i->n_lmo * fr_j->n_lmo, lmo_tmp, lmo_ds);
+        for (size_t a = 0; a < 3; a++) {
+            transform_integrals(fr_i->n_lmo, fr_j->n_lmo,
+                                fr_i->xr_wf_size, fr_j->xr_wf_size,
+                                fr_i->xr_wf_deriv[a], fr_j->xr_wf,
+                                s, lmo_tmp, tmp);
+            add_six_vec(3 + a, fr_i->n_lmo * fr_j->n_lmo, lmo_tmp, lmo_ds);
 
-		transform_integrals(fr_i->n_lmo, fr_j->n_lmo,
-				    fr_i->xr_wf_size, fr_j->xr_wf_size,
-				    fr_i->xr_wf_deriv[a], fr_j->xr_wf,
-				    t, lmo_tmp, tmp);
-		add_six_vec(3 + a, fr_i->n_lmo * fr_j->n_lmo, lmo_tmp, lmo_dt);
-	}
+            transform_integrals(fr_i->n_lmo, fr_j->n_lmo,
+                                fr_i->xr_wf_size, fr_j->xr_wf_size,
+                                fr_i->xr_wf_deriv[a], fr_j->xr_wf,
+                                t, lmo_tmp, tmp);
+            add_six_vec(3 + a, fr_i->n_lmo * fr_j->n_lmo, lmo_tmp, lmo_dt);
+        }
 
-	for (size_t i = 0, idx = 0; i < fr_i->n_lmo; i++) {
-		for (size_t j = 0; j < fr_j->n_lmo; j++, idx++) {
-			size_t ij = i * fr_j->n_lmo + j;
+        for (size_t i = 0, idx = 0; i < fr_i->n_lmo; i++) {
+            for (size_t j = 0; j < fr_j->n_lmo; j++, idx++) {
+                size_t ij = i * fr_j->n_lmo + j;
 
-			if ((efp->opts.terms & EFP_TERM_ELEC) &&
-			    (efp->opts.elec_damp == EFP_ELEC_DAMP_OVERLAP))
-				charge_penetration_grad(efp, frag_i, frag_j,
-				    i, j, lmo_s[ij], lmo_ds[ij], &swf);
-			if (efp->opts.terms & EFP_TERM_XR)
-				lmo_lmo_xr_grad(efp, frag_i, frag_j, i, j,
-				    lmo_s, lmo_t, lmo_ds, lmo_dt, &swf);
-		}
-	}
+                if ((efp->opts.terms & EFP_TERM_ELEC) &&
+                    (efp->opts.elec_damp == EFP_ELEC_DAMP_OVERLAP))
+                    charge_penetration_grad(efp, frag_i, frag_j,
+                                            i, j, lmo_s[ij], lmo_ds[ij], &swf);
+                if (efp->opts.terms & EFP_TERM_XR)
+                    lmo_lmo_xr_grad(efp, frag_i, frag_j, i, j,
+                                    lmo_s, lmo_t, lmo_ds, lmo_dt, &swf);
+            }
+        }
 
-	vec_t force = {
-		swf.dswf.x * (exr + ecp),
-		swf.dswf.y * (exr + ecp),
-		swf.dswf.z * (exr + ecp)
-	};
+        vec_t force = {
+                swf.dswf.x * (exr + ecp),
+                swf.dswf.y * (exr + ecp),
+                swf.dswf.z * (exr + ecp)
+        };
 
-	six_atomic_add_xyz(efp->grad + frag_i, &force);
-	six_atomic_sub_xyz(efp->grad + frag_j, &force);
-	efp_add_stress(&swf.dr, &force, &efp->stress);
+        six_atomic_add_xyz(efp->grad + frag_i, &force);
+        six_atomic_sub_xyz(efp->grad + frag_j, &force);
+        efp_add_stress(&swf.dr, &force, &efp->stress);
 
-	free(s);
-	free(ds);
-	free(t);
-	free(dt);
-	free(lmo_t);
-	free(lmo_dt);
-	free(lmo_tmp);
-	free(tmp);
-	free(sixtmp);
-	free(atoms_j);
+        free(s);
+        free(ds);
+        free(t);
+        free(dt);
+        free(lmo_t);
+        free(lmo_dt);
+        free(lmo_tmp);
+        free(tmp);
+        free(sixtmp);
+        free(atoms_j);
+    }
 }
 
 static inline size_t

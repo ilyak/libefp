@@ -150,7 +150,9 @@ struct efp_opts {
 	int enable_cutoff;
 	/** Cutoff distance for fragment-fragment interactions. */
 	double swf_cutoff;
-	/** Enable ligand-fragment energy decomposition from total system */ 
+    /** Cutoff distance for exchange-repulsion calculations. */
+    double xr_cutoff;
+	/** Enable ligand-fragment energy decomposition from total system */
     int enable_pairwise; 
     /** Index of ligand for enable_pairwise; default = 0; */
     int ligand;
