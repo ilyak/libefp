@@ -940,7 +940,7 @@ efp_prepare(struct efp *efp)
 	}
 
 	efp->n_fragment_field_pts = 0;
-	if (efp->opts.enable_pairwise) {
+	if (efp->opts.enable_pairwise && efp->opts.ligand != -1) {
 		size_t ligand_idx = efp->opts.ligand;
 		for (size_t i = 0; i < efp->n_frag; i++) {
 			efp->frags[i].fragment_field_offset = efp->n_fragment_field_pts;
@@ -1174,6 +1174,18 @@ efp_get_multipole_values(struct efp *efp, double *mult)
 	}
 	return EFP_RESULT_SUCCESS;
 }
+
+EFP_EXPORT enum efp_result
+efp_get_frag_induced_dipole_count(struct efp *efp, size_t frag_idx, size_t *n_dip)
+{
+    assert(efp);
+    assert(n_dip);
+    assert(frag_idx < efp->n_frag);
+
+    *n_dip = efp->frags[frag_idx].n_polarizable_pts;
+    return EFP_RESULT_SUCCESS;
+}
+
 
 EFP_EXPORT enum efp_result
 efp_get_induced_dipole_count(struct efp *efp, size_t *n_dip)

@@ -365,14 +365,14 @@ compute_elec_field(struct efp *efp)
 	vec_t *elec_field;
 	vec_t *ligand_field;
 	vec_t *fragment_field;
-	struct frag *ligand = efp->frags + efp->opts.ligand;
-	enum efp_result res;
+    int do_pairwise = (efp->opts.enable_pairwise && efp->opts.ligand != -1) ? 1 : 0;
+    enum efp_result res;
 
 	elec_field = (vec_t *)calloc(efp->n_polarizable_pts, sizeof(vec_t));
 	efp_balance_work(efp, compute_elec_field_range, elec_field);
 	efp_allreduce((double *)elec_field, 3 * efp->n_polarizable_pts);
 
-	if (efp->opts.enable_pairwise) {
+	if (do_pairwise) {
 		// this is field due to ligand on a fragment point
 		ligand_field = (vec_t *)calloc(efp->n_polarizable_pts, sizeof(vec_t));
 		efp_balance_work(efp, compute_ligand_field_range, ligand_field);
@@ -382,7 +382,8 @@ compute_elec_field(struct efp *efp)
 		efp_balance_work(efp, compute_fragment_field_range, fragment_field);
 		efp_allreduce((double *)fragment_field, 3 * efp->n_fragment_field_pts);
 	}
-
+    struct frag *ligand;
+    if (do_pairwise) ligand = efp->frags + efp->opts.ligand;
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic)
 #endif
@@ -393,12 +394,12 @@ compute_elec_field(struct efp *efp)
 			frag->polarizable_pts[j].elec_field =
 			    elec_field[frag->polarizable_offset + j];
 			frag->polarizable_pts[j].elec_field_wf = vec_zero;
-			if (efp->opts.enable_pairwise) {
+			if (do_pairwise) {
 				frag->polarizable_pts[j].ligand_field =
 						ligand_field[frag->polarizable_offset + j];
 			}
 		}
-		if (efp->opts.enable_pairwise && i!= efp->opts.ligand) {
+		if (do_pairwise && i!= efp->opts.ligand) {
 			for (size_t lp = 0; lp < ligand->n_polarizable_pts; lp++) {
 				efp->fragment_field[frag->fragment_field_offset + lp] =
 						fragment_field[frag->fragment_field_offset + lp];
@@ -407,7 +408,7 @@ compute_elec_field(struct efp *efp)
 
 	}
 	free(elec_field);
-	if (efp->opts.enable_pairwise) {
+	if (do_pairwise) {
 		free(ligand_field);
 		free(fragment_field);
 	}
@@ -552,7 +553,12 @@ static void
 compute_energy_range(struct efp *efp, size_t from, size_t to, void *data)
 {
 	double energy = 0.0;
-	struct frag *ligand = efp->frags + efp->opts.ligand;
+    int do_pairwise = (efp->opts.enable_pairwise && efp->opts.ligand != -1) ? 1 : 0;
+
+    struct frag *ligand;
+	if (do_pairwise) {
+        ligand = efp->frags + efp->opts.ligand;
+	}
 
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic) reduction(+:energy)
@@ -570,13 +576,18 @@ compute_energy_range(struct efp *efp, size_t from, size_t to, void *data)
 				  0.5 * vec_dot(&efp->indip[idx],
 						&pt->elec_field);
 
-			if (efp->opts.enable_pairwise && i != efp->opts.ligand) {
+			if (do_pairwise && i != efp->opts.ligand) {
                     efp->pair_energies[i].polarization +=
 					  - 0.5 * vec_dot(&efp->indip[idx], &pt->ligand_field);
 			}
+            // ligand is a QM region
+            if (efp->opts.enable_pairwise && efp->opts.ligand == -1) {
+                efp->pair_energies[i].polarization +=
+                        0.5 * vec_dot(&efp->indipconj[idx], &pt->elec_field_wf);
+            }
 		}
 
-		if (efp->opts.enable_pairwise &&  i != efp->opts.ligand) {
+		if (do_pairwise &&  i != efp->opts.ligand) {
 			for (size_t lp = 0; lp < ligand->n_polarizable_pts; lp++) {
 				struct polarizable_pt *lpt = ligand->polarizable_pts + lp;
 				size_t idx = ligand->polarizable_offset + lp;

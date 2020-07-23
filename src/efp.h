@@ -776,7 +776,21 @@ enum efp_result efp_get_multipole_coordinates(struct efp *efp, double *xyz);
 enum efp_result efp_get_multipole_values(struct efp *efp, double *mult);
 
 /**
- *  Get the number of polarization induced dipoles.
+ *  Get the number of polarization induced dipoles from a particular fragment.
+ *
+ * \param[in] efp The efp structure.
+ *
+ * \param[in] frag_idx Index of a fragment. Must be a value between zero and
+ * the total number of fragments minus one.
+ *
+ * \param[out] n_dip Number of polarization induced dipoles in fragment.
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+ enum efp_result efp_get_frag_induced_dipole_count(struct efp *efp, size_t frag_idx, size_t *n_dip);
+
+/**
+ *  Get the total number of polarization induced dipoles.
  *
  * \param[in] efp The efp structure.
  *
