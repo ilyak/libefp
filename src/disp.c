@@ -280,27 +280,32 @@ efp_frag_frag_disp(struct efp *efp, size_t frag_i, size_t frag_j,
 	struct frag *fr_i = efp->frags + frag_i;
 	struct frag *fr_j = efp->frags + frag_j;
 
-	size_t n_disp_i = fr_i->n_dynamic_polarizable_pts;
-	size_t n_disp_j = fr_j->n_dynamic_polarizable_pts;
+    struct swf swf = efp_make_swf(efp, fr_i, fr_j, 0);
+    // skip calculations if distance between fragments is too big...
+    if (swf.swf == 0.0) {
+        return 0.0;
+    }
+    else {
+        size_t n_disp_i = fr_i->n_dynamic_polarizable_pts;
+        size_t n_disp_j = fr_j->n_dynamic_polarizable_pts;
 
-	struct swf swf = efp_make_swf(efp, fr_i, fr_j);
 
-	for (size_t ii = 0, idx = 0; ii < n_disp_i; ii++)
-		for (size_t jj = 0; jj < n_disp_j; jj++, idx++)
-			energy += point_point_disp(efp, frag_i, frag_j, ii, jj,
-			    s[idx], ds[idx], &swf);
+        for (size_t ii = 0, idx = 0; ii < n_disp_i; ii++)
+            for (size_t jj = 0; jj < n_disp_j; jj++, idx++)
+                energy += point_point_disp(efp, frag_i, frag_j, ii, jj,
+                                           s[idx], ds[idx], &swf);
 
-	vec_t force = {
-		swf.dswf.x * energy,
-		swf.dswf.y * energy,
-		swf.dswf.z * energy
-	};
+        vec_t force = {
+                swf.dswf.x * energy,
+                swf.dswf.y * energy,
+                swf.dswf.z * energy
+        };
 
-	six_atomic_add_xyz(efp->grad + frag_i, &force);
-	six_atomic_sub_xyz(efp->grad + frag_j, &force);
-	efp_add_stress(&swf.dr, &force, &efp->stress);
-
-	return energy * swf.swf;
+        six_atomic_add_xyz(efp->grad + frag_i, &force);
+        six_atomic_sub_xyz(efp->grad + frag_j, &force);
+        efp_add_stress(&swf.dr, &force, &efp->stress);
+        return energy * swf.swf;
+    }
 }
 
 void

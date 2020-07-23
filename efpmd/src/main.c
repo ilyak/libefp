@@ -110,6 +110,7 @@ static struct cfg *make_cfg(void)
 	cfg_add_string(cfg, "efp_params_file", "params.efp");
 	cfg_add_bool(cfg, "enable_cutoff", false);
 	cfg_add_double(cfg, "swf_cutoff", 10.0);
+    cfg_add_double(cfg, "xr_cutoff", 0.0);
 	cfg_add_int(cfg, "max_steps", 100);
 	cfg_add_int(cfg, "multistep_steps", 1);
 	cfg_add_string(cfg, "fraglib_path", FRAGLIB_PATH);
@@ -253,10 +254,16 @@ static struct efp *create_efp(const struct cfg *cfg, const struct sys *sys)
 		.enable_pbc = cfg_get_bool(cfg, "enable_pbc"),
 		.enable_cutoff = cfg_get_bool(cfg, "enable_cutoff"),
 		.swf_cutoff = cfg_get_double(cfg, "swf_cutoff"),
+		.xr_cutoff = cfg_get_double(cfg, "xr_cutoff"),
         .enable_pairwise = cfg_get_bool(cfg, "enable_pairwise"), 
         .ligand = cfg_get_int(cfg, "ligand"),
         .print_pbc = cfg_get_bool(cfg, "print_pbc")
 	};
+
+	if (opts.xr_cutoff == 0.0) {
+	    opts.xr_cutoff = opts.swf_cutoff;
+	    printf("xr_cutoff is set to %lf \n\n\n", opts.xr_cutoff*0.52917721092);
+	}
 
 	enum efp_coord_type coord_type = cfg_get_enum(cfg, "coord");
 	struct efp *efp = efp_create();
@@ -393,7 +400,9 @@ static void convert_units(struct cfg *cfg, struct sys *sys)
 		cfg_get_double(cfg, "pressure") * BAR_TO_AU);
 	cfg_set_double(cfg, "swf_cutoff",
 		cfg_get_double(cfg, "swf_cutoff") / BOHR_RADIUS);
-	cfg_set_double(cfg, "num_step_dist",
+    cfg_set_double(cfg, "xr_cutoff",
+            cfg_get_double(cfg, "xr_cutoff") / BOHR_RADIUS);
+    cfg_set_double(cfg, "num_step_dist",
 		cfg_get_double(cfg, "num_step_dist") / BOHR_RADIUS);
 
 	size_t n_convert = (size_t []) {

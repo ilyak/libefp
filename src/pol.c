@@ -125,7 +125,9 @@ get_elec_field(const struct efp *efp, size_t frag_idx, size_t pt_idx)
 			continue;
 
 		const struct frag *fr_i = efp->frags + i;
-		struct swf swf = efp_make_swf(efp, fr_i, fr_j);
+		struct swf swf = efp_make_swf(efp, fr_i, fr_j, 0);
+		if (swf.swf == 0.0)
+		    continue;
 
 		/* field due to nuclei */
 		for (size_t j = 0; j < fr_i->n_atoms; j++) {
@@ -205,7 +207,9 @@ get_ligand_field(const struct efp *efp, size_t frag_idx, size_t pt_idx, size_t l
 	if (efp_skip_frag_pair(efp, ligand_idx, frag_idx))
 		return elec_field;
 
-	struct swf swf = efp_make_swf(efp, fr_i, fr_j);
+	struct swf swf = efp_make_swf(efp, fr_i, fr_j, 0);
+	if (swf.swf == 0)
+        return elec_field;
 
 	/* field due to nuclei */
 	for (size_t j = 0; j < fr_i->n_atoms; j++) {
@@ -429,7 +433,9 @@ get_induced_dipole_field(struct efp *efp, size_t frag_idx,
 			continue;
 
 		struct frag *fr_j = efp->frags + j;
-		struct swf swf = efp_make_swf(efp, fr_i, fr_j);
+		struct swf swf = efp_make_swf(efp, fr_i, fr_j, 0);
+		if (swf.swf == 0)
+		    continue;
 
 		for (size_t jj = 0; jj < fr_j->n_polarizable_pts; jj++) {
 			struct polarizable_pt *pt_j = fr_j->polarizable_pts+jj;
@@ -649,7 +655,9 @@ compute_grad_point(struct efp *efp, size_t frag_idx, size_t pt_idx)
 			continue;
 
 		struct frag *fr_j = efp->frags + j;
-		struct swf swf = efp_make_swf(efp, fr_i, fr_j);
+		struct swf swf = efp_make_swf(efp, fr_i, fr_j, 0);
+		if (swf.swf == 0.0)
+		    continue;
 
 		/* energy without switching applied */
 		double energy = 0.0;
@@ -917,7 +925,9 @@ efp_get_electric_field(struct efp *efp, size_t frag_idx, const double *xyz,
 			continue;
 
 		const struct frag *fr_i = efp->frags + i;
-		struct swf swf = efp_make_swf(efp, fr_i, frag);
+		struct swf swf = efp_make_swf(efp, fr_i, frag, 0);
+        if (swf.swf == 0.0)
+            continue;
 
 		/* field due to nuclei */
 		for (size_t j = 0; j < fr_i->n_atoms; j++) {

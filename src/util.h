@@ -34,7 +34,7 @@ struct frag;
 
 int efp_skip_frag_pair(const struct efp *, size_t, size_t);
 struct swf efp_make_swf(const struct efp *, const struct frag *,
-    const struct frag *);
+    const struct frag *, int);
 int efp_check_rotation_matrix(const mat_t *);
 void efp_points_to_matrix(const double *, mat_t *);
 const struct frag *efp_find_lib(struct efp *, const char *);

@@ -288,6 +288,12 @@ check_opts(const struct efp_opts *opts)
 			return EFP_RESULT_FATAL;
 		}
 	}
+    if (opts->enable_cutoff) {
+        if (opts->swf_cutoff < opts->xr_cutoff) {
+            efp_log("exchange-repulsion cutoff is smaller than interaction cutoff");
+            return EFP_RESULT_FATAL;
+        }
+    }
 	return EFP_RESULT_SUCCESS;
 }
 

@@ -65,7 +65,7 @@ get_int_mat(const struct efp *efp, size_t i, size_t j, size_t ii, size_t jj)
 	const struct frag *fr_j = efp->frags + j;
 	const struct polarizable_pt *pt_i = fr_i->polarizable_pts + ii;
 	const struct polarizable_pt *pt_j = fr_j->polarizable_pts + jj;
-	struct swf swf = efp_make_swf(efp, fr_i, fr_j);
+	struct swf swf = efp_make_swf(efp, fr_i, fr_j, 0);
 
 	vec_t dr = {
 		pt_j->x - pt_i->x - swf.cell.x,

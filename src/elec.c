@@ -337,91 +337,97 @@ efp_frag_frag_elec(struct efp *efp, size_t fr_i_idx, size_t fr_j_idx)
 {
 	struct frag *fr_i = efp->frags + fr_i_idx;
 	struct frag *fr_j = efp->frags + fr_j_idx;
-	struct swf swf = efp_make_swf(efp, fr_i, fr_j);
+	struct swf swf = efp_make_swf(efp, fr_i, fr_j, 0);
 	double energy = 0.0;
 
-	/* nuclei - nuclei */
-	for (size_t ii = 0; ii < fr_i->n_atoms; ii++) {
-		for (size_t jj = 0; jj < fr_j->n_atoms; jj++) {
-			struct efp_atom *at_i = fr_i->atoms + ii;
-			struct efp_atom *at_j = fr_j->atoms + jj;
+    // skip calculations if distance between fragments is too big...
+    if (swf.swf == 0.0) {
+        return 0.0;
+    }
+    else {
+        /* nuclei - nuclei */
+        for (size_t ii = 0; ii < fr_i->n_atoms; ii++) {
+            for (size_t jj = 0; jj < fr_j->n_atoms; jj++) {
+                struct efp_atom *at_i = fr_i->atoms + ii;
+                struct efp_atom *at_j = fr_j->atoms + jj;
 
-			vec_t dr = {
-				at_j->x - at_i->x - swf.cell.x,
-				at_j->y - at_i->y - swf.cell.y,
-				at_j->z - at_i->z - swf.cell.z
-			};
+                vec_t dr = {
+                        at_j->x - at_i->x - swf.cell.x,
+                        at_j->y - at_i->y - swf.cell.y,
+                        at_j->z - at_i->z - swf.cell.z
+                };
 
-			energy += efp_charge_charge_energy(at_i->znuc,
-			    at_j->znuc, &dr);
-			if (efp->do_gradient) {
-				vec_t force, add_i, add_j;
+                energy += efp_charge_charge_energy(at_i->znuc,
+                                                   at_j->znuc, &dr);
+                if (efp->do_gradient) {
+                    vec_t force, add_i, add_j;
 
-				efp_charge_charge_grad(at_i->znuc, at_j->znuc,
-				    &dr, &force, &add_i, &add_j);
-				vec_scale(&force, swf.swf);
-				efp_add_force(efp->grad + fr_i_idx,
-				    CVEC(fr_i->x), CVEC(at_i->x), &force, NULL);
-				efp_sub_force(efp->grad + fr_j_idx,
-				    CVEC(fr_j->x), CVEC(at_j->x), &force, NULL);
-				efp_add_stress(&swf.dr, &force, &efp->stress);
-			}
-		}
-	}
+                    efp_charge_charge_grad(at_i->znuc, at_j->znuc,
+                                           &dr, &force, &add_i, &add_j);
+                    vec_scale(&force, swf.swf);
+                    efp_add_force(efp->grad + fr_i_idx,
+                                  CVEC(fr_i->x), CVEC(at_i->x), &force, NULL);
+                    efp_sub_force(efp->grad + fr_j_idx,
+                                  CVEC(fr_j->x), CVEC(at_j->x), &force, NULL);
+                    efp_add_stress(&swf.dr, &force, &efp->stress);
+                }
+            }
+        }
 
-	/* nuclei - mult points */
-	for (size_t ii = 0; ii < fr_i->n_atoms; ii++) {
-		for (size_t jj = 0; jj < fr_j->n_multipole_pts; jj++) {
-			energy += atom_mult_energy(efp, fr_i, fr_j,
-			    ii, jj, &swf);
-			if (efp->do_gradient) {
-				atom_mult_grad(efp, fr_i_idx, fr_j_idx,
-				    ii, jj, &swf);
-			}
-		}
-	}
+        /* nuclei - mult points */
+        for (size_t ii = 0; ii < fr_i->n_atoms; ii++) {
+            for (size_t jj = 0; jj < fr_j->n_multipole_pts; jj++) {
+                energy += atom_mult_energy(efp, fr_i, fr_j,
+                                           ii, jj, &swf);
+                if (efp->do_gradient) {
+                    atom_mult_grad(efp, fr_i_idx, fr_j_idx,
+                                   ii, jj, &swf);
+                }
+            }
+        }
 
-	/* mult points - nuclei */
-	for (size_t jj = 0; jj < fr_j->n_atoms; jj++) {
-		for (size_t ii = 0; ii < fr_i->n_multipole_pts; ii++) {
-			struct swf swf2 = swf;
+        /* mult points - nuclei */
+        for (size_t jj = 0; jj < fr_j->n_atoms; jj++) {
+            for (size_t ii = 0; ii < fr_i->n_multipole_pts; ii++) {
+                struct swf swf2 = swf;
 
-			vec_negate(&swf2.cell);
-			vec_negate(&swf2.dr);
-			vec_negate(&swf2.dswf);
+                vec_negate(&swf2.cell);
+                vec_negate(&swf2.dr);
+                vec_negate(&swf2.dswf);
 
-			energy += atom_mult_energy(efp, fr_j, fr_i,
-			    jj, ii, &swf2);
-			if (efp->do_gradient) {
-				atom_mult_grad(efp, fr_j_idx, fr_i_idx,
-				    jj, ii, &swf2);
-			}
-		}
-	}
+                energy += atom_mult_energy(efp, fr_j, fr_i,
+                                           jj, ii, &swf2);
+                if (efp->do_gradient) {
+                    atom_mult_grad(efp, fr_j_idx, fr_i_idx,
+                                   jj, ii, &swf2);
+                }
+            }
+        }
 
-	/* mult points - mult points */
-	for (size_t ii = 0; ii < fr_i->n_multipole_pts; ii++) {
-		for (size_t jj = 0; jj < fr_j->n_multipole_pts; jj++) {
-			energy += mult_mult_energy(efp, fr_i_idx, fr_j_idx,
-			    ii, jj, &swf);
-			if (efp->do_gradient) {
-				mult_mult_grad(efp, fr_i_idx, fr_j_idx,
-				    ii, jj, &swf);
-			}
-		}
-	}
+        /* mult points - mult points */
+        for (size_t ii = 0; ii < fr_i->n_multipole_pts; ii++) {
+            for (size_t jj = 0; jj < fr_j->n_multipole_pts; jj++) {
+                energy += mult_mult_energy(efp, fr_i_idx, fr_j_idx,
+                                           ii, jj, &swf);
+                if (efp->do_gradient) {
+                    mult_mult_grad(efp, fr_i_idx, fr_j_idx,
+                                   ii, jj, &swf);
+                }
+            }
+        }
 
-	vec_t force = {
-		swf.dswf.x * energy,
-		swf.dswf.y * energy,
-		swf.dswf.z * energy
-	};
+        vec_t force = {
+                swf.dswf.x * energy,
+                swf.dswf.y * energy,
+                swf.dswf.z * energy
+        };
 
-	six_atomic_add_xyz(efp->grad + fr_i_idx, &force);
-	six_atomic_sub_xyz(efp->grad + fr_j_idx, &force);
-	efp_add_stress(&swf.dr, &force, &efp->stress);
+        six_atomic_add_xyz(efp->grad + fr_i_idx, &force);
+        six_atomic_sub_xyz(efp->grad + fr_j_idx, &force);
+        efp_add_stress(&swf.dr, &force, &efp->stress);
 
-	return energy * swf.swf;
+        return energy * swf.swf;
+    }
 }
 
 static void

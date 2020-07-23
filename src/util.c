@@ -65,7 +65,7 @@ efp_skip_frag_pair(const struct efp *efp, size_t fr_i_idx, size_t fr_j_idx)
 
 struct swf
 efp_make_swf(const struct efp *efp, const struct frag *fr_i,
-    const struct frag *fr_j)
+    const struct frag *fr_j, int short_range_cutoff)
 {
 	struct swf swf;
 
@@ -97,9 +97,16 @@ efp_make_swf(const struct efp *efp, const struct frag *fr_i,
 
 	double r = vec_len(&swf.dr);
 
-	swf.swf = efp_get_swf(r, efp->opts.swf_cutoff);
-	double dswf = efp_get_dswf(r, efp->opts.swf_cutoff);
-
+	// differentiating between cutoff for exrep and other terms
+	double dswf = 0.0;
+	if (short_range_cutoff == 1) {
+        swf.swf = efp_get_swf(r, efp->opts.xr_cutoff);
+        dswf = efp_get_dswf(r, efp->opts.xr_cutoff);
+	}
+	else {
+        swf.swf = efp_get_swf(r, efp->opts.swf_cutoff);
+        dswf = efp_get_dswf(r, efp->opts.swf_cutoff);
+    }
 	swf.dswf.x = -dswf * swf.dr.x;
 	swf.dswf.y = -dswf * swf.dr.y;
 	swf.dswf.z = -dswf * swf.dr.z;
