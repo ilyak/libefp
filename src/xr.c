@@ -527,6 +527,8 @@ efp_frag_frag_xr(struct efp *efp, size_t frag_i, size_t frag_j, double *lmo_s,
     struct swf swf = efp_make_swf(efp, fr_i, fr_j, 1);
     // skip calculations if distance between fragments is too big...
     if (swf.swf == 0.0) {
+        *exr_out = 0.0;
+        *ecp_out = 0.0;
         return;
     }
     else {
