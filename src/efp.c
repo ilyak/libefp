@@ -1116,6 +1116,44 @@ efp_get_frag_multipole_count(struct efp *efp, size_t frag_idx, size_t *n_mult)
 }
 
 EFP_EXPORT enum efp_result
+efp_get_frag_mult_rank(struct efp *efp, size_t frag_idx, size_t mult_idx, size_t *rank)
+{
+    assert(efp);
+    assert(rank);
+    assert(frag_idx < efp->n_frag);
+    assert(mult_idx < efp->frags[frag_idx].n_multipole_pts);
+
+    struct frag *frag = efp->frags + frag_idx;
+    struct multipole_pt *pt = frag->multipole_pts + mult_idx;
+
+    *rank = -1;
+
+    for (size_t t = 0; t < 10; t++)
+        if (pt->octupole[t] != 0) {
+            *rank = 3;
+            return EFP_RESULT_SUCCESS;
+        }
+
+    for (size_t t = 0; t < 6; t++)
+        if (pt->quadrupole[t] != 0) {
+            *rank = 2;
+            return EFP_RESULT_SUCCESS;
+        }
+
+    if (pt->dipole.x != 0 || pt->dipole.y != 0 || pt->dipole.z != 0) {
+        *rank = 1;
+        return EFP_RESULT_SUCCESS;
+    }
+
+    if (pt->monopole != 0) {
+        *rank = 0;
+        return EFP_RESULT_SUCCESS;
+    }
+
+    return EFP_RESULT_SUCCESS;
+}
+
+EFP_EXPORT enum efp_result
 efp_get_multipole_count(struct efp *efp, size_t *n_mult)
 {
 	size_t sum = 0;

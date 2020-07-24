@@ -154,7 +154,8 @@ struct efp_opts {
     double xr_cutoff;
 	/** Enable ligand-fragment energy decomposition from total system */
     int enable_pairwise; 
-    /** Index of ligand for enable_pairwise; default = 0; */
+    /** Index of ligand for enable_pairwise.
+     * default = 0 (ie the first fragment); -1 defines the ligand to be a QM region. */
     int ligand;
     /** Prints fragment coordinates rearranged around ligand. Applicable for periodic simulations only. */
     int print_pbc;
@@ -726,6 +727,19 @@ enum efp_result efp_get_frag_multiplicity(struct efp *efp, size_t frag_idx,
  */
 enum efp_result efp_get_frag_multipole_count(struct efp *efp, size_t frag_idx,
     size_t *n_mult);
+
+/**
+ *
+ * @param[in] efp The efp structure
+ * @param[in] frag_idx Index of a fragment. Must be a value between zero and
+ * the total number of fragments minus one.
+ * @param[in] mult_idx Index of a multipole point. Must be a value between 0 and
+ * the total number of multipoles in thios fragment minus one.
+ * @param[out] rank Highest rank of multipole (0 - charge, 1 - dipole, 2 - quad, 3 - oct).
+ * If all values are zero, rank = -1.
+ * @return
+ */
+enum efp_result efp_get_frag_mult_rank(struct efp *efp, size_t frag_idx, size_t mult_idx, size_t *rank);
 
 /**
  * Get total number of multipoles from EFP electrostatics.
