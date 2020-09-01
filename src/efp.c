@@ -26,6 +26,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #include "balance.h"
 #include "clapack.h"
@@ -954,6 +955,7 @@ efp_prepare(struct efp *efp)
 	efp->grad = (six_t *)calloc(efp->n_frag, sizeof(six_t));
 	efp->skiplist = (char *)calloc(efp->n_frag * efp->n_frag, 1);
 	efp->pair_energies = (struct efp_energy *)calloc(efp->n_frag, sizeof(struct efp_energy));
+    efp->symmlist = (size_t *)calloc(efp->n_frag, sizeof(size_t));
 
 	return EFP_RESULT_SUCCESS;
 }
@@ -1038,15 +1040,26 @@ efp_compute(struct efp *efp, int do_gradient)
 	memset(efp->ptc_grad, 0, efp->n_ptc * sizeof(vec_t));
 	memset(efp->pair_energies, 0, efp->n_frag * sizeof(efp->energy));
 
+//    if (efp->nsymm_frag == 0)
+//    {  // no symmetry - typical case
+        efp_balance_work(efp, compute_two_body_range, NULL);
 
-	efp_balance_work(efp, compute_two_body_range, NULL);
+        if ((res = efp_compute_pol(efp)))
+            return res;
+        if ((res = efp_compute_ai_elec(efp)))
+            return res;
+        if ((res = efp_compute_ai_disp(efp)))
+            return res;
+/*
+    }
+    else {   // when the system is highly symmetric - aka periodic crystal
+        efp_balance_work(efp, compute_two_body_crystal, NULL);
 
-	if ((res = efp_compute_pol(efp)))
-		return res;
-	if ((res = efp_compute_ai_elec(efp)))
-		return res;
-	if ((res = efp_compute_ai_disp(efp)))
-		return res;
+        if ((res = efp_compute_pol_crystal(efp)))
+            return res;
+        // no other terms are implemented for crystals
+    }
+    */
 
 #ifdef EFP_USE_MPI
 	efp_allreduce(&efp->energy.electrostatic, 1);
@@ -1353,6 +1366,7 @@ efp_shutdown(struct efp *efp)
 	free(efp->skiplist);
 	free(efp->fragment_field);
 	free(efp->pair_energies);
+    free(efp->symmlist);
 	free(efp);
 }
 
@@ -1659,3 +1673,134 @@ efp_get_pairwise_energy(struct efp *efp, struct efp_energy *pair_energies){
         memcpy(pair_energies, efp->pair_energies, efp->n_frag * sizeof(struct efp_energy));
         return EFP_RESULT_SUCCESS;
 }
+
+EFP_EXPORT enum efp_result
+efp_set_pairwise_energy(struct efp *efp, struct efp_energy *pair_energies)
+{
+    assert(efp);
+    assert(pair_energies);
+
+    memcpy(efp->pair_energies, pair_energies, efp->n_frag * sizeof(struct efp_energy));
+    return EFP_RESULT_SUCCESS;
+}
+
+EFP_EXPORT enum efp_result
+efp_set_symmlist(struct efp *efp)
+{
+    assert(efp);
+    assert(efp->symmlist);
+    assert(efp->skiplist);
+
+    if  (efp->opts.symmetry == 0)
+    {
+        for (size_t i = 0; i < efp->n_frag; i++) {
+            efp->symmlist[i] = 0;
+        }
+    }
+
+    else if (efp->opts.symm_frag == EFP_SYMM_FRAG_FRAG) {
+        //printf("\n n_lib %d \n", efp->n_lib);
+
+        // this needs to be changed for list settings of symmetry!!!
+        efp->nsymm_frag = efp->n_lib;
+        char name[32];
+        char** unique_names=malloc(efp->n_lib * sizeof(name));
+        for (int i = 0; i < efp->n_lib; i++){
+                unique_names[i] = NULL;
+        }
+
+        int n_unique = 0;
+        for (size_t i = 0; i < efp->n_frag; i++) {
+            struct frag *frag = efp->frags + i;
+            for (size_t m = 0; m < efp->n_lib; m++) {
+                if (unique_names[m] != NULL && strcmp(frag->name, unique_names[m]) == 0) {
+                    efp->symmlist[i] = m+1;
+                    break;
+                }
+            }
+            if (efp->symmlist[i] == 0) // did not find this fragment name in sofar unique names
+            {
+                unique_names[n_unique] = frag->name;
+                n_unique++;
+                efp->symmlist[i] = n_unique;
+            }
+            //printf("symm_list %d \n", efp->symmlist[i]);
+        }
+
+        // setup skiplist now...
+        for (size_t i = 0; i < efp->n_frag; i++) {
+            for (size_t j = 0; j < efp->n_frag; j++) {
+                efp_skip_fragments(efp, i, j, 1);
+            }
+        }
+
+        n_unique = 1;
+        //memset(efp->skiplist,true,efp->n_frag*efp->n_frag);
+        for (size_t i = 0; i < efp->n_frag; i++) {
+            // this is the first occuracnce of the symmetry-unique fragment
+            if (efp->symmlist[i] == n_unique) {
+                for (size_t j = 0; j < efp->n_frag; j++) {
+                    efp_skip_fragments(efp, i, j, 0);
+                }
+                n_unique ++;
+            }
+        }
+
+        free(unique_names);
+    }
+    else {
+        printf("\n DO NOT KNOW WHAT TO DO WITH THIS SYMMETRIC SYSTEM:  SYMM_FRAG IS UNKNOWN \n");
+    }
+
+
+    printf("\n skiplist \n");
+    for (int i = 0; i < efp->n_frag; i++){
+        for (int j=0; j < efp->n_frag; j++){
+            printf(" %s ", efp->skiplist[i*efp->n_frag + j] ? "true" : "false");
+        }
+    }
+
+    return EFP_RESULT_SUCCESS;
+}
+
+EFP_EXPORT enum efp_result
+efp_get_symmlist(struct efp *efp, size_t frag_idx, size_t *symm){
+
+    assert(efp);
+    assert(efp->symmlist);
+
+    *symm = efp->symmlist[frag_idx];
+    return EFP_RESULT_SUCCESS;
+}
+
+EFP_EXPORT enum efp_result
+efp_get_nsymm_frag(struct efp *efp, size_t *nsymm_frag){
+
+    assert(efp);
+    assert(efp->nsymm_frag);
+
+    *nsymm_frag = efp->nsymm_frag;
+    return EFP_RESULT_SUCCESS;
+}
+
+EFP_EXPORT enum efp_result
+efp_get_unique_symm_frag(struct efp *efp, size_t *unique_frag){
+    assert(efp);
+    assert(efp->symmlist);
+    assert(efp->nsymm_frag);
+
+    printf("\n Symmetry-unique fragments \n")
+    int n = 0;
+    int i = 0;
+    do {
+        if (efp->symmlist[i] > n) {
+            unique_frag[n] = i;
+            printf(unique_frag[n]);
+            n++;
+        }
+        i++;
+    } while (n < efp->nsymm_frag);
+    return EFP_RESULT_SUCCESS;
+}
+
+

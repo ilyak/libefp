@@ -326,7 +326,7 @@ void print_matrix(size_t rows, size_t cols, const double *mat)
 	}
 }
 
-void print_pair_energy(struct state *state){
+void print_pair_energy(struct state *state) {
     msg(" ------ PAIRWISE ENERGY ANALYSIS FOLLOWS ------------------\n\n");
     size_t n_frags;
     check_fail(efp_get_frag_count(state->efp, &n_frags));

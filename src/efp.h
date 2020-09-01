@@ -122,6 +122,12 @@ enum efp_pol_driver {
 	EFP_POL_DRIVER_DIRECT
 };
 
+/** Specifies which fragments are considered identical by symmetry. */
+enum efp_symm_frag {
+    EFP_SYMM_FRAG_FRAG = 0,       /**< All same fragments are symmetry-identical. */
+    EFP_SYMM_FRAG_LIST           /**< Symmetric fragments are given in a list. */
+};
+
 /** \struct efp
  * Main EFP opaque structure.
  */
@@ -159,6 +165,11 @@ struct efp_opts {
     int ligand;
     /** Prints fragment coordinates rearranged around ligand. Applicable for periodic simulations only. */
     int print_pbc;
+    /** Is 1 for periodic symmetric system (ctystal lattice). Default is 0 */
+    int symmetry;
+     /** Specifies symmetric elements of the crystal lattice. Default each unique fragment.
+      * Warning: this keyword is not related to space symmetry groups or symmetry elements */
+    enum efp_symm_frag symm_frag;
 };
 
 /** EFP energy terms. */
@@ -1094,6 +1105,50 @@ const char *efp_result_to_string(enum efp_result res);
 enum efp_result efp_get_pairwise_energy(struct efp *efp, 
                                         struct efp_energy *pair_energies);
 
+/**
+ * Set the interaction energies of ligand-fragment pairs
+ *
+ * \param[in] efp The efp structure.
+ *
+ * \param[in] total energy and energy components of each ligand-fragment pair
+ *
+ */
+enum efp_result efp_set_pairwise_energy(struct efp *efp, struct efp_energy *pair_energies);
+
+/**
+ * Prepares information for computing symmetric crystals. Sets the symmetry list, nsymm_frag AND skiplist
+ *
+ * \param[in] efp The efp structure.
+ *
+ */
+enum efp_result efp_set_symmlist(struct efp *efp);
+
+/**
+ * Prepares the symmetry list AND sets nsymm_frag
+ *
+ * \param[in] efp The efp structure.
+ *
+ * \param[in] frag_idx Fragment index.
+ *
+ * \param[out] symm Symmetry index [0 - no symmetry, 1 to nsymm_frag + 1 - meaningful values]
+ */
+enum efp_result efp_get_symmlist(struct efp *efp, size_t frag_idx, size_t *symm);
+
+/**
+ * Prepares the symmetry list AND sets nsymm_frag
+ *
+ * \param[in] efp The efp structure.
+ *
+ * \param[out] nsymm_frag The value of nsymm_frag.
+ */
+enum efp_result efp_get_nsymm_frag(struct efp *efp, size_t *nsymm_frag);
+
+/**
+ * Computes the list of indexes of symmetry-unique fragments
+ * @param[in] efp The efp structure.
+ * @param[out] unique_frag Array with unique-symmetry fragment' indexes
+ */
+enum efp_result efp_get_unique_symm_frag(struct efp *efp, size_t *unique_frag);
 
 #ifdef __cplusplus
 } /* extern "C" */

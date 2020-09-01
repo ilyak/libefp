@@ -240,6 +240,12 @@ struct efp {
 
 	/* energies of pairwise interactions with the ligand */
 	struct efp_energy *pair_energies;
+
+	/* the number of symmetrically unique fragments. 0 for non-symmetric systems */
+	size_t nsymm_frag;
+
+	/* symmetry list - list of n_frag length specifying symmetrically identical fragments */
+	size_t *symmlist;
 };
 
 #endif /* LIBEFP_PRIVATE_H */
