@@ -441,25 +441,29 @@ compute_elec_field_crystal(struct efp *efp)
             //elec_field[frag->polarizable_offset + j] = get_elec_field(efp, i, j);
             frag->polarizable_pts[j].elec_field = get_elec_field(efp, unique_frag[i], j);
             frag->polarizable_pts[j].elec_field_wf = vec_zero;
-            if (do_pairwise) {
-                frag->polarizable_pts[j].ligand_field =
-                        get_ligand_field(efp, unique_frag[i], j, efp->opts.ligand);
-            }
         }
     }
+
+    // slow and painful
     if (do_pairwise) {
+
         struct frag *ligand;
         ligand = efp->frags + efp->opts.ligand;
 
         for (size_t i = 0; i < efp->n_frag; i++) {
             if (i != efp->opts.ligand) {
+                // field on ligand due to other fragments "i"
                 struct frag *frag = efp->frags + i;
                 for (size_t lp = 0; lp < ligand->n_polarizable_pts; lp++) {
                     efp->fragment_field[frag->fragment_field_offset + lp] =
                             get_ligand_field(efp, efp->opts.ligand, lp, i);
                 }
+                // field on fragments "i" due to ligand
+                for (size_t p = 0; p < frag->n_polarizable_pts; p++) {
+                    frag->polarizable_pts[p].ligand_field =
+                            get_ligand_field(efp, i, p, efp->opts.ligand);
+                }
             }
-
         }
     }
 
@@ -784,31 +788,35 @@ compute_energy_crystal(struct efp *efp, double *polenergy)
             energy += factor * (0.5 * vec_dot(&efp->indipconj[idx], &pt->elec_field_wf) -
                                 0.5 * vec_dot(&efp->indip[idx], &pt->elec_field));
 
-            if (do_pairwise && i != efp->opts.ligand) {
-                efp->pair_energies[i].polarization +=
-                        -0.5 * vec_dot(&efp->indip[idx], &pt->ligand_field);
+            if (do_pairwise && i == efp->opts.ligand) {
+                for (size_t fr = 0; fr < efp->n_frag; fr++) {
+                    if (fr == i)
+                        continue;
+
+                    struct frag *other_frag = efp->frags + fr;
+                    efp->pair_energies[fr].polarization +=
+                            -0.5 * vec_dot(&efp->indip[idx], &efp->fragment_field[other_frag->fragment_field_offset + idx]);
+                }
             }
         }
-    }
 
-    if (do_pairwise) {
-        struct frag *ligand;
-        ligand = efp->frags + efp->opts.ligand;
+        if (do_pairwise && i == efp->opts.ligand) {
+            for (size_t fr = 0; fr < efp->n_frag; fr++) {
+                if (fr == i)
+                    continue;
+            
+                struct frag *other_frag = efp->frags + fr;
+                for (size_t p = 0; p < other_frag->n_polarizable_pts; p++) {
+                    struct polarizable_pt *pt = other_frag->polarizable_pts + p;
+                    size_t idx = other_frag->polarizable_offset + p;
 
-        for (size_t i = 0; i < efp->n_frag; i++) {
-            if (i != efp->opts.ligand) {
-                struct frag *frag = efp->frags + i;
-
-                for (size_t lp = 0; lp < ligand->n_polarizable_pts; lp++) {
-                    struct polarizable_pt *lpt = ligand->polarizable_pts + lp;
-                    size_t idx = ligand->polarizable_offset + lp;
-
-                    efp->pair_energies[i].polarization +=
-                            -0.5 * vec_dot(&efp->indip[idx], &efp->fragment_field[frag->fragment_field_offset + lp]);
+                    efp->pair_energies[fr].polarization +=
+                            -0.5 * vec_dot(&efp->indip[idx], &pt->ligand_field);
                 }
             }
         }
     }
+
     *polenergy = energy;
 }
 
