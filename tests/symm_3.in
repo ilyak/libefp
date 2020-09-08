@@ -1,0 +1,38 @@
+run_type sp
+coord points
+terms elec pol disp xr
+elec_damp screen
+pol_damp tt
+disp_damp tt
+enable_cutoff true
+userlib_path ./
+enable_pbc true
+enable_pairwise false
+ligand 0
+swf_cutoff 5.5
+xr_cutoff 5.5
+periodic_box 12.0024 13.5178 12.8583 90.0 109.424 90.0 
+symmetry true
+symm_frag frag
+
+
+ fragment  XXII_exp_N2_1_L
+-6.509027 -0.703872 4.315925
+-5.527225 0.739221 4.530684
+-6.037509 2.064371 4.56864
+
+ fragment  XXII_exp_N2_1_L
+-1.630227 -4.083322 1.7473
+-2.612029 -2.640229 1.532541
+-2.101745 -1.315079 1.494585
+
+ fragment  XXII_exp_N2_2_L
+6.509027 0.703872 -4.315925
+5.527225 -0.739221 -4.530684
+6.037509 -2.064371 -4.56864
+
+ fragment  XXII_exp_N2_2_L
+1.630227 4.083322 -1.7473
+2.612029 2.640229 -1.532541
+2.101745 1.315079 -1.494585
+

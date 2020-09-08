@@ -1,0 +1,30 @@
+run_type sp
+coord xyzabc
+terms elec pol disp xr
+elec_damp screen
+pol_damp tt
+disp_damp tt
+enable_cutoff true
+userlib_path ./
+enable_pbc true
+enable_pairwise false
+ligand 0
+swf_cutoff 6
+xr_cutoff 6
+periodic_box 12 12 12 
+symmetry false
+symm_frag frag
+
+fragment h2o_l
+   0.000   0.000   0.000   0.000   0.000   0.000
+fragment h2o_l
+   4.000   0.000   0.000   0.000   0.000   0.000
+fragment h2o_l
+   0.000   4.000   0.000   0.000   0.000   0.000
+fragment nh3_l
+   0.000   0.000   4.000   5.000   0.000  -3.000
+fragment nh3_l
+   4.000   0.000   4.000   5.000   0.000  -3.000
+fragment nh3_l
+   0.000   4.000   4.000   5.000   0.000  -3.000
+

@@ -461,6 +461,98 @@ compute_two_body_range(struct efp *efp, size_t frag_from, size_t frag_to,
 }
 
 EFP_EXPORT enum efp_result
+compute_two_body_crystal(struct efp *efp)
+{
+    double e_elec = 0.0, e_disp = 0.0, e_xr = 0.0, e_cp = 0.0, e_elec_tmp = 0.0, e_disp_tmp = 0.0;
+
+// no parallelization
+    int nsymm = efp->nsymm_frag;
+    size_t *unique_frag = (size_t *)calloc(nsymm, sizeof(size_t));
+    unique_symm_frag(efp, unique_frag);
+
+    size_t *nsymm_frag = (size_t *)calloc(nsymm, sizeof(size_t));
+    n_symm_frag(efp, nsymm_frag);
+
+    for (size_t k = 0; k < nsymm; k++) {
+        size_t i = unique_frag[k];
+        struct frag *frag = efp->frags + i;
+
+        // scaling factor that tells how many fragments like this are in the system
+        size_t factor = nsymm_frag[k];
+
+        for (size_t fr_j=0; fr_j<efp->n_frag; fr_j++){
+            if ( fr_j != i && !efp_skip_frag_pair(efp, i, fr_j)) {
+
+                struct frag *fragj = efp->frags + fr_j;
+                double *s;
+                six_t *ds;
+                size_t n_lmo_ij = efp->frags[i].n_lmo *
+                                  efp->frags[fr_j].n_lmo;
+
+                s = (double *)calloc(n_lmo_ij, sizeof(double));
+                ds = (six_t *)calloc(n_lmo_ij, sizeof(six_t));
+
+                if (do_xr(&efp->opts)) {
+                    double exr, ecp;
+
+                    efp_frag_frag_xr(efp, i, fr_j,
+                                     s, ds, &exr, &ecp);
+                    e_xr += exr * factor;
+                    e_cp += ecp * factor;
+
+                    /* */
+                    if (efp->opts.enable_pairwise) {
+                        if (i == efp->opts.ligand) {
+                            efp->pair_energies[fr_j].exchange_repulsion = exr;
+                            efp->pair_energies[fr_j].charge_penetration = ecp;
+                        }
+                        if (fr_j == efp->opts.ligand) {
+                            efp->pair_energies[i].exchange_repulsion = exr;
+                            efp->pair_energies[i].charge_penetration = ecp;
+                        }
+                    }
+                }
+                if (do_elec(&efp->opts)) {
+                    e_elec_tmp = efp_frag_frag_elec(efp,
+                                                    i, fr_j);
+                    e_elec += e_elec_tmp * factor;
+
+                    /* */
+                    if (efp->opts.enable_pairwise) {
+                        if (i == efp->opts.ligand)
+                            efp->pair_energies[fr_j].electrostatic = e_elec_tmp;
+                        if (fr_j == efp->opts.ligand)
+                            efp->pair_energies[i].electrostatic = e_elec_tmp;
+                    }
+                }
+                if (do_disp(&efp->opts)) {
+                    e_disp_tmp = efp_frag_frag_disp(efp,
+                                                    i, fr_j, s, ds);
+                    e_disp += e_disp_tmp * factor;
+                    /* */
+                    if (efp->opts.enable_pairwise) {
+                        if (i == efp->opts.ligand)
+                            efp->pair_energies[fr_j].dispersion = e_disp_tmp;
+                        if (fr_j == efp->opts.ligand)
+                            efp->pair_energies[i].dispersion = e_disp_tmp;
+                    }
+                }
+                free(s);
+                free(ds);
+
+            }
+        }
+    }
+    // really, we counted all pairwise interactions twice. Scaling back
+    efp->energy.electrostatic += e_elec/2;
+    efp->energy.dispersion += e_disp/2;
+    efp->energy.exchange_repulsion += e_xr/2;
+    efp->energy.charge_penetration += e_cp/2;
+
+    return EFP_RESULT_SUCCESS;
+}
+
+EFP_EXPORT enum efp_result
 efp_get_energy(struct efp *efp, struct efp_energy *energy)
 {
 	assert(efp);
@@ -1040,26 +1132,20 @@ efp_compute(struct efp *efp, int do_gradient)
 	memset(efp->ptc_grad, 0, efp->n_ptc * sizeof(vec_t));
 	memset(efp->pair_energies, 0, efp->n_frag * sizeof(efp->energy));
 
-//    if (efp->nsymm_frag == 0)
-//    {  // no symmetry - typical case
+	if (efp->opts.symmetry == 0) { // standard case
         efp_balance_work(efp, compute_two_body_range, NULL);
+	}
+	else {  // high-symmetry crystals
+	    if (res = compute_two_body_crystal(efp))
+	        return res;
+	}
 
-        if ((res = efp_compute_pol(efp)))
-            return res;
-        if ((res = efp_compute_ai_elec(efp)))
-            return res;
-        if ((res = efp_compute_ai_disp(efp)))
-            return res;
-/*
-    }
-    else {   // when the system is highly symmetric - aka periodic crystal
-        efp_balance_work(efp, compute_two_body_crystal, NULL);
-
-        if ((res = efp_compute_pol_crystal(efp)))
-            return res;
-        // no other terms are implemented for crystals
-    }
-    */
+	if (res = efp_compute_pol(efp))
+	    return res;
+	if (res = efp_compute_ai_elec(efp))
+	    return res;
+	if (res = efp_compute_ai_disp(efp))
+	    return res;
 
 #ifdef EFP_USE_MPI
 	efp_allreduce(&efp->energy.electrostatic, 1);
@@ -1724,7 +1810,7 @@ efp_set_symmlist(struct efp *efp)
                 n_unique++;
                 efp->symmlist[i] = n_unique;
             }
-            //printf("symm_list %d \n", efp->symmlist[i]);
+            // printf("symm_list %d \n", efp->symmlist[i]);
         }
 
         // setup skiplist now...
@@ -1752,13 +1838,14 @@ efp_set_symmlist(struct efp *efp)
         printf("\n DO NOT KNOW WHAT TO DO WITH THIS SYMMETRIC SYSTEM:  SYMM_FRAG IS UNKNOWN \n");
     }
 
-
-    printf("\n skiplist \n");
+    /*
+    //printf("\n skiplist \n");
     for (int i = 0; i < efp->n_frag; i++){
         for (int j=0; j < efp->n_frag; j++){
             printf(" %s ", efp->skiplist[i*efp->n_frag + j] ? "true" : "false");
         }
     }
+     */
 
     return EFP_RESULT_SUCCESS;
 }
@@ -1783,24 +1870,31 @@ efp_get_nsymm_frag(struct efp *efp, size_t *nsymm_frag){
     return EFP_RESULT_SUCCESS;
 }
 
-EFP_EXPORT enum efp_result
-efp_get_unique_symm_frag(struct efp *efp, size_t *unique_frag){
-    assert(efp);
-    assert(efp->symmlist);
-    assert(efp->nsymm_frag);
-
-    printf("\n Symmetry-unique fragments \n")
+void
+unique_symm_frag(struct efp *efp, size_t *unique_frag){
+    //printf("\n Symmetry-unique fragments \n");
     int n = 0;
     int i = 0;
     do {
         if (efp->symmlist[i] > n) {
             unique_frag[n] = i;
-            printf(unique_frag[n]);
+            //printf(" %d ", unique_frag[n]);
             n++;
         }
         i++;
     } while (n < efp->nsymm_frag);
-    return EFP_RESULT_SUCCESS;
 }
 
+void
+n_symm_frag(struct efp *efp, size_t *symm_frag) {
 
+    for (size_t i = 0; i < efp->nsymm_frag; i++) {
+        size_t counter = 0;
+        for (size_t j = 0; j < efp->n_frag; j++) {
+            if (efp->symmlist[i] == efp->symmlist[j])
+                counter++;
+        }
+        symm_frag[i] = counter;
+        // printf("\n symm_frag %d = %d", i, symm_frag[i]);
+    }
+}

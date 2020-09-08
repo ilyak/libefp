@@ -285,7 +285,7 @@ rotmat_2frags(const mat_t *rotmat1, const mat_t *rotmat2)
 {
     // rotmat2*rotmat1^T
     mat_t rotmat1_t = mat_transpose(rotmat1);
-    return mat_mat(rotmat2,rotmat1_t);
+    return mat_mat(rotmat2, &rotmat1_t);
 }
 
 int

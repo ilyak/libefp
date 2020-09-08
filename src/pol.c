@@ -25,6 +25,7 @@
  */
 
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "balance.h"
 #include "elec.h"
@@ -121,9 +122,11 @@ get_elec_field(const struct efp *efp, size_t frag_idx, size_t pt_idx)
 	vec_t elec_field = vec_zero;
 
 	for (size_t i = 0; i < efp->n_frag; i++) {
-		if (i == frag_idx || efp_skip_frag_pair(efp, i, frag_idx))
+		if (i == frag_idx )
 			continue;
-
+		// do not use skip list if symmetry is 1
+        if (efp->opts.symmetry == 0 && efp_skip_frag_pair(efp, i, frag_idx))
+            continue;
 		const struct frag *fr_i = efp->frags + i;
 		struct swf swf = efp_make_swf(efp, fr_i, fr_j, 0);
 		if (swf.swf == 0.0)
@@ -427,17 +430,36 @@ compute_elec_field_crystal(struct efp *efp)
     enum efp_result res;
 
     int nsymm = efp->nsymm_frag;
-    unique_frag = (size_t *)calloc(nsymm, sizeof(size_t));
-    check_fail(unique_symm_frag(efp, unique_frag));
+    size_t *unique_frag = (size_t *)calloc(nsymm, sizeof(size_t));
+    unique_symm_frag(efp, unique_frag);
 
     // This is not parallelized!!!
-    for (int i = 0; i < nsymm; i++) {
+    for (size_t i = 0; i < nsymm; i++) {
         struct frag *frag = efp->frags + unique_frag[i];
 
         for (size_t j = 0; j < frag->n_polarizable_pts; j++) {
             //elec_field[frag->polarizable_offset + j] = get_elec_field(efp, i, j);
-            frag->polarizable_pts[j].elec_field = get_elec_field(efp, i, j);
+            frag->polarizable_pts[j].elec_field = get_elec_field(efp, unique_frag[i], j);
             frag->polarizable_pts[j].elec_field_wf = vec_zero;
+            if (do_pairwise) {
+                frag->polarizable_pts[j].ligand_field =
+                        get_ligand_field(efp, unique_frag[i], j, efp->opts.ligand);
+            }
+        }
+    }
+    if (do_pairwise) {
+        struct frag *ligand;
+        ligand = efp->frags + efp->opts.ligand;
+
+        for (size_t i = 0; i < efp->n_frag; i++) {
+            if (i != efp->opts.ligand) {
+                struct frag *frag = efp->frags + i;
+                for (size_t lp = 0; lp < ligand->n_polarizable_pts; lp++) {
+                    efp->fragment_field[frag->fragment_field_offset + lp] =
+                            get_ligand_field(efp, efp->opts.ligand, lp, i);
+                }
+            }
+
         }
     }
 
@@ -552,6 +574,7 @@ compute_id_range(struct efp *efp, size_t from, size_t to, void *data)
 	}
 
 	((struct id_work_data *)data)->conv += conv;
+
 }
 
 static void
@@ -565,8 +588,8 @@ compute_id_crystal(struct efp *efp, void *data)
     id_conj_new = ((struct id_work_data *)data)->id_conj_new;
 
     int nsymm = efp->nsymm_frag;
-    unique_frag = (size_t *)calloc(nsymm, sizeof(size_t));
-    check_fail(unique_symm_frag(efp, unique_frag));
+    size_t *unique_frag = (size_t *)calloc(nsymm, sizeof(size_t));
+    unique_symm_frag(efp, unique_frag);
 
     // step 1: compute induced dipoles on symmetry-unique fragments
     for (int i = 0; i < nsymm; i++) {
@@ -578,7 +601,7 @@ compute_id_crystal(struct efp *efp, void *data)
             vec_t field, field_conj;
 
             /* electric field from other induced dipoles */
-            get_induced_dipole_field(efp, i, pt, &field,
+            get_induced_dipole_field(efp, unique_frag[i], pt, &field,
                                      &field_conj);
             /* add field that doesn't change during scf */
             field.x += pt->elec_field.x + pt->elec_field_wf.x;
@@ -614,60 +637,38 @@ compute_id_crystal(struct efp *efp, void *data)
 
     // step 3: broadcast induced dipoles to symmetry-identical fragments
     for (int j=0; j<nsymm; j++){
+        //printf("\n unique_frag %d", unique_frag[j]);
         struct frag *symmfrag = efp->frags + unique_frag[j];
         size_t poloff_s = symmfrag->polarizable_offset;
         for (size_t i=0; i<efp->n_frag; i++){
             if (i == unique_frag[j]) // do nothing for self
-                break;
+                continue;
             // found same-symmetry fragment, copy induced dipoles
+            //printf("\n symm i %d, symm j %d", efp->symmlist[i], efp->symmlist[unique_frag[j]]);
             if (efp->symmlist[i] == efp->symmlist[unique_frag[j]]){
                 struct frag *frag = efp->frags + i;
                 // compute rotation matrix between two fragments
                 mat_t rotmat;
-                rotmat = rotmat_2frags(symmfrag->rotmat, frag->rotmat);
+                rotmat = rotmat_2frags(&symmfrag->rotmat, &frag->rotmat);
+                //printf("\n rotmat: %lf, %lf, %lf ", rotmat.xy, rotmat.xz, rotmat.yz);
 
                 for (size_t p=0; p<frag->n_polarizable_pts; p++) {
                     size_t poloff_i = frag->polarizable_offset;
 
                     // rotate induced dipole and copy
-                    efp->indip[poloff_i+p] = mat_vec(rotmat, efp->indip[poloff_s+p]);
-                    efp->indipconj[poloff_i+p] = mat_vec(rotmat, efp->indipconj[poloff_s+p]);
+                    efp->indip[poloff_i+p] = mat_vec(&rotmat, &efp->indip[poloff_s+p]);
+                    efp->indipconj[poloff_i+p] = mat_vec(&rotmat, &efp->indipconj[poloff_s+p]);
                 }
             }
         }
     }
-}
 
-static void
-broadcast_indip_crystal(struct efp *efp)
-{
-    int nsymm = efp->nsymm_frag;
-    unique_frag = (size_t *)calloc(nsymm, sizeof(size_t));
-    check_fail(unique_symm_frag(efp, unique_frag));
-
-    for (int j=0; j<nsymm; j++){
-        struct frag *symmfrag = efp->frags + unique_frag[j];
-        size_t poloff_s = symmfrag->polarizable_offset;
-        for (size_t i=0; i<efp->n_frag; i++){
-            if (i == unique_frag[j]) // do nothing for self
-                break;
-            // found same-symmetry fragment, copy induced dipoles
-            if (efp->symmlist[i] == efp->symmlist[unique_frag[j]]){
-                struct frag *frag = efp->frags + i;
-                // compute rotation matrix between two fragments
-                mat_t rotmat;
-                rotmat = rotmat_2frags(symmfrag->rotmat, frag->rotmat);
-
-                for (size_t p=0; p<frag->n_polarizable_pts; p++) {
-                    size_t poloff_i = frag->polarizable_offset;
-
-                    // rotate induced dipole and copy
-                    efp->indip[poloff_i+p] = mat_vec(rotmat, efp->indip[poloff_s+p]);
-                    efp->indipconj[poloff_i+p] = mat_vec(rotmat, efp->indipconj[poloff_s+p]);
-                }
-            }
-        }
+    /*
+    printf("\n induced dipoles");
+    for (int i=0; i<efp->n_polarizable_pts; i++) {
+        printf("\npoint %d: %lf ", i, vec_len(&efp->indip[i]));
     }
+    */
 }
 
 static double
@@ -696,6 +697,11 @@ pol_scf_iter(struct efp *efp)
 	free(data.id_new);
 	free(data.id_conj_new);
 
+	/*
+	printf("\n induced dipoles");
+	for (int i=0; i<efp->n_polarizable_pts; i++) {
+	    printf("\npoint %d: %lf ", i, vec_len(&efp->indip[i]));
+	}  */
 	return data.conv / npts / 2;
 }
 
@@ -753,51 +759,57 @@ compute_energy_range(struct efp *efp, size_t from, size_t to, void *data)
 }
 
 static void
-compute_energy_crystal(struct efp *efp, void *data)
+compute_energy_crystal(struct efp *efp, double *polenergy)
 {
     double energy = 0.0;
     int do_pairwise = (efp->opts.enable_pairwise && efp->opts.ligand != -1) ? 1 : 0;
 
-    struct frag *ligand;
-    if (do_pairwise) {
-        ligand = efp->frags + efp->opts.ligand;
-    }
-
     int nsymm = efp->nsymm_frag;
-    unique_frag = (size_t *)calloc(nsymm, sizeof(size_t));
-    check_fail(unique_symm_frag(efp, unique_frag));
+    size_t *unique_frag = (size_t *)calloc(nsymm, sizeof(size_t));
+    unique_symm_frag(efp, unique_frag);
 
-    for (int j=0; j<nsymm; j++){
-        struct frag *frag = efp->frags + unique_frag[j];
+    size_t *nsymm_frag = (size_t *)calloc(nsymm, sizeof(size_t));
+    n_symm_frag(efp, nsymm_frag);
+
+    for (int k=0; k<nsymm; k++) {
+        size_t i = unique_frag[k];
+        struct frag *frag = efp->frags + i;
+
+        size_t factor = nsymm_frag[k];
 
         for (size_t j = 0; j < frag->n_polarizable_pts; j++) {
             struct polarizable_pt *pt = frag->polarizable_pts + j;
             size_t idx = frag->polarizable_offset + j;
 
-            energy += 0.5 * vec_dot(&efp->indipconj[idx],
-                                    &pt->elec_field_wf) -
-                      0.5 * vec_dot(&efp->indip[idx],
-                                    &pt->elec_field);
+            energy += factor * (0.5 * vec_dot(&efp->indipconj[idx], &pt->elec_field_wf) -
+                                0.5 * vec_dot(&efp->indip[idx], &pt->elec_field));
 
             if (do_pairwise && i != efp->opts.ligand) {
                 efp->pair_energies[i].polarization +=
-                        - 0.5 * vec_dot(&efp->indip[idx], &pt->ligand_field);
+                        -0.5 * vec_dot(&efp->indip[idx], &pt->ligand_field);
             }
         }
-
-        if (do_pairwise &&  i != efp->opts.ligand) {
-            for (size_t lp = 0; lp < ligand->n_polarizable_pts; lp++) {
-                struct polarizable_pt *lpt = ligand->polarizable_pts + lp;
-                size_t idx = ligand->polarizable_offset + lp;
-
-                efp->pair_energies[i].polarization +=
-                        - 0.5 * vec_dot(&efp->indip[idx], &efp->fragment_field[frag->fragment_field_offset+lp]);
-            }
-        }
-
     }
 
-    *(double *)data += energy;
+    if (do_pairwise) {
+        struct frag *ligand;
+        ligand = efp->frags + efp->opts.ligand;
+
+        for (size_t i = 0; i < efp->n_frag; i++) {
+            if (i != efp->opts.ligand) {
+                struct frag *frag = efp->frags + i;
+
+                for (size_t lp = 0; lp < ligand->n_polarizable_pts; lp++) {
+                    struct polarizable_pt *lpt = ligand->polarizable_pts + lp;
+                    size_t idx = ligand->polarizable_offset + lp;
+
+                    efp->pair_energies[i].polarization +=
+                            -0.5 * vec_dot(&efp->indip[idx], &efp->fragment_field[frag->fragment_field_offset + lp]);
+                }
+            }
+        }
+    }
+    *polenergy = energy;
 }
 
 static enum efp_result
@@ -858,8 +870,7 @@ efp_compute_pol_energy_crystal(struct efp *efp, double *energy)
         return res;
 
     *energy = 0.0;
-    efp_balance_work(efp, compute_energy_range, energy); // ?
-    efp_allreduce(energy, 1);
+    compute_energy_crystal(efp, energy);
 
     return EFP_RESULT_SUCCESS;
 }

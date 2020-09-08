@@ -1148,7 +1148,14 @@ enum efp_result efp_get_nsymm_frag(struct efp *efp, size_t *nsymm_frag);
  * @param[in] efp The efp structure.
  * @param[out] unique_frag Array with unique-symmetry fragment' indexes
  */
-enum efp_result efp_get_unique_symm_frag(struct efp *efp, size_t *unique_frag);
+void unique_symm_frag(struct efp *efp, size_t *unique_frag);
+
+/**
+ * Computes number of symmetric fragments of each type
+ * @param[in] efp The efp structure
+ * @param[out] symm_frag Array of length nsymm_frag specifying # of identical fragments
+ */
+void n_symm_frag(struct efp *efp, size_t *symm_frag);
 
 #ifdef __cplusplus
 } /* extern "C" */
