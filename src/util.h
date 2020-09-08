@@ -46,6 +46,7 @@ void efp_sub_force(six_t *, const vec_t *, const vec_t *,
 void efp_move_pt(const vec_t *, const mat_t *, const vec_t *, vec_t *);
 void efp_rotate_t2(const mat_t *, const double *, double *);
 void efp_rotate_t3(const mat_t *, const double *, double *);
+mat_t rotmat_2frags(const mat_t *rotmat1, const mat_t *rotmat2);
 int efp_strcasecmp(const char *, const char *);
 int efp_strncasecmp(const char *, const char *, size_t);
 // find plane by 3 points

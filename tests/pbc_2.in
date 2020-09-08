@@ -10,8 +10,8 @@ swf_cutoff 4.79
 enable_pbc true
 periodic_box 10.66 12.03 10.872 90.0 115.83 90.0
 ligand 1
-print_pbc true
 fraglib_path ../fraglib
+
 
 
  fragment  oxalicb_L

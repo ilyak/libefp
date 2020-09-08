@@ -1,5 +1,5 @@
 run_type etest
-ref_energy -0.2470299158
+ref_energy  -0.2470326353
 coord points
 terms elec pol disp xr
 elec_damp screen
@@ -9,9 +9,10 @@ enable_cutoff true
 swf_cutoff 4.79
 enable_pbc true
 periodic_box 10.66 12.03 10.872 90.0 115.83 90.0
-ligand 1
-print_pbc true
 fraglib_path ../fraglib
+symmetry true
+symm_frag frag
+
 
 
  fragment  oxalicb_L

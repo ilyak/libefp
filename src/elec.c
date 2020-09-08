@@ -633,6 +633,7 @@ static void
 compute_ai_elec_range(struct efp *efp, size_t from, size_t to, void *data)
 {
 	double energy = 0.0;
+	double energy_tmp = 0.0;
 
 	(void)data;
 
@@ -640,7 +641,11 @@ compute_ai_elec_range(struct efp *efp, size_t from, size_t to, void *data)
 #pragma omp parallel for schedule(dynamic) reduction(+:energy)
 #endif
 	for (size_t i = from; i < to; i++) {
-		energy += compute_ai_elec_frag(efp, i);
+		energy_tmp = compute_ai_elec_frag(efp, i);
+		energy += energy_tmp;
+        if (efp->opts.enable_pairwise && efp->opts.ligand == -1) {
+            efp->pair_energies[i].electrostatic += energy_tmp;
+        }
 		if (efp->do_gradient)
 			compute_ai_elec_frag_grad(efp, i);
 	}

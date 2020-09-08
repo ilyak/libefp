@@ -122,6 +122,12 @@ enum efp_pol_driver {
 	EFP_POL_DRIVER_DIRECT
 };
 
+/** Specifies which fragments are considered identical by symmetry. */
+enum efp_symm_frag {
+    EFP_SYMM_FRAG_FRAG = 0,       /**< All same fragments are symmetry-identical. */
+    EFP_SYMM_FRAG_LIST           /**< Symmetric fragments are given in a list. */
+};
+
 /** \struct efp
  * Main EFP opaque structure.
  */
@@ -154,10 +160,16 @@ struct efp_opts {
     double xr_cutoff;
 	/** Enable ligand-fragment energy decomposition from total system */
     int enable_pairwise; 
-    /** Index of ligand for enable_pairwise; default = 0; */
+    /** Index of ligand for enable_pairwise.
+     * default = 0 (ie the first fragment); -1 defines the ligand to be a QM region. */
     int ligand;
     /** Prints fragment coordinates rearranged around ligand. Applicable for periodic simulations only. */
     int print_pbc;
+    /** Is 1 for periodic symmetric system (ctystal lattice). Default is 0 */
+    int symmetry;
+     /** Specifies symmetric elements of the crystal lattice. Default each unique fragment.
+      * Warning: this keyword is not related to space symmetry groups or symmetry elements */
+    enum efp_symm_frag symm_frag;
 };
 
 /** EFP energy terms. */
@@ -728,6 +740,19 @@ enum efp_result efp_get_frag_multipole_count(struct efp *efp, size_t frag_idx,
     size_t *n_mult);
 
 /**
+ *
+ * @param[in] efp The efp structure
+ * @param[in] frag_idx Index of a fragment. Must be a value between zero and
+ * the total number of fragments minus one.
+ * @param[in] mult_idx Index of a multipole point. Must be a value between 0 and
+ * the total number of multipoles in thios fragment minus one.
+ * @param[out] rank Highest rank of multipole (0 - charge, 1 - dipole, 2 - quad, 3 - oct).
+ * If all values are zero, rank = -1.
+ * @return
+ */
+enum efp_result efp_get_frag_mult_rank(struct efp *efp, size_t frag_idx, size_t mult_idx, size_t *rank);
+
+/**
  * Get total number of multipoles from EFP electrostatics.
  *
  * \param[in] efp The efp structure.
@@ -776,7 +801,21 @@ enum efp_result efp_get_multipole_coordinates(struct efp *efp, double *xyz);
 enum efp_result efp_get_multipole_values(struct efp *efp, double *mult);
 
 /**
- *  Get the number of polarization induced dipoles.
+ *  Get the number of polarization induced dipoles from a particular fragment.
+ *
+ * \param[in] efp The efp structure.
+ *
+ * \param[in] frag_idx Index of a fragment. Must be a value between zero and
+ * the total number of fragments minus one.
+ *
+ * \param[out] n_dip Number of polarization induced dipoles in fragment.
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+ enum efp_result efp_get_frag_induced_dipole_count(struct efp *efp, size_t frag_idx, size_t *n_dip);
+
+/**
+ *  Get the total number of polarization induced dipoles.
  *
  * \param[in] efp The efp structure.
  *
@@ -1066,6 +1105,57 @@ const char *efp_result_to_string(enum efp_result res);
 enum efp_result efp_get_pairwise_energy(struct efp *efp, 
                                         struct efp_energy *pair_energies);
 
+/**
+ * Set the interaction energies of ligand-fragment pairs
+ *
+ * \param[in] efp The efp structure.
+ *
+ * \param[in] total energy and energy components of each ligand-fragment pair
+ *
+ */
+enum efp_result efp_set_pairwise_energy(struct efp *efp, struct efp_energy *pair_energies);
+
+/**
+ * Prepares information for computing symmetric crystals. Sets the symmetry list, nsymm_frag AND skiplist
+ *
+ * \param[in] efp The efp structure.
+ *
+ */
+enum efp_result efp_set_symmlist(struct efp *efp);
+
+/**
+ * Prepares the symmetry list AND sets nsymm_frag
+ *
+ * \param[in] efp The efp structure.
+ *
+ * \param[in] frag_idx Fragment index.
+ *
+ * \param[out] symm Symmetry index [0 - no symmetry, 1 to nsymm_frag + 1 - meaningful values]
+ */
+enum efp_result efp_get_symmlist(struct efp *efp, size_t frag_idx, size_t *symm);
+
+/**
+ * Prepares the symmetry list AND sets nsymm_frag
+ *
+ * \param[in] efp The efp structure.
+ *
+ * \param[out] nsymm_frag The value of nsymm_frag.
+ */
+enum efp_result efp_get_nsymm_frag(struct efp *efp, size_t *nsymm_frag);
+
+/**
+ * Computes the list of indexes of symmetry-unique fragments
+ * @param[in] efp The efp structure.
+ * @param[out] unique_frag Array with unique-symmetry fragment' indexes
+ */
+void unique_symm_frag(struct efp *efp, size_t *unique_frag);
+
+/**
+ * Computes number of symmetric fragments of each type
+ * @param[in] efp The efp structure
+ * @param[out] symm_frag Array of length nsymm_frag specifying # of identical fragments
+ */
+void n_symm_frag(struct efp *efp, size_t *symm_frag);
 
 #ifdef __cplusplus
 } /* extern "C" */

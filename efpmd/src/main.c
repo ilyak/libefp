@@ -37,6 +37,7 @@ void sim_opt(struct state *);
 void sim_md(struct state *);
 void sim_efield(struct state *);
 void sim_gtest(struct state *);
+void sim_etest(struct state *);
 
 #define USAGE_STRING \
 	"usage: efpmd [-d | -v | -h | input]\n" \
@@ -55,14 +56,16 @@ static struct cfg *make_cfg(void)
 		"opt\n"
 		"md\n"
 		"efield\n"
-		"gtest\n",
+		"gtest\n"
+        "etest\n",
 		(int []) { RUN_TYPE_SP,
 			   RUN_TYPE_GRAD,
 			   RUN_TYPE_HESS,
 			   RUN_TYPE_OPT,
 			   RUN_TYPE_MD,
 			   RUN_TYPE_EFIELD,
-			   RUN_TYPE_GTEST});
+			   RUN_TYPE_GTEST,
+			   RUN_TYPE_ETEST});
 
 	cfg_add_enum(cfg, "coord", EFP_COORD_TYPE_XYZABC,
 		"xyzabc\n"
@@ -143,7 +146,13 @@ static struct cfg *make_cfg(void)
 	cfg_add_int(cfg, "ligand", 0); 
     cfg_add_bool(cfg, "enable_pairwise", false);
     cfg_add_bool(cfg, "print_pbc", false);
+    cfg_add_bool(cfg, "symmetry", false);
 
+    cfg_add_enum(cfg, "symm_frag", EFP_SYMM_FRAG_FRAG,
+                 "frag\n"
+                 "list\n",
+                 (int []) { EFP_SYMM_FRAG_FRAG,
+                            EFP_SYMM_FRAG_LIST });
 
 	return cfg;
 }
@@ -165,6 +174,8 @@ static sim_fn_t get_sim_fn(enum run_type run_type)
 		return sim_efield;
 	case RUN_TYPE_GTEST:
 		return sim_gtest;
+		case RUN_TYPE_ETEST:
+		    return sim_etest;
 	}
 	assert(0);
 }
@@ -257,7 +268,9 @@ static struct efp *create_efp(const struct cfg *cfg, const struct sys *sys)
 		.xr_cutoff = cfg_get_double(cfg, "xr_cutoff"),
         .enable_pairwise = cfg_get_bool(cfg, "enable_pairwise"), 
         .ligand = cfg_get_int(cfg, "ligand"),
-        .print_pbc = cfg_get_bool(cfg, "print_pbc")
+        .print_pbc = cfg_get_bool(cfg, "print_pbc"),
+        .symmetry = cfg_get_bool(cfg, "symmetry"),
+        .symm_frag = cfg_get_enum(cfg, "symm_frag")
 	};
 
 	if (opts.xr_cutoff == 0.0) {
@@ -304,8 +317,9 @@ static struct efp *create_efp(const struct cfg *cfg, const struct sys *sys)
 
 	check_fail(efp_set_opts(efp, &opts));
 	check_fail(efp_prepare(efp));
+    check_fail(efp_set_symmlist(efp));
 
-	if (opts.enable_pbc) {
+    if (opts.enable_pbc) {
 		six_t box = box_from_str(cfg_get_string(cfg, "periodic_box"));
 		check_fail(efp_set_periodic_box(efp, box.x, box.y, box.z, box.a, box.b, box.c));
 	}

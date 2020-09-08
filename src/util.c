@@ -280,6 +280,14 @@ efp_rotate_t3(const mat_t *rotmat, const double *in, double *out)
 		}
 }
 
+mat_t
+rotmat_2frags(const mat_t *rotmat1, const mat_t *rotmat2)
+{
+    // rotmat2*rotmat1^T
+    mat_t rotmat1_t = mat_transpose(rotmat1);
+    return mat_mat(rotmat2, &rotmat1_t);
+}
+
 int
 efp_strcasecmp(const char *s1, const char *s2)
 {
