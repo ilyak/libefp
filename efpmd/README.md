@@ -51,6 +51,8 @@ Lines beginning with the `#` symbol are ignored during input parsing.
 
 `gtest` - compute and compare numerical and analytical gradients.
 
+`etest` - compute and compare total energy.
+
 Default value: `sp`
 
 ##### Format of fragment input
@@ -180,6 +182,14 @@ Default value: `10.0`
 
 Unit: Angstrom
 
+##### Cutoff distance for exchange-repulsion interactions between fragments
+
+`xr_cutoff <value>` 
+
+Default value: `swf_cutoff`
+
+Unit: Angstrom
+
 ##### Maximum number of steps to make
 
 `max_steps <number>`
@@ -259,6 +269,27 @@ Default value: `false`
 
 Prints coordinates of the system contained in a single periodic cell around 
 a fragment specified by `ligand` keyword.
+
+##### Use symmetry
+
+`symmetry [true/false]`
+
+Default value: `false`
+
+If `true`, effectively performs calculations only on symmetry-unique fragments, which speeds up
+calculations of symmetric crystal systems with PBC.
+Implemented for single-point energy calculations. Not parallelized. 
+See `symm_frag` keyword for specifying symmetry-identical fragments.
+
+##### Specifying symmetry-identical fragments
+
+`symm_frag [frag | list]`
+
+Default value: `frag`
+
+`frag` - assumes that all fragments of the same type are identical.
+`list` - not implemented.
+
 
 ### Geometry optimization related parameters
 
