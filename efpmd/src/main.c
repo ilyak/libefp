@@ -37,6 +37,7 @@ void sim_opt(struct state *);
 void sim_md(struct state *);
 void sim_efield(struct state *);
 void sim_gtest(struct state *);
+void sim_etest(struct state *);
 
 #define USAGE_STRING \
 	"usage: efpmd [-d | -v | -h | input]\n" \
@@ -55,14 +56,16 @@ static struct cfg *make_cfg(void)
 		"opt\n"
 		"md\n"
 		"efield\n"
-		"gtest\n",
+		"gtest\n"
+        "etest\n",
 		(int []) { RUN_TYPE_SP,
 			   RUN_TYPE_GRAD,
 			   RUN_TYPE_HESS,
 			   RUN_TYPE_OPT,
 			   RUN_TYPE_MD,
 			   RUN_TYPE_EFIELD,
-			   RUN_TYPE_GTEST});
+			   RUN_TYPE_GTEST,
+			   RUN_TYPE_ETEST});
 
 	cfg_add_enum(cfg, "coord", EFP_COORD_TYPE_XYZABC,
 		"xyzabc\n"
@@ -171,6 +174,8 @@ static sim_fn_t get_sim_fn(enum run_type run_type)
 		return sim_efield;
 	case RUN_TYPE_GTEST:
 		return sim_gtest;
+		case RUN_TYPE_ETEST:
+		    return sim_etest;
 	}
 	assert(0);
 }

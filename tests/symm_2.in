@@ -1,4 +1,5 @@
-run_type sp
+run_type etest
+ref_energy -2.4694268198
 coord points
 terms elec pol disp xr
 elec_damp screen

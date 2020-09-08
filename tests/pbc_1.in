@@ -1,4 +1,4 @@
-run_type gtest
+run_type etest
 ref_energy -0.2470299158
 coord points
 terms elec pol disp xr

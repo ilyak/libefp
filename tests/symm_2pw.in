@@ -1,4 +1,5 @@
-run_type sp
+run_type etest
+ref_energy -2.4694268198
 coord points
 terms elec pol disp xr
 elec_damp screen
@@ -7,11 +8,11 @@ disp_damp tt
 enable_cutoff true
 userlib_path ./
 enable_pbc true
-enable_pairwise false
+enable_pairwise true
 ligand 0
 swf_cutoff 11
 periodic_box 24.0048 27.0356 25.7166 90.0 109.424 90.0 
-symmetry false
+symmetry true
 symm_frag frag
 
 

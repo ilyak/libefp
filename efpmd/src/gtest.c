@@ -171,3 +171,15 @@ void sim_gtest(struct state *state)
 
 	msg("GRADIENT TEST JOB COMPLETED SUCCESSFULLY\n");
 }
+
+void sim_etest(struct state *state)
+{
+    msg("ENERGY TEST JOB\n\n\n");
+
+    print_geometry(state->efp);
+    compute_energy(state, 1);
+    print_energy(state);
+    test_energy(state);
+
+    msg("ENERGY TEST JOB COMPLETED SUCCESSFULLY\n");
+}

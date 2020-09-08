@@ -804,7 +804,7 @@ compute_energy_crystal(struct efp *efp, double *polenergy)
             for (size_t fr = 0; fr < efp->n_frag; fr++) {
                 if (fr == i)
                     continue;
-            
+
                 struct frag *other_frag = efp->frags + fr;
                 for (size_t p = 0; p < other_frag->n_polarizable_pts; p++) {
                     struct polarizable_pt *pt = other_frag->polarizable_pts + p;
