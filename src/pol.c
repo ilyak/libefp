@@ -198,7 +198,7 @@ get_elec_field(const struct efp *efp, size_t frag_idx, size_t pt_idx)
 	return elec_field;
 }
 
-/* this function computes electric field on a polarizable point due to a ligand */
+/* this function computes electric field on a polarizable point pt_idx of fragment frag_idx due to other fragment ligand_idx */
 static vec_t
 get_ligand_field(const struct efp *efp, size_t frag_idx, size_t pt_idx, size_t ligand_idx)
 {
@@ -594,6 +594,9 @@ compute_id_crystal(struct efp *efp, void *data)
     int nsymm = efp->nsymm_frag;
     size_t *unique_frag = (size_t *)calloc(nsymm, sizeof(size_t));
     unique_symm_frag(efp, unique_frag);
+    size_t *nsymm_frag = (size_t *)calloc(nsymm, sizeof(size_t));
+    n_symm_frag(efp, nsymm_frag);
+
 
     // step 1: compute induced dipoles on symmetry-unique fragments
     for (int i = 0; i < nsymm; i++) {
@@ -620,9 +623,8 @@ compute_id_crystal(struct efp *efp, void *data)
             id_conj_new[idx] = mat_trans_vec(&pt->tensor,
                                              &field_conj);
 
-            conv += vec_dist(&id_new[idx], &efp->indip[idx]);
-            conv += vec_dist(&id_conj_new[idx],
-                             &efp->indipconj[idx]);
+            conv += nsymm_frag[i]*vec_dist(&id_new[idx], &efp->indip[idx]);
+            conv += nsymm_frag[i]*vec_dist(&id_conj_new[idx], &efp->indipconj[idx]);
         }
     }
     ((struct id_work_data *)data)->conv += conv;
@@ -795,7 +797,8 @@ compute_energy_crystal(struct efp *efp, double *polenergy)
 
                     struct frag *other_frag = efp->frags + fr;
                     efp->pair_energies[fr].polarization +=
-                            -0.5 * vec_dot(&efp->indip[idx], &efp->fragment_field[other_frag->fragment_field_offset + idx]);
+                            -0.5 *
+                            vec_dot(&efp->indip[idx], &efp->fragment_field[other_frag->fragment_field_offset + j]);
                 }
             }
         }
@@ -816,7 +819,6 @@ compute_energy_crystal(struct efp *efp, double *polenergy)
             }
         }
     }
-
     *polenergy = energy;
 }
 
