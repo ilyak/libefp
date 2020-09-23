@@ -131,6 +131,7 @@ free_frag(struct frag *frag)
 	free(frag->multipole_pts);
 	free(frag->polarizable_pts);
 	free(frag->dynamic_polarizable_pts);
+    free(frag->dipquad_polarizable_pts);
 	free(frag->lmo_centroids);
 	free(frag->xr_fock_mat);
 	free(frag->xr_wf);
@@ -204,6 +205,16 @@ copy_frag(struct frag *dest, const struct frag *src)
 		memcpy(dest->dynamic_polarizable_pts,
 				src->dynamic_polarizable_pts, size);
 	}
+    if (src->dipquad_polarizable_pts) {
+        size = src->n_dipquad_polarizable_pts *
+               sizeof(struct dipquad_polarizable_pt);
+        dest->dipquad_polarizable_pts =
+                (struct dipquad_polarizable_pt *)malloc(size);
+        if (!dest->dipquad_polarizable_pts)
+            return EFP_RESULT_NO_MEMORY;
+        memcpy(dest->dipquad_polarizable_pts,
+               src->dipquad_polarizable_pts, size);
+    }
 	if (src->lmo_centroids) {
 		size = src->n_lmo * sizeof(vec_t);
 		dest->lmo_centroids = (vec_t *)malloc(size);

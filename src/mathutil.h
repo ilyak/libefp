@@ -48,6 +48,12 @@ typedef struct {
 	double xx, xy, xz, yx, yy, yz, zx, zy, zz;
 } mat_t;
 
+typedef struct {
+    double xxx, xxy, xxz, xyx, xyy, xyz, xzx, xzy, xzz,
+           yxx, yxy, yxz, yyx, yyy, yyz, yzx, yzy, yzz,
+           zxx, zxy, zxz, zyx, zyy, zyz, zzx, zzy, zzz;
+} t3_t;
+
 static const vec_t vec_zero = { 0.0, 0.0, 0.0 };
 
 static const six_t six_zero = { 0.0, 0.0, 0.0,

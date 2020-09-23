@@ -696,6 +696,139 @@ skip_ctfok(struct frag *frag, struct stream *stream)
 }
 
 static enum efp_result
+parse_dipquad_polarizable_pts(struct frag *frag, struct stream *stream)
+{
+    double m[27];
+
+    efp_stream_next_line(stream);
+
+    while (!efp_stream_eof(stream)) {
+        frag->n_dipquad_polarizable_pts++;
+
+        size_t size = sizeof(struct dipquad_polarizable_pt);
+        frag->dipquad_polarizable_pts =
+                (struct dipquad_polarizable_pt *)realloc(
+                        frag->dipquad_polarizable_pts,
+                        frag->n_dipquad_polarizable_pts * size);
+        if (frag->dipquad_polarizable_pts == NULL)
+            return EFP_RESULT_NO_MEMORY;
+
+        struct dipquad_polarizable_pt *pt =
+                frag->dipquad_polarizable_pts +
+                frag->n_dynamic_polarizable_pts - 1;
+
+        if (!efp_stream_advance(stream, 5))
+            return EFP_RESULT_SYNTAX_ERROR;
+
+        if (!tok_double(stream, &pt->x) ||
+            !tok_double(stream, &pt->y) ||
+            !tok_double(stream, &pt->z))
+            return EFP_RESULT_SYNTAX_ERROR;
+
+        efp_stream_next_line(stream);
+
+        for (size_t j = 0; j < 27; j++)
+            if (!tok_double(stream, m + j))
+                return EFP_RESULT_SYNTAX_ERROR;
+
+            //tentative order!!!
+        pt->tensor[0].xxx = m[0];
+        pt->tensor[0].xxy = m[1];
+        pt->tensor[0].xxz = m[2];
+        pt->tensor[0].xyx = m[3];
+        pt->tensor[0].xyy = m[4];
+        pt->tensor[0].xyz = m[5];
+        pt->tensor[0].xzx = m[6];
+        pt->tensor[0].xzy = m[7];
+        pt->tensor[0].xzz = m[8];
+        pt->tensor[0].yxx = m[9];
+        pt->tensor[0].yxy = m[10];
+        pt->tensor[0].yxz = m[11];
+        pt->tensor[0].yyx = m[12];
+        pt->tensor[0].yyy = m[13];
+        pt->tensor[0].yyz = m[14];
+        pt->tensor[0].yzx = m[15];
+        pt->tensor[0].yzy = m[16];
+        pt->tensor[0].yzz = m[17];
+        pt->tensor[0].zxx = m[18];
+        pt->tensor[0].zxy = m[19];
+        pt->tensor[0].zxz = m[20];
+        pt->tensor[0].zyx = m[21];
+        pt->tensor[0].zyy = m[22];
+        pt->tensor[0].zyz = m[23];
+        pt->tensor[0].zzx = m[24];
+        pt->tensor[0].zzy = m[25];
+        pt->tensor[0].zzz = m[26];
+
+        efp_stream_next_line(stream);
+
+        if (efp_stream_eof(stream))
+            return EFP_RESULT_SYNTAX_ERROR;
+
+        if (strstr(efp_stream_get_ptr(stream), "FOR"))
+            break;
+    }
+    if (efp_stream_eof(stream))
+        return EFP_RESULT_SYNTAX_ERROR;
+
+    for (size_t w = 1; w < 12; w++) {
+        for (size_t i = 0; i < frag->n_dipquad_polarizable_pts; i++) {
+            struct dipquad_polarizable_pt *pt =
+                    frag->dipquad_polarizable_pts + i;
+
+            if (!efp_stream_advance(stream, 5))
+                return EFP_RESULT_SYNTAX_ERROR;
+            //printf("\n in dipquad 8");
+            if (!tok_double(stream, &pt->x) ||
+                !tok_double(stream, &pt->y) ||
+                !tok_double(stream, &pt->z))
+                return EFP_RESULT_SYNTAX_ERROR;
+
+            efp_stream_next_line(stream);
+            //printf("\n in dipquad 9");
+            for (size_t j = 0; j < 27; j++)
+                if (!tok_double(stream, m + j))
+                    return EFP_RESULT_SYNTAX_ERROR;
+
+            pt->tensor[w].xxx = m[0];
+            pt->tensor[w].xxy = m[1];
+            pt->tensor[w].xxz = m[2];
+            pt->tensor[w].xyx = m[3];
+            pt->tensor[w].xyy = m[4];
+            pt->tensor[w].xyz = m[5];
+            pt->tensor[w].xzx = m[6];
+            pt->tensor[w].xzy = m[7];
+            pt->tensor[w].xzz = m[8];
+            pt->tensor[w].yxx = m[9];
+            pt->tensor[w].yxy = m[10];
+            pt->tensor[w].yxz = m[11];
+            pt->tensor[w].yyx = m[12];
+            pt->tensor[w].yyy = m[13];
+            pt->tensor[w].yyz = m[14];
+            pt->tensor[w].yzx = m[15];
+            pt->tensor[w].yzy = m[16];
+            pt->tensor[w].yzz = m[17];
+            pt->tensor[w].zxx = m[18];
+            pt->tensor[w].zxy = m[19];
+            pt->tensor[w].zxz = m[20];
+            pt->tensor[w].zyx = m[21];
+            pt->tensor[w].zyy = m[22];
+            pt->tensor[w].zyz = m[23];
+            pt->tensor[w].zzx = m[24];
+            pt->tensor[w].zzy = m[25];
+            pt->tensor[w].zzz = m[26];
+
+            efp_stream_next_line(stream);
+        }
+    }
+    printf("\n in dipquad 10");
+    if (!tok_stop(stream))
+        return EFP_RESULT_SYNTAX_ERROR;
+
+    return EFP_RESULT_SUCCESS;
+}
+
+static enum efp_result
 parse_screen(struct frag *frag, struct stream *stream)
 {
 	double *scr;
@@ -813,6 +946,7 @@ get_parse_fn(struct stream *stream)
 		{ "CANONFOK",                   skip_canonfok                 },
 		{ "CTVEC",                      skip_ctvec                    },
 		{ "CTFOK",                      skip_ctfok                    },
+        { "DIPOLE-QUADRUPOLE DYNAMIC POLARIZABLE POINTS", parse_dipquad_polarizable_pts},
 		{ "SCREEN",                     parse_screen                  },
 		{ "XRFIT",                      parse_xrfit                   },
 		{ "POLAB",                      parse_polab                   },

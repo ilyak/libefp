@@ -61,6 +61,11 @@ struct dynamic_polarizable_pt {
 	mat_t tensor[12];
 };
 
+struct dipquad_polarizable_pt {
+    double x, y, z;
+    t3_t tensor[12];
+};
+
 struct ff_atom {
 	char type[32]; /* atom type in force field */
 	size_t idx;    /* index in atoms array */
@@ -114,10 +119,16 @@ struct frag {
 	/* dynamic polarizability points */
 	struct dynamic_polarizable_pt *dynamic_polarizable_pts;
 
-	/* number of dynamic polarizability points */
+    /* dipole-quadrupole dynamic polarizability points */
+    struct dipquad_polarizable_pt *dipquad_polarizable_pts;
+
+    /* number of dynamic polarizability points */
 	size_t n_dynamic_polarizable_pts;
 
-	/* number of localized molecular orbitals */
+    /* number of dipole-quadrupole dynamic polarizability points */
+    size_t n_dipquad_polarizable_pts;
+
+    /* number of localized molecular orbitals */
 	size_t n_lmo;
 
 	/* localized molecular orbital centroids */
