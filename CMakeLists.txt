@@ -2,10 +2,10 @@ cmake_minimum_required(VERSION 3.0)
 # project_VERSION* variables populated from project(... VERSION x.x.x) string
 cmake_policy(SET CMP0048 NEW)
 
-project(libefp VERSION 1.5.0 LANGUAGES C)
-set(libefp_AUTHORS "Ilya A. Kaliman")
+project(libefp VERSION 1.7.2 LANGUAGES C)
+set(libefp_AUTHORS "Ilya A. Kaliman, Lori A. Burns, Dmitry Morozov, Carlos H. Borca, Yen (Terri) Bui, Yongbin Kim, Lyudmila V. Slipchenko")
 set(libefp_DESCRIPTION "Parallel implementation of the Effective Fragment Potential method")
-set(libefp_URL "https://libefp.github.io/")
+set(libefp_URL "https://github.com/libefp2/libefp")
 set(libefp_LICENSE "BSD 2-clause")
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)

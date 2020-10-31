@@ -1728,7 +1728,7 @@ efp_banner(void)
 		"  - Kaliman and Slipchenko, JCC 2015.\n"
 		"    DOI: http://dx.doi.org/10.1002/jcc.23772\n"
 		"\n"
-		"Project web site: https://libefp.github.io/\n";
+		"Project web site: https://github.com/libefp2/libefp/\n";
 
 	return banner;
 }
