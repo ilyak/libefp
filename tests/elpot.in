@@ -1,8 +1,5 @@
-run_type gtest
-ref_energy 0.0002777238
+run_type elpot
 coord xyzabc
-terms elec pol
-elec_damp screen
 fraglib_path ../fraglib
 
 fragment h2o_l

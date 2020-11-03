@@ -114,6 +114,38 @@ get_multipole_field(const vec_t *xyz, const struct multipole_pt *mult_pt,
 	return field;
 }
 
+static double
+get_multipole_elec_potential(const vec_t *xyz, const struct multipole_pt *mult_pt,
+                    const struct swf *swf)
+{
+    double elpot = 0.0;
+
+    vec_t dr = {
+            xyz->x - mult_pt->x - swf->cell.x,
+            xyz->y - mult_pt->y - swf->cell.y,
+            xyz->z - mult_pt->z - swf->cell.z
+    };
+
+    double r = vec_len(&dr);
+    double r3 = r * r * r;
+    double r5 = r3 * r * r;
+    double r7 = r5 * r * r;
+
+    /* charge */
+    elpot += swf->swf * mult_pt->monopole / r;
+
+    /* dipole */
+    elpot += swf->swf * vec_dot(&mult_pt->dipole, &dr) / r3;
+
+    /* quadrupole */
+    elpot += swf->swf * quadrupole_sum(mult_pt->quadrupole, &dr) / r5;
+
+    /* octupole */
+    elpot += swf->swf * octupole_sum(mult_pt->octupole, &dr) / r7;
+
+    return elpot;
+}
+
 static vec_t
 get_elec_field(const struct efp *efp, size_t frag_idx, size_t pt_idx)
 {
@@ -1258,4 +1290,79 @@ efp_get_electric_field(struct efp *efp, size_t frag_idx, const double *xyz,
 
 	*((vec_t *)field) = elec_field;
 	return EFP_RESULT_SUCCESS;
+}
+
+EFP_EXPORT enum efp_result
+efp_get_elec_potential(struct efp *efp, size_t frag_idx, const double *xyz,
+                       double *elec_potential)
+{
+    assert(efp);
+    assert(frag_idx < efp->n_frag);
+    assert(xyz);
+    assert(elec_potential);
+
+    const struct frag *frag = efp->frags + frag_idx;
+    double elpot = 0.0;
+
+    for (size_t i = 0; i < efp->n_frag; i++) {
+        if (i == frag_idx || efp_skip_frag_pair(efp, i, frag_idx))
+            continue;
+
+        const struct frag *fr_i = efp->frags + i;
+        struct swf swf = efp_make_swf(efp, fr_i, frag, 0);
+        if (swf.swf == 0.0)
+            continue;
+
+        /* potential due to nuclei */
+        for (size_t j = 0; j < fr_i->n_atoms; j++) {
+            const struct efp_atom *at = fr_i->atoms + j;
+
+            vec_t dr = {
+                    xyz[0] - at->x - swf.cell.x,
+                    xyz[1] - at->y - swf.cell.y,
+                    xyz[2] - at->z - swf.cell.z
+            };
+
+            double r = vec_len(&dr);
+
+            elpot += swf.swf * at->znuc / r;
+        }
+
+        /* potential due to multipoles */
+        for (size_t j = 0; j < fr_i->n_multipole_pts; j++) {
+            const struct multipole_pt *mpt = fr_i->multipole_pts+j;
+            elpot += get_multipole_elec_potential((const vec_t *)xyz, mpt, &swf);
+         }
+
+        /* potential due to induced dipoles */
+        for (size_t j = 0; j < fr_i->n_polarizable_pts; j++) {
+            struct polarizable_pt *pt_i = fr_i->polarizable_pts + j;
+            size_t idx = fr_i->polarizable_offset + j;
+
+            vec_t dr = {
+                    xyz[0] - pt_i->x - swf.cell.x,
+                    xyz[1] - pt_i->y - swf.cell.y,
+                    xyz[2] - pt_i->z - swf.cell.z
+            };
+
+            double r = vec_len(&dr);
+            double r3 = r * r * r;
+
+            elpot += swf.swf * 0.5 * (vec_dot(&efp->indip[idx], &dr) + vec_dot(&efp->indipconj[idx], &dr)) / r3;
+        }
+    }
+
+    if (efp->opts.terms & EFP_TERM_AI_POL) {
+        /* elec potential due to nuclei from ab initio subsystem */
+        for (size_t i = 0; i < efp->n_ptc; i++) {
+            vec_t dr = vec_sub((const vec_t *)xyz, efp->ptc_xyz+i);
+
+            double r = vec_len(&dr);
+
+            elpot += efp->ptc[i] / r;
+        }
+    }
+
+    *elec_potential = elpot;
+    return EFP_RESULT_SUCCESS;
 }

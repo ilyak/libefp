@@ -36,6 +36,7 @@ void sim_hess(struct state *);
 void sim_opt(struct state *);
 void sim_md(struct state *);
 void sim_efield(struct state *);
+void sim_elpot(struct state *);
 void sim_gtest(struct state *);
 void sim_etest(struct state *);
 
@@ -56,6 +57,7 @@ static struct cfg *make_cfg(void)
 		"opt\n"
 		"md\n"
 		"efield\n"
+        "elpot\n"
 		"gtest\n"
         "etest\n",
 		(int []) { RUN_TYPE_SP,
@@ -64,10 +66,11 @@ static struct cfg *make_cfg(void)
 			   RUN_TYPE_OPT,
 			   RUN_TYPE_MD,
 			   RUN_TYPE_EFIELD,
+			   RUN_TYPE_ELPOT,
 			   RUN_TYPE_GTEST,
 			   RUN_TYPE_ETEST});
 
-	cfg_add_enum(cfg, "coord", EFP_COORD_TYPE_XYZABC,
+	cfg_add_enum(cfg, "coord", EFP_COORD_TYPE_POINTS,
 		"xyzabc\n"
 		"points\n"
 		"rotmat\n",
@@ -160,20 +163,22 @@ static struct cfg *make_cfg(void)
 static sim_fn_t get_sim_fn(enum run_type run_type)
 {
 	switch (run_type) {
-	case RUN_TYPE_SP:
-		return sim_sp;
-	case RUN_TYPE_GRAD:
-		return sim_grad;
-	case RUN_TYPE_HESS:
-		return sim_hess;
-	case RUN_TYPE_OPT:
-		return sim_opt;
-	case RUN_TYPE_MD:
-		return sim_md;
-	case RUN_TYPE_EFIELD:
-		return sim_efield;
-	case RUN_TYPE_GTEST:
-		return sim_gtest;
+	    case RUN_TYPE_SP:
+		    return sim_sp;
+	    case RUN_TYPE_GRAD:
+		    return sim_grad;
+	    case RUN_TYPE_HESS:
+		    return sim_hess;
+	    case RUN_TYPE_OPT:
+		    return sim_opt;
+	    case RUN_TYPE_MD:
+		    return sim_md;
+	    case RUN_TYPE_EFIELD:
+		    return sim_efield;
+		case RUN_TYPE_ELPOT:
+            return sim_elpot;
+	    case RUN_TYPE_GTEST:
+		    return sim_gtest;
 		case RUN_TYPE_ETEST:
 		    return sim_etest;
 	}

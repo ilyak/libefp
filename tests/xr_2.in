@@ -1,5 +1,6 @@
 run_type gtest
 ref_energy 0.0008443933
+coord xyzabc
 terms xr
 fraglib_path ../fraglib
 
