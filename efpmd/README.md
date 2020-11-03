@@ -35,7 +35,7 @@ Lines beginning with the `#` symbol are ignored during input parsing.
 
 ##### Type of the simulation
 
-`run_type [sp|grad|hess|opt|md|gtest]`
+`run_type [sp|grad|hess|opt|md|efield|elpot|gtest|etest]`
 
 `sp` - single point energy calculation.
 
@@ -48,6 +48,8 @@ Lines beginning with the `#` symbol are ignored during input parsing.
 `md` - molecular dynamics simulation.
 
 `efield` - compute and print electric field on all atoms.
+
+`elpot` - compute and print electrostatic potential on all atoms.
 
 `gtest` - compute and compare numerical and analytical gradients.
 
@@ -65,9 +67,9 @@ Default value: `sp`
 
 `rotmat` - Coordinates of the center of mass and rotation matrix.
 
-Default value: `xyzabc`
+Default value: `points`
 
-See fragment input specification for more details.
+See fragment input specification for more details. ATTENTION: default changed to "points" from "xyzabc" in version 1.7.3!
 
 ##### Energy terms for EFP computation
 
