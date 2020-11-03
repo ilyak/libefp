@@ -1,5 +1,6 @@
 run_type gtest
 ref_energy 0.0002777238
+coord xyzabc
 terms elec pol
 elec_damp screen
 pol_driver direct

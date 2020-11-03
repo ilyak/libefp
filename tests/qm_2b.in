@@ -1,6 +1,7 @@
 run_type gtest
 ref_energy -0.2314262632
 gtest_tol 5.0e-6
+coord xyzabc
 elec_damp screen
 disp_damp overlap
 pol_driver direct

@@ -1,5 +1,6 @@
 run_type gtest
 ref_energy 0.0017049246
+coord xyzabc
 terms elec
 elec_damp overlap
 fraglib_path ../fraglib

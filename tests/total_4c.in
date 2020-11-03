@@ -1,6 +1,7 @@
 run_type gtest
 ref_energy -0.0091278725
 gtest_tol 5.0e-6
+coord xyzabc
 elec_damp off
 disp_damp off
 pol_damp tt

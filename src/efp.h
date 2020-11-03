@@ -1063,6 +1063,20 @@ enum efp_result efp_get_electric_field(struct efp *efp, size_t frag_idx,
     const double *xyz, double *field);
 
 /**
+ * Get electrostatic potential for a point on a fragment.
+ *
+ * @param[in] efp The efp structure.
+ * @param[in] frag_idx Index of a fragment. Must be a value between zero and
+ * the total number of fragments minus one.
+ * @param[in] xyz Coordinates of a point for which electric field should be
+ * computed.
+ * @param[out] elec_potential Electrostatic potential in atomic units.
+ * @return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_get_elec_potential(struct efp *efp, size_t frag_idx,
+        const double *xyz, double *elec_potential);
+
+/**
  * Convert rigid body torque to derivatives of energy by Euler angles.
  *
  * \param[in] euler Array of 3 elements containing the values of Euler angles

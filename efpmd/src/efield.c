@@ -27,6 +27,7 @@
 #include "common.h"
 
 void sim_efield(struct state *state);
+void sim_elpot(struct state *state);
 
 static void
 print_field(size_t frag_idx, const struct efp_atom *atom, const double *field)
@@ -77,4 +78,55 @@ sim_efield(struct state *state)
 	}
 
 	msg("ELECTRIC FIELD JOB COMPLETED SUCCESSFULLY\n");
+}
+
+
+static void
+print_elpot(const struct efp_atom *atom, const double elpot)
+{
+     msg("    %s %12.8lf %12.8lf %12.8lf %12.8lf\n",
+        atom->label,
+        BOHR_RADIUS * atom->x,
+        BOHR_RADIUS * atom->y,
+        BOHR_RADIUS * atom->z,
+        elpot);
+    // msg("    ELEC POTENTIAL %12.8lf\n\n", elpot);
+}
+
+void
+sim_elpot(struct state *state)
+{
+    size_t n_frags;
+
+    msg("ELECTROSTATIC POTENTIAL JOB\n\n\n");
+
+    print_geometry(state->efp);
+    compute_energy(state, false);
+    print_energy(state);
+    check_fail(efp_get_frag_count(state->efp, &n_frags));
+
+    msg("COORDINATES IN ANGSTROMS, ELECTROSTATIC POTENTIAL IN ATOMIC UNITS\n");
+    msg("     ATOM            X            Y            Z        ELPOT \n\n");
+
+    for (size_t i = 0; i < n_frags; i++) {
+        double elpot;
+        struct efp_atom *atoms;
+        size_t n_atoms;
+
+        check_fail(efp_get_frag_atom_count(state->efp, i, &n_atoms));
+        atoms = xmalloc(n_atoms * sizeof(struct efp_atom));
+        check_fail(efp_get_frag_atoms(state->efp, i, n_atoms, atoms));
+
+        msg("ELECTROSTATIC POTENTIAL ON FRAGMENT %zu\n", i);
+
+        for (size_t j = 0; j < n_atoms; j++) {
+            check_fail(efp_get_elec_potential(state->efp, i, &atoms[j].x, &elpot));
+            print_elpot(atoms + j, elpot);
+        }
+        msg("\n");
+
+        free(atoms);
+    }
+
+    msg("ELECTROSTATIC POTENTIAL JOB COMPLETED SUCCESSFULLY\n");
 }

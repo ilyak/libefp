@@ -1,5 +1,6 @@
 run_type hess
 hess_central true
+coord xyzabc
 fraglib_path ../fraglib
 
 fragment h2o_l

@@ -93,6 +93,28 @@ quadrupole_sum(const double *quad, const vec_t *dr)
 	return sum;
 }
 
+static inline double
+octupole_sum(const double *oct, const vec_t *dr)
+{
+    /* order in which octupoles are stored */
+    enum { xxx = 0, yyy, zzz, xxy, xxz, xyy, yyz, xzz, yzz, xyz };
+
+    double sum = 0.0;
+
+    sum += oct[xxx] * dr->x * dr->x * dr->x;
+    sum += oct[yyy] * dr->y * dr->y * dr->y;
+    sum += oct[zzz] * dr->z * dr->z * dr->z;
+    sum += oct[xxy] * dr->x * dr->x * dr->y * 3.0;
+    sum += oct[xxz] * dr->x * dr->x * dr->z * 3.0;
+    sum += oct[xyy] * dr->x * dr->y * dr->y * 3.0;
+    sum += oct[yyz] * dr->y * dr->y * dr->z * 3.0;
+    sum += oct[xzz] * dr->x * dr->z * dr->z * 3.0;
+    sum += oct[yzz] * dr->y * dr->z * dr->z * 3.0;
+    sum += oct[xyz] * dr->x * dr->y * dr->z * 6.0;
+
+    return sum;
+}
+
 double efp_charge_charge_energy(double, double, const vec_t *);
 double efp_charge_dipole_energy(double, const vec_t *, const vec_t *);
 double efp_charge_quadrupole_energy(double, const double *, const vec_t *);

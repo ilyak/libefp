@@ -1,5 +1,6 @@
 run_type gtest
 ref_energy -0.0000980020
+coord xyzabc
 terms disp
 disp_damp off
 enable_pbc true
