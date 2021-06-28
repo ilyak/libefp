@@ -36,6 +36,21 @@
 #include "util.h"
 
 static void
+add_screen2_params(struct frag *frag) {
+    double *scr;
+    scr = (double *)malloc(frag->n_multipole_pts * sizeof(double));
+    // if (scr == NULL)
+    //    return EFP_RESULT_NO_MEMORY;
+    for (int i=0; i<frag->n_multipole_pts; i++){
+        scr[i] = 10.0;    // assign large value - no effective screening
+    }
+
+    if (frag->screen_params)
+        free(frag->screen_params);
+    frag->screen_params = scr;
+}
+
+static void
 update_fragment(struct frag *frag)
 {
 	/* update atoms */
@@ -310,7 +325,7 @@ check_opts(const struct efp_opts *opts)
 }
 
 static enum efp_result
-check_frag_params(const struct efp_opts *opts, const struct frag *frag)
+check_frag_params(const struct efp_opts *opts, struct frag *frag)
 {
 	if ((opts->terms & EFP_TERM_ELEC) || (opts->terms & EFP_TERM_AI_ELEC)) {
 		if (!frag->multipole_pts) {
@@ -319,8 +334,9 @@ check_frag_params(const struct efp_opts *opts, const struct frag *frag)
 		}
 		if (opts->elec_damp == EFP_ELEC_DAMP_SCREEN &&
 		    frag->screen_params == NULL) {
-			efp_log("screening parameters are missing");
-			return EFP_RESULT_FATAL;
+			efp_log("electrostatic screening parameters are missing; continue");
+			add_screen2_params(frag);
+            //return EFP_RESULT_FATAL;
 		}
 	}
 	if ((opts->terms & EFP_TERM_POL) || (opts->terms & EFP_TERM_AI_POL)) {
@@ -359,8 +375,10 @@ check_params(struct efp *efp)
 	enum efp_result res;
 
 	for (size_t i = 0; i < efp->n_frag; i++)
-		if ((res = check_frag_params(&efp->opts, efp->frags + i)))
-			return res;
+		if ((res = check_frag_params(&efp->opts, efp->frags + i))) {
+            efp_log("check_params() failure");
+            return res;
+		}
 
 	return EFP_RESULT_SUCCESS;
 }
@@ -870,8 +888,10 @@ efp_set_coordinates(struct efp *efp, enum efp_coord_type coord_type,
 	}
 
 	for (size_t i = 0; i < efp->n_frag; i++, coord += stride)
-		if ((res = efp_set_frag_coordinates(efp, i, coord_type, coord)))
-			return res;
+		if ((res = efp_set_frag_coordinates(efp, i, coord_type, coord))) {
+            efp_log("efp_set_coordinates() failure");
+            return res;
+		}
 
 	return EFP_RESULT_SUCCESS;
 }
@@ -896,6 +916,7 @@ efp_set_frag_coordinates(struct efp *efp, size_t frag_idx,
 	case EFP_COORD_TYPE_ROTMAT:
 		return set_coord_rotmat(frag, coord);
 	}
+    efp_log("efp_set_frag_coordinates() failure");
 	assert(0);
 }
 
@@ -1134,8 +1155,10 @@ efp_compute(struct efp *efp, int do_gradient)
 
 	efp->do_gradient = do_gradient;
 
-	if ((res = check_params(efp)))
-		return res;
+	if ((res = check_params(efp))) {
+        efp_log("check_params() failure");
+        return res;
+	}
 
 	memset(&efp->energy, 0, sizeof(efp->energy));
 	memset(&efp->stress, 0, sizeof(efp->stress));
@@ -1147,16 +1170,24 @@ efp_compute(struct efp *efp, int do_gradient)
         efp_balance_work(efp, compute_two_body_range, NULL);
 	}
 	else {  // high-symmetry crystals
-	    if (res = compute_two_body_crystal(efp))
-	        return res;
+	    if (res = compute_two_body_crystal(efp)){
+            efp_log("compute_two_body_crystal() failure");
+            return res;
+        }
 	}
 
-	if (res = efp_compute_pol(efp))
-	    return res;
-	if (res = efp_compute_ai_elec(efp))
-	    return res;
-	if (res = efp_compute_ai_disp(efp))
-	    return res;
+	if (res = efp_compute_pol(efp)) {
+        efp_log("efp_compute_pol() failure");
+        return res;
+    }
+	if (res = efp_compute_ai_elec(efp)){
+        efp_log("efp_compute_ai_elec() failure");
+        return res;
+    }
+	if (res = efp_compute_ai_disp(efp)){
+        efp_log("efp_compute_ai_disp() failure");
+        return res;
+    }
 
 #ifdef EFP_USE_MPI
 	efp_allreduce(&efp->energy.electrostatic, 1);
@@ -1475,8 +1506,10 @@ efp_set_opts(struct efp *efp, const struct efp_opts *opts)
 	assert(efp);
 	assert(opts);
 
-	if ((res = check_opts(opts)))
-		return res;
+	if ((res = check_opts(opts))) {
+	    efp_log("check_opts() failure");
+        return res;
+	}
 
 	efp->opts = *opts;
 	return EFP_RESULT_SUCCESS;
@@ -1534,8 +1567,10 @@ efp_add_fragment(struct efp *efp, const char *name)
 	enum efp_result res;
 	struct frag *frag = efp->frags + efp->n_frag - 1;
 
-	if ((res = copy_frag(frag, lib)))
-		return res;
+	if ((res = copy_frag(frag, lib))) {
+        efp_log("copy_frag() failure");
+        return res;
+    }
 
 	for (size_t a = 0; a < 3; a++) {
 		size_t size = frag->xr_wf_size * frag->n_lmo;
@@ -1909,3 +1944,4 @@ n_symm_frag(struct efp *efp, size_t *symm_frag) {
         // printf("\n symm_frag %d = %d", i, symm_frag[i]);
     }
 }
+

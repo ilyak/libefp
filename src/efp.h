@@ -1171,6 +1171,11 @@ void unique_symm_frag(struct efp *efp, size_t *unique_frag);
  */
 void n_symm_frag(struct efp *efp, size_t *symm_frag);
 
+/**
+ * Adds electrostatic screening parameters when missing
+ */
+//static void add_screen2_params(struct frag *frag);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
