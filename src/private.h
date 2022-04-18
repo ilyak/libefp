@@ -217,7 +217,13 @@ struct efp {
 	/* polarization conjugate induced dipoles */
 	vec_t *indipconj;
 
-	/* total number of polarizable points */
+    /* polarization induced dipoles */
+    vec_t *indip_old;
+
+    /* polarization conjugate induced dipoles */
+    vec_t *indipconj_old;
+
+    /* total number of polarizable points */
 	size_t n_polarizable_pts;
 
 	/* total number of points to store electric field due to ligand */

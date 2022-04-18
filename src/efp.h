@@ -178,6 +178,9 @@ struct efp_energy {
 	 * EFP/EFP electrostatic energy. */
 	double electrostatic;
 	/**
+	 * AI/EFP electrostatic energy. */
+ 	double ai_electrostatic;
+ 	/**
 	 * Charge penetration energy from overlap-based electrostatic
 	 * damping. Zero if overlap-based damping is turned off. */
 	double charge_penetration;
@@ -189,6 +192,15 @@ struct efp_energy {
 	 * self-consistently so it can't be separated into EFP/EFP and AI/EFP
 	 * parts. */
 	double polarization;
+	/**
+	 * Separate storage for polarization corresponding to the excited/correlated state
+	 * (relevant for excited state QM/EFP calculations).
+	 */
+	double exs_polarization;
+	/**
+	 * Polarization energy storage for pairwise AI/EFP analysis.
+	 * Not used in "normal" code	 */
+	double ai_polarization;
 	/**
 	 * EFP/EFP dispersion energy. */
 	double dispersion;
@@ -683,6 +695,15 @@ enum efp_result efp_get_wavefunction_dependent_energy(struct efp *efp,
     double *energy);
 
 /**
+ * Computes excitation energy correction.
+ * @param[in] efp The efp structure.
+ * @param[out] energy Excitation energy correction.
+ * @return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_get_wavefunction_dependent_energy_correction(struct efp *efp,
+        double *energy);
+
+/**
  * Perform the EFP computation.
  *
  * \param[in] efp The efp structure.
@@ -863,6 +884,24 @@ enum efp_result efp_get_induced_dipole_values(struct efp *efp, double *dip);
  */
 enum efp_result efp_get_induced_dipole_conj_values(struct efp *efp,
     double *dip);
+
+/**
+ * Analogues to efp_get_induced_dipole_values but returnes "old" i.e. ground state induced dipoles
+ * @param efp The efp structure.
+ * @param dip Array where induced dipoles will be stored. The size of the
+ * array must be at least [3 * \p n_dip] elements.
+ * @return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_get_old_induced_dipole_values(struct efp *efp, double *dip);
+
+/**
+ * Analogues to efp_get_induced_dipole_conj_values but returnes "old" i.e. ground state induced dipoles
+ * @param efp The efp structure.
+ * @param dip Array where induced dipoles will be stored. The size of the
+ * array must be at least [3 * \p n_dip] elements.
+ * @return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_get_old_induced_dipole_conj_values(struct efp *efp, double *dip);
 
 /**
  * Get the number of LMOs in a fragment.

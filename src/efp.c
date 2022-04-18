@@ -1076,6 +1076,8 @@ efp_prepare(struct efp *efp)
 
 	efp->indip = (vec_t *)calloc(efp->n_polarizable_pts, sizeof(vec_t));
 	efp->indipconj = (vec_t *)calloc(efp->n_polarizable_pts, sizeof(vec_t));
+    efp->indip_old = (vec_t *)calloc(efp->n_polarizable_pts, sizeof(vec_t));
+    efp->indipconj_old = (vec_t *)calloc(efp->n_polarizable_pts, sizeof(vec_t));
 	efp->grad = (six_t *)calloc(efp->n_frag, sizeof(six_t));
 	efp->skiplist = (char *)calloc(efp->n_frag * efp->n_frag, 1);
 	efp->pair_energies = (struct efp_energy *)calloc(efp->n_frag, sizeof(struct efp_energy));
@@ -1139,6 +1141,20 @@ efp_get_wavefunction_dependent_energy(struct efp *efp, double *energy)
 		return EFP_RESULT_SUCCESS;
 	}
 	return efp_compute_pol_energy(efp, energy);
+}
+
+EFP_EXPORT enum efp_result
+efp_get_wavefunction_dependent_energy_correction(struct efp *efp, double *energy)
+{
+    assert(efp);
+    assert(energy);
+
+    if (!(efp->opts.terms & EFP_TERM_POL) &&
+        !(efp->opts.terms & EFP_TERM_AI_POL)) {
+        *energy = 0.0;
+        return EFP_RESULT_SUCCESS;
+    }
+    return efp_compute_pol_correction(efp, energy);
 }
 
 EFP_EXPORT enum efp_result
@@ -1422,6 +1438,26 @@ efp_get_induced_dipole_conj_values(struct efp *efp, double *dip)
 }
 
 EFP_EXPORT enum efp_result
+efp_get_old_induced_dipole_values(struct efp *efp, double *dip)
+{
+    assert(efp);
+    assert(dip);
+
+    memcpy(dip, efp->indip_old, efp->n_polarizable_pts * sizeof(vec_t));
+    return EFP_RESULT_SUCCESS;
+}
+
+EFP_EXPORT enum efp_result
+efp_get_old_induced_dipole_conj_values(struct efp *efp, double *dip)
+{
+    assert(efp);
+    assert(dip);
+
+    memcpy(dip, efp->indipconj_old, efp->n_polarizable_pts * sizeof(vec_t));
+    return EFP_RESULT_SUCCESS;
+}
+
+EFP_EXPORT enum efp_result
 efp_get_lmo_count(struct efp *efp, size_t frag_idx, size_t *n_lmo)
 {
 	assert(efp != NULL);
@@ -1489,6 +1525,8 @@ efp_shutdown(struct efp *efp)
 	free(efp->ptc_grad);
 	free(efp->indip);
 	free(efp->indipconj);
+    free(efp->indip_old);
+    free(efp->indipconj_old);
 	free(efp->ai_orbital_energies);
 	free(efp->ai_dipole_integrals);
 	free(efp->skiplist);
