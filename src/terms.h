@@ -41,6 +41,7 @@ enum efp_result efp_compute_pol(struct efp *);
 enum efp_result efp_compute_ai_elec(struct efp *);
 enum efp_result efp_compute_ai_disp(struct efp *);
 enum efp_result efp_compute_pol_energy(struct efp *, double *);
+enum efp_result efp_compute_pol_correction(struct efp *, double *);
 void efp_update_elec(struct frag *);
 void efp_update_pol(struct frag *);
 void efp_update_disp(struct frag *);
