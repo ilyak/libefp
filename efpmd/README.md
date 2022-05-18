@@ -59,13 +59,15 @@ Default value: `sp`
 
 ##### Format of fragment input
 
-`coord [xyzabc|points|rotmat]`
+`coord [xyzabc|points|rotmat|atoms]`
 
 `xyzabc` - Coordinates of the center of mass and Euler angles.
 
 `points` - Coordinates of three atoms for each fragment.
 
 `rotmat` - Coordinates of the center of mass and rotation matrix.
+
+`atoms` - Atom names and cartesian coordinates of all atoms.
 
 Default value: `points`
 

@@ -76,20 +76,69 @@ static void parse_frag(struct stream *stream, enum efp_coord_type coord_type,
 	int n_rows = (int []) {
 		[EFP_COORD_TYPE_XYZABC] = 1,
 		[EFP_COORD_TYPE_POINTS] = 3,
-		[EFP_COORD_TYPE_ROTMAT] = 4 }[coord_type];
+		[EFP_COORD_TYPE_ROTMAT] = 4,
+		[EFP_COORD_TYPE_ATOMS] = 3 }[coord_type];
 
 	int n_cols = (int []) {
 		[EFP_COORD_TYPE_XYZABC] = 6,
 		[EFP_COORD_TYPE_POINTS] = 3,
-		[EFP_COORD_TYPE_ROTMAT] = 3 }[coord_type];
+		[EFP_COORD_TYPE_ROTMAT] = 3,
+		[EFP_COORD_TYPE_ATOMS] = 4 }[coord_type];
 
-	for (int i = 0, idx = 0; i < n_rows; i++) {
-		for (int j = 0; j < n_cols; j++, idx++)
-			if (!efp_stream_parse_double(stream, frag->coord + idx))
-				error("incorrect fragment coordinates format");
+	if (coord_type == EFP_COORD_TYPE_ATOMS) {
+	    int counter = 0;
+	    while (true) {
+            struct efp_atom atom_i;
+            memset(&atom_i, 0, sizeof(struct efp_atom));
 
-		efp_stream_next_line(stream);
-	}
+            efp_stream_skip_space(stream);
+            if (efp_strncasecmp(efp_stream_get_ptr(stream), "velocity", strlen("velocity")) == 0 ||
+                efp_strncasecmp(efp_stream_get_ptr(stream), "constraint", strlen("constraint")) == 0 ||
+                efp_strncasecmp(efp_stream_get_ptr(stream), "fragment", strlen("fragment")) == 0) {
+                break;
+            }
+
+            const char *ptr2 = efp_stream_get_ptr(stream);
+            efp_stream_skip_nonspace(stream);
+
+            size_t len2 = efp_stream_get_ptr(stream) - ptr2;
+            if (len2 == 0)
+                error("incorrect fragment coordinates format: reading efp atom name");
+            memcpy(atom_i.label, ptr2, len2);
+
+            efp_stream_skip_space(stream);
+            if (!efp_stream_parse_double(stream, &atom_i.x) || !efp_stream_parse_double(stream, &atom_i.y)
+                || !efp_stream_parse_double(stream, &atom_i.z))
+                error("incorrect fragment coordinates format: reading efp atom coordinates");
+
+            // LVS: temporary fix not to break the code; probably need to be rewritten later on
+            if (counter < 3) {
+                frag->coord[counter*3] = atom_i.x;
+                frag->coord[counter*3+1] = atom_i.y;
+                frag->coord[counter*3+2] = atom_i.z;
+            }
+
+            frag->n_atoms++;
+            frag->atoms = xrealloc(frag->atoms, frag->n_atoms * sizeof(struct efp_atom));
+            frag->atoms[frag->n_atoms - 1] = atom_i;
+            counter++;
+            //printf("n_atoms = %d",frag->n_atoms);
+
+            efp_stream_next_line(stream);
+            if (efp_stream_eol(stream))
+                return;
+        }
+    }
+	else {
+        for (int i = 0, idx = 0; i < n_rows; i++) {
+            for (int j = 0; j < n_cols; j++, idx++) {
+                if (!efp_stream_parse_double(stream, frag->coord + idx))
+                    error("incorrect fragment coordinates format");
+            }
+
+            efp_stream_next_line(stream);
+        }
+    }
 
 	efp_stream_skip_space(stream);
 	if (efp_stream_eol(stream))

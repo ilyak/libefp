@@ -119,6 +119,49 @@ set_coord_points(struct frag *frag, const double *coord)
 }
 
 static enum efp_result
+set_coord_atoms(struct frag *frag, const double *coord)
+{
+    /* allow fragments with less than 3 atoms by using multipole points of
+     * ghost atoms; multipole points have the same coordinates as atoms */
+    if (frag->n_multipole_pts < 3) {
+        efp_log("fragment must contain at least three atoms");
+        return EFP_RESULT_FATAL;
+    }
+
+    int natoms = frag->lib->n_atoms;
+
+    double ref[9] = {
+            frag->lib->multipole_pts[0].x,
+            frag->lib->multipole_pts[0].y,
+            frag->lib->multipole_pts[0].z,
+            frag->lib->multipole_pts[1].x,
+            frag->lib->multipole_pts[1].y,
+            frag->lib->multipole_pts[1].z,
+            frag->lib->multipole_pts[2].x,
+            frag->lib->multipole_pts[2].y,
+            frag->lib->multipole_pts[2].z
+    };
+
+    vec_t p1;
+    mat_t rot1, rot2;
+
+    efp_points_to_matrix(coord, &rot1);
+    efp_points_to_matrix(ref, &rot2);
+    rot2 = mat_transpose(&rot2);
+    frag->rotmat = mat_mat(&rot1, &rot2);
+    p1 = mat_vec(&frag->rotmat, VEC(frag->lib->multipole_pts[0].x));
+
+    /* center of mass */
+    frag->x = coord[0] - p1.x;
+    frag->y = coord[1] - p1.y;
+    frag->z = coord[2] - p1.z;
+
+    update_fragment(frag);
+
+    return EFP_RESULT_SUCCESS;
+}
+
+static enum efp_result
 set_coord_rotmat(struct frag *frag, const double *coord)
 {
 	if (!efp_check_rotation_matrix((const mat_t *)(coord + 3))) {
@@ -885,13 +928,28 @@ efp_set_coordinates(struct efp *efp, enum efp_coord_type coord_type,
 	case EFP_COORD_TYPE_ROTMAT:
 		stride = 12;
 		break;
+    case EFP_COORD_TYPE_ATOMS:
+        stride = 9;
+        break;
 	}
 
-	for (size_t i = 0; i < efp->n_frag; i++, coord += stride)
-		if ((res = efp_set_frag_coordinates(efp, i, coord_type, coord))) {
-            efp_log("efp_set_coordinates() failure");
-            return res;
-		}
+	/*
+	if ( coord_type == EFP_COORD_TYPE_ATOMS ) {
+        for (size_t i = 0; i < efp->n_frag; i++) {
+            if ((res = efp_set_frag_coordinates(efp, i, coord_type, coord))) {
+                efp_log("efp_set_coordinates() failure");
+                return res;
+            }
+        }
+    }
+	else {
+	 */
+        for (size_t i = 0; i < efp->n_frag; i++, coord += stride) {
+            if ((res = efp_set_frag_coordinates(efp, i, coord_type, coord))) {
+                efp_log("efp_set_coordinates() failure");
+                return res;
+            }
+        }
 
 	return EFP_RESULT_SUCCESS;
 }
@@ -915,6 +973,8 @@ efp_set_frag_coordinates(struct efp *efp, size_t frag_idx,
 		return set_coord_points(frag, coord);
 	case EFP_COORD_TYPE_ROTMAT:
 		return set_coord_rotmat(frag, coord);
+    case EFP_COORD_TYPE_ATOMS:
+        return set_coord_atoms(frag, coord);
 	}
     efp_log("efp_set_frag_coordinates() failure");
 	assert(0);

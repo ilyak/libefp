@@ -70,9 +70,20 @@ enum ensemble_type {
 	ENSEMBLE_TYPE_NPT
 };
 
+/*
+struct atom {
+    char *name;
+    double x;
+    double y;
+    double z;
+};
+*/
+
 struct frag {
 	char *name;
 	double coord[12];
+	size_t n_atoms;
+	struct efp_atom *atoms;
 	double vel[6];
 	bool constraint_enable;
 	vec_t constraint_xyz;

@@ -33,6 +33,7 @@
 
 #define POL_SCF_TOL 1.0e-10
 #define POL_SCF_MAX_ITER 200
+#define INDIP_PRINT_TRESH 5.0
 
 double efp_get_pol_damp_tt(double, double, double);
 enum efp_result efp_compute_id_direct(struct efp *);
@@ -755,11 +756,25 @@ pol_scf_iter(struct efp *efp)
 	free(data.id_new);
 	free(data.id_conj_new);
 
+
+	for (size_t i=0; i<efp->n_frag; i++) {
+        struct frag *frag = efp->frags + i;
+        for (size_t j = 0; j < frag->n_polarizable_pts; j++) {
+            struct polarizable_pt *pt = frag->polarizable_pts + j;
+            size_t idx = frag->polarizable_offset + j;
+            if (vec_len(&efp->indip[idx]) > INDIP_PRINT_TRESH) {
+                printf("\n WARNING: induced dipole %d on fragment %d: %lf ", j, i, vec_len(&efp->indip[idx]));
+            }
+        }
+	}
 	/*
-	printf("\n induced dipoles");
 	for (int i=0; i<efp->n_polarizable_pts; i++) {
-	    printf("\npoint %d: %lf ", i, vec_len(&efp->indip[i]));
-	}  */
+	    if vec_len(&efp->indip[i]) > INDIP_PRINT_TRESH {
+            printf("\npoint %d: %lf ", i, vec_len(&efp->indip[i]));
+	    };
+	}
+	*/
+
 	return data.conv / npts / 2;
 }
 

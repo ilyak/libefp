@@ -110,8 +110,10 @@ enum efp_coord_type {
 	EFP_COORD_TYPE_XYZABC = 0,
 	/** Coordinates of three points belonging to a fragment. */
 	EFP_COORD_TYPE_POINTS,
-	/** Coordinates of fragment center of mass and its rotation matrix. */
-	EFP_COORD_TYPE_ROTMAT
+    /** Coordinates of fragment center of mass and its rotation matrix. */
+    EFP_COORD_TYPE_ROTMAT,
+    /** Coordinates of all fragment atoms. */
+    EFP_COORD_TYPE_ATOMS
 };
 
 /** Driver used for solving polarization equations. */
