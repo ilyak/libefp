@@ -89,7 +89,13 @@ struct frag {
 	/* pointer to the initial fragment state in library */
 	const struct frag *lib;
 
-	/* number of atoms in this fragment */
+    /* pointer to the updated fragment parameters */
+    const struct frag *lib_current;
+
+    /* rmsd between initial and updated structures of the fragment */
+    double rmsd;
+
+    /* number of atoms in this fragment */
 	size_t n_atoms;
 
 	/* fragment atoms */
@@ -178,7 +184,13 @@ struct efp {
 	/* array with the library of fragment initial parameters */
 	struct frag **lib;
 
-	/* callback which computes electric field from electrons */
+    /* number of current (updated) fragments in the library */
+    size_t n_lib_current;
+
+    /* array with the library of fragment updated (shifted) parameters */
+    struct frag **lib_current;
+
+    /* callback which computes electric field from electrons */
 	efp_electron_density_field_fn get_electron_density_field;
 
 	/* user data for get_electron_density_field */

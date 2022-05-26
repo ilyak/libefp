@@ -53,5 +53,7 @@ int efp_strncasecmp(const char *, const char *, size_t);
 void find_plane(const vec_t, const vec_t, const vec_t, vec_t *, double);
 // computes maximum cut_off distance for an arbitrary periodic cell
 double max_cutoff(const six_t);
+// computes rmsd between two fragment structures
+double calc_rmsd(const struct frag *frag1, const struct frag *frag2);
 
 #endif /* LIBEFP_UTIL_H */

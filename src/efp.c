@@ -333,6 +333,28 @@ copy_frag(struct frag *dest, const struct frag *src)
 	return EFP_RESULT_SUCCESS;
 }
 
+// updates (shifts) parameters of fragment based on coordinates of fragment atoms
+static enum efp_result
+update_params(struct efp_atom *atoms, const struct frag *lib_orig, const struct frag *lib_current) {
+    return EFP_RESULT_SUCCESS;
+}
+
+// checks whether atoms in fragment "frag" match those in fragment "lib"
+static enum efp_result
+check_frag_atoms(struct frag *frag, const struct frag *lib) {
+    return EFP_RESULT_SUCCESS;
+}
+
+static enum efp_result
+clean_frag_atoms(struct frag *frag)
+{
+    if (frag->atoms) {
+        free(frag->atoms);
+        frag->n_atoms = 0;
+    }
+    return EFP_RESULT_SUCCESS;
+}
+
 static enum efp_result
 check_opts(const struct efp_opts *opts)
 {
@@ -933,23 +955,12 @@ efp_set_coordinates(struct efp *efp, enum efp_coord_type coord_type,
         break;
 	}
 
-	/*
-	if ( coord_type == EFP_COORD_TYPE_ATOMS ) {
-        for (size_t i = 0; i < efp->n_frag; i++) {
-            if ((res = efp_set_frag_coordinates(efp, i, coord_type, coord))) {
-                efp_log("efp_set_coordinates() failure");
-                return res;
-            }
+    for (size_t i = 0; i < efp->n_frag; i++, coord += stride) {
+        if ((res = efp_set_frag_coordinates(efp, i, coord_type, coord))) {
+            efp_log("efp_set_coordinates() failure");
+            return res;
         }
     }
-	else {
-	 */
-        for (size_t i = 0; i < efp->n_frag; i++, coord += stride) {
-            if ((res = efp_set_frag_coordinates(efp, i, coord_type, coord))) {
-                efp_log("efp_set_coordinates() failure");
-                return res;
-            }
-        }
 
 	return EFP_RESULT_SUCCESS;
 }
@@ -1577,8 +1588,14 @@ efp_shutdown(struct efp *efp)
 		free_frag(efp->lib[i]);
 		free(efp->lib[i]);
 	}
+	// for the case of updated/shifted fragment parameters
+    for (size_t i = 0; i < efp->n_lib_current; i++) {
+        free_frag(efp->lib_current[i]);
+        free(efp->lib_current[i]);
+    }
 	free(efp->frags);
 	free(efp->lib);
+    free(efp->lib_current);
 	free(efp->grad);
 	free(efp->ptc);
 	free(efp->ptc_xyz);
@@ -1664,6 +1681,19 @@ efp_add_fragment(struct efp *efp, const char *name)
 
 	enum efp_result res;
 	struct frag *frag = efp->frags + efp->n_frag - 1;
+
+    // if update/rotate parameters
+	if (efp->opts.update_params == 1) {
+        // first, sanity check: do fragment atoms match those in the library fragment?
+        if (res = check_frag_atoms(frag, lib)) {
+            efp_log("check_frag_atoms() failure");
+            return res;
+        }
+        frag->rmsd = calc_rmsd(frag,lib);
+	    if (frag->rmsd < efp->opts.update_params_cutoff) {
+	        update_params(frag->atoms,lib, frag->lib_current);
+	    }
+	}
 
 	if ((res = copy_frag(frag, lib))) {
         efp_log("copy_frag() failure");
@@ -1824,6 +1854,23 @@ efp_get_frag_atoms(struct efp *efp, size_t frag_idx, size_t size,
 	memcpy(atoms, frag->atoms, frag->n_atoms * sizeof(struct efp_atom));
 
 	return EFP_RESULT_SUCCESS;
+}
+
+EFP_EXPORT enum efp_result
+efp_set_frag_atoms(struct efp *efp, size_t frag_idx, size_t n_atoms,
+                   struct efp_atom *atoms)
+{
+    struct frag *frag;
+
+    assert(efp);
+    assert(atoms);
+    assert(frag_idx < efp->n_frag);
+
+    frag = efp->frags + frag_idx;
+    frag->n_atoms = n_atoms;
+    memcpy(frag->atoms, atoms, n_atoms * sizeof(struct efp_atom));
+
+    return EFP_RESULT_SUCCESS;
 }
 
 EFP_EXPORT void
@@ -2042,4 +2089,5 @@ n_symm_frag(struct efp *efp, size_t *symm_frag) {
         // printf("\n symm_frag %d = %d", i, symm_frag[i]);
     }
 }
+
 

@@ -163,7 +163,10 @@ static struct cfg *make_cfg(void)
                  (int []) { EFP_SYMM_FRAG_FRAG,
                             EFP_SYMM_FRAG_LIST });
 
-	return cfg;
+    cfg_add_int(cfg, "update_params", 0);
+    cfg_add_double(cfg, "update_params_cutoff", 0.0);
+
+    return cfg;
 }
 
 static sim_fn_t get_sim_fn(enum run_type run_type)
@@ -281,7 +284,9 @@ static struct efp *create_efp(const struct cfg *cfg, const struct sys *sys)
         .ligand = cfg_get_int(cfg, "ligand"),
         .print_pbc = cfg_get_bool(cfg, "print_pbc"),
         .symmetry = cfg_get_bool(cfg, "symmetry"),
-        .symm_frag = cfg_get_enum(cfg, "symm_frag")
+        .symm_frag = cfg_get_enum(cfg, "symm_frag"),
+        .update_params = cfg_get_int(cfg, "update_params"),
+        .update_params_cutoff = cfg_get_double(cfg, "update_params_cutoff")
 	};
 
 	if (opts.xr_cutoff == 0.0) {
@@ -336,7 +341,16 @@ static struct efp *create_efp(const struct cfg *cfg, const struct sys *sys)
 	}
 
 	for (size_t i = 0; i < sys->n_frags; i++)
-		check_fail(efp_set_frag_coordinates(efp, i, coord_type, sys->frags[i].coord));
+        check_fail(efp_set_frag_coordinates(efp, i, coord_type, sys->frags[i].coord));
+
+	/*
+	// LVS: need to coordinate this function with update_fragment() in efp.c
+	// copying atomic coordinates of fragments
+	// possibly add check on update_params == 1
+	if (coord_type == EFP_COORD_TYPE_ATOMS)
+        for (size_t i = 0; i < sys->n_frags; i++)
+            check_fail(efp_set_frag_atoms(efp, i, sys->frags[i].n_atoms, sys->frags[i].atoms));
+	*/
 
 	return (efp);
 }

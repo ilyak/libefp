@@ -353,3 +353,9 @@ max_cutoff(const six_t box) {
     if (min_dist > dist) min_dist = dist;
     return min_dist;
 }
+
+double
+calc_rmsd(const struct frag *frag1, const struct frag *frag2){
+    double rmsd = 0.0;
+    return rmsd;
+}

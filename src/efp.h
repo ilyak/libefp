@@ -172,6 +172,11 @@ struct efp_opts {
      /** Specifies symmetric elements of the crystal lattice. Default each unique fragment.
       * Warning: this keyword is not related to space symmetry groups or symmetry elements */
     enum efp_symm_frag symm_frag;
+    /** Enables updating (shifting) library fragment parameters to match fragment geometry.
+     * 1 corresponds to flexible EFP model by Yongbin Kim. Default is 0 (no update) */
+    int update_params;
+    /** Cutoff when updating parameters is "safe". Default 0.0 (never safe) */
+    double update_params_cutoff;
 };
 
 /** EFP energy terms. */
@@ -1085,6 +1090,24 @@ enum efp_result efp_get_frag_atom_count(struct efp *efp, size_t frag_idx,
 enum efp_result efp_get_frag_atoms(struct efp *efp, size_t frag_idx,
     size_t size, struct efp_atom *atoms);
 
+
+/**
+ * Set atoms comprising the specified fragment.
+ *
+ * \param[in] efp The efp structure.
+ *
+ * \param[in] frag_idx Index of a fragment. Must be a value between zero and
+ * the total number of fragments minus one.
+ *
+ * \param[in] n_atoms Size of the \p atoms array.
+ *
+ * \param[in] atoms Array with atom information; it will be copied into fragment's atoms.
+ *
+ * \return ::EFP_RESULT_SUCCESS on success or error code otherwise.
+ */
+enum efp_result efp_set_frag_atoms(struct efp *efp, size_t frag_idx, size_t n_atoms,
+                   struct efp_atom *atoms);
+
 /**
  * Get electric field for a point on a fragment.
  *
@@ -1211,6 +1234,26 @@ void unique_symm_frag(struct efp *efp, size_t *unique_frag);
  * @param[out] symm_frag Array of length nsymm_frag specifying # of identical fragments
  */
 void n_symm_frag(struct efp *efp, size_t *symm_frag);
+
+/** updates (shifts) parameters of fragment based on coordinates of fragment atoms
+ *
+ * @param[in] atoms Atoms with target coordinates, to which the parameters will be shifted
+ * @param lib_orig[in] Original fragment parameters
+ * @param lib_current[out] Updated fragment parameters
+ * @return
+ */
+//static enum efp_result
+//update_params(struct efp_atom *atoms, const struct frag *lib_orig, struct frag *lib_current);
+
+/** Checks whether atoms in fragment "frag" match those in fragment "lib"
+ *
+ * @param[in] frag
+ * @param[in] lib
+ * @return
+ */
+//static enum efp_result
+//check_frag_atoms(const struct frag *frag, const struct frag *lib);
+
 
 #ifdef __cplusplus
 } /* extern "C" */
